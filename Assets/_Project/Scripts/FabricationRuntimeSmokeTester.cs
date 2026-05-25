@@ -49,21 +49,21 @@ namespace Hecton8.Debugging
 
                 if (_inventory == null || _scanLogSystem == null)
                 {
-                    Debug.LogError("[FabricationSmoke] Missing PlayerInventory or ScanLogSystem on Player.");
+                    Hecton8.Core.H8Debug.LogError("[FabricationSmoke] Missing PlayerInventory or ScanLogSystem on Player.");
                     return;
                 }
 
                 Fabricator fabricator = FindTargetFabricator();
                 if (fabricator == null)
                 {
-                    Debug.LogError($"[FabricationSmoke] Fabricator '{targetFabricatorName}' not found.");
+                    Hecton8.Core.H8Debug.LogError($"[FabricationSmoke] Fabricator '{targetFabricatorName}' not found.");
                     return;
                 }
 
                 RecipeData recipe = FindTargetRecipe(fabricator);
                 if (recipe == null)
                 {
-                    Debug.LogError($"[FabricationSmoke] Recipe '{targetRecipeName}' not found on '{fabricator.name}'.");
+                    Hecton8.Core.H8Debug.LogError($"[FabricationSmoke] Recipe '{targetRecipeName}' not found on '{fabricator.name}'.");
                     return;
                 }
 
@@ -83,7 +83,7 @@ namespace Hecton8.Debugging
 
                 if (!craftStarted)
                 {
-                    Debug.LogError($"[FabricationSmoke] Failed to start craft '{recipe.recipeName}'.");
+                    Hecton8.Core.H8Debug.LogError($"[FabricationSmoke] Failed to start craft '{recipe.recipeName}'.");
                     return;
                 }
 
@@ -98,7 +98,7 @@ namespace Hecton8.Debugging
 
                 if (!crafted)
                 {
-                    Debug.LogError(
+                    Hecton8.Core.H8Debug.LogError(
                         $"[FabricationSmoke] FAIL recipe='{recipe.recipeName}' menuOpened={menuOpened} before={beforeCount} after={afterCount}");
                     return;
                 }
@@ -114,7 +114,7 @@ namespace Hecton8.Debugging
             }
             catch (Exception exception)
             {
-                Debug.LogException(exception);
+                Hecton8.Core.H8Debug.LogException(exception);
             }
         }
 

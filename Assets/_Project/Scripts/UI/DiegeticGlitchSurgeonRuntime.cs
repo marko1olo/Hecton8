@@ -24,7 +24,7 @@ namespace Hecton8.UI
         [FieldOffset(0)] public float GlobalIntensity;
         [FieldOffset(4)] public float Seed;
         [FieldOffset(8)] public uint GlitchTableOffset;
-        [FieldOffset(12)] public uint _pad0;
+        [FieldOffset(12)] private uint _pad0;
 
         /// <summary>Returns a mutable reference to a raw vault pointer without copying the DTO.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -35,28 +35,31 @@ namespace Hecton8.UI
     }
 
     /// <summary>
-    /// 4-byte ASCII substitution mapping entry for ARM64-friendly table validation.
+    /// 8-byte ASCII substitution mapping entry for ARM64-friendly table validation.
     /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 4)]
+    [StructLayout(LayoutKind.Explicit, Size = 8)]
     public struct ScrambledCharacterDTO
     {
         [FieldOffset(0)] public byte OriginalChar;
         [FieldOffset(1)] public byte GlitchChar;
-        [FieldOffset(2)] public ushort _pad0;
+        [FieldOffset(2)] private ushort _pad0;
+        [FieldOffset(4)] private uint _pad1;
     }
 
     /// <summary>
-    /// Pointer-backed test span used when Babel, Terminal OS, or anomaly owners are unavailable.
+    /// Descriptor-backed test span used when Babel, Terminal OS, or anomaly owners are unavailable.
     /// </summary>
     [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public unsafe struct MockTextSpan
+    public struct MockTextSpan
     {
-        [FieldOffset(0)] public ushort* Buffer;
+        [FieldOffset(0)] public uint BufferId;
+        [FieldOffset(4)] public uint BufferGeneration;
         [FieldOffset(8)] public int Length;
         [FieldOffset(12)] public int ReadabilityPrefixChars;
         [FieldOffset(16)] public int ReadabilityDigitBudget;
         [FieldOffset(20)] public uint Flags;
-        [FieldOffset(24)] private ulong _pad0;
+        [FieldOffset(24)] private uint _pad0;
+        [FieldOffset(28)] private uint _pad1;
     }
 
     /// <summary>
@@ -68,7 +71,7 @@ namespace Hecton8.UI
         [FieldOffset(0)] public float Corruption01;
         [FieldOffset(4)] public float SimulationSeconds;
         [FieldOffset(8)] public uint Frame;
-        [FieldOffset(12)] public uint _pad0;
+        [FieldOffset(12)] private uint _pad0;
     }
 
     /// <summary>
@@ -80,7 +83,7 @@ namespace Hecton8.UI
         [FieldOffset(0)] public float DepthMeters;
         [FieldOffset(4)] public float BaselineIntensity;
         [FieldOffset(8)] public uint Frame;
-        [FieldOffset(12)] public uint _pad0;
+        [FieldOffset(12)] private uint _pad0;
     }
 
     /// <summary>
@@ -122,8 +125,8 @@ namespace Hecton8.UI
         [FieldOffset(80)] public float4 UVRect;
         [FieldOffset(96)] public uint CharacterCode;
         [FieldOffset(100)] public float GlitchIntensity;
-        [FieldOffset(104)] public uint _pad0;
-        [FieldOffset(108)] public uint _pad1;
+        [FieldOffset(104)] private uint _pad0;
+        [FieldOffset(108)] private uint _pad1;
     }
 
     /// <summary>
@@ -181,7 +184,8 @@ namespace Hecton8.UI
         [FieldOffset(12)] public uint Cursor;
         [FieldOffset(16)] public uint FaultFlags;
         [FieldOffset(20)] public uint TableHash;
-        [FieldOffset(24)] public ulong TimestampTicks;
+        [FieldOffset(24)] public uint TimestampTicksLow;
+        [FieldOffset(28)] public uint TimestampTicksHigh;
     }
 
     public struct ExternalAsciiScrambleLease
@@ -196,7 +200,7 @@ namespace Hecton8.UI
     /// Vault-backed diegetic glitch runtime. It mutates owned unmanaged buffers and exports bridge-ready DTOs.
     /// </summary>
     [DisallowMultipleComponent]
-    public unsafe sealed class DiegeticGlitchSurgeonRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public unsafe sealed class DiegeticGlitchSurgeonRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         internal const int GlitchTableCapacity = 64;
         internal const int GlitchTableBufferIdRaw = 70901;
@@ -233,7 +237,7 @@ namespace Hecton8.UI
 #if UNITY_EDITOR
         private const string DefaultCsvRelativePath = "glitch_profiles.csv";
 #endif
-        private const string DefaultDumpRelativePath = "Docs/AgentLogs/Dump_GLITCH_SURGEON.bin";
+        private const string DefaultDumpRelativePath = "Docs/AgentLogs/Dump_1309_UIPresentation.bin";
 
         private const BufferID StateBufferId = (BufferID)70900;
         private const BufferID GlitchTableBufferId = (BufferID)GlitchTableBufferIdRaw;
@@ -334,7 +338,6 @@ namespace Hecton8.UI
         private uint _lastTableHash;
         private uint _lastSeedBits;
         private int _stalledSeedFrames;
-        private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
         private bool _nativeReady;
@@ -390,12 +393,6 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             _pendingDisableTeardown = true;
-            if (_registeredUpdate)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registeredUpdate = false;
-            }
-
             TryUnregisterHotSwapListener();
             if (!TryDrainActiveJobIfReady() || !ServicePendingExternalLeaseRelease())
             {
@@ -413,7 +410,7 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float deltaTime)
+        private void ScheduleGlitchFrameJobs(float deltaTime)
         {
             if (!_nativeReady || _jobScheduled || _pendingDisableTeardown || _pendingVaultSwap)
                 return;
@@ -446,7 +443,8 @@ namespace Hecton8.UI
 
             PrepareFrameTuning(tuning);
 
-            textSpan->Buffer = workText;
+            textSpan->BufferId = unchecked((uint)(int)WorkTextBufferId);
+            textSpan->BufferGeneration = _workTextHandle.Generation;
             textSpan->Length = _mockTextLength;
             textSpan->ReadabilityPrefixChars = CriticalReadabilityPrefixChars;
             textSpan->ReadabilityDigitBudget = 0;
@@ -526,6 +524,8 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void LateFrameTick()
         {
+            ScheduleGlitchFrameJobs(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (!TryDrainActiveJobIfReady())
                 return;
 
@@ -1032,9 +1032,6 @@ namespace Hecton8.UI
 
         private void TryRegister()
         {
-            if (!_registeredUpdate)
-                _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
-
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
@@ -1065,19 +1062,12 @@ namespace Hecton8.UI
             {
                 if (currentService == null)
                 {
-                    _registeredUpdate = false;
                     _registeredLateFrame = false;
                     return;
                 }
 
                 if (isActiveAndEnabled)
                 {
-                    if (_registeredUpdate)
-                    {
-                        GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                        _registeredUpdate = false;
-                    }
-
                     UnregisterLateFrameCold();
                     TryRegister();
                 }
@@ -1171,7 +1161,7 @@ namespace Hecton8.UI
         private bool ValidateStructLayouts()
         {
             bool valid = UnsafeUtility.SizeOf<GlitchStateDTO>() == 16 &&
-                         UnsafeUtility.SizeOf<ScrambledCharacterDTO>() == 4 &&
+                         UnsafeUtility.SizeOf<ScrambledCharacterDTO>() == 8 &&
                          UnsafeUtility.SizeOf<MockTextSpan>() == 32 &&
                          UnsafeUtility.SizeOf<GlitchTuningDTO>() == 32 &&
                          UnsafeUtility.SizeOf<GlitchQuadTransformDTO>() == 112 &&
@@ -1180,8 +1170,21 @@ namespace Hecton8.UI
                          UnsafeUtility.SizeOf<DiegeticGlitchTelemetryEntry>() == 64 &&
                          UnsafeUtility.SizeOf<GlitchBlackBoxDumpHeader>() == 32;
 #if UNITY_EDITOR
+            valid = valid &&
+                    OffsetOf<ScrambledCharacterDTO>(nameof(ScrambledCharacterDTO.OriginalChar)) == 0 &&
+                    OffsetOf<ScrambledCharacterDTO>(nameof(ScrambledCharacterDTO.GlitchChar)) == 1 &&
+                    OffsetOf<MockTextSpan>(nameof(MockTextSpan.BufferId)) == 0 &&
+                    OffsetOf<MockTextSpan>(nameof(MockTextSpan.BufferGeneration)) == 4 &&
+                    OffsetOf<MockTextSpan>(nameof(MockTextSpan.Length)) == 8 &&
+                    OffsetOf<MockTextSpan>(nameof(MockTextSpan.ReadabilityPrefixChars)) == 12 &&
+                    OffsetOf<MockTextSpan>(nameof(MockTextSpan.ReadabilityDigitBudget)) == 16 &&
+                    OffsetOf<MockTextSpan>(nameof(MockTextSpan.Flags)) == 20 &&
+                    OffsetOf<GlitchBlackBoxDumpHeader>(nameof(GlitchBlackBoxDumpHeader.Magic)) == 0 &&
+                    OffsetOf<GlitchBlackBoxDumpHeader>(nameof(GlitchBlackBoxDumpHeader.TableHash)) == 20 &&
+                    OffsetOf<GlitchBlackBoxDumpHeader>(nameof(GlitchBlackBoxDumpHeader.TimestampTicksHigh)) == 28;
+
             if (!valid)
-                Debug.LogError("SHINOBU_49 glitch DTO layout mismatch.");
+                Hecton8.Core.H8Debug.LogError("SHINOBU_49 glitch DTO layout mismatch.");
 #endif
             return valid;
         }
@@ -1234,7 +1237,7 @@ namespace Hecton8.UI
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId)
-            where T : struct
+            where T : unmanaged
         {
             if (vault != null && IsGlitchVaultHandle(in handle, bufferId))
                 vault.ReleaseBuffer(in handle);
@@ -1248,7 +1251,7 @@ namespace Hecton8.UI
             BufferID bufferId,
             int requiredLength,
             out NativeArray<T> buffer)
-            where T : struct
+            where T : unmanaged
         {
             return TryOpenGlitchVaultBuffer(vault, in handle, bufferId, requiredLength, readOnly: false, out buffer);
         }
@@ -1259,7 +1262,7 @@ namespace Hecton8.UI
             BufferID bufferId,
             int requiredLength,
             out NativeArray<T> buffer)
-            where T : struct
+            where T : unmanaged
         {
             return TryOpenGlitchVaultBuffer(vault, in handle, bufferId, requiredLength, readOnly: true, out buffer);
         }
@@ -1271,7 +1274,7 @@ namespace Hecton8.UI
             int requiredLength,
             bool readOnly,
             out NativeArray<T> buffer)
-            where T : struct
+            where T : unmanaged
         {
             buffer = default;
             if (vault == null ||
@@ -1293,16 +1296,28 @@ namespace Hecton8.UI
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool IsGlitchVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
-            where T : struct
+            where T : unmanaged
         {
             return handle.BufferID == unchecked((uint)(int)bufferId) &&
                    handle.SystemID == (uint)SystemID.UI &&
                    handle.Generation != 0u;
         }
 
+#if UNITY_EDITOR
+        private static int OffsetOf<T>(string fieldName)
+        {
+            System.Reflection.FieldInfo field = typeof(T).GetField(
+                fieldName,
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.Public |
+                System.Reflection.BindingFlags.NonPublic);
+            return field != null ? UnsafeUtility.GetFieldOffset(field) : -1;
+        }
+#endif
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ref T ElementRef<T>(NativeArray<T> buffer, int index)
-            where T : struct
+            where T : unmanaged
         {
             return ref UnsafeUtility.AsRef<T>((byte*)buffer.GetUnsafePtr() + (index * UnsafeUtility.SizeOf<T>()));
         }
@@ -1321,7 +1336,6 @@ namespace Hecton8.UI
             state.GlobalIntensity = 0f;
             state.Seed = math.asfloat(0x3F800000u);
             state.GlitchTableOffset = 0u;
-            state._pad0 = 0u;
 
             ref GlitchTuningDTO tuning = ref ElementRef(tuningBuffer, 0);
             tuning.MasterIntensity = math.saturate(masterIntensity);
@@ -1369,16 +1383,13 @@ namespace Hecton8.UI
             GlitchQuadTransformDTO* quads = (GlitchQuadTransformDTO*)quadBuffer.GetUnsafePtr();
             for (int i = 0; i < MockQuadCapacity; i++)
             {
-                quads[i] = new GlitchQuadTransformDTO
-                {
-                    Matrix = BuildMockQuadMatrixForIndex(i),
-                    Color = new float4(0.18f, 0.95f, 0.62f, 0.82f),
-                    UVRect = new float4(0f, 0f, 1f, 1f),
-                    CharacterCode = i < 16 ? SpecialRadarBlipCode : (uint)('A' + (i % 26)),
-                    GlitchIntensity = 0f,
-                    _pad0 = 0u,
-                    _pad1 = 0u
-                };
+                GlitchQuadTransformDTO quad = default;
+                quad.Matrix = BuildMockQuadMatrixForIndex(i);
+                quad.Color = MakeFloat4(0.18f, 0.95f, 0.62f, 0.82f);
+                quad.UVRect = MakeFloat4(0f, 0f, 1f, 1f);
+                quad.CharacterCode = i < 16 ? SpecialRadarBlipCode : (uint)('A' + (i % 26));
+                quad.GlitchIntensity = 0f;
+                quads[i] = quad;
             }
         }
 
@@ -1493,7 +1504,7 @@ namespace Hecton8.UI
                 {
                     using (FileStream stream = new FileStream(_csvFullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128))
                     {
-                        Span<byte> destination = new Span<byte>(scratch, CsvScratchCapacity);
+                        Span<byte> destination = MemoryMarshal.CreateSpan(ref UnsafeUtility.AsRef<byte>(scratch), CsvScratchCapacity);
                         while (length < CsvScratchCapacity)
                         {
                             int read = stream.Read(destination.Slice(length));
@@ -1950,21 +1961,21 @@ namespace Hecton8.UI
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
 
-                GlitchBlackBoxDumpHeader header = new GlitchBlackBoxDumpHeader
-                {
-                    Magic = DumpMagic,
-                    Version = DumpVersion,
-                    EntryCount = TelemetryFrameCount,
-                    Cursor = *cursor,
-                    FaultFlags = faultFlags,
-                    TableHash = _lastTableHash,
-                    TimestampTicks = (ulong)DateTime.UtcNow.Ticks
-                };
+                ulong timestampTicks = (ulong)DateTime.UtcNow.Ticks;
+                GlitchBlackBoxDumpHeader header = default;
+                header.Magic = DumpMagic;
+                header.Version = DumpVersion;
+                header.EntryCount = TelemetryFrameCount;
+                header.Cursor = *cursor;
+                header.FaultFlags = faultFlags;
+                header.TableHash = _lastTableHash;
+                header.TimestampTicksLow = (uint)timestampTicks;
+                header.TimestampTicksHigh = (uint)(timestampTicks >> 32);
 
                 using (FileStream stream = new FileStream(_dumpFullPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096))
                 {
-                    stream.Write(new ReadOnlySpan<byte>((byte*)&header, UnsafeUtility.SizeOf<GlitchBlackBoxDumpHeader>()));
-                    stream.Write(new ReadOnlySpan<byte>((byte*)telemetry, UnsafeUtility.SizeOf<DiegeticGlitchTelemetryEntry>() * TelemetryFrameCount));
+                    stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(&header), UnsafeUtility.SizeOf<GlitchBlackBoxDumpHeader>()));
+                    stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(telemetry), UnsafeUtility.SizeOf<DiegeticGlitchTelemetryEntry>() * TelemetryFrameCount));
                 }
             }
             catch (Exception)
@@ -1979,13 +1990,65 @@ namespace Hecton8.UI
             return math.saturate(math.isfinite(weight) ? weight : 1f);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float2 MakeFloat2(float x, float y)
+        {
+            float2 result = default;
+            result.x = x;
+            result.y = y;
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 MakeFloat3(float x, float y, float z)
+        {
+            float3 result = default;
+            result.x = x;
+            result.y = y;
+            result.z = z;
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float4 MakeFloat4(float x, float y, float z, float w)
+        {
+            float4 result = default;
+            result.x = x;
+            result.y = y;
+            result.z = z;
+            result.w = w;
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float4 MakeFloat4(float2 xy, float z, float w)
+        {
+            float4 result = default;
+            result.x = xy.x;
+            result.y = xy.y;
+            result.z = z;
+            result.w = w;
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float4 MakeFloat4(float3 xyz, float w)
+        {
+            float4 result = default;
+            result.x = xyz.x;
+            result.y = xyz.y;
+            result.z = xyz.z;
+            result.w = w;
+            return result;
+        }
+
         private static float4x4 BuildMockQuadMatrix(float3 position, float2 size)
         {
             float4x4 matrix = float4x4.identity;
-            matrix.c0 = new float4(size.x, 0f, 0f, 0f);
-            matrix.c1 = new float4(0f, size.y, 0f, 0f);
-            matrix.c2 = new float4(0f, 0f, 1f, 0f);
-            matrix.c3 = new float4(position, 1f);
+            matrix.c0 = MakeFloat4(size.x, 0f, 0f, 0f);
+            matrix.c1 = MakeFloat4(0f, size.y, 0f, 0f);
+            matrix.c2 = MakeFloat4(0f, 0f, 1f, 0f);
+            matrix.c3 = MakeFloat4(position, 1f);
             return matrix;
         }
 
@@ -1994,7 +2057,7 @@ namespace Hecton8.UI
         {
             float x = ((index & 15) - 8) * 0.018f;
             float y = ((index >> 4) - 4) * 0.014f;
-            return BuildMockQuadMatrix(new float3(x, y, 0.6f), new float2(0.012f, 0.012f));
+            return BuildMockQuadMatrix(MakeFloat3(x, y, 0.6f), MakeFloat2(0.012f, 0.012f));
         }
 
 #if UNITY_EDITOR
@@ -2152,12 +2215,10 @@ namespace Hecton8.UI
                 Corruption->Corruption01 = corruption01;
                 Corruption->SimulationSeconds = deterministicSeconds;
                 Corruption->Frame = Frame;
-                Corruption->_pad0 = 0u;
 
                 Depth->DepthMeters = math.isfinite(depthMeters) ? depthMeters : 0f;
                 Depth->BaselineIntensity = math.isfinite(depthBaseline) ? depthBaseline : 0f;
                 Depth->Frame = Frame;
-                Depth->_pad0 = 0u;
 
                 Breach->BreachedMask0 = breachIntensity > 0f ? breachBit : 0u;
                 Breach->BreachedMask1 = 0u;
@@ -2167,7 +2228,6 @@ namespace Hecton8.UI
                 State->GlobalIntensity = math.isfinite(intensity) ? intensity : 0f;
                 State->Seed = math.asfloat(0x3F800000u | (Hash(Frame ^ tuning.FrameSeed) & 0x007FFFFFu));
                 State->GlitchTableOffset = (Hash(Frame + 17u) >> 24) & 63u;
-                State->_pad0 = 0u;
             }
         }
 
@@ -2337,7 +2397,7 @@ namespace Hecton8.UI
                 if (effective <= 0.00001f)
                 {
                     quad.Matrix = baseMatrix;
-                    quad.UVRect = new float4(0f, 0f, 1f, 1f);
+                    quad.UVRect = MakeFloat4(0f, 0f, 1f, 1f);
                     quad.GlitchIntensity = 0f;
                     return;
                 }
@@ -2355,15 +2415,15 @@ namespace Hecton8.UI
                 float3 xAxis = baseMatrix.c0.xyz;
                 float3 yAxis = baseMatrix.c1.xyz;
                 quad.Matrix = baseMatrix;
-                quad.Matrix.c0 = new float4(xAxis * c + yAxis * s, 0f);
-                quad.Matrix.c1 = new float4(yAxis * c - xAxis * s, 0f);
-                quad.Matrix.c3 = baseMatrix.c3 + new float4(new float3(n0, n1, n0 * n1) * effective * 0.009f, 0f);
-                quad.UVRect = new float4(new float2(n1, n0) * effective * 0.018f, 1f, 1f);
+                quad.Matrix.c0 = MakeFloat4(xAxis * c + yAxis * s, 0f);
+                quad.Matrix.c1 = MakeFloat4(yAxis * c - xAxis * s, 0f);
+                quad.Matrix.c3 = baseMatrix.c3 + MakeFloat4(MakeFloat3(n0, n1, n0 * n1) * effective * 0.009f, 0f);
+                quad.UVRect = MakeFloat4(MakeFloat2(n1, n0) * effective * 0.018f, 1f, 1f);
                 quad.GlitchIntensity = intensity;
                 if (!AllFinite(quad.Matrix.c0) || !AllFinite(quad.Matrix.c1) || !AllFinite(quad.Matrix.c3) || !AllFinite(quad.UVRect))
                 {
                     quad.Matrix = baseMatrix;
-                    quad.UVRect = new float4(0f, 0f, 1f, 1f);
+                    quad.UVRect = MakeFloat4(0f, 0f, 1f, 1f);
                     quad.GlitchIntensity = 0f;
                 }
             }
@@ -2390,13 +2450,12 @@ namespace Hecton8.UI
                 float alpha = math.saturate(ghostBudget - index);
                 Unity.Mathematics.Random rng = new Unity.Mathematics.Random(NonZeroRandomSeed(Frame ^ math.asuint(State->Seed) ^ ((uint)index * 374761393u)));
                 float radius = 0.018f + rng.NextFloat(0f, 0.075f);
-                float2 direction = math.normalizesafe(new float2(rng.NextFloat(-1f, 1f), rng.NextFloat(-1f, 1f)), new float2(1f, 0f));
+                float2 direction = math.normalizesafe(MakeFloat2(rng.NextFloat(-1f, 1f), rng.NextFloat(-1f, 1f)), MakeFloat2(1f, 0f));
                 float2 local = direction * radius;
-                RadarBlips[index] = new RadarBlipDTO
-                {
-                    LocalPositionIntensity = new float4(local.x, local.y, 0f, alpha * intensity),
-                    ColorSizeAgeFlags = new float4(0.85f, 0.08f + alpha * 0.42f, 0.06f, 0x53484E)
-                };
+                RadarBlipDTO blip = default;
+                blip.LocalPositionIntensity = MakeFloat4(local.x, local.y, 0f, alpha * intensity);
+                blip.ColorSizeAgeFlags = MakeFloat4(0.85f, 0.08f + alpha * 0.42f, 0.06f, 0x53484E);
+                RadarBlips[index] = blip;
             }
         }
 
@@ -2419,7 +2478,8 @@ namespace Hecton8.UI
                 float bend = intensity * math.lerp(0.25f, 1f, Smooth01(quality));
                 float baseFrequency = 180f + index * 35f;
                 float baseGrain = 0.045f + index * 0.0025f;
-                float n = noise.snoise(new float2((Frame + index * 19u) * 0.017f, math.asuint(State->Seed) * 0.000001f));
+                uint pitchHash = Hash(Frame ^ ((uint)index * 0x9E3779B9u) ^ math.asuint(State->Seed));
+                float n = ((pitchHash & 0xFFFFu) * (2f / 65535f)) - 1f;
                 float pitchScalar = math.lerp(1f, math.clamp(0.58f + n * 0.28f, 0.38f, 1.24f), bend);
                 SynthParameters[index] = new GlitchSynthParametersDTO
                 {

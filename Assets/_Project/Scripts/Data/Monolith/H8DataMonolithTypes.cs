@@ -15,7 +15,7 @@ namespace Hecton8.Data
         public const ushort HeaderSizeMarker = HeaderSizeBytes;
 
         /// <summary>Current binary format version.</summary>
-        public const ushort FormatVersion = 1;
+        public const ushort FormatVersion = 2;
 
         /// <summary>Data Monolith blob extension.</summary>
         public const string BlobExtension = ".h8bin";
@@ -29,8 +29,8 @@ namespace Hecton8.Data
         /// <summary>Fixed header size required by the BIOS checksum contract.</summary>
         public const int HeaderSizeBytes = 64;
 
-        /// <summary>Fixed schema hash for the X_002 Data Monolith layout contract.</summary>
-        public const uint SchemaHash = 0x58303032u;
+        /// <summary>Fixed schema hash for the 1313 Data Monolith layout contract.</summary>
+        public const uint SchemaHash = 0x33313331u;
 
         /// <summary>Header/directory flag: blob payload is little-endian.</summary>
         public const uint BlobFlagLittleEndian = 1u;
@@ -214,12 +214,12 @@ namespace Hecton8.Data
     [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct H8ItemRecord
     {
-        [FieldOffset(0)] public uint HashId;
-        [FieldOffset(4)] public uint RecordIndex;
-        [FieldOffset(8)] public uint CategoryHash;
-        [FieldOffset(12)] public uint Flags;
-        [FieldOffset(16)] public ulong RecipeMask0;
-        [FieldOffset(24)] public ulong RecipeMask1;
+        [FieldOffset(0)] public ulong RecipeMask0;
+        [FieldOffset(8)] public ulong RecipeMask1;
+        [FieldOffset(16)] public uint HashId;
+        [FieldOffset(20)] public uint RecordIndex;
+        [FieldOffset(24)] public uint CategoryHash;
+        [FieldOffset(28)] public uint Flags;
         [FieldOffset(32)] public float MassKg;
         [FieldOffset(36)] public float VolumeM3;
         [FieldOffset(40)] public float BaseQuality;
@@ -229,10 +229,10 @@ namespace Hecton8.Data
         [FieldOffset(56)] public uint DescriptionUtf8Offset;
         [FieldOffset(60)] public uint NameUtf8ByteLength;
         [FieldOffset(64)] public uint DescriptionUtf8ByteLength;
-        [FieldOffset(68)] public ushort MaxStack;
-        [FieldOffset(70)] public ushort RecipeIngredientCount;
-        [FieldOffset(72)] public uint Cost;
-        [FieldOffset(76)] public float AccessFrequency;
+        [FieldOffset(68)] public uint Cost;
+        [FieldOffset(72)] public float AccessFrequency;
+        [FieldOffset(76)] public ushort MaxStack;
+        [FieldOffset(78)] public ushort RecipeIngredientCount;
     }
 
     /// <summary>

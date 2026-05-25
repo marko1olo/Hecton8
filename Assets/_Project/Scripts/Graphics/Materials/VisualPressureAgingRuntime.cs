@@ -1571,7 +1571,7 @@ namespace Hecton8.Graphics.Materials
                 if (!failureLogged)
                 {
 #if UNITY_EDITOR
-                    Debug.LogError("Hecton8 VisualPressureAgingRuntime failed to open black-box dump stream.");
+                    Hecton8.Core.H8Debug.LogError("Hecton8 VisualPressureAgingRuntime failed to open black-box dump stream.");
 #endif
                     failureLogged = true;
                 }
@@ -1891,7 +1891,7 @@ namespace Hecton8.Graphics.Materials
                 if (!failureLogged)
                 {
 #if UNITY_EDITOR
-                    Debug.LogError("Hecton8 VisualPressureAgingRuntime failed to write black-box dump.");
+                    Hecton8.Core.H8Debug.LogError("Hecton8 VisualPressureAgingRuntime failed to write black-box dump.");
 #endif
                     failureLogged = true;
                 }

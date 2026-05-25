@@ -9,7 +9,7 @@
   },
   "coreContractsBoundary": {
     "requiredRoute": "Hecton8.Core.Contracts",
-    "violationCount": 119,
+    "violationCount": 124,
     "violations": [
       {
         "assembly": "Hecton8.AI.Ambient",
@@ -290,6 +290,12 @@
       {
         "assembly": "Hecton8.Narrative.Campaign",
         "path": "Assets/_Project/Scripts/Narrative/Campaign/Hecton8.Narrative.Campaign.asmdef",
+        "reference": "Hecton8.Core.Memory",
+        "requiredRoute": "Hecton8.Core.Contracts"
+      },
+      {
+        "assembly": "Hecton8.Narrative.Campaign",
+        "path": "Assets/_Project/Scripts/Narrative/Campaign/Hecton8.Narrative.Campaign.asmdef",
         "reference": "Hecton8.Bootstrap.Contracts",
         "requiredRoute": "Hecton8.Core.Contracts"
       },
@@ -297,6 +303,12 @@
         "assembly": "Hecton8.Narrative.Prologue",
         "path": "Assets/_Project/Scripts/Narrative/Prologue/Hecton8.Narrative.Prologue.asmdef",
         "reference": "Hecton8.Core",
+        "requiredRoute": "Hecton8.Core.Contracts"
+      },
+      {
+        "assembly": "Hecton8.Narrative.Prologue",
+        "path": "Assets/_Project/Scripts/Narrative/Prologue/Hecton8.Narrative.Prologue.asmdef",
+        "reference": "Hecton8.Core.Memory",
         "requiredRoute": "Hecton8.Core.Contracts"
       },
       {
@@ -426,6 +438,12 @@
         "requiredRoute": "Hecton8.Core.Contracts"
       },
       {
+        "assembly": "Hecton8.Prologue.VFX",
+        "path": "Assets/_Project/Scripts/Prologue/VFX/Hecton8.Prologue.VFX.asmdef",
+        "reference": "Hecton8.Core.Memory",
+        "requiredRoute": "Hecton8.Core.Contracts"
+      },
+      {
         "assembly": "Hecton8.QA.Headless",
         "path": "Assets/_Project/Scripts/QA/Headless/Hecton8.QA.Headless.asmdef",
         "reference": "Hecton8.Core",
@@ -441,6 +459,12 @@
         "assembly": "Hecton8.QA",
         "path": "Assets/_Project/Scripts/QA/Hecton8.QA.asmdef",
         "reference": "Hecton8.Core",
+        "requiredRoute": "Hecton8.Core.Contracts"
+      },
+      {
+        "assembly": "Hecton8.QA",
+        "path": "Assets/_Project/Scripts/QA/Hecton8.QA.asmdef",
+        "reference": "Hecton8.Core.Memory",
         "requiredRoute": "Hecton8.Core.Contracts"
       },
       {
@@ -537,6 +561,12 @@
         "assembly": "Hecton8.UI.VR",
         "path": "Assets/_Project/Scripts/UI/VR/Hecton8.UI.VR.asmdef",
         "reference": "Hecton8.Core",
+        "requiredRoute": "Hecton8.Core.Contracts"
+      },
+      {
+        "assembly": "Hecton8.UI.VR",
+        "path": "Assets/_Project/Scripts/UI/VR/Hecton8.UI.VR.asmdef",
+        "reference": "Hecton8.Core.Memory",
         "requiredRoute": "Hecton8.Core.Contracts"
       },
       {
@@ -730,7 +760,7 @@
   "cycleCount": 0,
   "cycles": [],
   "dag": {
-    "edgeCount": 392,
+    "edgeCount": 404,
     "edges": [
       {
         "from": "Hecton8.AI.Ambient",
@@ -1105,6 +1135,14 @@
         "to": "Hecton8.Core"
       },
       {
+        "from": "Hecton8.DataMonolith.Editor",
+        "to": "Hecton8.Core.Contracts"
+      },
+      {
+        "from": "Hecton8.DataMonolith.Editor",
+        "to": "Hecton8.Core.Memory"
+      },
+      {
         "from": "Hecton8.Dev.SpaceEngine098",
         "to": "Hecton8.Core"
       },
@@ -1191,6 +1229,10 @@
       {
         "from": "Hecton8.Editor",
         "to": "Hecton8.Dev.SpaceEngine098"
+      },
+      {
+        "from": "Hecton8.Editor",
+        "to": "Hecton8.Graphics.Materials"
       },
       {
         "from": "Hecton8.Editor",
@@ -1461,6 +1503,10 @@
         "to": "Hecton8.Core.Contracts"
       },
       {
+        "from": "Hecton8.Narrative.Campaign",
+        "to": "Hecton8.Core.Memory"
+      },
+      {
         "from": "Hecton8.Narrative.Prologue",
         "to": "Hecton8.Core"
       },
@@ -1469,12 +1515,24 @@
         "to": "Hecton8.Core.Contracts"
       },
       {
+        "from": "Hecton8.Narrative.Prologue",
+        "to": "Hecton8.Core.Memory"
+      },
+      {
         "from": "Hecton8.Optimization.Editor",
         "to": "Hecton8.Core"
       },
       {
+        "from": "Hecton8.Optimization.Editor",
+        "to": "Hecton8.Core.Contracts"
+      },
+      {
         "from": "Hecton8.Physics.Buoyancy.Editor",
         "to": "Hecton8.Core"
+      },
+      {
+        "from": "Hecton8.Physics.Buoyancy.Editor",
+        "to": "Hecton8.Core.Contracts"
       },
       {
         "from": "Hecton8.Physics.Buoyancy.Editor",
@@ -1531,6 +1589,14 @@
       {
         "from": "Hecton8.Physics.Vehicles.Editor",
         "to": "Hecton8.Core"
+      },
+      {
+        "from": "Hecton8.Physics.Vehicles.Editor",
+        "to": "Hecton8.Core.Contracts"
+      },
+      {
+        "from": "Hecton8.Physics.Vehicles.Editor",
+        "to": "Hecton8.Core.Memory"
       },
       {
         "from": "Hecton8.Physiology",
@@ -1669,12 +1735,20 @@
         "to": "Hecton8.Core.Contracts"
       },
       {
+        "from": "Hecton8.Prologue.VFX",
+        "to": "Hecton8.Core.Memory"
+      },
+      {
         "from": "Hecton8.QA",
         "to": "Hecton8.Core"
       },
       {
         "from": "Hecton8.QA",
         "to": "Hecton8.Core.Contracts"
+      },
+      {
+        "from": "Hecton8.QA",
+        "to": "Hecton8.Core.Memory"
       },
       {
         "from": "Hecton8.QA.Editor",
@@ -1895,6 +1969,10 @@
       {
         "from": "Hecton8.UI.VR",
         "to": "Hecton8.Core.Contracts"
+      },
+      {
+        "from": "Hecton8.UI.VR",
+        "to": "Hecton8.Core.Memory"
       },
       {
         "from": "Hecton8.UI.VR",
@@ -2475,7 +2553,7 @@
   },
   "duplicateAssemblyNameCount": 0,
   "duplicateAssemblyNames": [],
-  "runtimeConcreteSiblingReferenceCount": 91,
+  "runtimeConcreteSiblingReferenceCount": 96,
   "runtimeConcreteSiblingReferences": [
     {
       "assembly": "Hecton8.AI.Ambient",
@@ -2623,9 +2701,19 @@
       "reference": "Hecton8.Core"
     },
     {
+      "assembly": "Hecton8.Narrative.Campaign",
+      "path": "Assets/_Project/Scripts/Narrative/Campaign/Hecton8.Narrative.Campaign.asmdef",
+      "reference": "Hecton8.Core.Memory"
+    },
+    {
       "assembly": "Hecton8.Narrative.Prologue",
       "path": "Assets/_Project/Scripts/Narrative/Prologue/Hecton8.Narrative.Prologue.asmdef",
       "reference": "Hecton8.Core"
+    },
+    {
+      "assembly": "Hecton8.Narrative.Prologue",
+      "path": "Assets/_Project/Scripts/Narrative/Prologue/Hecton8.Narrative.Prologue.asmdef",
+      "reference": "Hecton8.Core.Memory"
     },
     {
       "assembly": "Hecton8.Physics.Buoyancy.Runtime",
@@ -2713,6 +2801,11 @@
       "reference": "Hecton8.Core"
     },
     {
+      "assembly": "Hecton8.Prologue.VFX",
+      "path": "Assets/_Project/Scripts/Prologue/VFX/Hecton8.Prologue.VFX.asmdef",
+      "reference": "Hecton8.Core.Memory"
+    },
+    {
       "assembly": "Hecton8.QA.Headless",
       "path": "Assets/_Project/Scripts/QA/Headless/Hecton8.QA.Headless.asmdef",
       "reference": "Hecton8.Core"
@@ -2726,6 +2819,11 @@
       "assembly": "Hecton8.QA",
       "path": "Assets/_Project/Scripts/QA/Hecton8.QA.asmdef",
       "reference": "Hecton8.Core"
+    },
+    {
+      "assembly": "Hecton8.QA",
+      "path": "Assets/_Project/Scripts/QA/Hecton8.QA.asmdef",
+      "reference": "Hecton8.Core.Memory"
     },
     {
       "assembly": "Hecton8.Rendering.BilateralDrs",
@@ -2796,6 +2894,11 @@
       "assembly": "Hecton8.UI.VR",
       "path": "Assets/_Project/Scripts/UI/VR/Hecton8.UI.VR.asmdef",
       "reference": "Hecton8.Core"
+    },
+    {
+      "assembly": "Hecton8.UI.VR",
+      "path": "Assets/_Project/Scripts/UI/VR/Hecton8.UI.VR.asmdef",
+      "reference": "Hecton8.Core.Memory"
     },
     {
       "assembly": "Hecton8.Vehicles.VFX",
@@ -2944,15 +3047,15 @@
     "runtimeFirstPartyAssemblyCount": 103,
     "topReferenceCounts": [
       {
+        "assembly": "Hecton8.Editor",
+        "firstPartyReferences": 12,
+        "path": "Assets/_Project/Scripts/Editor/Hecton8.Editor.asmdef",
+        "references": 33
+      },
+      {
         "assembly": "Hecton8.Crest.Bridge.Editor",
         "firstPartyReferences": 10,
         "path": "Assets/_Project/Scripts/Plugins/Crest/Editor/Hecton8.Crest.Bridge.Editor.asmdef",
-        "references": 32
-      },
-      {
-        "assembly": "Hecton8.Editor",
-        "firstPartyReferences": 11,
-        "path": "Assets/_Project/Scripts/Editor/Hecton8.Editor.asmdef",
         "references": 32
       },
       {

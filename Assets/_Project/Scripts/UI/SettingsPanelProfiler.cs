@@ -130,12 +130,12 @@ namespace Hecton8.UI
 
             if (_lastApplyTimeMs > targetApplyTimeMs)
             {
-                UnityEngine.Debug.LogWarning("[SettingsPanelProfiler] Apply time exceeded target.");
+                Hecton8.Core.H8Debug.LogWarning("[SettingsPanelProfiler] Apply time exceeded target.");
             }
 
             if (_lastGcAlloc > 0)
             {
-                UnityEngine.Debug.LogWarning("[SettingsPanelProfiler] GC allocation detected.");
+                Hecton8.Core.H8Debug.LogWarning("[SettingsPanelProfiler] GC allocation detected.");
             }
 #endif
         }

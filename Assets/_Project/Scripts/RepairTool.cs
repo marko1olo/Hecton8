@@ -36,7 +36,6 @@ using Hecton8.Gameplay;
 using Hecton8.Audio;
 using Hecton8.Interaction;
 using Hecton8.Items;
-using Hecton8.Physics;
 using Hecton8.Tools;
 using Hecton8.UI;
 using Hecton8.World;
@@ -45,6 +44,9 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Audio;
+
+using ISubmarineDamageControlTarget = global::Hecton8.Core.Contracts.ISubmarineDamageControlTarget;
+using ISubmarineRepairRoomResolver = global::Hecton8.Core.Contracts.ISubmarineRepairRoomResolver;
 
 namespace Hecton8.Gameplay
 {
@@ -597,7 +599,7 @@ namespace Hecton8.Gameplay
 
         private void CacheRepairAudioCold()
         {
-            IAudioService audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            IAudioService audioService = GlobalRegistry.Audio;
             _cachedRepairAudioMixerGroup = audioService != null ? audioService.AmbientGroup : null;
         }
 

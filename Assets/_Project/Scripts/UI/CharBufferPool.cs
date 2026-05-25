@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
@@ -299,7 +300,9 @@ namespace Hecton8.UI
                 unsafe
                 {
                     char* basePtr = (char*)NativeArrayUnsafeUtility.GetUnsafePtr(babelArena);
-                    return new Span<char>(basePtr + (slotIndex * RequiredBabelTextCapacity), RequiredBabelTextCapacity);
+                    return MemoryMarshal.CreateSpan(
+                        ref UnsafeUtility.AsRef<char>(basePtr + (slotIndex * RequiredBabelTextCapacity)),
+                        RequiredBabelTextCapacity);
                 }
             }
 
@@ -460,7 +463,7 @@ namespace Hecton8.UI
             return true;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
         {
             return handle.BufferID != 0u && handle.Generation != 0u;
         }
@@ -473,7 +476,7 @@ namespace Hecton8.UI
         }
 
         private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
-            where T : struct
+            where T : unmanaged
         {
             if (vault != null && handle.BufferID != 0u)
                 vault.ReleaseBuffer(in handle);

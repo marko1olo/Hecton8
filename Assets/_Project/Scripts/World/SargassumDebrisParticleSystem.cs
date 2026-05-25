@@ -10,7 +10,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ParticleSystem))]
-    public sealed class SargassumDebrisParticleSystem : MonoBehaviour, ITickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class SargassumDebrisParticleSystem : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxQueuedParticleEmits = 64;
         private static readonly int _DryColorId = Shader.PropertyToID("_DryColor");
@@ -154,7 +154,6 @@ namespace Hecton8.World
         private Color _bubbleColor;
         private float _ambientSpawnAccumulator;
         private uint _emitSeed = 1u;
-        private bool _registered;
         private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
         private int _queuedEmitCount;
@@ -295,7 +294,7 @@ namespace Hecton8.World
         /// Emits ambient suspended debris around the player while they move through dense sargassum.
         /// </summary>
         /// <param name="deltaTime">Gameplay frame delta supplied by GameTickManager.</param>
-        public void Tick(float deltaTime)
+        private void AdvanceAmbientDebrisEmission(float deltaTime)
         {
             _debugAmbientEmissionThisTick = 0;
 
@@ -363,6 +362,7 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
+            AdvanceAmbientDebrisEmission(SystemDispatcher.CurrentFrameDeltaTime);
             FlushQueuedParticleEmits();
         }
 
@@ -411,12 +411,10 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-            if (!_lateFrameRegistered)
-                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -427,11 +425,6 @@ namespace Hecton8.World
                 _lateFrameRegistered = false;
             }
 
-            if (!_registered)
-                return;
-
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _registered = false;
         }
 
         private void CacheRegistryServicesCold()
@@ -467,7 +460,6 @@ namespace Hecton8.World
                     _sargassumDrag = currentService as SargassumGlobalDragManager;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registered = false;
                     _lateFrameRegistered = false;
                     if (currentService != null && isActiveAndEnabled)
                         TryRegister();

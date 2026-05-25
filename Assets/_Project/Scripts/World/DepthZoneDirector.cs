@@ -521,7 +521,7 @@ namespace Hecton8.World
                 if (ShouldPublishZoneEnterNotification())
                 {
                     _pendingZoneNotification = newZone;
-                    _nextZoneNotificationTime = Time.unscaledTime + Mathf.Max(0f, zoneNotificationCooldown);
+                    _nextZoneNotificationTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds + Mathf.Max(0f, zoneNotificationCooldown);
                 }
 
                 _pendingLogZone = newZone;
@@ -622,7 +622,7 @@ namespace Hecton8.World
 
         private bool ShouldPublishZoneEnterNotification()
         {
-            if (Time.unscaledTime < _nextZoneNotificationTime)
+            if ((float)SystemDispatcher.CurrentUnscaledTimeSeconds < _nextZoneNotificationTime)
                 return false;
 
             IFirstHourReadModel firstHourDirector = _firstHourDirector;

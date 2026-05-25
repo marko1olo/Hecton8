@@ -1,9 +1,9 @@
 ﻿# HECTON-8 Documentation Actuality Ledger
 
-Date: 2026-05-24
+Date: 2026-05-26
 Status: PENDING VERIFICATION
 Owner: X_012 DOCUMENTATION_CLEANUP_AND_ACTUALIZATION_ENGINE
-Evidence class: STATIC_DOC / STATIC_SOURCE / STATIC_FILESYSTEM
+Evidence class: STATIC_DOC / STATIC_SOURCE / STATIC_FILESYSTEM / CLI_COMPILE where artifact cited
 
 This ledger is the active documentation-change register. Full historical text is archived at `../_Archive/Architecture_X_012_APEX_2026-05-23/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.full.md`.
 
@@ -62,11 +62,13 @@ Prompt/report values that disagree with source are stale. Current source wins.
 | 31-word density pass | Manually split residual architecture blocks and made scanner fail at `>30` words | `../Reports/ARCHITECTURE_31WORD_DENSITY_AUDIT_X_012.json` |
 | 30-word density pass | Manually split residual architecture blocks and made scanner fail at `>29` words | `../Reports/ARCHITECTURE_30WORD_DENSITY_AUDIT_X_012.json` |
 | 29-word density pass | Manually split residual architecture blocks and made scanner fail at `>28` words | `../Reports/ARCHITECTURE_29WORD_DENSITY_AUDIT_X_012.json` |
+| 28-word density pass | Manually split residual architecture blocks and made scanner fail at `>27` words | `../Reports/ARCHITECTURE_28WORD_DENSITY_AUDIT_X_012.json` |
 
 ## Active Gaps
 
 | Gap | Required proof artifact |
 |---|---|
+| Current full-solution CLI compile | `Docs/Reports/BUILD_UNKNOWN_RECHECK_20260526_020504.log`; exit `0`; `0 Warning(s)`; `0 Error(s)`; CLI_COMPILE only |
 | EXTERNAL_CODEX loop165 source gate | Remaining 34 runtime files moved unsigned `Time.frameCount` casts to `SystemDispatcher.CurrentFrameId`; touched grep 0; build skipped by `BUILD_GUARD cpu=100 compiler_count=2` |
 | EXTERNAL_CODEX loop164 source gate | 34 runtime files moved unsigned `Time.frameCount` casts to `SystemDispatcher.CurrentFrameId`; touched cast grep 0; build skipped by `BUILD_GUARD cpu=100 compiler_count=0` |
 | EXTERNAL_CODEX loop163 source gate | 38 files moved frame-id payload casts to `SystemDispatcher.CurrentFrameId`; targeted cast grep 0; scoped `diff --check` passed; build skipped by guard |
@@ -74,7 +76,7 @@ Prompt/report values that disagree with source are stale. Current source wins.
 | EXTERNAL_CODEX loop161 source gate | 19 Dispatcher/TickManager stale-registration tails fixed; touched-file `diff --check` passed; broad stale scans 0; build skipped by `BUILD_GUARD cpu=73 compiler_count=9` |
 | EXTERNAL_CODEX loop160 source gate | 50 additional Dispatcher stale-registration tails fixed; targeted touched-file `diff --check` passed with LF warnings only; build skipped by `BUILD_GUARD cpu=63 compiler_count=1` |
 | EXTERNAL_CODEX loop159 source gate | Singleton owner-route grep returned 0; `?? GlobalRegistry|GlobalRegistry.TryGet` grep returned 0; scoped `diff --check` passed; build skipped by `BUILD_GUARD cpu=100 compiler_count=2` |
-| EXTERNAL_CODEX loop158 source gate | Latest wall: `Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log`; `NETSDK1004` before C#; no warnings/`CS*`; retry blocked by `BUILD_GUARD cpu=79 compiler_count=2`; targeted greps pass |
+| EXTERNAL_CODEX loop158 source gate | Historical wall: `Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log`; `NETSDK1004` before C#; no warnings/`CS*`; retry blocked by `BUILD_GUARD cpu=79 compiler_count=2`; targeted greps pass |
 | EXTERNAL_CODEX loop157 source gate | UI/Construction singleton-tail greps pass; scoped `diff --check` passed; build skipped by `BUILD_GUARD cpu=100 compiler_count=2` |
 | EXTERNAL_CODEX loop143 compile verification | Source-only; guarded build skipped by `BUILD_GUARD cpu=100 compiler_count=0` after targeted hot-swap/getter greps |
 | EXTERNAL_CODEX loop142 compile verification | Source-only after pre-build `BUILD_GUARD cpu=78.3 compiler_count=2` |
@@ -102,4 +104,4 @@ Prompt/report values that disagree with source are stale. Current source wins.
 | `Tools/OOP_Doc_Scanner.py` | `finalPass=true`; source sync; reduction `>=30%`; markers `0`; narrative paragraphs `0`; strict paragraph/sentence/line/file/non-contract offenders `0`; instructional markers `0` |
 | `Tools/VerifyDocStructure.py` | `pass=true`; root text docs `3`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0`; active non-BOM files `0` |
 
-This file is not compile, Unity import, Play Mode, profiler, GC, player-build, or visual proof.
+This file links the current CLI compile artifact. It is not Unity import, Play Mode, profiler, GC, player-build, or visual proof.

@@ -21,7 +21,6 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Inventory;
 using Hecton8.Items;
-using Hecton8.Physics;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -429,7 +428,7 @@ namespace Hecton8.Gameplay
         private static bool TryResolveKccVelocity(out Vector3 velocity)
         {
             velocity = Vector3.zero;
-            if (!PhysicsDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal) || signal.Sequence == 0u)
+            if (!CoreDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal) || signal.Sequence == 0u)
                 return false;
 
             uint currentFrame = SystemDispatcher.CurrentFrameId;
@@ -602,7 +601,7 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold()
         {
             _playerInventoryService = GlobalRegistry.PlayerInventory;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
         }
 
         private void TryRegisterHotSwap()

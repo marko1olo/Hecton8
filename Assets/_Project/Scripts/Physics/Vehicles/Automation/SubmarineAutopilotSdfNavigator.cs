@@ -1,5 +1,7 @@
 using System;
+#if UNITY_EDITOR
 using System.IO;
+#endif
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -30,7 +32,9 @@ namespace Hecton8.Vehicles.Automation
         public const int FlowSampleCount = FlowWidth * FlowHeight * FlowDepth;
         public const int WaypointCapacity = 256;
         public const int HandlingProfileCapacity = 32;
+#if UNITY_EDITOR
         public const int CsvScratchBytes = 4096;
+#endif
 
         public const uint HandlingProfileDefaultHash = 0x933B5BDEu;
         public const uint HandlingProfileScoutHash = 0xC322AD05u;
@@ -68,7 +72,9 @@ namespace Hecton8.Vehicles.Automation
         public const BufferID AutopilotTelemetryCursor = (BufferID)71599;
         public const BufferID AutopilotMockSdf = (BufferID)71600;
         public const BufferID AutopilotFlowSamples = (BufferID)71601;
+#if UNITY_EDITOR
         public const BufferID AutopilotCsvScratch = (BufferID)71602;
+#endif
         public const BufferID AutopilotHandlingProfiles = (BufferID)71603;
     }
 
@@ -1396,9 +1402,11 @@ namespace Hecton8.Vehicles.Automation
     [AddComponentMenu("Hecton8/Physics/Vehicles/Submarine Autopilot SDF Navigator")]
     public unsafe sealed class SubmarineAutopilotSdfNavigator : MonoBehaviour, IFixedTickable, IPostFixedTickable, ISlowTickable, IGlobalRegistryHotSwapListener
     {
-        private const string AgentDumpFileName = "Dump_SHINOBU_157.bin";
-        private const string NavigationSurgeonDumpFileName = "Dump_NAVIGATION_SURGEON.bin";
+#if UNITY_EDITOR
         private const long MaxCsvBytes = SubmarineAutopilotConstants.CsvScratchBytes;
+#endif
+        private const uint AutopilotFaultEventHash = 0x41504654u; // APFT
+        private const uint AutopilotFaultDumpHash = 0x41504450u; // APDP
         private const uint LockKinematicStates = 1u << 0;
         private const uint LockAutopilotStates = 1u << 1;
         private const uint LockAutopilotAvoidance = 1u << 2;
@@ -1434,7 +1442,9 @@ namespace Hecton8.Vehicles.Automation
         private VaultGenerationHandle<uint> _telemetryCursorHandle;
         private VaultGenerationHandle<byte> _mockSdfHandle;
         private VaultGenerationHandle<float3> _flowHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
         private VaultGenerationHandle<AutopilotHandlingProfileDTO> _handlingProfileHandle;
 
         private JobHandle _solverHandle;
@@ -1450,14 +1460,17 @@ namespace Hecton8.Vehicles.Automation
         private bool _initialized;
         private bool _faulted;
         private bool _dumped;
+        private bool _coreBlackboxWarmed;
         private uint _lockMask;
         private int _resolvedVehicleCapacity;
         private float _accumulatedSolverDeltaTime;
         private uint _frame;
         private uint _fixedFrame;
+#if UNITY_EDITOR
         private string _projectRoot;
         private string _csvPath;
         private long _csvLastWriteTicks;
+#endif
 
         public static bool TryGetLatest(out SubmarineAutopilotSdfNavigator navigator)
         {
@@ -1470,10 +1483,13 @@ namespace Hecton8.Vehicles.Automation
         private void OnEnable()
         {
             _latest = this;
+#if UNITY_EDITOR
             _projectRoot = ResolveProjectRoot();
             _csvPath = ResolveHandlingProfilesCsvPath(_projectRoot);
+#endif
             EnsureDataVault();
             EnsureVaultBuffers();
+            WarmCoreBlackboxRoute();
             _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
             _registeredPostFixed = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
             _registeredSlow = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
@@ -1498,6 +1514,7 @@ namespace Hecton8.Vehicles.Automation
             _registeredPostFixed = false;
             _registeredSlow = false;
             _registeredHotSwap = false;
+            _coreBlackboxWarmed = false;
             if (ReferenceEquals(_latest, this))
                 _latest = null;
         }
@@ -1517,7 +1534,10 @@ namespace Hecton8.Vehicles.Automation
             ReleaseAutopilotVaultHandles(previousVault ?? _dataVault);
             _dataVault = currentService as IDataVault;
             if (_dataVault != null)
+            {
                 EnsureVaultBuffers();
+                WarmCoreBlackboxRoute();
+            }
         }
 
         public void FixedTick(float fixedDeltaTime)
@@ -1870,11 +1890,13 @@ namespace Hecton8.Vehicles.Automation
                 SubmarineAutopilotConstants.FlowSampleCount,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
+#if UNITY_EDITOR
             _csvScratchHandle = _dataVault.EnsureGenerationHandle<byte>(
                 SubmarineAutopilotVaultRoute.AutopilotCsvScratch,
                 SubmarineAutopilotConstants.CsvScratchBytes,
                 SystemID.VehiclesPhysics,
                 NativeArrayOptions.UninitializedMemory);
+#endif
             _handlingProfileHandle = _dataVault.EnsureGenerationHandle<AutopilotHandlingProfileDTO>(
                 SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles,
                 SubmarineAutopilotConstants.HandlingProfileCapacity,
@@ -1909,7 +1931,9 @@ namespace Hecton8.Vehicles.Automation
                 HasAutopilotVaultBuffer(_dataVault, in _telemetryCursorHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryCursor, 1) &&
                 HasAutopilotVaultBuffer(_dataVault, in _mockSdfHandle, SubmarineAutopilotVaultRoute.AutopilotMockSdf, SubmarineAutopilotConstants.MockSdfVoxelCount) &&
                 HasAutopilotVaultBuffer(_dataVault, in _flowHandle, SubmarineAutopilotVaultRoute.AutopilotFlowSamples, SubmarineAutopilotConstants.FlowSampleCount) &&
+#if UNITY_EDITOR
                 HasAutopilotVaultBuffer(_dataVault, in _csvScratchHandle, SubmarineAutopilotVaultRoute.AutopilotCsvScratch, SubmarineAutopilotConstants.CsvScratchBytes) &&
+#endif
                 HasAutopilotVaultBuffer(_dataVault, in _handlingProfileHandle, SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles, SubmarineAutopilotConstants.HandlingProfileCapacity);
         }
 
@@ -1979,7 +2003,9 @@ namespace Hecton8.Vehicles.Automation
             ReleaseOwnedAutopilotVaultHandle(vault, ref _telemetryCursorHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryCursor);
             ReleaseOwnedAutopilotVaultHandle(vault, ref _mockSdfHandle, SubmarineAutopilotVaultRoute.AutopilotMockSdf);
             ReleaseOwnedAutopilotVaultHandle(vault, ref _flowHandle, SubmarineAutopilotVaultRoute.AutopilotFlowSamples);
+#if UNITY_EDITOR
             ReleaseOwnedAutopilotVaultHandle(vault, ref _csvScratchHandle, SubmarineAutopilotVaultRoute.AutopilotCsvScratch);
+#endif
             ReleaseOwnedAutopilotVaultHandle(vault, ref _handlingProfileHandle, SubmarineAutopilotVaultRoute.AutopilotHandlingProfiles);
 
             _kinematicHandle = default;
@@ -2335,43 +2361,44 @@ namespace Hecton8.Vehicles.Automation
                 !TryReadAutopilotVaultBuffer(_dataVault, in _telemetryHandle, SubmarineAutopilotVaultRoute.AutopilotTelemetryRing, SubmarineAutopilotConstants.BlackBoxFrames, out NativeArray<AutopilotTelemetryEntry> telemetry))
                 return;
 
-            try
+            float scalar = 0f;
+            uint stateHash = SubmarineAutopilotConstants.SourceHashAutopilot;
+            if (TryReadAutopilotVaultBuffer(
+                    _dataVault,
+                    in _telemetryCursorHandle,
+                    SubmarineAutopilotVaultRoute.AutopilotTelemetryCursor,
+                    1,
+                    out NativeArray<uint> cursorBuffer))
             {
-                string logDir = Path.Combine(_projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(logDir);
-                int bytes = UnsafeUtility.SizeOf<AutopilotTelemetryEntry>() * SubmarineAutopilotConstants.BlackBoxFrames;
-                AutopilotTelemetryEntry* telemetryPtr = (AutopilotTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                bool wrote = WriteTelemetryDump(Path.Combine(logDir, AgentDumpFileName), telemetryPtr, bytes);
-                wrote |= WriteTelemetryDump(Path.Combine(logDir, NavigationSurgeonDumpFileName), telemetryPtr, bytes);
-                _dumped = wrote;
+                uint cursorValue = cursorBuffer[0];
+                if (cursorValue != 0u)
+                {
+                    int latest = ((int)cursorValue - 1 + SubmarineAutopilotConstants.BlackBoxFrames) % SubmarineAutopilotConstants.BlackBoxFrames;
+                    AutopilotTelemetryEntry latestEntry = telemetry[latest];
+                    scalar = latestEntry.EstimatedBurstMicroseconds;
+                    stateHash = latestEntry.StateHash;
+                }
             }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
+
+            _dumped = TryDumpCoreBlackbox(AutopilotFaultEventHash, scalar, stateHash, AutopilotFaultDumpHash);
         }
 
-        private static bool WriteTelemetryDump(string path, AutopilotTelemetryEntry* telemetry, int bytes)
+        private void WarmCoreBlackboxRoute()
         {
-            try
-            {
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.SequentialScan))
-                {
-                    stream.Write(new ReadOnlySpan<byte>((byte*)telemetry, bytes));
-                }
+            if (_coreBlackboxWarmed || !Application.isPlaying)
+                return;
 
-                return true;
-            }
-            catch (IOException)
-            {
+            GlobalTelemetryBus.Initialize();
+            _coreBlackboxWarmed = GlobalTelemetryBus.BlackboxActiveFrameCount > 0;
+        }
+
+        private bool TryDumpCoreBlackbox(uint eventHash, float scalarValue, uint stateHash, uint dumpHash)
+        {
+            if (!_coreBlackboxWarmed || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
                 return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
+
+            GlobalTelemetryBus.PushEvent(eventHash, scalarValue, stateHash);
+            return GlobalTelemetryBus.TryDumpBlackboxNow(dumpHash);
         }
 
 #if UNITY_EDITOR
@@ -2808,6 +2835,7 @@ namespace Hecton8.Vehicles.Automation
             return new Vector3(value.x, value.y, value.z);
         }
 
+#if UNITY_EDITOR
         private static string ResolveProjectRoot()
         {
             DirectoryInfo assets = Directory.GetParent(Application.dataPath);
@@ -2822,5 +2850,6 @@ namespace Hecton8.Vehicles.Automation
 
             return Path.Combine(projectRoot, "vehicle_handling_profiles.csv");
         }
+#endif
     }
 }

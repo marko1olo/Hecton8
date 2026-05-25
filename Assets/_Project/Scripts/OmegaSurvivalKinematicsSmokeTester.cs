@@ -66,7 +66,7 @@ namespace Hecton8.Dev
                 if (_debugLastPass)
                     Hecton8.Core.H8Debug.Log("[OmegaSurvivalKinematicsSmoke] PASS checks=" + _debugLastCheckCount);
                 else
-                    Debug.LogError("[OmegaSurvivalKinematicsSmoke] FAIL mask=" + _debugLastFailureMask);
+                    Hecton8.Core.H8Debug.LogError("[OmegaSurvivalKinematicsSmoke] FAIL mask=" + _debugLastFailureMask);
             }
 #endif
         }

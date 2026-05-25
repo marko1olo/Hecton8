@@ -419,7 +419,7 @@ namespace Hecton8.Core
                     Application.targetFrameRate = frameRate;
 
                 _refreshRateHz = targetRefreshRateHz;
-                _nextRefreshSampleFrame = Time.frameCount + RefreshSampleIntervalFrames;
+                _nextRefreshSampleFrame = SystemDispatcher.CurrentFrameIndex + RefreshSampleIntervalFrames;
                 InvalidateShaderStateCache();
             }
 
@@ -448,7 +448,7 @@ namespace Hecton8.Core
                 return;
 
             _originShiftPoseLocked = true;
-            _originShiftPoseLockFrame = Time.frameCount;
+            _originShiftPoseLockFrame = SystemDispatcher.CurrentFrameIndex;
             SampleCurrentEyePoses();
             PublishPoseSyncState();
         }
@@ -463,7 +463,7 @@ namespace Hecton8.Core
             }
 
             SampleCurrentEyePoses();
-            _lastForcedPoseRefreshFrame = Time.frameCount;
+            _lastForcedPoseRefreshFrame = SystemDispatcher.CurrentFrameIndex;
             _originShiftPoseLocked = false;
             SlowTickHeadAupCache();
             PublishOriginShiftState(shiftSequence, fixedInterpolationAlpha);
@@ -809,7 +809,7 @@ namespace Hecton8.Core
 
             _cachedHeadRuntimePosition = runtimePosition;
             _cachedHeadAup = headAup;
-            _cachedHeadAupFrame = Time.frameCount;
+            _cachedHeadAupFrame = SystemDispatcher.CurrentFrameIndex;
             _hasCachedHeadAup = true;
         }
 

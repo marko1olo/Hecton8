@@ -1,193 +1,73 @@
 ﻿{
-    "schema":  "hecton8.vault_exorcism_report.v16",
+    "schema":  "hecton8.vault_exorcism_report.v26",
     "agentId":  "X_000",
     "domain":  "ECHELON 1 CORE \u0026 MEMORY INFRASTRUCTURE",
-    "generatedAtLocal":  "2026-05-25T05:04:33.3908514+04:00",
+    "generatedAtLocal":  "2026-05-25T14:39:20.3502295+04:00",
     "sourceRoot":  "Assets/_Project/Scripts",
-    "targetedDomain":  [
-                           "Assets/_Project/Scripts/AudioLog/AudioLogSystem.cs",
-                           "Assets/_Project/Scripts/Narrative/Prologue/AwaitableDropSequenceDirector.cs",
-                           "Assets/_Project/Scripts/QA/QAEnduranceWatchdogBot.cs",
-                           "Assets/_Project/Scripts/Prologue/VFX/OrbitalDropReentryVfxController.cs",
-                           "Assets/_Project/Scripts/World/SargassumCutManager.cs",
-                           "Assets/_Project/Scripts/Gameplay/DebrisManager.cs",
-                           "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs",
-                           "Assets/_Project/Scripts/UI/DiegeticVisorHudMesh.cs",
-                           "Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs",
-                           "Assets/_Project/Scripts/HUDNotification.cs",
-                           "Assets/_Project/Scripts/Narrative/LoreDatabaseManager.cs",
-                           "Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs",
-                           "Assets/_Project/Scripts/Graphics/Culling/InstanceCullingService.cs",
-                           "Assets/_Project/Scripts/Gameplay/TraumaDispatcher.cs",
-                           "Assets/_Project/Scripts/RaycastBatchHelper.cs",
-                           "Assets/_Project/Scripts/Interaction/PhysicalToolGripOffsets.cs",
-                           "Assets/_Project/Scripts/UI/DiegeticHudManualLayout.cs",
-                           "Assets/_Project/Scripts/UI/FontStreamingManager.cs",
-                           "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs",
-                           "Assets/_Project/Scripts/UI/FakeRadarBlipController.cs",
-                           "Assets/_Project/Scripts/World/EcosystemDirector.cs",
-                           "Assets/_Project/Scripts/WorldProceduralFieldSampler.cs",
-                           "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs",
-                           "Assets/_Project/Scripts/WorldProceduralScatterDirectorMigratorySargassum.cs",
-                           "Assets/_Project/Scripts/World/Outposts/MarauderOutpostGenerationService.cs"
-                       ],
     "verification":  {
                          "latestCompileCommand":  "dotnet build Hecton8.Editor.csproj /nr:false -p:UseSharedCompilation=false -v:minimal",
                          "latestCompileResult":  "succeeded",
-                         "latestCompileDuration":  "00:02:08.87",
+                         "latestCompileDuration":  "00:00:50.01",
                          "warnings":  0,
                          "errors":  0,
-                         "buildGate":  "Latest accepted run launched after gate sampled CPU 21.93% and active dotnet/csc/VBCSCompiler 0.",
+                         "buildGate":  "CPU 3.735%, no active dotnet/csc/VBCSCompiler process before launch; build passed after Loop 40 SargassumGlobalDragManager final direct NativeArray descriptor cut.",
                          "roslynAuditExecutable":  "Tools/VaultNativeAliasRoslynAudit/bin/Debug/net10.0/VaultNativeAliasRoslynAudit.exe",
                          "sourceLedger":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_X_000.json",
                          "monoBehaviourResidualReport":  "Docs/Reports/VAULT_MONOBEHAVIOUR_NATIVE_FIELD_AUDIT_X_000.json",
-                         "marauderOutpostGenerationServiceScopedForbiddenPersistentFindings":  0,
                          "parseFailures":  0,
-                         "sourceLedgerHashSha256":  "1a2db4092081840dfc0366bb82ed12aaa304e226b1fc5b3b1ee858e37456c58a"
+                         "sourceLedgerHashSha256":  "91f4d3c62deea775222c8865966da74234c9e9665817e1d3f050b816a2212db9",
+                         "scannedFiles":  2411
                      },
     "globalNativeAliasCounts":  {
-                                    "initial":  {
-                                                    "scannedFiles":  2369,
-                                                    "parseFailures":  0,
-                                                    "totalNativeFieldDeclarations":  7774,
-                                                    "forbiddenPersistentCandidates":  2270,
-                                                    "forbiddenMonoBehaviourCandidates":  699,
-                                                    "auditHashSha256":  "9ca7dd4a557409d491330d465ea51689ae64fb2b37c3550580e08f5002305f99"
-                                                },
-                                    "afterMarauderOutpost":  {
-                                                                 "scannedFiles":  2406,
-                                                                 "parseFailures":  0,
-                                                                 "totalNativeFieldDeclarations":  7710,
-                                                                 "forbiddenPersistentCandidates":  2138,
-                                                                 "forbiddenMonoBehaviourCandidates":  581,
-                                                                 "monoBehaviourFiles":  33,
-                                                                 "jobTransientFields":  5526,
-                                                                 "coreMemoryAllowedFields":  46,
-                                                                 "rawPointerFields":  894,
-                                                                 "auditHashSha256":  "1a2db4092081840dfc0366bb82ed12aaa304e226b1fc5b3b1ee858e37456c58a"
-                                                             },
-                                    "targetedPersistentNativeAliasesRemovedByX000":  71,
-                                    "latestSliceTargetedPersistentNativeAliasesRemoved":  7,
-                                    "globalDeltaForbiddenPersistentCandidatesFromInitial":  -132,
-                                    "globalDeltaMonoBehaviourCandidatesFromInitial":  -118,
-                                    "concurrencyNote":  "Global residual counts include concurrent workspace edits by other agents. X_000 latest targeted delta is -7 fields in MarauderOutpostGenerationService."
+                                    "afterSpatialFinalPoolDescriptorCut":  {
+                                                                               "scannedFiles":  2411,
+                                                                               "totalNativeFieldDeclarations":  7563,
+                                                                               "forbiddenPersistentCandidates":  1999,
+                                                                               "forbiddenMonoBehaviourCandidates":  468,
+                                                                               "monoBehaviourFiles":  26,
+                                                                               "jobTransientFields":  5518,
+                                                                               "coreMemoryAllowedFields":  46,
+                                                                               "auditHashSha256":  "38a0b122f62e3236a34c0ba804e8fc867a09ad34ba1584e4a8a9fac3716fd02f"
+                                                                           },
+                                    "afterSargassumGlobalDragFinalDirectArrayCut":  {
+                                                                                        "scannedFiles":  2411,
+                                                                                        "totalNativeFieldDeclarations":  7560,
+                                                                                        "forbiddenPersistentCandidates":  1996,
+                                                                                        "forbiddenMonoBehaviourCandidates":  465,
+                                                                                        "monoBehaviourFiles":  25,
+                                                                                        "jobTransientFields":  5518,
+                                                                                        "coreMemoryAllowedFields":  46,
+                                                                                        "auditHashSha256":  "91f4d3c62deea775222c8865966da74234c9e9665817e1d3f050b816a2212db9"
+                                                                                    }
                                 },
     "targetedNativeAliasCounts":  {
-                                      "MarauderOutpostGenerationService":  {
-                                                                               "persistentNativeFieldsBefore":  [
-                                                                                                                    "NativeArray\u003cbyte\u003e WfcGrid",
-                                                                                                                    "NativeArray\u003cfloat4x4\u003e _shellMatrices",
-                                                                                                                    "NativeArray\u003cuint\u003e _shellCellTypes",
-                                                                                                                    "NativeArray\u003cOutpostInteractableSpawn\u003e _interactableSpawns",
-                                                                                                                    "NativeArray\u003cbyte\u003e _wfcMutableStateGrid",
-                                                                                                                    "NativeArray\u003cint\u003e _counters",
-                                                                                                                    "NativeArray\u003cOutpostTelemetryEntry\u003e _telemetryRing"
-                                                                                                                ],
-                                                                               "persistentNativeFieldsAfter":  [
+                                      "SpatialAudioManager":  {
+                                                                  "remainingForbiddenPersistentFindings":  0,
+                                                                  "scopeNote":  "Loop 39 left SpatialAudioManager with zero forbidden persistent native collection fields in the Roslyn ledger."
+                                                              },
+                                      "SargassumGlobalDragManager":  {
+                                                                         "removedThisSlice":  [
+                                                                                                  "NativeArray\u003cMatrix4x4\u003e _scavengerMatricesNative",
+                                                                                                  "NativeArray\u003cMetadataValue\u003e _scavengerBatchMetadata",
+                                                                                                  "NativeArray\u003cDensitySourceData\u003e _densityBuildSources"
+                                                                                              ],
+                                                                         "newBufferIds":  [
+                                                                                              "BufferID.SargassumGlobalDragDensityBuildSources = 74403",
+                                                                                              "BufferID.SargassumGlobalDragScavengerMatrices = 74404",
+                                                                                              "BufferID.SargassumGlobalDragBatchMetadata = 74405"
+                                                                                          ],
+                                                                         "remainingForbiddenPersistentFindings":  0,
+                                                                         "remainingFields":  {
 
-                                                                                                               ],
-                                                                               "persistentNativeFieldDelta":  -7,
-                                                                               "remainingForbiddenPersistentFindings":  0,
-                                                                               "scopeNote":  "Payloads moved to DataVault BufferID 74375..74381; MonoBehaviour stores generation handles and scalar lock state only."
-                                                                           }
+                                                                                             },
+                                                                         "scopeNote":  "Loop 40 converts the final three direct SargassumGlobalDragManager NativeArray fields to VaultGenerationHandle descriptors. Density source staging holds a writer fence until the scheduled density job completes; scavenger matrix and BRG metadata views are method-local."
+                                                                     }
                                   },
-    "arm64LayoutProof":  {
-                             "report":  "Docs/Reports/VAULT_ARM64_LAYOUT_REPORT_X_000.md",
-                             "rowsCheckedLatest":  [
-                                                       "OutpostTelemetryEntry explicit 128-byte row",
-                                                       "OutpostInteractableSpawn explicit 32-byte row",
-                                                       "Marauder primitive byte/uint/int lanes and float4x4 matrix rows"
-                                                   ],
-                             "verdict":  "Latest custom DTO rows are 8-byte-size-clean; no double/long/ulong field is misaligned."
-                         },
-    "readAccessorPurityProof":  {
-                                    "report":  "Docs/Reports/VAULT_READ_ACCESSOR_PURITY_X_000.md",
-                                    "verdict":  "Marauder TryGet/TryRead routes resolve read-only DataVault views only; mutation/job paths use writer fences."
-                                },
-    "residualRisk":  {
-                         "projectWideAliasEradicationComplete":  false,
-                         "reason":  "Full Roslyn audit still reports 2138 forbidden persistent native alias candidates, including 581 MonoBehaviour candidates across 33 files.",
-                         "topMonoBehaviourResidualOwners":  [
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs",
-                                                                    "count":  50
-                                                                },
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/PlayerInventory.cs",
-                                                                    "count":  49
-                                                                },
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/HectonFluidEngine.cs",
-                                                                    "count":  39
-                                                                },
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/World/EcosystemDirector.cs",
-                                                                    "count":  39
-                                                                },
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs",
-                                                                    "count":  33
-                                                                },
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/SpatialAudioManager.cs",
-                                                                    "count":  33
-                                                                },
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs",
-                                                                    "count":  33
-                                                                },
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/TetherInstance.cs",
-                                                                    "count":  25
-                                                                },
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
-                                                                    "count":  25
-                                                                },
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
-                                                                    "count":  19
-                                                                },
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/Construction/FluidPipeGraphRuntime.cs",
-                                                                    "count":  19
-                                                                },
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
-                                                                    "count":  17
-                                                                },
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/SubmarineStructuralGrid.cs",
-                                                                    "count":  15
-                                                                },
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
-                                                                    "count":  14
-                                                                },
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/Fabricator.cs",
-                                                                    "count":  13
-                                                                },
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/SaveManager.cs",
-                                                                    "count":  13
-                                                                },
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/Gameplay/ContextualPhysicalIkRig.cs",
-                                                                    "count":  13
-                                                                },
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/World/FloraRegrowthDirector.cs",
-                                                                    "count":  12
-                                                                },
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs",
-                                                                    "count":  12
-                                                                },
-                                                                {
-                                                                    "path":  "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs",
-                                                                    "count":  12
-                                                                }
-                                                            ]
-                     }
+    "verdict":  {
+                    "buildClean":  true,
+                    "projectWidePurgeComplete":  false,
+                    "spatialAudioManagerClean":  true,
+                    "sargassumGlobalDragManagerClean":  true,
+                    "truthfulResidual":  "1996 forbidden persistent candidates remain project-wide; 465 MonoBehaviour candidates remain across 25 files; SpatialAudioManager and SargassumGlobalDragManager have 0 forbidden native fields in the latest ledger."
+                }
 }

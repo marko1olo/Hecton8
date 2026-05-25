@@ -38,7 +38,7 @@ namespace Hecton8.Construction.Editor
         [MenuItem("HECTON-8/Logistics/Run OOP Interaction Scanner")]
         private static void RunMenu()
         {
-            Debug.Log(RunAndWriteReport());
+            Hecton8.Core.H8Debug.Log(RunAndWriteReport());
         }
 
         public static string RunAndWriteReport()

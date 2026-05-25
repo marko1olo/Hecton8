@@ -14,6 +14,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Celestial;
 using Hecton8.Construction;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Fluids;
 using Hecton8.Core.Contracts.Signals;
 using ScalabilityChangedEvent = Hecton8.Core.Contracts.Signals.ScalabilityChangedEvent;
 using Hecton8.Core.Memory;
@@ -844,7 +845,7 @@ namespace Hecton8.Core
             bool enabled)
         {
             SystemKillSwitchBitsSignal signal = default;
-            signal.Frame = unchecked((uint)Math.Max(0, Time.frameCount));
+            signal.Frame = SystemDispatcher.CurrentFrameId;
             signal.SourceHash = SystemKillSwitchBitsSignalSourceHash;
             signal.PreviousMask = previousMask;
             signal.CurrentMask = currentMask;
@@ -951,6 +952,16 @@ namespace Hecton8.Core
         /// Optional registry-owned batched raycast helper.
         /// </summary>
         public static RaycastBatchHelper RaycastBatch => _raycastBatchRuntime;
+
+        /// <summary>
+        /// Player-look query cache exposed as a core route so tool/UI code does not bind to the physics cache owner.
+        /// </summary>
+        public static IPlayerLookQueryCache PlayerLookQueryCache => global::Hecton8.Physics.GlobalQueryCacheManager.PlayerLook;
+
+        /// <summary>
+        /// Physics query diagnostics exposed without concrete physics counter reads.
+        /// </summary>
+        public static IPhysicsQueryTelemetryReadModel PhysicsQueryTelemetry => _raycastBatchRuntime;
 
         /// <summary>
         /// Registered input rebind service slot for mod/UI callers that should not know about Input System assets.
@@ -1378,6 +1389,11 @@ namespace Hecton8.Core
         public static IAbyssalFlowGpuReadModel AbyssalFlowGpu => _fluidRuntime;
 
         /// <summary>
+        /// RenderGraph fluid advection route exposed without binding presentation to the physics runtime type.
+        /// </summary>
+        public static IFluidAdvectionRenderGraphReadModel FluidAdvectionRenderGraph => _fluidRuntime;
+
+        /// <summary>
         /// Read-only authored/global current route exposed by the fluid owner.
         /// </summary>
         public static IAmbientCurrentReadModel AmbientCurrent => _fluidRuntime;
@@ -1461,6 +1477,11 @@ namespace Hecton8.Core
         /// Registered persistent world registry owner.
         /// </summary>
         public static PersistentWorldRegistry PersistentWorldRegistry => _persistentWorldRegistry;
+
+        /// <summary>
+        /// Narrow dropped-item emission route owned by the persistent world registry.
+        /// </summary>
+        public static IPersistentDroppedItemRegistry PersistentDroppedItems => _persistentWorldRegistry;
 
         /// <summary>
         /// Registered nutrient-facing thermal vent snapshot read model.
@@ -1671,6 +1692,11 @@ namespace Hecton8.Core
         public static IAtlasSignalReadModel AtlasSignalReadModel => _atlasSignalRuntime;
 
         /// <summary>
+        /// Narrow Atlas signal decode command sink.
+        /// </summary>
+        public static IAtlasSignalDecodeSink AtlasSignalDecodeSink => _atlasSignalRuntime;
+
+        /// <summary>
         /// Registered first-hour pacing runtime owner.
         /// </summary>
         public static FirstHourDirector FirstHour => _firstHourRuntime;
@@ -1684,6 +1710,11 @@ namespace Hecton8.Core
         /// Registered emergency relay runtime owner.
         /// </summary>
         public static EmergencyServiceRelayDirector EmergencyRelay => _emergencyRelayRuntime;
+
+        /// <summary>
+        /// Registered emergency relay route read model.
+        /// </summary>
+        public static IEmergencyRelayRouteReadModel EmergencyRelayReadModel => _emergencyRelayRuntime;
 
         /// <summary>
         /// Registered atmosphere runtime owner.
@@ -1704,6 +1735,11 @@ namespace Hecton8.Core
         /// Read-only celestial sky direction provider.
         /// </summary>
         public static ICelestialSkyDirectionReadModel CelestialSkyDirection => _celestialEngineRuntime;
+
+        /// <summary>
+        /// Read-only celestial resonance provider.
+        /// </summary>
+        public static ICelestialResonanceReadModel CelestialResonance => _celestialEngineRuntime;
 
         /// <summary>
         /// Registered terrain sampling provider. Gameplay must use this interface instead of MapMagic types.
@@ -1837,6 +1873,11 @@ namespace Hecton8.Core
         /// Registered lore unlock read model.
         /// </summary>
         public static ILoreUnlockReadModel LoreUnlockReadModel => _loreDatabaseRuntime;
+
+        /// <summary>
+        /// Registered lore database read model.
+        /// </summary>
+        public static ILoreDatabaseReadModel LoreDatabaseReadModel => _loreDatabaseRuntime;
 
         /// <summary>
         /// Registered lore unlock command sink.
@@ -1994,6 +2035,11 @@ namespace Hecton8.Core
         public static IEnvironmentalStrainReadModel EnvironmentalStrainReadModel => _environmentalStrainRuntime;
 
         /// <summary>
+        /// Registered environmental strain industrial-pollution sink.
+        /// </summary>
+        public static IEnvironmentalStrainIndustrialSink EnvironmentalStrainIndustrialSink => _environmentalStrainRuntime;
+
+        /// <summary>
         /// Registered ecosystem health runtime owner.
         /// </summary>
         public static EcosystemHealthDirector EcosystemHealth => _ecosystemHealthRuntime;
@@ -2002,6 +2048,11 @@ namespace Hecton8.Core
         /// Registered fauna genetics runtime owner.
         /// </summary>
         public static FaunaGeneticsManager FaunaGenetics => _faunaGeneticsRuntime;
+
+        /// <summary>
+        /// Read-only deterministic fauna world-seed route.
+        /// </summary>
+        public static IFaunaWorldSeedReadModel FaunaWorldSeed => _faunaGeneticsRuntime;
 
         /// <summary>
         /// Registered player exploration runtime owner.
@@ -2027,6 +2078,11 @@ namespace Hecton8.Core
         /// Registered resource scarcity runtime owner.
         /// </summary>
         public static ResourceScarcityDirector ResourceScarcity => _resourceScarcityRuntime;
+
+        /// <summary>
+        /// Read-only scarcity inflation route.
+        /// </summary>
+        public static IResourceScarcityReadModel ResourceScarcityReadModel => _resourceScarcityRuntime;
 
         /// <summary>
         /// Registered field-operation log runtime owner.
@@ -2094,9 +2150,19 @@ namespace Hecton8.Core
         public static EndingSystem Ending => _endingRuntime;
 
         /// <summary>
+        /// Narrow ending runtime service route.
+        /// </summary>
+        public static IEndingRuntimeService EndingRuntimeService => _endingRuntime as IEndingRuntimeService;
+
+        /// <summary>
         /// Registered Atlas-6 directive runtime owner.
         /// </summary>
         public static Atlas6DirectiveSystem Atlas6Directive => _atlas6DirectiveRuntime;
+
+        /// <summary>
+        /// Narrow Atlas-6 directive command sink.
+        /// </summary>
+        public static IAtlas6DirectiveCommandSink Atlas6DirectiveCommandSink => _atlas6DirectiveRuntime;
 
         /// <summary>
         /// Registered hazard-zone runtime owner.
@@ -7315,7 +7381,7 @@ namespace Hecton8.Core
                 PreviousServiceHash = ComputeObjectHash(previousService),
                 CurrentServiceHash = ComputeObjectHash(currentService),
                 ReferenceSlot = referenceSlot,
-                FrameIndex = unchecked((uint)Time.frameCount),
+                FrameIndex = SystemDispatcher.CurrentFrameId,
                 ServiceSlot = (ushort)serviceSlot,
                 EventType = (ushort)RegistryEventType.ServiceRebound
             };
@@ -7875,11 +7941,13 @@ namespace Hecton8.Core
             if (serviceType == typeof(IRuntimeWatchdogWorldHealthBridge)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
             if (serviceType == typeof(INutrientThermalVentReadModel)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
             if (serviceType == typeof(IFaunaPersistentWorldStateService)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
+            if (serviceType == typeof(IPersistentDroppedItemRegistry)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
             if (serviceType == typeof(PersistentWorldRegistry)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
             if (serviceType == typeof(WorldStateManager)) return GlobalRegistryServiceSlot.WorldStateRuntime;
             if (serviceType == typeof(IPDALogbookService)) return GlobalRegistryServiceSlot.PDALogbook;
             if (serviceType == typeof(IProfileService)) return GlobalRegistryServiceSlot.Profile;
-            if (serviceType == typeof(ICelestialSkyDirectionReadModel)) return GlobalRegistryServiceSlot.CelestialEngineRuntime;
+            if (serviceType == typeof(ICelestialSkyDirectionReadModel) ||
+                serviceType == typeof(ICelestialResonanceReadModel)) return GlobalRegistryServiceSlot.CelestialEngineRuntime;
             if (serviceType == typeof(HectonCelestialEngine)) return GlobalRegistryServiceSlot.CelestialEngineRuntime;
             if (serviceType == typeof(IOrbitalDirector)) return GlobalRegistryServiceSlot.OrbitalDirectorRuntime;
             if (serviceType == typeof(IPrologueSequenceService)) return GlobalRegistryServiceSlot.PrologueSequenceRuntime;
@@ -7939,11 +8007,13 @@ namespace Hecton8.Core
             {
                 return GlobalRegistryServiceSlot.SurfaceWeatherRuntime;
             }
-            if (serviceType == typeof(IAtlasSignalReadModel)) return GlobalRegistryServiceSlot.AtlasSignalRuntime;
+            if (serviceType == typeof(IAtlasSignalReadModel) ||
+                serviceType == typeof(IAtlasSignalDecodeSink)) return GlobalRegistryServiceSlot.AtlasSignalRuntime;
             if (serviceType == typeof(AtlasSignalSystem)) return GlobalRegistryServiceSlot.AtlasSignalRuntime;
             if (serviceType == typeof(IFirstHourReadModel)) return GlobalRegistryServiceSlot.FirstHourRuntime;
             if (serviceType == typeof(FirstHourDirector)) return GlobalRegistryServiceSlot.FirstHourRuntime;
-            if (serviceType == typeof(EmergencyServiceRelayDirector)) return GlobalRegistryServiceSlot.EmergencyRelayRuntime;
+            if (serviceType == typeof(IEmergencyRelayRouteReadModel) ||
+                serviceType == typeof(EmergencyServiceRelayDirector)) return GlobalRegistryServiceSlot.EmergencyRelayRuntime;
             if (serviceType == typeof(IAtmosphereRenderSettingsBridge) ||
                 serviceType == typeof(IAtmosphereReadModel))
             {
@@ -7971,6 +8041,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(ToolHapticsRuntime)) return GlobalRegistryServiceSlot.ToolHapticsRuntime;
             if (serviceType == typeof(IVRSomaticProvider)) return GlobalRegistryServiceSlot.VRSomaticProvider;
             if (serviceType == typeof(ILoreUnlockReadModel) ||
+                serviceType == typeof(ILoreDatabaseReadModel) ||
                 serviceType == typeof(ILoreUnlockSink)) return GlobalRegistryServiceSlot.LoreDatabaseRuntime;
             if (serviceType == typeof(LoreDatabaseManager)) return GlobalRegistryServiceSlot.LoreDatabaseRuntime;
             if (serviceType == typeof(IPlayerExpressionReadModel)) return GlobalRegistryServiceSlot.PlayerExpressionRuntime;
@@ -8016,16 +8087,19 @@ namespace Hecton8.Core
                 return GlobalRegistryServiceSlot.SoundscapeRuntime;
             }
             if (serviceType == typeof(IEnvironmentalStrainReadModel) ||
+                serviceType == typeof(IEnvironmentalStrainIndustrialSink) ||
                 serviceType == typeof(EnvironmentalStrainManager))
             {
                 return GlobalRegistryServiceSlot.EnvironmentalStrainRuntime;
             }
             if (serviceType == typeof(EcosystemHealthDirector)) return GlobalRegistryServiceSlot.EcosystemHealthRuntime;
-            if (serviceType == typeof(FaunaGeneticsManager)) return GlobalRegistryServiceSlot.FaunaGeneticsRuntime;
+            if (serviceType == typeof(IFaunaWorldSeedReadModel) ||
+                serviceType == typeof(FaunaGeneticsManager)) return GlobalRegistryServiceSlot.FaunaGeneticsRuntime;
             if (serviceType == typeof(PlayerExplorationTracker)) return GlobalRegistryServiceSlot.PlayerExplorationRuntime;
             if (serviceType == typeof(DynamicDifficultyDirector)) return GlobalRegistryServiceSlot.DynamicDifficultyRuntime;
             if (serviceType == typeof(HectonDiscoveryManager)) return GlobalRegistryServiceSlot.DiscoveryRuntime;
-            if (serviceType == typeof(ResourceScarcityDirector)) return GlobalRegistryServiceSlot.ResourceScarcityRuntime;
+            if (serviceType == typeof(IResourceScarcityReadModel) ||
+                serviceType == typeof(ResourceScarcityDirector)) return GlobalRegistryServiceSlot.ResourceScarcityRuntime;
             if (serviceType == typeof(FieldOperationLogSystem)) return GlobalRegistryServiceSlot.FieldOperationLogRuntime;
             if (serviceType == typeof(PDAExchangeSystem)) return GlobalRegistryServiceSlot.PDAExchangeRuntime;
             if (serviceType == typeof(PlayerActionController)) return GlobalRegistryServiceSlot.PlayerActionRuntime;
@@ -8036,8 +8110,10 @@ namespace Hecton8.Core
             if (serviceType == typeof(UIAudioFeedback)) return GlobalRegistryServiceSlot.UIAudioFeedbackRuntime;
             if (serviceType == typeof(UITooltip)) return GlobalRegistryServiceSlot.UITooltipRuntime;
             if (serviceType == typeof(LoadingScreenController)) return GlobalRegistryServiceSlot.LoadingScreenRuntime;
-            if (serviceType == typeof(EndingSystem)) return GlobalRegistryServiceSlot.EndingRuntime;
-            if (serviceType == typeof(Atlas6DirectiveSystem)) return GlobalRegistryServiceSlot.Atlas6DirectiveRuntime;
+            if (serviceType == typeof(IEndingRuntimeService) ||
+                serviceType == typeof(EndingSystem)) return GlobalRegistryServiceSlot.EndingRuntime;
+            if (serviceType == typeof(IAtlas6DirectiveCommandSink) ||
+                serviceType == typeof(Atlas6DirectiveSystem)) return GlobalRegistryServiceSlot.Atlas6DirectiveRuntime;
             if (serviceType == typeof(IHazardZoneReadModel)) return GlobalRegistryServiceSlot.HazardZoneRuntime;
             if (serviceType == typeof(HazardZoneManager)) return GlobalRegistryServiceSlot.HazardZoneRuntime;
             if (serviceType == typeof(MissionManager)) return GlobalRegistryServiceSlot.MissionRuntime;

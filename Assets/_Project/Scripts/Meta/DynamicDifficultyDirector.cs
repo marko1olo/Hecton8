@@ -208,7 +208,7 @@ namespace Hecton8.Meta
                 _discoveryManager = GlobalRegistry.Discovery;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             RefreshSurvivalSignalBinding();
             return ResolveOwnersHot();
@@ -387,7 +387,7 @@ namespace Hecton8.Meta
             if (saveService != null)
                 return math.max(0f, saveService.CurrentPlayTimeSeconds);
 
-            return math.max(0f, Time.realtimeSinceStartup);
+            return math.max(0f, (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds);
         }
 
         public void OnGlobalRegistryServiceReplaced(

@@ -1,8 +1,10 @@
 using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
+using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -12,7 +14,7 @@ namespace Hecton8.Visor
     /// Applies critical-state pulse feedback through shader globals and heartbeat cues.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerStressVFX : MonoBehaviour, ITickable, ILateFrameTickable, IPlayerSignalEventListener, IGlobalRegistryHotSwapListener
+    public sealed class PlayerStressVFX : MonoBehaviour, ILateFrameTickable, IPlayerSignalEventListener, IGlobalRegistryHotSwapListener
     {
         [Header("── Audio ──────────────────")]
         [Tooltip("Helmet heartbeat cue played while the player approaches death.")]
@@ -80,7 +82,6 @@ namespace Hecton8.Visor
         private static readonly int HectonHudStressVignetteId = Shader.PropertyToID("_HectonHudStressVignette");
         private static readonly int HectonHudFogFrostId = Shader.PropertyToID("_HectonHudFogFrost");
 
-        private bool _registered;
         private bool _registeredLateFrame;
         private bool _hotSwapRegistered;
         private HectonSurvivalSystem _survivalSystem;
@@ -164,7 +165,6 @@ namespace Hecton8.Visor
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registered = false;
                 _registeredLateFrame = false;
                 if (currentService != null && isActiveAndEnabled)
                     TryRegisterTickHandler();
@@ -185,7 +185,7 @@ namespace Hecton8.Visor
         /// Advances the stress pulse and heartbeat cadence.
         /// </summary>
         /// <param name="deltaTime">Tick delta supplied by <see cref="GameTickManager"/>.</param>
-        public void Tick(float deltaTime)
+        private void AdvanceStressPresentationState(float deltaTime)
         {
             if (deltaTime <= 0f || !math.isfinite(deltaTime))
                 return;
@@ -240,6 +240,8 @@ namespace Hecton8.Visor
 
         public void LateFrameTick()
         {
+            AdvanceStressPresentationState(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (_heartbeatDirty)
             {
                 _heartbeatDirty = false;
@@ -352,8 +354,6 @@ namespace Hecton8.Visor
             if (!Application.isPlaying)
                 return;
 
-            if (!_registered)
-                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
@@ -366,11 +366,6 @@ namespace Hecton8.Visor
                 _registeredLateFrame = false;
             }
 
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registered = false;
-            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -392,8 +387,8 @@ namespace Hecton8.Visor
 
         private void CacheRegistryServicesCold()
         {
-            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedAudioService = GlobalRegistry.Audio;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private float ResolveStress01()
@@ -514,16 +509,40 @@ namespace Hecton8.Visor
             }
 
             if (movement != null)
-                return (Vector3)movement.CurrentAup.ToRuntimeFloat3();
-
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
             {
-                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
-                    return (Vector3)movementState.PredictedAup.ToRuntimeFloat3();
+                AbsoluteUniversePosition currentAup = movement.CurrentAup;
+                if (TryResolveRuntimePosition(in currentAup, out Vector3 runtimePosition))
+                    return runtimePosition;
             }
 
             return Vector3.zero;
+        }
+
+        private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition targetAup, out Vector3 runtimePosition)
+        {
+            runtimePosition = default;
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            double3 localDelta = AupPrecisionMath.LocalDeltaDouble(
+                targetAup.ToAbsoluteDouble3(),
+                originAup.ToAbsoluteDouble3());
+
+            if (!math.all(math.isfinite(localDelta)) ||
+                math.abs(localDelta.x) > AupPrecisionMath.DefaultMaxLocalCastMeters ||
+                math.abs(localDelta.y) > AupPrecisionMath.DefaultMaxLocalCastMeters ||
+                math.abs(localDelta.z) > AupPrecisionMath.DefaultMaxLocalCastMeters)
+            {
+                return false;
+            }
+
+            float3 local = default;
+            local.x = (float)localDelta.x;
+            local.y = (float)localDelta.y;
+            local.z = (float)localDelta.z;
+            if (!math.all(math.isfinite(local)))
+                return false;
+
+            runtimePosition = (Vector3)local;
+            return true;
         }
 
         private float ResolveFogging01()

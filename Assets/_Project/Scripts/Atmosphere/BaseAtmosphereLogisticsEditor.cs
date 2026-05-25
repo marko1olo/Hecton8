@@ -25,7 +25,7 @@ namespace Hecton8.Atmosphere.Editor
                 UnsafeUtility.SizeOf<AtmosphereConnectionDTO>() != 16 ||
                 UnsafeUtility.SizeOf<AtmosphereTelemetryEntry>() != 64)
             {
-                Debug.LogError("[SHINOBU_221] Base atmosphere logistics layout mismatch.");
+                Hecton8.Core.H8Debug.LogError("[SHINOBU_221] Base atmosphere logistics layout mismatch.");
             }
         }
     }

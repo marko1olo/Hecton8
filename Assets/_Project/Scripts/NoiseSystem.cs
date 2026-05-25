@@ -195,7 +195,7 @@ namespace Hecton8.AI
                 math.saturate(transportBoost01),
                 math.max(0f, transportSignature),
                 math.saturate(toolUseNoise01),
-                Time.frameCount);
+                Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
             _hasPlayerNoiseSignal = true;
             float transientRadius = ResolveDispatchRadius(_playerNoiseSignal);
             if (transientRadius > 0f)
@@ -233,7 +233,7 @@ namespace Hecton8.AI
                 0f,
                 0f,
                 clampedIntensity,
-                Time.frameCount,
+                Hecton8.Core.SystemDispatcher.CurrentFrameIndex,
                 true,
                 1f,
                 AcousticOcclusionUtility.OpenLowPassCutoffHertz,
@@ -285,7 +285,7 @@ namespace Hecton8.AI
         public static bool TryGetPlayerSignal(out PlayerNoiseSignal signal)
         {
             if (_hasPlayerNoiseSignal &&
-                Time.frameCount - _playerNoiseSignal.ReportedFrame <= MaxPlayerSignalAgeFrames)
+                Hecton8.Core.SystemDispatcher.CurrentFrameIndex - _playerNoiseSignal.ReportedFrame <= MaxPlayerSignalAgeFrames)
             {
                 signal = _playerNoiseSignal;
                 return true;
@@ -353,7 +353,7 @@ namespace Hecton8.AI
                     0f,
                     0f,
                     signal.ToolUseNoise01 * occlusion.Transmission01,
-                    Time.frameCount,
+                    Hecton8.Core.SystemDispatcher.CurrentFrameIndex,
                     true,
                     occlusion.Transmission01,
                     occlusion.LowPassCutoffHz,

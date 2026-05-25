@@ -24,7 +24,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-85)]
-    public sealed class HectonBiolumController : MonoBehaviour, ISlowTickable, IAtlasSignalEventListener, IDepthZoneEventListener, ISonarPulseEventListener, IEclipseGameplayEventListener, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
+    public sealed class HectonBiolumController : MonoBehaviour, ISlowTickable, ILateFrameTickable, IAtlasSignalEventListener, IDepthZoneEventListener, ISonarPulseEventListener, IEclipseGameplayEventListener, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -80,8 +80,10 @@ namespace Hecton8.World
         private float[] _localProxyLightBaseIntensities;
         private bool  _eclipseActive;
         private bool  _registered;
+        private bool _lateFrameRegistered;
         private bool _runtimeRegistered;
         private bool _hotSwapRegistered;
+        private bool _localProxyLightsDirty;
 
         public ServiceHeartbeatState HeartbeatState => _runtimeRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
         public bool IsServiceReady => _runtimeRegistered;
@@ -117,6 +119,15 @@ namespace Hecton8.World
             _targetEclipseMultiplier = 1f;
             _atlasPulseBurst = 0f;
             _sonarPulseBurst = 0f;
+            _localProxyLightsDirty = true;
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_localProxyLightsDirty)
+                return;
+
+            _localProxyLightsDirty = false;
             ApplyLocalProxyLights();
         }
 
@@ -275,7 +286,7 @@ namespace Hecton8.World
                 _currentEclipseMultiplier = clampedMultiplier;
                 _currentIntensity = Mathf.Max(_currentIntensity, baseIntensityWithoutEclipse * clampedMultiplier);
                 _targetIntensity = Mathf.Max(_targetIntensity, baseIntensityWithoutEclipse * clampedMultiplier);
-                ApplyLocalProxyLights();
+                _localProxyLightsDirty = true;
             }
         }
 
@@ -306,7 +317,7 @@ namespace Hecton8.World
         private void HandleSignalPulse(float intensity)
         {
             _atlasPulseBurst = Mathf.Max(_atlasPulseBurst, signalPulseBoost * intensity);
-            ApplyLocalProxyLights();
+            _localProxyLightsDirty = true;
         }
 
         private void HandleSonarPulse(float radius)
@@ -362,10 +373,13 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if ((_registered && _lateFrameRegistered) || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            if (!_registered)
+                _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+            if (!_lateFrameRegistered)
+                _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private bool TryRegisterRuntime()
@@ -390,12 +404,17 @@ namespace Hecton8.World
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
+            }
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-
-            _registered = false;
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registered = false;
+            }
         }
 
         public void OnGlobalRegistryServiceReplaced(

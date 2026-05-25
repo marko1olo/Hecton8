@@ -1,0 +1,141 @@
+﻿{
+    "schema":  "HECTON8_DATA_MONOLITH_APEX_STRICT_RECHECK_V2",
+    "agent":  "1313",
+    "date":  "2026-05-25",
+    "evidence":  "STATIC_SOURCE_NO_DOTNET_NO_UNITY",
+    "promptTaskCount":  10,
+    "buildOrDotnetLaunched":  false,
+    "runtimeHydrator":  {
+                            "file":  "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+                            "windowsReleaseActiveForbiddenHits":  0,
+                            "androidReleaseActiveForbiddenHits":  0,
+                            "windowsNativeEntryLine":  1609,
+                            "windowsNativeReadLine":  1778,
+                            "windowsNativeDumpLine":  2248,
+                            "androidNonWindowsReleaseState":  "FAIL_CLOSED_READFAILED",
+                            "androidNonWindowsFailClosedLines":  [
+                                                                     133,
+                                                                     137,
+                                                                     141,
+                                                                     272,
+                                                                     276,
+                                                                     301,
+                                                                     305
+                                                                 ],
+                            "questReleaseReady":  false
+                        },
+    "bootstrapOwnedSlices":  {
+                                 "file":  "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+                                 "bootStateStackallocLine":  5050,
+                                 "fatalMarkerStackallocLine":  5370,
+                                 "fatalMarkerByteWriterLines":  "5376-5443",
+                                 "forbiddenHitsInOwnedRanges":  0,
+                                 "managedPathPolicyResidual":  [
+                                                                   {
+                                                                       "line":  5048,
+                                                                       "text":  "string absolutePath = HectonPersistentPathPolicy.CombineFile(BootStateFileName);"
+                                                                   },
+                                                                   {
+                                                                       "line":  5368,
+                                                                       "text":  "string absolutePath = HectonPersistentPathPolicy.CombineFile(FatalBootCrashFileName);"
+                                                                   }
+                                                               ]
+                             },
+    "dtoLayout":  {
+                      "structCount":  32,
+                      "sizeMultipleOf8Failures":  0,
+                      "naturalAlignmentFailures":  0,
+                      "strictFieldOrderFailures":  1,
+                      "strictFieldOrderFailureDetails":  [
+                                                             {
+                                                                 "name":  "H8DataBlobHeader",
+                                                                 "structLine":  128,
+                                                                 "layoutLine":  127,
+                                                                 "declaredSize":  64,
+                                                                 "violations":  [
+                                                                                    "8-byte field begins at offset 8, after smaller fields; alignment OK but strict field-order policy FAIL"
+                                                                                ]
+                                                             }
+                                                         ]
+                  },
+    "activeBlob":  {
+                       "path":  "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin",
+                       "exists":  true,
+                       "bytes":  1064384,
+                       "blobFormatVersion":  2,
+                       "blobSchemaHash":  "0x33313331",
+                       "codeFormatVersion":  2,
+                       "codeSchemaHash":  "0x33313331",
+                       "checksum64":  "0x19D880780D6E1B46",
+                       "validatorStatus":  "PASS",
+                       "status":  "STATIC_VALIDATION_PASS"
+                  },
+    "parserPurge":  {
+                        "releaseReady":  false,
+                        "rawProductionCandidateFindingCount":  281,
+                        "strictBlockingCandidateCount":  262,
+                        "csvCallableMethodDeclarations":  121,
+                        "csvCallableInvocations":  100,
+                        "managedFileOrParserOperations":  41,
+                        "scannerVerbPatchLines":  [
+                                                      "OOP_StaticData_Scanner.cs:211-225",
+                                                      "H8DataMonolithReleaseBuildGate.cs:217-241"
+                                                  ]
+                    },
+    "preprocessorBalance":  [
+                                {
+                                    "file":  "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+                                    "ifCount":  20,
+                                    "endifCount":  20,
+                                    "balanced":  true
+                                },
+                                {
+                                    "file":  "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+                                    "ifCount":  50,
+                                    "endifCount":  50,
+                                    "balanced":  true
+                                },
+                                {
+                                    "file":  "Assets/_Project/Scripts/Editor/DataMonolith/OOP_StaticData_Scanner.cs",
+                                    "ifCount":  1,
+                                    "endifCount":  1,
+                                    "balanced":  true
+                                },
+                                {
+                                    "file":  "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithReleaseBuildGate.cs",
+                                    "ifCount":  1,
+                                    "endifCount":  1,
+                                    "balanced":  true
+                                },
+                                {
+                                    "file":  "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithBatchAudit.cs",
+                                    "ifCount":  1,
+                                    "endifCount":  1,
+                                    "balanced":  true
+                                },
+                                {
+                                    "file":  "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCorruptionFuzzer.cs",
+                                    "ifCount":  1,
+                                    "endifCount":  1,
+                                    "balanced":  true
+                                },
+                                {
+                                    "file":  "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithGlobalDataVaultStressProbe.cs",
+                                    "ifCount":  1,
+                                    "endifCount":  1,
+                                    "balanced":  true
+                                }
+                            ],
+    "staticValidation":  {
+                             "gitDiffCheck":  "PASS_CRLF_WARNINGS_ONLY",
+                             "jsonReportsParse":  "PASS_ALL_1313_JSON_REPORTS_OK",
+                             "compile":  "NOT_RUN_BY_USER_RESTRICTION"
+                         },
+    "blockers":  [
+                     "Quest/Android/non-Windows production monolith loading is fail-closed, not implemented as a native/PAL asset route.",
+                     "262 strict production parser/file/config blockers remain outside 1313 ownership.",
+                     "H8DataBlobHeader violates strict descending field-order policy but is natural-aligned; changing it would break the magic/version/header ABI.",
+                     "Unity import, player boot, profiler, and GC proof still have not been run against the v2 static_data.h8bin payload.",
+                     "Bootstrap boot/fatal markers still use managed persistent path policy strings; Data Monolith hydrator does not."
+                 ]
+}

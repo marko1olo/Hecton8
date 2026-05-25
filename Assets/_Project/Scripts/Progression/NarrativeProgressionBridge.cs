@@ -1,4 +1,3 @@
-﻿using Hecton8.AtlasSignal;
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -279,11 +278,14 @@ namespace Hecton8.Progression
                 return;
 
             PDAMarkerRegistry markerRegistry = GlobalRegistry.PDAMarkers;
-            AtlasSignalSystem atlasSignal = GlobalRegistry.AtlasSignal;
-            if (markerRegistry == null || atlasSignal == null)
+            IAtlasSignalReadModel atlasSignal = GlobalRegistry.AtlasSignalReadModel;
+            if (markerRegistry == null ||
+                atlasSignal == null ||
+                !atlasSignal.TryReadAtlasSignalCoreAup(out AbsoluteUniversePosition atlasCoreAup))
+            {
                 return;
+            }
 
-            AbsoluteUniversePosition atlasCoreAup = atlasSignal.AtlasCoreAup;
             if (markerRegistry.TryCreateOrUpdateMarker(
                     _atlasMarkerHash,
                     in atlasCoreAup,

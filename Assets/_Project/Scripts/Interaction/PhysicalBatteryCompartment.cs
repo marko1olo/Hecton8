@@ -1,7 +1,6 @@
 using Hecton8.Items;
 using Hecton8.Tools;
 using Hecton8.Core;
-using Hecton8.Physics;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -45,6 +44,7 @@ namespace Hecton8.Interaction
         private Rigidbody _snappingCellBody;
         private ItemData _pendingBattery;
         private IBatteryTool _cachedBatteryTool;
+        private IPhysicsService _physicsService;
         private Vector3 _snapStartLocalPosition;
         private Vector3 _snapTargetLocalPosition;
         private Vector3 _snapBodyLinearVelocity;
@@ -107,6 +107,7 @@ namespace Hecton8.Interaction
             RefreshBatteryToolCache();
             CacheScalarConfig();
             CacheDoorAxis();
+            _physicsService = GlobalRegistry.Physics;
             _batteryVisualStateCached = false;
             TryRegisterHotSwapListener();
             ApplyDoorVisual();
@@ -119,6 +120,7 @@ namespace Hecton8.Interaction
             _batteryVisualStateCached = false;
             TryUnregisterTick();
             TryUnregisterHotSwapListener();
+            _physicsService = null;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -126,6 +128,12 @@ namespace Hecton8.Interaction
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Physics)
+            {
+                _physicsService = currentService as IPhysicsService;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
@@ -456,7 +464,7 @@ namespace Hecton8.Interaction
 
             _snappingCellBody.isKinematic = _snapBodyWasKinematic;
             _snappingCellBody.detectCollisions = _snapBodyDetectedCollisions;
-            QueueBodyVelocityRestore(_snappingCellBody, _snapBodyLinearVelocity, _snapBodyAngularVelocity);
+            QueueBodyVelocityRestore(_snappingCellBody, _snapBodyLinearVelocity, _snapBodyAngularVelocity, _physicsService);
         }
 
         private void LockInsertedCellBodyState()
@@ -468,20 +476,24 @@ namespace Hecton8.Interaction
             _snappingCellBody.detectCollisions = false;
         }
 
-        private static void QueueBodyVelocityRestore(Rigidbody body, Vector3 targetLinearVelocity, Vector3 targetAngularVelocity)
+        private static void QueueBodyVelocityRestore(
+            Rigidbody body,
+            Vector3 targetLinearVelocity,
+            Vector3 targetAngularVelocity,
+            IPhysicsService physicsService)
         {
-            if (body == null)
+            if (body == null || physicsService == null)
                 return;
 
             Vector3 currentLinearVelocity = SanitizeVector(body.linearVelocity, Vector3.zero);
             Vector3 linearDelta = SanitizeVector(targetLinearVelocity - currentLinearVelocity, Vector3.zero);
             if (linearDelta.sqrMagnitude > 0.000001f)
-                PhysicsForceRouter.QueueForce(body, linearDelta, ForceMode.VelocityChange);
+                physicsService.QueueForce(body, linearDelta, ForceMode.VelocityChange);
 
             Vector3 currentAngularVelocity = SanitizeVector(body.angularVelocity, Vector3.zero);
             Vector3 angularDelta = SanitizeVector(targetAngularVelocity - currentAngularVelocity, Vector3.zero);
             if (angularDelta.sqrMagnitude > 0.000001f)
-                PhysicsForceRouter.QueueTorque(body, angularDelta, ForceMode.VelocityChange);
+                physicsService.QueueTorque(body, angularDelta, ForceMode.VelocityChange);
         }
 
         private static void ResolveSnapTargetLocalPose(

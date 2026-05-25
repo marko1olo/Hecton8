@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Fluids;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
@@ -1773,7 +1774,6 @@ namespace Hecton8.World
         private PlayerTransportCoordinator _playerTransportCoordinator;
         private int _activeGrazingAnchorCount;
         private int _activeMassiveThreatCount;
-        private Rigidbody _playerRigidbody;
         private HectonPlayerMovement _playerMovement;
         private HectonPlayerHealth _playerHealth;
         private PlayerFlashlight _playerFlashlight;
@@ -1787,7 +1787,7 @@ namespace Hecton8.World
         private IEncounterDirectorService _encounterDirector;
         private IEcosystemDirectorService _ecosystemDirector;
         private IBeaconNetworkService _beaconNetworkRuntime;
-        private AbyssalFluidDecalManager _abyssalFluidDecals;
+        private IFluidDecalPresentationSink _abyssalFluidDecals;
         private bool _flashlightOn;
         private bool _parasiteModeActive;
         private bool _formationModeActive;
@@ -2250,7 +2250,7 @@ namespace Hecton8.World
             {
                 FlushMicroFaunaGpuStateRefreshVisualSync();
                 FlushThreatVoxelPayloadRefreshVisualSync();
-                RunMicroFaunaVisualSync(Time.deltaTime);
+                RunMicroFaunaVisualSync(SystemDispatcher.CurrentFrameDeltaTime);
                 CompletePendingLeviathanNodeBuild(forceComplete: false);
                 CompletePendingFoveatedSimulationDecision(forceComplete: false);
                 CompletePendingPredatorConsumption(forceComplete: false);
@@ -2333,7 +2333,7 @@ namespace Hecton8.World
                     _beaconNetworkRuntime = currentService as IBeaconNetworkService;
                     break;
                 case GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime:
-                    _abyssalFluidDecals = currentService as AbyssalFluidDecalManager;
+                    _abyssalFluidDecals = currentService as IFluidDecalPresentationSink;
                     break;
                 case GlobalRegistryServiceSlot.SimulationBucketerRuntime:
                     _simulationBucketer = currentService as ISimulationBucketer;
@@ -2375,7 +2375,7 @@ namespace Hecton8.World
                 _beaconNetworkRuntime = GlobalRegistry.BeaconNetworkService;
 
             if (_abyssalFluidDecals == null)
-                _abyssalFluidDecals = GlobalRegistry.AbyssalFluidDecals;
+                _abyssalFluidDecals = GlobalRegistry.FluidDecalPresentation;
 
             _playerRuntimeContext = GlobalRegistry.Player;
 
@@ -2441,7 +2441,6 @@ namespace Hecton8.World
                 runtimeContext.IsBound)
             {
                 playerTransform ??= runtimeContext.PlayerTransform;
-                _playerRigidbody ??= runtimeContext.PlayerRigidbody;
                 _playerMovement ??= runtimeContext.PlayerMovement;
                 _playerTransportCoordinator ??= runtimeContext.PlayerTransportCoordinator;
                 _playerHealth ??= runtimeContext.PlayerHealth;
@@ -2453,7 +2452,6 @@ namespace Hecton8.World
                 if (playerContext != null && playerContext.IsInitialized)
                 {
                     playerTransform ??= playerContext.PlayerTransform;
-                    _playerRigidbody ??= playerContext.PlayerRigidbody;
                     _playerMovement ??= playerContext.PlayerMovement;
                     _playerTransportCoordinator ??= playerContext.PlayerTransportCoordinator;
                     _playerHealth ??= playerContext.PlayerHealth;
@@ -4790,9 +4788,15 @@ namespace Hecton8.World
                 return changed;
 
             var mapped = _predatorAupFallbackBuffer.LockBufferForWrite<float4>(0, PredatorAupBufferCapacity);
-            for (int i = 0; i < PredatorAupBufferCapacity; i++)
-                mapped[i] = float4.zero;
-            _predatorAupFallbackBuffer.UnlockBufferAfterWrite<float4>(PredatorAupBufferCapacity);
+            try
+            {
+                for (int i = 0; i < PredatorAupBufferCapacity; i++)
+                    mapped[i] = float4.zero;
+            }
+            finally
+            {
+                _predatorAupFallbackBuffer.UnlockBufferAfterWrite<float4>(PredatorAupBufferCapacity);
+            }
             return true;
         }
 
@@ -5164,7 +5168,7 @@ namespace Hecton8.World
                 return;
             }
 
-            int frameCount = Time.frameCount;
+            int frameCount = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             simulationBucketMask = FaunaSimulationBucketMask;
             simulationBucketIndex = frameCount & simulationBucketMask;
             _simulationInterpolationAlpha = (simulationBucketIndex + 1) * FaunaSimulationBucketInvCount;
@@ -5178,7 +5182,7 @@ namespace Hecton8.World
 
         private static void RefreshSystemKillSwitchBitsSnapshot()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_systemKillSwitchSnapshotFrame == frame)
                 return;
 
@@ -5257,7 +5261,7 @@ namespace Hecton8.World
 
         private bool TryResolvePlayerRuntimeMotion(out Vector3 playerPosition, out Vector3 playerVelocity)
         {
-            int currentFrame = Time.frameCount;
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_playerMotionCacheFrame != currentFrame)
             {
                 _playerMotionCacheFrame = currentFrame;
@@ -5383,7 +5387,7 @@ namespace Hecton8.World
             RecalculateMassiveThreatCount();
             UploadMassiveThreats();
 
-            AbyssalFluidDecalManager fluidDecals = _abyssalFluidDecals;
+            IFluidDecalPresentationSink fluidDecals = _abyssalFluidDecals;
             if ((_deepModeActive || _parasiteModeActive || _formationModeActive || _leviathanModeActive) && fluidDecals != null)
             {
                 float ruptureScale = SaturateFinite01(signal.RadiusWS * math.rcp(math.max(1f, deepBaitBallRadius * 2f)));
@@ -5688,7 +5692,7 @@ namespace Hecton8.World
         {
             uint sourceId = killSignal.PredatorId != 0u
                 ? killSignal.PredatorId
-                : (uint)math.hash(new int2(boidId, (int)Time.frameCount));
+                : (uint)math.hash(new int2(boidId, Hecton8.Core.SystemDispatcher.CurrentFrameIndex));
             if (TryResolveAupFromRuntimeOrigin(killPositionWS, out AbsoluteUniversePosition killAup))
             {
                 DebrisSpawnSignal debrisSignal = new DebrisSpawnSignal
@@ -5703,7 +5707,7 @@ namespace Hecton8.World
                 SignalBus<DebrisSpawnSignal>.TryPushTracked(in debrisSignal, ref s_x001SargassumMicroFaunaBoidsSignalPushDropCount);
             }
 
-            AbyssalFluidDecalManager fluidDecals = _abyssalFluidDecals;
+            IFluidDecalPresentationSink fluidDecals = _abyssalFluidDecals;
             if (fluidDecals != null)
                 fluidDecals.RegisterRuptureFluid(killPositionWS, PredatorKillFluidDecalRadiusScale);
         }
@@ -5824,8 +5828,14 @@ namespace Hecton8.World
             }
 
             var mapped = buffer.LockBufferForWrite<BoidData>(boidId, 1);
-            mapped[0] = source;
-            buffer.UnlockBufferAfterWrite<BoidData>(1);
+            try
+            {
+                mapped[0] = source;
+            }
+            finally
+            {
+                buffer.UnlockBufferAfterWrite<BoidData>(1);
+            }
         }
 
         private void RecordFoodChainTelemetry(uint flags, Vector3 eventPositionWS, uint sourceHash, uint anomalyHash)
@@ -6156,7 +6166,7 @@ namespace Hecton8.World
 
         private static float ResolveHitFlashShaderClockSeconds()
         {
-            return Time.timeSinceLevelLoad;
+            return (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
         }
 
         private void UpdateFragmentationState(
@@ -6482,11 +6492,18 @@ namespace Hecton8.World
                 SourceId = resolvedSourceId,
                 EstimatedBoidCount = (ushort)math.clamp(_activeBoidCount, 0, (int)ushort.MaxValue),
                 Flags = 1,
-                QualityTier = (byte)_lastSimulationLodTier
+                QualityTier = ResolveSignalQualityWeightByte()
             };
 
             SignalBus<SwarmDispersedSignal>.TryPushTracked(in signal, ref s_x001SargassumMicroFaunaBoidsSignalPushDropCount);
             RecordFoodChainTelemetry(FoodChainTelemetryFlagBoidsScattered, originWS, resolvedSourceId, 0u);
+        }
+
+        private static byte ResolveSignalQualityWeightByte()
+        {
+            float quality = HomeostasisBrain.GlobalQualityWeight;
+            float safeQuality = math.saturate(math.select(1f, quality, math.isfinite(quality)));
+            return (byte)math.clamp((int)math.round(safeQuality * 255f), 0, 255);
         }
 
         private float ResolveHeadlightPanic01()
@@ -7006,7 +7023,7 @@ namespace Hecton8.World
 
         private bool TryResolveApproxViewPose(out Vector3 cameraPosition, out Vector3 cameraForward)
         {
-            int currentFrame = Time.frameCount;
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_viewPoseCacheFrame == currentFrame)
             {
                 cameraPosition = _viewPoseCachePosition;
@@ -7057,7 +7074,7 @@ namespace Hecton8.World
             out PlayerMovementRuntimeState movementState,
             out PlayerLookState lookState)
         {
-            int currentFrame = Time.frameCount;
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_playerRuntimeSnapshotCacheFrame != currentFrame)
             {
                 _playerRuntimeSnapshotCacheFrame = currentFrame;
@@ -7163,15 +7180,21 @@ namespace Hecton8.World
 
             var mappedArgs =
                 _boidIndirectArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            mappedArgs[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            try
             {
-                indexCountPerInstance = mesh.GetIndexCount(0),
-                instanceCount = (uint)instanceCount,
-                startIndex = mesh.GetIndexStart(0),
-                baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
-                startInstance = 0u
-            };
-            _boidIndirectArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+                mappedArgs[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+                {
+                    indexCountPerInstance = mesh.GetIndexCount(0),
+                    instanceCount = (uint)instanceCount,
+                    startIndex = mesh.GetIndexStart(0),
+                    baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
+                    startInstance = 0u
+                };
+            }
+            finally
+            {
+                _boidIndirectArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            }
             _boidIndirectArgsMesh = mesh;
             _boidIndirectArgsInstanceCount = instanceCount;
             return true;
@@ -8204,7 +8227,7 @@ namespace Hecton8.World
 
         private static void LogComputeDispatchDisabled(string message, UnityEngine.Object context)
         {
-            Debug.LogError(message, context);
+            Hecton8.Core.H8Debug.LogError(message, context);
         }
 #endif
 
@@ -8391,7 +8414,7 @@ namespace Hecton8.World
             if (_editorValidateDepth > MaxEditorValidateDepth)
             {
                 _editorValidateDepth--;
-                Debug.LogError("SargassumMicroFaunaBoids editor validation watchdog tripped.", this);
+                Hecton8.Core.H8Debug.LogError("SargassumMicroFaunaBoids editor validation watchdog tripped.", this);
                 return;
             }
 

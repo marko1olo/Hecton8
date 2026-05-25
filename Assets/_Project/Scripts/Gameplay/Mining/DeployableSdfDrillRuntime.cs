@@ -146,6 +146,7 @@ namespace Hecton8.Gameplay.Mining
         private IPowerGridService _powerGrid;
         private ITerrainProvider _terrainProvider;
         private IVoxelSonarSdfReadModel _voxelSdfReadModel;
+        private HectonVoxelEngine _cachedVoxelEngine;
         private VoxelDeltaProcessor _cachedVoxelDeltaProcessor;
         private MapMagicBridge _mapMagic;
         private IDataVault _dataVault;
@@ -766,6 +767,7 @@ namespace Hecton8.Gameplay.Mining
 
         private void RebindVoxelDependencies(HectonVoxelEngine voxelEngine)
         {
+            _cachedVoxelEngine = voxelEngine;
             _cachedVoxelDeltaProcessor = voxelDeltaProcessor;
             if (_cachedVoxelDeltaProcessor == null && voxelEngine != null)
                 voxelEngine.TryGetComponent(out _cachedVoxelDeltaProcessor);
@@ -929,17 +931,13 @@ namespace Hecton8.Gameplay.Mining
             if (readModel == null)
                 return false;
 
-            if (!readModel.TryRaymarchNearestSonarSdf(
+            if (!VoxelSonarSdfMath.TryResolveNearestSdfSurface(
+                    readModel,
                     new float3(origin.x, origin.y, origin.z),
                     new float3(0f, -1f, 0f),
                     range,
                     ResolveSnapSdfStepMeters(range),
-                    out VoxelSonarSdfRaycastHit hit,
-                    out NativeArray<byte>.ReadOnly _,
-                    out int3 _,
-                    out float3 _,
-                    out float3 _,
-                    out float _) ||
+                    out VoxelSonarSdfRaycastHit hit) ||
                 (hit.Flags & VoxelSonarSdfRaycastHit.FlagHit) == 0u ||
                 !math.all(math.isfinite(hit.Point)) ||
                 !math.all(math.isfinite(hit.Normal)) ||
@@ -1246,16 +1244,12 @@ namespace Hecton8.Gameplay.Mining
             if (volume == null && _cachedTransform != null)
             {
                 Vector3 origin = _cachedTransform.position + Vector3.up * 0.5f;
-                if (HectonVoxelVolume.TryRaymarchAnyPublishedSdf(
-                        origin,
-                        Vector3.down,
-                        math.max(1f, sdfRaymarchDistanceMeters),
-                        math.max(0.05f, sdfRaymarchStepMeters),
-                        out HectonVoxelVolume raymarchVolume,
-                        out VoxelSdfRaycastHit _))
+                HectonVoxelEngine voxelEngine = _cachedVoxelEngine != null ? _cachedVoxelEngine : GlobalRegistry.VoxelEngine;
+                if (voxelEngine != null &&
+                    voxelEngine.TryGetNearestActiveVolume(origin, out HectonVoxelVolume nearestVolume))
                 {
-                    volume = raymarchVolume;
-                    _resolvedVoxelVolume = raymarchVolume;
+                    volume = nearestVolume;
+                    _resolvedVoxelVolume = nearestVolume;
                 }
             }
 

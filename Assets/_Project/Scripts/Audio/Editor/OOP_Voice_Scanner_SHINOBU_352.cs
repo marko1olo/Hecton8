@@ -48,7 +48,7 @@ namespace Hecton8.Audio.Editor
             ScanResult result = ScanProject();
             WriteReports(result);
             AssetDatabase.Refresh();
-            Debug.Log("SHINOBU_352 voice scanner found " + result.Findings.Count + " OOP voice findings.");
+            Hecton8.Core.H8Debug.Log("SHINOBU_352 voice scanner found " + result.Findings.Count + " OOP voice findings.");
         }
 
         internal static ScanResult ScanProject()

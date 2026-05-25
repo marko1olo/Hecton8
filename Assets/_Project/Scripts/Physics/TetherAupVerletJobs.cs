@@ -915,16 +915,25 @@ namespace Hecton8.Physics
             if (safeCount <= 0)
                 return;
 
-            NativeArray<TetherSplineVertexDTO> mapped = destination.LockBufferForWrite<TetherSplineVertexDTO>(0, safeCount);
-            var job = new TetherSplineGpuMemcpyJob
+            bool locked = false;
+            try
             {
-                Source = source,
-                Destination = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped),
-                Count = safeCount,
-                DestinationBytes = (long)UnsafeUtility.SizeOf<TetherSplineVertexDTO>() * mapped.Length
-            };
-            job.Execute();
-            destination.UnlockBufferAfterWrite<TetherSplineVertexDTO>(safeCount);
+                NativeArray<TetherSplineVertexDTO> mapped = destination.LockBufferForWrite<TetherSplineVertexDTO>(0, safeCount);
+                locked = true;
+                var job = new TetherSplineGpuMemcpyJob
+                {
+                    Source = source,
+                    Destination = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped),
+                    Count = safeCount,
+                    DestinationBytes = (long)UnsafeUtility.SizeOf<TetherSplineVertexDTO>() * mapped.Length
+                };
+                job.Execute();
+            }
+            finally
+            {
+                if (locked)
+                    destination.UnlockBufferAfterWrite<TetherSplineVertexDTO>(safeCount);
+            }
         }
     }
 

@@ -72,7 +72,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             CacheBaseRotation();
-            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _cachedAudioService = GlobalRegistry.Audio;
             TryRegisterHotSwapListener();
         }
 

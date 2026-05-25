@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Hecton8.Core.Contracts.Physics;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -59,7 +60,8 @@ namespace Hecton8.Physics
                    UnsafeUtility.SizeOf<CableTensionForceDTO>() == CableTensionForceStrideBytes &&
                    UnsafeUtility.SizeOf<CableAabbDTO>() == CableAabbStrideBytes &&
                    UnsafeUtility.SizeOf<VerletCableBlackBoxEntry>() == BlackBoxEntryStrideBytes &&
-                   ValidateTetherAupLayouts();
+                   ValidateTetherAupLayouts() &&
+                   ValidateTetherVerletTelemetryLayout();
         }
 
         public static bool ValidateTetherAupLayouts()
@@ -95,17 +97,44 @@ namespace Hecton8.Physics
                    OffsetOf<TetherSplineVertexDTO>(nameof(TetherSplineVertexDTO.Tension01)) == 28 &&
                    UnsafeUtility.SizeOf<TetherSplineIndirectArgsDTO>() == TetherSplineIndirectArgsStrideBytes &&
                    UnsafeUtility.SizeOf<TetherAupTelemetryEntry>() == TetherAupTelemetryStrideBytes &&
+                   OffsetOf<TetherAupTelemetryEntry>(nameof(TetherAupTelemetryEntry.AnchorAUP)) == 0 &&
+                   OffsetOf<TetherAupTelemetryEntry>(nameof(TetherAupTelemetryEntry.FrameIndex)) == 24 &&
+                   OffsetOf<TetherAupTelemetryEntry>(nameof(TetherAupTelemetryEntry.NodeCount)) == 28 &&
+                   OffsetOf<TetherAupTelemetryEntry>(nameof(TetherAupTelemetryEntry.IterationCount)) == 32 &&
+                   OffsetOf<TetherAupTelemetryEntry>(nameof(TetherAupTelemetryEntry.MaxTension)) == 36 &&
+                   OffsetOf<TetherAupTelemetryEntry>(nameof(TetherAupTelemetryEntry.StateHash)) == 40 &&
+                   OffsetOf<TetherAupTelemetryEntry>(nameof(TetherAupTelemetryEntry.Flags)) == 44 &&
+                   OffsetOf<TetherAupTelemetryEntry>(nameof(TetherAupTelemetryEntry.CpuMicroseconds)) == 48 &&
+                   OffsetOf<TetherAupTelemetryEntry>(nameof(TetherAupTelemetryEntry.GlobalQualityWeight)) == 52 &&
+                   OffsetOf<TetherAupTelemetryEntry>("_pad0") == 56 &&
                    UnsafeUtility.SizeOf<TetherTelemetryEntry>() == TetherTelemetryStrideBytes &&
-                   OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.FrameIndex)) == 0 &&
-                   OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.NodeCount)) == 4 &&
-                   OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.IterationCount)) == 8 &&
-                   OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.MaxTension)) == 12 &&
-                   OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.AnchorAUP)) == 16 &&
+                   OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.AnchorAUP)) == 0 &&
+                   OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.FrameIndex)) == 24 &&
+                   OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.NodeCount)) == 28 &&
+                   OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.IterationCount)) == 32 &&
+                   OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.MaxTension)) == 36 &&
                    OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.StateHash)) == 40 &&
                    OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.Flags)) == 44 &&
                    OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.CpuMicroseconds)) == 48 &&
                    OffsetOf<TetherTelemetryEntry>(nameof(TetherTelemetryEntry.GlobalQualityWeight)) == 52 &&
                    OffsetOf<TetherTelemetryEntry>("_pad0") == 56;
+        }
+
+        public static bool ValidateTetherVerletTelemetryLayout()
+        {
+            return UnsafeUtility.SizeOf<TetherVerletTelemetryEntry>() == TetherVerletJobLayout.TelemetryEntryStrideBytes &&
+                   OffsetOf<TetherVerletTelemetryEntry>(nameof(TetherVerletTelemetryEntry.FrameIndex)) == 0 &&
+                   OffsetOf<TetherVerletTelemetryEntry>(nameof(TetherVerletTelemetryEntry.NodeCount)) == 4 &&
+                   OffsetOf<TetherVerletTelemetryEntry>(nameof(TetherVerletTelemetryEntry.IterationCount)) == 8 &&
+                   OffsetOf<TetherVerletTelemetryEntry>(nameof(TetherVerletTelemetryEntry.PeakConstraintDelta)) == 12 &&
+                   OffsetOf<TetherVerletTelemetryEntry>(nameof(TetherVerletTelemetryEntry.PeakCableTension)) == 16 &&
+                   OffsetOf<TetherVerletTelemetryEntry>(nameof(TetherVerletTelemetryEntry.AnchorPosition)) == 20 &&
+                   OffsetOf<TetherVerletTelemetryEntry>(nameof(TetherVerletTelemetryEntry.PayloadPosition)) == 32 &&
+                   OffsetOf<TetherVerletTelemetryEntry>(nameof(TetherVerletTelemetryEntry.Flags)) == 44 &&
+                   OffsetOf<TetherVerletTelemetryEntry>(nameof(TetherVerletTelemetryEntry.BufferId)) == 48 &&
+                   OffsetOf<TetherVerletTelemetryEntry>(nameof(TetherVerletTelemetryEntry.Generation)) == 52 &&
+                   OffsetOf<TetherVerletTelemetryEntry>(nameof(TetherVerletTelemetryEntry.FailureCode)) == 56 &&
+                   OffsetOf<TetherVerletTelemetryEntry>(nameof(TetherVerletTelemetryEntry.Reserved0)) == 60;
         }
 
         private static int OffsetOf<T>(string fieldName) where T : struct
@@ -182,7 +211,14 @@ namespace Hecton8.Physics
         [FieldOffset(24)] public double3 PreviousAUP;
         [FieldOffset(48)] public float InverseMass;
         [FieldOffset(52)] public uint Flags;
-        [FieldOffset(56)] public ulong _pad0;
+        [FieldOffset(56)] private byte _pad0;
+        [FieldOffset(57)] private byte _pad1;
+        [FieldOffset(58)] private byte _pad2;
+        [FieldOffset(59)] private byte _pad3;
+        [FieldOffset(60)] private byte _pad4;
+        [FieldOffset(61)] private byte _pad5;
+        [FieldOffset(62)] private byte _pad6;
+        [FieldOffset(63)] private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -211,7 +247,14 @@ namespace Hecton8.Physics
         [FieldOffset(12)] public float Stiffness;
         [FieldOffset(16)] public uint Flags;
         [FieldOffset(20)] public uint CableId;
-        [FieldOffset(24)] private ulong _pad0;
+        [FieldOffset(24)] private byte _pad0;
+        [FieldOffset(25)] private byte _pad1;
+        [FieldOffset(26)] private byte _pad2;
+        [FieldOffset(27)] private byte _pad3;
+        [FieldOffset(28)] private byte _pad4;
+        [FieldOffset(29)] private byte _pad5;
+        [FieldOffset(30)] private byte _pad6;
+        [FieldOffset(31)] private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -233,7 +276,14 @@ namespace Hecton8.Physics
         [FieldOffset(44)] public int BodySlot;
         [FieldOffset(48)] public uint Flags;
         [FieldOffset(52)] public uint FrameIndex;
-        [FieldOffset(56)] private ulong _pad0;
+        [FieldOffset(56)] private byte _pad0;
+        [FieldOffset(57)] private byte _pad1;
+        [FieldOffset(58)] private byte _pad2;
+        [FieldOffset(59)] private byte _pad3;
+        [FieldOffset(60)] private byte _pad4;
+        [FieldOffset(61)] private byte _pad5;
+        [FieldOffset(62)] private byte _pad6;
+        [FieldOffset(63)] private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -257,31 +307,45 @@ namespace Hecton8.Physics
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct TetherAupTelemetryEntry
     {
-        [FieldOffset(0)] public uint FrameIndex;
-        [FieldOffset(4)] public int NodeCount;
-        [FieldOffset(8)] public int IterationCount;
-        [FieldOffset(12)] public float MaxTension;
-        [FieldOffset(16)] public double3 AnchorAUP;
+        [FieldOffset(0)] public double3 AnchorAUP;
+        [FieldOffset(24)] public uint FrameIndex;
+        [FieldOffset(28)] public int NodeCount;
+        [FieldOffset(32)] public int IterationCount;
+        [FieldOffset(36)] public float MaxTension;
         [FieldOffset(40)] public uint StateHash;
         [FieldOffset(44)] public uint Flags;
         [FieldOffset(48)] public float CpuMicroseconds;
         [FieldOffset(52)] public float GlobalQualityWeight;
-        [FieldOffset(56)] private ulong _pad0;
+        [FieldOffset(56)] private byte _pad0;
+        [FieldOffset(57)] private byte _pad1;
+        [FieldOffset(58)] private byte _pad2;
+        [FieldOffset(59)] private byte _pad3;
+        [FieldOffset(60)] private byte _pad4;
+        [FieldOffset(61)] private byte _pad5;
+        [FieldOffset(62)] private byte _pad6;
+        [FieldOffset(63)] private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct TetherTelemetryEntry
     {
-        [FieldOffset(0)] public uint FrameIndex;
-        [FieldOffset(4)] public int NodeCount;
-        [FieldOffset(8)] public int IterationCount;
-        [FieldOffset(12)] public float MaxTension;
-        [FieldOffset(16)] public double3 AnchorAUP;
+        [FieldOffset(0)] public double3 AnchorAUP;
+        [FieldOffset(24)] public uint FrameIndex;
+        [FieldOffset(28)] public int NodeCount;
+        [FieldOffset(32)] public int IterationCount;
+        [FieldOffset(36)] public float MaxTension;
         [FieldOffset(40)] public uint StateHash;
         [FieldOffset(44)] public uint Flags;
         [FieldOffset(48)] public float CpuMicroseconds;
         [FieldOffset(52)] public float GlobalQualityWeight;
-        [FieldOffset(56)] private ulong _pad0;
+        [FieldOffset(56)] private byte _pad0;
+        [FieldOffset(57)] private byte _pad1;
+        [FieldOffset(58)] private byte _pad2;
+        [FieldOffset(59)] private byte _pad3;
+        [FieldOffset(60)] private byte _pad4;
+        [FieldOffset(61)] private byte _pad5;
+        [FieldOffset(62)] private byte _pad6;
+        [FieldOffset(63)] private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -291,23 +355,6 @@ namespace Hecton8.Physics
         [FieldOffset(4)] public int NodeB;
         [FieldOffset(8)] public float RestLength;
         [FieldOffset(12)] public float Stiffness;
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
-    public struct GpuCableSplinePointDTO
-    {
-        [FieldOffset(0)] public float3 Position;
-        [FieldOffset(12)] public float Tension01;
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 80)]
-    public struct GpuCableDrawParamsDTO
-    {
-        [FieldOffset(0)] public float4 Color;
-        [FieldOffset(16)] public float4 StressColor;
-        [FieldOffset(32)] public float4 Params0; // x=global stress, y=segment stress scale, z=point count, w=radius.
-        [FieldOffset(48)] public float4 Params1; // x=indirect mode, y=visual quality, z=crystal density, w=silt intensity.
-        [FieldOffset(64)] public float4 Params2; // x=visual clock, yzw reserved for visual-only overkill.
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -366,16 +413,15 @@ namespace Hecton8.Physics
 
             for (int i = 0; i < materials.Length; i++)
             {
-                materials[i] = new CableMaterialDTO
-                {
-                    MaterialHash = i == 0 ? 0x5645524Cu : 0x5645524Cu + (uint)i,
-                    LinearDensity = 1.45f,
-                    YieldStretch01 = 0.18f,
-                    SnapStretch01 = 0.38f,
-                    SolverTuning = new float4(0.82f, 0.975f, 0.42f, 0.035f),
-                    VisualTuning = new float4(0.045f, 0.35f, 0.22f, 0f),
-                    LoadTuning = new float4(24f, 3f, 5f, 10f)
-                };
+                CableMaterialDTO material = default;
+                material.MaterialHash = i == 0 ? 0x5645524Cu : 0x5645524Cu + (uint)i;
+                material.LinearDensity = 1.45f;
+                material.YieldStretch01 = 0.18f;
+                material.SnapStretch01 = 0.38f;
+                material.SolverTuning = math.float4(0.82f, 0.975f, 0.42f, 0.035f);
+                material.VisualTuning = math.float4(0.045f, 0.35f, 0.22f, 0f);
+                material.LoadTuning = math.float4(24f, 3f, 5f, 10f);
+                materials[i] = material;
             }
         }
     }
@@ -411,7 +457,7 @@ namespace Hecton8.Physics
         public SdfSampleDTO Sample(float3 position)
         {
             float planeDistance = position.y - PlaneY;
-            float3 planeNormal = new float3(0f, 1f, 0f);
+            float3 planeNormal = DefaultUp();
 
             float primaryDistance = SampleSphereDistance(position, SphereCenter, SphereRadius);
             float3 primaryNormal = SafeNormal(position - SphereCenter, planeNormal);
@@ -436,11 +482,10 @@ namespace Hecton8.Physics
             if (!math.isfinite(distance))
                 distance = 1f;
 
-            return new SdfSampleDTO
-            {
-                Distance = distance,
-                Normal = SafeNormal(normal, planeNormal)
-            };
+            SdfSampleDTO sample = default;
+            sample.Distance = distance;
+            sample.Normal = SafeNormal(normal, planeNormal);
+            return sample;
         }
 
         private static float SampleSphereDistance(float3 position, float3 center, float radius)
@@ -461,9 +506,16 @@ namespace Hecton8.Physics
         {
             float lenSq = math.lengthsq(vector);
             if (!math.isfinite(lenSq) || lenSq <= 0.000001f)
-                return math.all(math.isfinite(fallback)) ? fallback : new float3(0f, 1f, 0f);
+                return math.all(math.isfinite(fallback)) ? fallback : DefaultUp();
 
             return vector * math.rsqrt(math.max(lenSq, 0.000001f));
+        }
+
+        internal static float3 DefaultUp()
+        {
+            float3 up = default;
+            up.y = 1f;
+            return up;
         }
     }
 
@@ -532,15 +584,17 @@ namespace Hecton8.Physics
         [FieldOffset(16)] public int CableId;
         [FieldOffset(20)] public int ConstraintIndex;
         [FieldOffset(24)] public uint FrameIndex;
-        [FieldOffset(28)] public byte Reason;
-        [FieldOffset(29)] public byte Flags;
-        [FieldOffset(30)] public ushort NodeCount;
-        [FieldOffset(32)] public float SnapThreshold;
-        [FieldOffset(36)] public float Severity01;
-        [FieldOffset(40)] public uint Reserved;
-        [FieldOffset(44)] public uint Reserved1;
-        [FieldOffset(48)] public ulong Reserved2;
-        [FieldOffset(56)] public ulong Reserved3;
+        [FieldOffset(28)] public float SnapThreshold;
+        [FieldOffset(32)] public float Severity01;
+        [FieldOffset(36)] public uint Reserved;
+        [FieldOffset(40)] public uint Reserved1;
+        [FieldOffset(44)] public uint Reserved2;
+        [FieldOffset(48)] public uint Reserved3;
+        [FieldOffset(52)] public uint Reserved4;
+        [FieldOffset(56)] public uint Reserved5;
+        [FieldOffset(60)] public ushort NodeCount;
+        [FieldOffset(62)] public byte Reason;
+        [FieldOffset(63)] public byte Flags;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -578,7 +632,7 @@ namespace Hecton8.Physics
         [FieldOffset(60)] public uint Reserved1;
     }
 
-    public unsafe struct VerletCableNodeBuffer
+    public unsafe ref struct VerletCableNodeBuffer
     {
         public NativeArray<VerletNodeDTO> Nodes;
 
@@ -650,7 +704,7 @@ namespace Hecton8.Physics
             SdfSampleDTO sample = WorldSampler.Sample(next);
             if (sample.Distance < radius)
             {
-                float3 normal = MockSDFSampler.SafeNormal(sample.Normal, new float3(0f, 1f, 0f));
+                float3 normal = MockSDFSampler.SafeNormal(sample.Normal, MockSDFSampler.DefaultUp());
                 next += normal * (radius - sample.Distance);
                 float3 impactVelocity = next - position;
                 float3 normalVelocity = normal * math.dot(impactVelocity, normal);
@@ -814,13 +868,12 @@ namespace Hecton8.Physics
 
             float safeTension = ClampTension(tension);
             float3 safeDirection = SanitizeDirection(direction);
-            TensionForces[index] = new CableTensionForceDTO
-            {
-                Force = safeDirection * safeTension,
-                ApplicationPoint = applicationPoint,
-                Tension = safeTension,
-                CableId = CableId
-            };
+            CableTensionForceDTO force = default;
+            force.Force = safeDirection * safeTension;
+            force.ApplicationPoint = applicationPoint;
+            force.Tension = safeTension;
+            force.CableId = CableId;
+            TensionForces[index] = force;
         }
 
         private static float SanitizeNonNegative(float value)
@@ -847,20 +900,19 @@ namespace Hecton8.Physics
             if ((uint)writeIndex >= (uint)SnapSignals.Length)
                 return;
 
-            SnapSignals[writeIndex] = new CableSnappedSignal
-            {
-                Position = math.all(math.isfinite(position)) ? position : float3.zero,
-                PeakTension = math.isfinite(tension) ? tension : 0f,
-                CableId = CableId,
-                ConstraintIndex = constraintIndex,
-                FrameIndex = FrameIndex,
-                Reason = 1,
-                Flags = 0,
-                NodeCount = (ushort)math.min(Nodes.Length, ushort.MaxValue),
-                SnapThreshold = math.max(0f, SnapStretch01),
-                Severity01 = math.saturate(stretch01 * math.rcp(math.max(SnapStretch01, 0.0001f))),
-                Reserved = 0u
-            };
+            CableSnappedSignal signal = default;
+            signal.Position = math.all(math.isfinite(position)) ? position : float3.zero;
+            signal.PeakTension = math.isfinite(tension) ? tension : 0f;
+            signal.CableId = CableId;
+            signal.ConstraintIndex = constraintIndex;
+            signal.FrameIndex = FrameIndex;
+            signal.Reason = 1;
+            signal.Flags = 0;
+            signal.NodeCount = (ushort)math.min(Nodes.Length, ushort.MaxValue);
+            signal.SnapThreshold = math.max(0f, SnapStretch01);
+            signal.Severity01 = math.saturate(stretch01 * math.rcp(math.max(SnapStretch01, 0.0001f)));
+            signal.Reserved = 0u;
+            SnapSignals[writeIndex] = signal;
             SnapSignalCount[0] = writeIndex + 1;
         }
     }
@@ -964,11 +1016,10 @@ namespace Hecton8.Physics
             if (SegmentTensions.IsCreated && SegmentTensions.Length > 0)
                 tension = SegmentTensions[math.min(index, SegmentTensions.Length - 1)];
 
-            GpuPoints[index] = new GpuCableSplinePointDTO
-            {
-                Position = Nodes[index].Position + Origin,
-                Tension01 = math.saturate(tension * math.max(0f, InvSnapTension))
-            };
+            GpuCableSplinePointDTO point = default;
+            point.Position = Nodes[index].Position + Origin;
+            point.Tension01 = math.saturate(tension * math.max(0f, InvSnapTension));
+            GpuPoints[index] = point;
         }
     }
 
@@ -1006,10 +1057,10 @@ namespace Hecton8.Physics
             for (int i = 0; i < planeCount; i++)
             {
                 float4 plane = FrustumPlanes[i];
-                float3 positive = new float3(
-                    plane.x >= 0f ? maxPoint.x : minPoint.x,
-                    plane.y >= 0f ? maxPoint.y : minPoint.y,
-                    plane.z >= 0f ? maxPoint.z : minPoint.z);
+                float3 positive = default;
+                positive.x = plane.x >= 0f ? maxPoint.x : minPoint.x;
+                positive.y = plane.y >= 0f ? maxPoint.y : minPoint.y;
+                positive.z = plane.z >= 0f ? maxPoint.z : minPoint.z;
                 if (math.dot(plane.xyz, positive) + plane.w < 0f)
                 {
                     visible = 0;
@@ -1017,13 +1068,12 @@ namespace Hecton8.Physics
                 }
             }
 
-            Aabbs[AabbIndex] = new CableAabbDTO
-            {
-                Min = minPoint,
-                Max = maxPoint,
-                Visible = visible,
-                Dirty = 1
-            };
+            CableAabbDTO aabb = default;
+            aabb.Min = minPoint;
+            aabb.Max = maxPoint;
+            aabb.Visible = visible;
+            aabb.Dirty = 1;
+            Aabbs[AabbIndex] = aabb;
         }
     }
 
@@ -1062,21 +1112,20 @@ namespace Hecton8.Physics
                 hash = (hash ^ math.asuint(point.z)) * 16777619u;
             }
 
-            Ring[head] = new VerletCableBlackBoxEntry
-            {
-                FrameIndex = FrameIndex,
-                CableId = CableId,
-                ActiveNodeCount = activeCount,
-                ConstraintCount = ConstraintCount,
-                FirstPosition = first,
-                LastPosition = last,
-                MaxTension = SolverStats.IsCreated && SolverStats.Length > 0 ? SolverStats[0] : 0f,
-                AverageError = SolverStats.IsCreated && SolverStats.Length > 1 ? SolverStats[1] : 0f,
-                Flags = Flags,
-                StateHash = hash,
-                Reserved0 = 0u,
-                Reserved1 = 0u
-            };
+            VerletCableBlackBoxEntry entry = default;
+            entry.FrameIndex = FrameIndex;
+            entry.CableId = CableId;
+            entry.ActiveNodeCount = activeCount;
+            entry.ConstraintCount = ConstraintCount;
+            entry.FirstPosition = first;
+            entry.LastPosition = last;
+            entry.MaxTension = SolverStats.IsCreated && SolverStats.Length > 0 ? SolverStats[0] : 0f;
+            entry.AverageError = SolverStats.IsCreated && SolverStats.Length > 1 ? SolverStats[1] : 0f;
+            entry.Flags = Flags;
+            entry.StateHash = hash;
+            entry.Reserved0 = 0u;
+            entry.Reserved1 = 0u;
+            Ring[head] = entry;
             Head[0] = (head + 1) % capacity;
         }
     }
@@ -1274,16 +1323,13 @@ namespace Hecton8.Physics
                     break;
             }
 
-            material = new CableMaterialDTO
-            {
-                MaterialHash = materialHash,
-                LinearDensity = math.max(0.001f, density),
-                YieldStretch01 = math.max(0f, yield),
-                SnapStretch01 = math.max(yield + 0.01f, snap),
-                SolverTuning = new float4(math.saturate(stiffness), math.saturate(damping), math.saturate(friction), math.max(0.001f, radius)),
-                VisualTuning = new float4(math.max(0.001f, radius), 0.35f, 0.22f, 0f),
-                LoadTuning = new float4(24f, 3f, 5f, 10f)
-            };
+            material.MaterialHash = materialHash;
+            material.LinearDensity = math.max(0.001f, density);
+            material.YieldStretch01 = math.max(0f, yield);
+            material.SnapStretch01 = math.max(yield + 0.01f, snap);
+            material.SolverTuning = math.float4(math.saturate(stiffness), math.saturate(damping), math.saturate(friction), math.max(0.001f, radius));
+            material.VisualTuning = math.float4(math.max(0.001f, radius), 0.35f, 0.22f, 0f);
+            material.LoadTuning = math.float4(24f, 3f, 5f, 10f);
             return true;
         }
 
@@ -1388,16 +1434,13 @@ namespace Hecton8.Physics
                     break;
             }
 
-            material = new CableMaterialDTO
-            {
-                MaterialHash = materialHash,
-                LinearDensity = math.max(0.001f, density),
-                YieldStretch01 = math.max(0f, yield),
-                SnapStretch01 = math.max(yield + 0.01f, snap),
-                SolverTuning = new float4(math.saturate(stiffness), math.saturate(damping), math.saturate(friction), math.max(0.001f, radius)),
-                VisualTuning = new float4(math.max(0.001f, radius), 0.35f, 0.22f, 0f),
-                LoadTuning = new float4(24f, 3f, 5f, 10f)
-            };
+            material.MaterialHash = materialHash;
+            material.LinearDensity = math.max(0.001f, density);
+            material.YieldStretch01 = math.max(0f, yield);
+            material.SnapStretch01 = math.max(yield + 0.01f, snap);
+            material.SolverTuning = math.float4(math.saturate(stiffness), math.saturate(damping), math.saturate(friction), math.max(0.001f, radius));
+            material.VisualTuning = math.float4(math.max(0.001f, radius), 0.35f, 0.22f, 0f);
+            material.LoadTuning = math.float4(24f, 3f, 5f, 10f);
             return true;
         }
 

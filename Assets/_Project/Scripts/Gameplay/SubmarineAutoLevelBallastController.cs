@@ -8,7 +8,6 @@ using Hecton8.Core.Contracts.Fluids;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Contracts.Physics;
-using Hecton8.Physics;
 using Hecton8.Physics.Vehicles;
 using Hecton8.World;
 using Unity.Burst;
@@ -17,6 +16,8 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+
+using SubmarineFluidDynamics = global::Hecton8.Physics.SubmarineFluidDynamics;
 
 namespace Hecton8.Gameplay
 {
@@ -425,6 +426,7 @@ namespace Hecton8.Gameplay
         private SubmarineCoreDirector _core;
         private IPowerGridService _powerGrid;
         private IAudioService _audio;
+        private IPhysicsService _physicsService;
         private IDataVault _dataVault;
         private IAnalyticalFlowReadModel _analyticalFlowReadModel;
         private Rigidbody _hull;
@@ -675,6 +677,12 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.Physics)
+            {
+                _physicsService = currentService as IPhysicsService;
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime)
             {
                 _analyticalFlowReadModel = currentService as IAnalyticalFlowReadModel;
@@ -702,7 +710,7 @@ namespace Hecton8.Gameplay
         private void RegisterRuntime()
         {
             _powerGrid = GlobalRegistry.PowerGrid;
-            _audio = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audio = GlobalRegistry.Audio;
             _analyticalFlowReadModel = GlobalRegistry.AnalyticalFlow;
             RefreshDynamicFloodServicesFromRegistry();
             RefreshOwnerPhaseSnapshotsCold();
@@ -829,6 +837,7 @@ namespace Hecton8.Gameplay
                 TryGetComponent(out _hull);
 
             _powerGrid = GlobalRegistry.PowerGrid;
+            _physicsService = GlobalRegistry.Physics;
 
             if (_core != null)
                 _baseMassKg = math.max(1f, _core.BaseMass);
@@ -1549,7 +1558,7 @@ namespace Hecton8.Gameplay
                 (packet.Flags & SubmarineBallastConstants.ForceFlagValid) != 0u &&
                 math.lengthsq(packet.NetForce) > 0.000001f)
             {
-                PhysicsForceRouter.QueueAmbientForce(_hull, ToVector3(packet.NetForce), ForceMode.Force);
+                _physicsService?.QueueAmbientForce(_hull, ToVector3(packet.NetForce), ForceMode.Force);
             }
 
             return true;
@@ -2242,11 +2251,11 @@ namespace Hecton8.Gameplay
             {
                 _smoothedPidTorqueWorld = acceptedTorque;
                 EmitPidHullStressSignal(output.Error, _hull.worldCenterOfMass);
-                PhysicsForceRouter.QueueTorque(_hull, ToVector3(acceptedTorque), ForceMode.Force);
+                _physicsService?.QueueTorque(_hull, ToVector3(acceptedTorque), ForceMode.Force);
             }
 
             if (_hull != null && output.Flags == 0u && math.lengthsq(output.MaelstromAcceleration) > 0.0001f)
-                PhysicsForceRouter.QueueAmbientForce(_hull, ToVector3(output.MaelstromAcceleration), ForceMode.Acceleration);
+                _physicsService?.QueueAmbientForce(_hull, ToVector3(output.MaelstromAcceleration), ForceMode.Acceleration);
 
             return true;
         }

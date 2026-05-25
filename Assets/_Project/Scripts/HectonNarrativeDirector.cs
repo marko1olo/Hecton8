@@ -160,7 +160,7 @@ namespace Hecton8.Gameplay
         {
             TryRegister();
             TryRegisterHotSwapListener();
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             TryRegisterSaveParticipant();
 
             NarrativeEvents.Register(this);
@@ -303,7 +303,7 @@ namespace Hecton8.Gameplay
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;
@@ -752,10 +752,10 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            AtlasSignalSystem atlasSignalSystem = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            IAtlasSignalReadModel atlasSignalSystem = Hecton8.Core.GlobalRegistry.AtlasSignalReadModel;
             bool rebroadcastedPulse = CanRebroadcastAtlasRareDiscoveryPulse(atlasSignalSystem);
             if (rebroadcastedPulse)
-                AtlasSignalEvents.TryRaisePulse(atlasSignalSystem.CurrentStrength);
+                AtlasSignalEvents.TryRaisePulse(atlasSignalSystem.CurrentAtlasSignalStrength01);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             H8Debug.Log("[Narrative] Rare discovery requested.");
@@ -791,11 +791,11 @@ namespace Hecton8.Gameplay
         {
         }
 
-        private static bool CanRebroadcastAtlasRareDiscoveryPulse(AtlasSignalSystem atlasSignalSystem)
+        private static bool CanRebroadcastAtlasRareDiscoveryPulse(IAtlasSignalReadModel atlasSignalSystem)
         {
             return atlasSignalSystem != null &&
-                   atlasSignalSystem.CurrentRevealStage >= 3 &&
-                   atlasSignalSystem.CurrentStrength > 0f;
+                   atlasSignalSystem.CurrentAtlasSignalRevealStage >= 3 &&
+                   atlasSignalSystem.CurrentAtlasSignalStrength01 > 0f;
         }
 
         private bool ResolvePlayerTransform()

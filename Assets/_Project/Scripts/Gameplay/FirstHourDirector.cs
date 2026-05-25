@@ -1,26 +1,26 @@
 // ============================================================================
-// HECTON-8 — FirstHourDirector.cs
+// HECTON-8 â€” FirstHourDirector.cs
 // Rezhissura pervogo chasa igry.
 //
-// LOR (lor1 — Psihologicheskiy arc pervyh dvuh chasov):
+// LOR (lor1 â€” Psihologicheskiy arc pervyh dvuh chasov):
 //   Minuta 0-5:    Dezorientatsiya ? Orientatsiya
 //   Minuta 5-15:   Lyubopytstvo bez straha (melkovode bezopasno)
 //   Minuta 15-25:  Pervaya trevoga (ruka iz-pod oblomka, gul snizu)
 //   Minuta 25-40:  Kompetentnost (pervyy kraft)
-//   Minuta 40-50:  Udar po uverennosti (TEN — bolshaya, bystraya, sleva)
+//   Minuta 40-50:  Udar po uverennosti (TEN â€” bolshaya, bystraya, sleva)
 //   Minuta 50-70:  Ostorozhnost (igrok dvigaetsya inache)
 //   Minuta 70-90:  Malenkaya pobeda (nashel modul)
 //   Minuta 90-120: Predvkushenie (gul priblizhaetsya)
 //
 // MEHANIKA:
-//   • Otslezhivaet vremya sessii i progress.
-//   • Publikuet sobytiya dlya Director AI i narrativnyh sistem.
-//   • Odnorazovye sobytiya (ne povtoryayutsya posle pervogo raza).
-//   • ISaveable: sohranyaet progress pervogo chasa.
+//   â€¢ Otslezhivaet vremya sessii i progress.
+//   â€¢ Publikuet sobytiya dlya Director AI i narrativnyh sistem.
+//   â€¢ Odnorazovye sobytiya (ne povtoryayutsya posle pervogo raza).
+//   â€¢ ISaveable: sohranyaet progress pervogo chasa.
 //
 // ZERO GC:
-//   • Bitovaya maska dlya otslezhivaniya vypolnennyh sobytiy.
-//   • ISlowTickable.
+//   â€¢ Bitovaya maska dlya otslezhivaniya vypolnennyh sobytiy.
+//   â€¢ ISlowTickable.
 // ============================================================================
 
 using System;
@@ -334,7 +334,7 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<FirstHourEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] — deferred first-hour milestone lane flushed by SystemDispatcher LateUpdate — owner: FirstHourEvents
+                _pendingEvents = new NativeQueue<FirstHourEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] â€” deferred first-hour milestone lane flushed by SystemDispatcher LateUpdate â€” owner: FirstHourEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -346,7 +346,7 @@ namespace Hecton8.Gameplay
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<FirstHourEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] — next-frame first-hour milestone lane prevents same-frame reentrant dispatch — owner: FirstHourEvents
+                _nextFrameEvents = new NativeQueue<FirstHourEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] â€” next-frame first-hour milestone lane prevents same-frame reentrant dispatch â€” owner: FirstHourEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -389,7 +389,7 @@ namespace Hecton8.Gameplay
         private static void LogListenerDispatchException(Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogException(exception);
+            Hecton8.Core.H8Debug.LogException(exception);
 #endif
         }
 
@@ -761,7 +761,7 @@ namespace Hecton8.Gameplay
         private BiomeMatrixDirector _biomeMatrixDirector;
         private IQuestSystem _cachedQuestManager;
         private IAtlasSignalReadModel _cachedAtlasSignalSystem;
-        private EmergencyServiceRelayDirector _cachedEmergencyRelayDirector;
+        private IEmergencyRelayRouteReadModel _cachedEmergencyRelayDirector;
         private IAudioLogRuntime _cachedAudioLogSystem;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private ILocalizationTextReadModel _cachedLocalization;
@@ -769,6 +769,7 @@ namespace Hecton8.Gameplay
         private bool _lastContextResourceCompleted;
         private bool _lastContextDepthCompleted;
         private bool _lastContextLoreContact;
+        private uint _lastServiceRelayGuidanceHash;
         private HectonSurvivalSystem _survivalSystem;
         private uint _firstModuleZoneDiscoveryHash;
         private uint _arrivalQuestHash;
@@ -884,6 +885,7 @@ namespace Hecton8.Gameplay
             _lastContextResourceCompleted = false;
             _lastContextDepthCompleted = false;
             _lastContextLoreContact = false;
+            _lastServiceRelayGuidanceHash = 0u;
         }
 
         private void OnDestroy()
@@ -975,7 +977,7 @@ namespace Hecton8.Gameplay
                     _cachedAtlasSignalSystem = currentService as IAtlasSignalReadModel;
                     break;
                 case GlobalRegistryServiceSlot.EmergencyRelayRuntime:
-                    _cachedEmergencyRelayDirector = currentService as EmergencyServiceRelayDirector;
+                    _cachedEmergencyRelayDirector = currentService as IEmergencyRelayRouteReadModel;
                     break;
                 case GlobalRegistryServiceSlot.AudioLogRuntime:
                     _cachedAudioLogSystem = currentService as IAudioLogRuntime;
@@ -998,11 +1000,11 @@ namespace Hecton8.Gameplay
         {
             _cachedQuestManager = GlobalRegistry.QuestSystem;
             _cachedAtlasSignalSystem = Hecton8.Core.GlobalRegistry.AtlasSignalReadModel;
-            _cachedEmergencyRelayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelay;
+            _cachedEmergencyRelayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelayReadModel;
             _cachedAudioLogSystem = Hecton8.Core.GlobalRegistry.AudioLogRuntime;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = Hecton8.Core.GlobalRegistry.Save;
         }
 
         private void ClearCachedRuntimeServices()
@@ -1039,7 +1041,7 @@ namespace Hecton8.Gameplay
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = Hecton8.Core.GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;
@@ -1083,7 +1085,7 @@ namespace Hecton8.Gameplay
                 FirstHourMilestone.FirstAnxiety,
                 ShouldTriggerFirstAnxiety(atlasRevealStage));
 
-            // Ten — tolko esli igrok pod vodoy na nuzhnoy glubine
+            // Ten â€” tolko esli igrok pod vodoy na nuzhnoy glubine
             CheckMilestone(FirstHourMilestone.TheShadow,
                 _sessionTime >= shadowTime && depth >= shadowMinDepth);
 
@@ -1137,7 +1139,7 @@ namespace Hecton8.Gameplay
                     break;
 
                 case FirstHourMilestone.TheShadow:
-                    // TEN — bolshaya, bystraya, sleva
+                    // TEN â€” bolshaya, bystraya, sleva
                     // Director AI poluchaet narrative bonus (snizhenie tension posle straha)
                     NarrativeEvents.TryRaiseDiscoveryMade(_shadowEventDiscoveryHash);
                     break;
@@ -1172,7 +1174,7 @@ namespace Hecton8.Gameplay
                 CheckMilestone(FirstHourMilestone.FirstModule, true);
             }
 
-            EmergencyServiceRelayDirector relayDirector = _cachedEmergencyRelayDirector;
+            IEmergencyRelayRouteReadModel relayDirector = _cachedEmergencyRelayDirector;
             if (relayDirector != null && relayDirector.IsRelayDiscoveryHash(payload.DiscoveryHash))
                 _hasLoreRouteContact = true;
         }
@@ -1284,7 +1286,7 @@ namespace Hecton8.Gameplay
             if (audioLogSystem != null && audioLogSystem.DiscoveredAudioLogCount > 0)
                 _hasLoreRouteContact = true;
 
-            EmergencyServiceRelayDirector relayDirector = _cachedEmergencyRelayDirector;
+            IEmergencyRelayRouteReadModel relayDirector = _cachedEmergencyRelayDirector;
             if (relayDirector != null && relayDirector.HasDiscoveredRelayInDrivenChain())
                 _hasLoreRouteContact = true;
         }
@@ -1340,6 +1342,7 @@ namespace Hecton8.Gameplay
             _lastContextResourceCompleted = false;
             _lastContextDepthCompleted = false;
             _lastContextLoreContact = false;
+            _lastServiceRelayGuidanceHash = 0u;
             SynchronizeContextFromRuntimeSystems();
             SynchronizeAtlasMilestonesFromRuntime();
             SynchronizeEarlyQuestState();
@@ -1592,7 +1595,8 @@ namespace Hecton8.Gameplay
             if (!IsMilestoneComplete(FirstHourMilestone.Orientation))
                 return;
 
-            if (Time.unscaledTime < _nextContextualGuidanceTime)
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (now < _nextContextualGuidanceTime)
                 return;
 
             IQuestSystem questManager = _cachedQuestManager;
@@ -1645,14 +1649,26 @@ namespace Hecton8.Gameplay
 
         private bool TryIssueServiceRelayGuidance()
         {
-            EmergencyServiceRelayDirector relayDirector = _cachedEmergencyRelayDirector;
-            if (relayDirector == null ||
-                !relayDirector.TryBuildContextualGuidanceMessageSpan(out ReadOnlySpan<char> relayMessage))
+            IEmergencyRelayRouteReadModel relayDirector = _cachedEmergencyRelayDirector;
+            if (relayDirector == null)
             {
                 return false;
             }
 
+            uint relayHash = 0u;
+            if (relayDirector.TryReadActiveRouteTarget(out EmergencyRelayRouteTargetSnapshot routeTarget))
+            {
+                relayHash = routeTarget.RelayHash;
+                if (relayHash != 0u && _lastServiceRelayGuidanceHash == relayHash)
+                    return false;
+            }
+
+            if (!relayDirector.TryBuildContextualGuidanceMessageSpan(out ReadOnlySpan<char> relayMessage))
+                return false;
+
             PublishContextualInfo(relayMessage);
+            if (relayHash != 0u)
+                _lastServiceRelayGuidanceHash = relayHash;
             return true;
         }
 
@@ -1790,7 +1806,8 @@ namespace Hecton8.Gameplay
                 return;
 
             NotificationEvents.TryPushInfo(message);
-            _nextContextualGuidanceTime = Time.unscaledTime + math.max(0f, contextualGuidanceCooldown);
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            _nextContextualGuidanceTime = now + math.max(0f, contextualGuidanceCooldown);
         }
 
         private HectonBiomeMatrixProfile ResolveCurrentBiomeProfile(WorldZoneAnchor currentZone)

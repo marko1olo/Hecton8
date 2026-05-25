@@ -9,8 +9,8 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Inventory;
 using Hecton8.Items;
-using Hecton8.Physics;
 using Hecton8.Gameplay;
+using BuoyancyObject = Hecton8.Physics.BuoyancyObject;
 
 namespace Hecton8.Interaction
 {
@@ -20,7 +20,7 @@ namespace Hecton8.Interaction
 
     [RequireComponent(typeof(InteractionHighlighter))]
     [RequireComponent(typeof(Collider))]
-    public class PickupItem : MonoBehaviour, IInteractable, IInteractableTextProvider, ISlowTickable, IFixedTickable, IInventoryPickupSource, IInventoryPickupPreviewSource, IInteractionVulnerabilitySource, IFaunaBaitSource, Hecton8.Physics.IPhysicsImpactMaterialProvider
+    public class PickupItem : MonoBehaviour, IInteractable, IInteractableTextProvider, ISlowTickable, IFixedTickable, IInventoryPickupSource, IInventoryPickupPreviewSource, IInteractionVulnerabilitySource, IFaunaBaitSource, Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider
     {
         private static int s_x001PickupItemSignalPushDropCount;
         private const int WorldStateRegistryCapacity = 8192;
@@ -31,6 +31,8 @@ namespace Hecton8.Interaction
         private static IPlayerRuntimeContext s_playerRuntimeContext;
         private static IPlayerInventoryService s_playerInventoryService;
         private static IPhysicsService s_physicsService;
+        private static IPhysicsStateEventService s_physicsStateEvents;
+        private static IAmbientCurrentReadModel s_ambientCurrentReadModel;
         private static IObjectPoolService s_objectPool;
         private static readonly StaticRegistryHotSwapListener s_hotSwapListener = new StaticRegistryHotSwapListener();
         private static bool s_hotSwapListenerRegistered;
@@ -43,6 +45,8 @@ namespace Hecton8.Interaction
             s_playerRuntimeContext = null;
             s_playerInventoryService = null;
             s_physicsService = null;
+            s_physicsStateEvents = null;
+            s_ambientCurrentReadModel = null;
             s_objectPool = null;
             s_hotSwapListenerRegistered = false;
         }
@@ -296,7 +300,7 @@ namespace Hecton8.Interaction
             TryRegisterFixedTick();
 
             if (_rigidbody != null && !_rigidbody.isKinematic)
-                GlobalPhysicsStateManager.RegisterTrackedBody(_rigidbody);
+                s_physicsStateEvents?.RegisterBodyStateTracking(_rigidbody);
         }
 
         private void Start()
@@ -317,7 +321,7 @@ namespace Hecton8.Interaction
             RestoreDamping();
             RestoreLootMagnetRuntimeState();
             if (_rigidbody != null)
-                GlobalPhysicsStateManager.UnregisterTrackedBody(_rigidbody);
+                s_physicsStateEvents?.UnregisterBodyStateTracking(_rigidbody);
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -332,7 +336,7 @@ namespace Hecton8.Interaction
             UnregisterWorldStateRegistry();
             RestoreLootMagnetRuntimeState();
             if (_rigidbody != null)
-                GlobalPhysicsStateManager.UnregisterTrackedBody(_rigidbody);
+                s_physicsStateEvents?.UnregisterBodyStateTracking(_rigidbody);
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -369,9 +373,13 @@ namespace Hecton8.Interaction
 
             ApplyUnderwaterDamping();
 
-            Vector3 sampledCurrent = CurrentVolume.SampleCombinedCurrent(_rigidbody.worldCenterOfMass);
-            if (!IsFiniteVector(sampledCurrent))
+            IAmbientCurrentReadModel ambientCurrentReadModel = s_ambientCurrentReadModel;
+            if (ambientCurrentReadModel == null ||
+                !ambientCurrentReadModel.TrySampleCombinedCurrent(_rigidbody.worldCenterOfMass, out Vector3 sampledCurrent) ||
+                !IsFiniteVector(sampledCurrent))
+            {
                 return;
+            }
 
             if (sampledCurrent.sqrMagnitude <= 0.0001f)
                 return;
@@ -381,14 +389,14 @@ namespace Hecton8.Interaction
                 ? math.min(6f, currentLength) / currentLength
                 : 0f;
             Vector3 velocityChange = sampledCurrent * (currentScale * LooseCurrentVelocityInfluence * fdt);
-            PhysicsForceRouter.QueueAmbientForce(_rigidbody, velocityChange, ForceMode.VelocityChange, wake: false);
+            s_physicsService?.QueueAmbientForce(_rigidbody, velocityChange, ForceMode.VelocityChange, wake: false);
 
             Vector3 spinAxis = Vector3.Cross(Vector3.up, sampledCurrent);
             float spinAxisLength = EstimateLength3D(spinAxis);
             if (spinAxisLength > 0.0001f)
             {
                 float velocityLength = EstimateLength3D(velocityChange);
-                PhysicsForceRouter.QueueAmbientTorque(
+                s_physicsService?.QueueAmbientTorque(
                     _rigidbody,
                     spinAxis * ((LooseCurrentSpinInfluence * velocityLength) / spinAxisLength),
                     ForceMode.VelocityChange,
@@ -876,6 +884,8 @@ namespace Hecton8.Interaction
             s_playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
             s_playerInventoryService = Hecton8.Core.GlobalRegistry.PlayerInventory;
             s_physicsService = Hecton8.Core.GlobalRegistry.Physics;
+            s_physicsStateEvents = Hecton8.Core.GlobalRegistry.PhysicsStateEvents;
+            s_ambientCurrentReadModel = Hecton8.Core.GlobalRegistry.AmbientCurrent;
             s_objectPool = Hecton8.Core.GlobalRegistry.ObjectPoolService;
             TryRegisterStaticHotSwapListener();
             RefreshCachedPlayerMovement();
@@ -906,6 +916,12 @@ namespace Hecton8.Interaction
                         break;
                     case GlobalRegistryServiceSlot.Physics:
                         s_physicsService = currentService as IPhysicsService;
+                        break;
+                    case GlobalRegistryServiceSlot.PhysicsStateManager:
+                        s_physicsStateEvents = currentService as IPhysicsStateEventService;
+                        break;
+                    case GlobalRegistryServiceSlot.FluidRuntime:
+                        s_ambientCurrentReadModel = currentService as IAmbientCurrentReadModel;
                         break;
                     case GlobalRegistryServiceSlot.ObjectPool:
                         s_objectPool = currentService as IObjectPoolService;

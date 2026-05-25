@@ -5,7 +5,6 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
-using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -352,6 +351,7 @@ namespace Hecton8.Gameplay
         private static float _requestedVisualQualityWeight01 = 1f;
         private static float _visualQualityWeight01 = 1f;
         private static IDataVault _combatDataVault;
+        private static IPhysicsService _physicsService;
         private static bool _combatHotSwapRegistered;
         private static bool _combatDataVaultColdCacheAttempted;
         private static readonly CombatRegistryHotSwapBridge _combatHotSwapBridge = new CombatRegistryHotSwapBridge();
@@ -406,6 +406,7 @@ namespace Hecton8.Gameplay
             if (!_combatDataVaultColdCacheAttempted)
             {
                 ApplyCombatDataVaultRebind(null, GlobalRegistry.DataVault);
+                _physicsService = GlobalRegistry.Physics;
                 _combatDataVaultColdCacheAttempted = true;
             }
         }
@@ -417,6 +418,7 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.TryUnregisterHotSwapListener(_combatHotSwapBridge);
             _combatHotSwapRegistered = false;
+            _physicsService = null;
         }
 
         public static void Prewarm()
@@ -438,6 +440,12 @@ namespace Hecton8.Gameplay
                 object previousService,
                 object currentService)
             {
+                if (serviceSlot == GlobalRegistryServiceSlot.Physics)
+                {
+                    _physicsService = currentService as IPhysicsService;
+                    return;
+                }
+
                 if (serviceSlot != GlobalRegistryServiceSlot.DataVault)
                     return;
 
@@ -1587,7 +1595,7 @@ namespace Hecton8.Gameplay
 
             Vector3 force = new Vector3(pushDirection.x, pushDirection.y, pushDirection.z) *
                             math.max(0f, result.AppliedDamage) * 10f;
-            PhysicsForceRouter.QueueForce(body, force, ForceMode.Impulse);
+            _physicsService?.QueueForce(body, force, ForceMode.Impulse);
         }
 
         private static void TryEmitEntityDeathSignal(in CombatDamageResult result, int slot)
@@ -2052,9 +2060,9 @@ namespace Hecton8.Gameplay
             [WriteOnly, NoAlias] public NativeArray<CombatDamageResult> Results;
             [NoAlias]
             public NativeArray<int> Counters;
-            public NativeQueue<DeflectSignal>.ParallelWriter DeflectSignalWriter;
+            public global::Hecton8.Core.MpscSignalRingBuffer<DeflectSignal>.ParallelWriter DeflectSignalWriter;
             [NativeDisableParallelForRestriction] public NativeArray<int> DeflectSignalWriterBudget;
-            public NativeQueue<ImpactSignal>.ParallelWriter ImpactSignalWriter;
+            public global::Hecton8.Core.MpscSignalRingBuffer<ImpactSignal>.ParallelWriter ImpactSignalWriter;
             [NativeDisableParallelForRestriction] public NativeArray<int> ImpactSignalWriterBudget;
             public int SignalBudget;
             public float VisualQualityWeight01;

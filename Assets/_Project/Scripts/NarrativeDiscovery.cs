@@ -216,7 +216,7 @@ namespace Hecton8.Interaction
             if (!HasValidDiscoveryId)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[Narrative] Missing discoveryId. Interaction ignored.");
+                Hecton8.Core.H8Debug.LogWarning("[Narrative] Missing discoveryId. Interaction ignored.");
 #endif
                 return;
             }

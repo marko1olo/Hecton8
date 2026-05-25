@@ -69,11 +69,16 @@ namespace Hecton8.AI.Cognition
         [FieldOffset(12)] public uint Flags;
         [FieldOffset(16)] public uint StateHash;
         [FieldOffset(20)] public uint EntityHash;
-        [FieldOffset(24)] private ulong _pad0;
-        [FieldOffset(32)] private ulong _pad1;
-        [FieldOffset(40)] private ulong _pad2;
-        [FieldOffset(48)] private ulong _pad3;
-        [FieldOffset(56)] private ulong _pad4;
+        [FieldOffset(24)] private uint _pad0;
+        [FieldOffset(28)] private uint _pad1;
+        [FieldOffset(32)] private uint _pad2;
+        [FieldOffset(36)] private uint _pad3;
+        [FieldOffset(40)] private uint _pad4;
+        [FieldOffset(44)] private uint _pad5;
+        [FieldOffset(48)] private uint _pad6;
+        [FieldOffset(52)] private uint _pad7;
+        [FieldOffset(56)] private uint _pad8;
+        [FieldOffset(60)] private uint _pad9;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -93,7 +98,8 @@ namespace Hecton8.AI.Cognition
         [FieldOffset(44)] public float ThermalPressure01;
         [FieldOffset(48)] public uint StateHashFold;
         [FieldOffset(52)] public uint ProfileHashFold;
-        [FieldOffset(56)] private ulong _pad0;
+        [FieldOffset(56)] private uint _pad0;
+        [FieldOffset(60)] private uint _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -119,7 +125,8 @@ namespace Hecton8.AI.Cognition
         [FieldOffset(44)] public float SdfRangeMeters;
         [FieldOffset(48)] public uint Version;
         [FieldOffset(52)] public uint Flags;
-        [FieldOffset(56)] private ulong _pad0;
+        [FieldOffset(56)] private uint _pad0;
+        [FieldOffset(60)] private uint _pad1;
     }
 
     public static class AnxietyDecayDefaults

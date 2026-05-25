@@ -794,7 +794,7 @@ namespace Hecton8.UI
         private static int AppendPercentValue(char[] destination, int cursor, int percent)
         {
             int safeCursor = math.clamp(cursor, 0, destination.Length);
-            Span<char> writableSpan = new Span<char>(destination, safeCursor, destination.Length - safeCursor);
+            Span<char> writableSpan = destination.AsSpan(safeCursor, destination.Length - safeCursor);
             if (!percent.TryFormat(writableSpan, out int written))
                 return safeCursor;
 
@@ -808,7 +808,7 @@ namespace Hecton8.UI
         private static int AppendInt(char[] destination, int cursor, int value)
         {
             int safeCursor = math.clamp(cursor, 0, destination.Length);
-            Span<char> writableSpan = new Span<char>(destination, safeCursor, destination.Length - safeCursor);
+            Span<char> writableSpan = destination.AsSpan(safeCursor, destination.Length - safeCursor);
             if (!value.TryFormat(writableSpan, out int written))
                 return safeCursor;
 

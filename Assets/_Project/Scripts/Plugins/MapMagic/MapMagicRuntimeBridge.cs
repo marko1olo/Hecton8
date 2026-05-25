@@ -174,7 +174,7 @@ namespace Hecton8.Core
         private bool _registeredToLateFrameTickManager;
         private bool _registeredMapMagicRuntime;
         private bool _hotSwapRegistered;
-        private bool _pendingPlanetaryCanvasShaderGlobals;
+        private bool _pendingPlanetaryTerrainShaderGlobals;
         private bool _pendingRuntimeMapMagicGenerationFence;
 
         /// <summary>
@@ -438,7 +438,7 @@ namespace Hecton8.Core
             RefreshSceneBindingsIfNeeded(force: false);
             RefreshTerrainTileCache(force: false);
             DetectAndPublishBiome();
-            QueuePlanetaryCanvasShaderGlobals();
+            QueuePlanetaryTerrainShaderGlobals();
         }
 
         public void LateFrameTick()
@@ -449,20 +449,20 @@ namespace Hecton8.Core
                 FenceRuntimeMapMagicGenerationImmediate();
             }
 
-            if (_pendingPlanetaryCanvasShaderGlobals)
+            if (_pendingPlanetaryTerrainShaderGlobals)
             {
-                _pendingPlanetaryCanvasShaderGlobals = false;
-                PublishPlanetaryCanvasShaderGlobals();
+                _pendingPlanetaryTerrainShaderGlobals = false;
+                PublishPlanetaryTerrainShaderGlobals();
             }
         }
 
-        private void QueuePlanetaryCanvasShaderGlobals()
+        private void QueuePlanetaryTerrainShaderGlobals()
         {
-            _pendingPlanetaryCanvasShaderGlobals = true;
+            _pendingPlanetaryTerrainShaderGlobals = true;
             TryRegisterToLateFrameTickManager();
         }
 
-        private void PublishPlanetaryCanvasShaderGlobals()
+        private void PublishPlanetaryTerrainShaderGlobals()
         {
             if (!enablePlanetaryCanvasTerrainFade)
             {
@@ -618,7 +618,7 @@ namespace Hecton8.Core
             long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - solveStartTicks;
             float elapsedMilliseconds = (float)(elapsedTicks * 1000.0d / System.Diagnostics.Stopwatch.Frequency);
             if (elapsedMilliseconds <= DistantTerrainShadowSolveBudgetWarningMilliseconds ||
-                Time.frameCount < _nextDistantTerrainShadowPerformanceWarningFrame)
+                SystemDispatcher.CurrentFrameIndex < _nextDistantTerrainShadowPerformanceWarningFrame)
             {
                 return;
             }
@@ -628,7 +628,7 @@ namespace Hecton8.Core
                 _MapMagicBridgeTelemetryContextHash,
                 elapsedMilliseconds);
             _nextDistantTerrainShadowPerformanceWarningFrame =
-                Time.frameCount + DistantTerrainShadowPerformanceWarningCooldownFrames;
+                SystemDispatcher.CurrentFrameIndex + DistantTerrainShadowPerformanceWarningCooldownFrames;
         }
 
         private void EnsureDistantTerrainShadowMaskCapacity(int resolution)
@@ -2555,7 +2555,7 @@ namespace Hecton8.Core
 
             _loggedMissingMapMagicBinding = true;
 #if UNITY_EDITOR
-            Debug.LogError(
+            Hecton8.Core.H8Debug.LogError(
                 "[MapMagicBridge] Missing MapMagicObject binding. Assign it explicitly or place MapMagicBridge on the same GameObject as MapMagicObject. Runtime scene-wide fallback search is forbidden.",
                 this);
 #endif

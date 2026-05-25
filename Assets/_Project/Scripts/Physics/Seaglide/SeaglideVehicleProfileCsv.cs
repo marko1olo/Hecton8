@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Core.Contracts.Physics;
 using Unity.Mathematics;
 
 namespace Hecton8.Physics

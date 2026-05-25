@@ -139,11 +139,11 @@ namespace Hecton8.Equipment.Auxiliary
         // SAFETY_JUSTIFICATION_PARAGRAPH_1: AuxiliaryEquipmentRouterRuntime schedules UpdateDeployedAuxiliaryJob with IJobParallelFor.Schedule, chains it into _pendingHandle through StageAuxiliaryVFXJob, and registers the combined handle through H8Memory.RegisterActiveJob(SystemID.GameplayTools, _pendingHandle).
         // SAFETY_JUSTIFICATION_PARAGRAPH_2: These fields are SignalBus ParallelWriter producer lanes only; each Execute index appends independent signal records and never reads or aliases queue storage, deployment buffers, state buffers, tether buffers, or VFX buffers.
         // SAFETY_JUSTIFICATION_PARAGRAPH_3: LateFrameTick finalizes _pendingHandle through DispatcherJobFence.TryFinalizeCompleted before buffer unlock/readback, and teardown uses the forced dispatcher fence before releasing Vault handles, so queue writers cannot outlive the scheduled producer window.
-        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<AuxiliaryFlareLightSignal>.ParallelWriter FlareWriter;
+        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<AuxiliaryFlareLightSignal>.ParallelWriter FlareWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> FlareWriterBudget;
-        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<AuxiliarySonarRequestSignal>.ParallelWriter SonarWriter;
+        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<AuxiliarySonarRequestSignal>.ParallelWriter SonarWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> SonarWriterBudget;
-        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<AuxiliaryTetherConnectionSignal>.ParallelWriter TetherWriter;
+        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<AuxiliaryTetherConnectionSignal>.ParallelWriter TetherWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> TetherWriterBudget;
         public AuxiliaryTuningDTO Tuning;
         public uint FrameIndex;

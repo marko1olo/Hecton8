@@ -15,7 +15,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BoxCollider))]
     [AddComponentMenu("Hecton8/UI/Physical Panel Button")]
-    public sealed class PhysicalPanelButton : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IInteractionSignalConsumer, IPhysicalPanelButtonReceiver, IGlobalRegistryHotSwapListener
+    public sealed class PhysicalPanelButton : MonoBehaviour, ILateFrameTickable, IInteractionSignalConsumer, IPhysicalPanelButtonReceiver, IGlobalRegistryHotSwapListener
     {
         private const uint PhysicalPanelToolId = 0x50414E4Cu;
         private const byte LeftMotorMask = 0b0001;
@@ -125,8 +125,10 @@ namespace Hecton8.UI
         private bool _acousticRuntimeAcquired;
         private bool _buttonVisualDirty;
         private bool _pendingPressHaptic;
+        private bool _pendingClickAudio;
         private float _pendingVisualPressed01;
         private byte _pendingPressHapticMask;
+        private Vector3 _pendingClickRuntimeHitPoint;
         private Collider _registeredActivationVolume;
 
         /// <summary>Collider volume used by the physical hand overlap probe.</summary>
@@ -193,7 +195,7 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float dt)
+        private void AdvanceButtonPresentation(float dt)
         {
             float safeDeltaTime = SanitizeButtonDeltaSeconds(dt);
             _buttonClock += safeDeltaTime;
@@ -232,6 +234,8 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            AdvanceButtonPresentation(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (_buttonVisualDirty)
             {
                 _buttonVisualDirty = false;
@@ -250,7 +254,13 @@ namespace Hecton8.UI
                     _pendingPressHapticMask);
             }
 
-            if (_registeredLateFrame && !_registered && !_buttonVisualDirty && !_pendingPressHaptic)
+            if (_pendingClickAudio)
+            {
+                _pendingClickAudio = false;
+                PlayDiegeticClick(_pendingClickRuntimeHitPoint);
+            }
+
+            if (_registeredLateFrame && !_registered && !_buttonVisualDirty && !_pendingPressHaptic && !_pendingClickAudio)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
@@ -399,7 +409,7 @@ namespace Hecton8.UI
             if (!_pressDispatched)
             {
                 DispatchPanelEvent(DiegeticPanelInputEventType.Down);
-                PlayDiegeticClick(runtimeHitPoint);
+                QueueDiegeticClick(runtimeHitPoint);
                 _pressDispatched = true;
                 _holdEventRemaining = HoldDispatchIntervalSeconds;
                 TryRegister();
@@ -413,6 +423,13 @@ namespace Hecton8.UI
 
             _pendingPressHapticMask = ResolveHapticMotorMask(handSourceCollider, fallbackHandSide);
             _pendingPressHaptic = true;
+            TryRegister();
+        }
+
+        private void QueueDiegeticClick(Vector3 runtimeHitPoint)
+        {
+            _pendingClickRuntimeHitPoint = runtimeHitPoint;
+            _pendingClickAudio = true;
             TryRegister();
         }
 
@@ -613,8 +630,8 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedAudioService = GlobalRegistry.Audio;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private void TryRegisterHotSwapListener()
@@ -755,9 +772,11 @@ namespace Hecton8.UI
                 return;
 
             if (!_registered)
-                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+                _registered = true;
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            if (!_registeredLateFrame)
+                _registered = false;
         }
 
         private void RefreshTickRegistration(bool handInside)
@@ -783,11 +802,10 @@ namespace Hecton8.UI
         {
             if (_registered)
             {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
                 _registered = false;
             }
 
-            if (_registeredLateFrame && (forceLateFrame || (!_buttonVisualDirty && !_pendingPressHaptic)))
+            if (_registeredLateFrame && (forceLateFrame || (!_buttonVisualDirty && !_pendingPressHaptic && !_pendingClickAudio)))
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredLateFrame = false;

@@ -24,7 +24,7 @@ namespace Hecton8.World
                 return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[CrestFoamDebugger] Disabled in Core. Crest probes must live in Hecton8.Plugins.");
+            Hecton8.Core.H8Debug.LogWarning("[CrestFoamDebugger] Disabled in Core. Crest probes must live in Hecton8.Plugins.");
 #endif
         }
     }

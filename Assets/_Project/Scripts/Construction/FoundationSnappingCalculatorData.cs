@@ -836,27 +836,23 @@ namespace Hecton8.Construction
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveRayBudget(FoundationTuningDTO tuning)
         {
-            float quality = SanitizeQuality(tuning.GlobalQualityWeight);
             int min = math.clamp(tuning.MinRaysPerModule, 1, MaxRaysPerModule);
             int max = math.clamp(tuning.MaxRaysPerModule, min, MaxRaysPerModule);
-            float density = math.smoothstep(0.18f, 1f, quality);
-            return math.lerp(min, max, density);
+            return max;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int ResolveMarchSteps(FoundationTuningDTO tuning)
         {
-            float quality = SanitizeQuality(tuning.GlobalQualityWeight);
             int low = math.clamp(tuning.MaxMarchStepsLow, 1, 512);
             int high = math.max(low, math.clamp(tuning.MaxMarchStepsUltra, 1, 512));
-            return math.clamp((int)math.round(math.lerp(low, high, quality)), low, high);
+            return high;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float ResolveSdfInterpolationWeight(FoundationTuningDTO tuning)
         {
-            float quality = SanitizeQuality(tuning.GlobalQualityWeight);
-            return math.smoothstep(0.3f, 0.55f, quality);
+            return 1f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

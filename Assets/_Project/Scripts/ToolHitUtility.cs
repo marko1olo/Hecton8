@@ -610,12 +610,12 @@ namespace Hecton8.Gameplay
 
         private static void LogToolWarning(string message)
         {
-            Debug.LogWarning($"[ToolWarning] {message}");
+            Hecton8.Core.H8Debug.LogWarning($"[ToolWarning] {message}");
         }
 
         private static void LogToolWarning(in FixedCharBuffer messageBuffer)
         {
-            Debug.LogWarning($"[ToolWarning] {messageBuffer.ToString()}");
+            Hecton8.Core.H8Debug.LogWarning($"[ToolWarning] {messageBuffer.ToString()}");
         }
 #else
         private static void LogToolInfo(string message) { }

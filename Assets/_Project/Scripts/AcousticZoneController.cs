@@ -16,13 +16,13 @@
 //     BaseInteriorSnapshot: clear mids, small metallic reverb, machine hum.
 //
 // INTEGRATION:
-//   - Reads BuoyancyObject.IsInAir through a cached reference.
+//   - Reads buoyancy air/dry-zone state through IBuoyancyAirStateReadModel.
 //   - IsInAir = true: player is inside a dry module.
 //   - IsInAir = false: player is in water.
 //   - Lazily resolves the player through GameBootstrapper.
 //
 // TRANSITION FLOW:
-//   FixedTick: BuoyancyObject.IsInAir changes
+//   FixedTick: IBuoyancyAirStateReadModel state changes
 //     -> Tick: AcousticZoneController detects edge
 //       -> snapshot.TransitionTo(transitionDuration)
 //       -> SpatialAudioManager.PlayStatic2D(transitionClip)
@@ -46,15 +46,16 @@ using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Hecton8.Visor;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Audio;
+using BuoyancyObject = global::Hecton8.Physics.BuoyancyObject;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -374,6 +375,7 @@ namespace Hecton8.Audio
         [Tooltip("Player BuoyancyObject. If unassigned, it is resolved from the Player tag during startup.")]
 
         [SerializeField] private BuoyancyObject playerBuoyancy; // player acoustic owner ref
+        private IBuoyancyAirStateReadModel _playerBuoyancyState;
 
         [Header("Underwater Vegetation Overlay")]
         [Tooltip("Optional 2D ambient pulse used when underwater audio moves through dense sargassum fields.")]
@@ -632,6 +634,7 @@ namespace Hecton8.Audio
         private bool _hotSwapListenerRegistered;
         private IAudioService _cachedAudioService;
         private ISpatialAudioWorldEmitterReadModel _cachedSpatialAudioEmitterReadModel;
+        private IPhysicsStateEventService _physicsStateEvents;
         private int _nextAudioServiceResolveFrame;
         private float _nextPlayerResolveTime;
         private const float PlayerResolveRetryInterval = 1f;
@@ -641,6 +644,7 @@ namespace Hecton8.Audio
         private ISoundscapeTierReadModel _cachedSoundscapeReadModel;
         private IAtmosphereReadModel _atmosphereReadModel;
         private HectonPlayerMovement _playerMovement;
+        private bool _physicsImpactRegistered;
         private bool _fallbackUnderwaterState;
         private bool _acousticUnderwaterState;
         private bool _hasPendingExteriorZone;
@@ -820,7 +824,7 @@ namespace Hecton8.Audio
             TryRegisterLateFrameTick();
             AtmosphereEvents.Register(this);
             SoundscapeEvents.Register(this);
-            PhysicsEvents.Register(this);
+            TryRegisterPhysicsImpactListener();
             SpectrumEvents.RegisterSonarPingListener(this);
             _stormInterferencePulseTimer = 0f;
             _stormAmbientInterference = 0f;
@@ -841,6 +845,8 @@ namespace Hecton8.Audio
 
         private void Start()
         {
+            CachePlayerBuoyancyState();
+
             // Lazy player lookup.
             if (playerBuoyancy == null)
             {
@@ -856,7 +862,7 @@ namespace Hecton8.Audio
             if (!_registeredToTickManager)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError(
+                Hecton8.Core.H8Debug.LogError(
                     "[AcousticZoneController] GameTickManager not found at Start(). " +
                     "Acoustic transitions will NOT work.", this);
 #endif
@@ -878,7 +884,7 @@ namespace Hecton8.Audio
         {
             AtmosphereEvents.Unregister(this);
             SoundscapeEvents.Unregister(this);
-            PhysicsEvents.Unregister(this);
+            TryUnregisterPhysicsImpactListener();
             SpectrumEvents.UnregisterSonarPingListener(this);
             _stormInterferencePulseTimer = 0f;
             _stormAmbientInterference = 0f;
@@ -904,7 +910,7 @@ namespace Hecton8.Audio
             TryUnregisterService();
             AtmosphereEvents.Unregister(this);
             SoundscapeEvents.Unregister(this);
-            PhysicsEvents.Unregister(this);
+            TryUnregisterPhysicsImpactListener();
             SpectrumEvents.UnregisterSonarPingListener(this);
             ResetSourceLevelAcousticFallback();
             TryUnregisterHotSwapListener();
@@ -931,6 +937,9 @@ namespace Hecton8.Audio
                 case GlobalRegistryServiceSlot.AtmosphereRuntime:
                     _atmosphereReadModel = currentService as IAtmosphereReadModel;
                     RefreshAtmosphereZoneCache();
+                    break;
+                case GlobalRegistryServiceSlot.PhysicsStateManager:
+                    RebindPhysicsStateEventService(currentService as IPhysicsStateEventService);
                     break;
             }
         }
@@ -1033,6 +1042,7 @@ namespace Hecton8.Audio
         {
             _cachedAudioService = null;
             _cachedSpatialAudioEmitterReadModel = null;
+            _physicsStateEvents = null;
             _cachedSoundscapeReadModel = null;
             _atmosphereReadModel = null;
             _nextAudioServiceResolveFrame = 0;
@@ -1040,9 +1050,10 @@ namespace Hecton8.Audio
 
         private void CacheRegistryServicesCold()
         {
-            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
+            CacheAudioService(GlobalRegistry.Audio);
             CacheSoundscapeReadModel(GlobalRegistry.SoundscapeTierReadModel);
             _atmosphereReadModel = GlobalRegistry.AtmosphereReadModel;
+            _physicsStateEvents = GlobalRegistry.PhysicsStateEvents;
         }
 
         private void CacheAudioService(IAudioService audioService)
@@ -1073,6 +1084,45 @@ namespace Hecton8.Audio
 
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
+        }
+
+        private void TryRegisterPhysicsImpactListener()
+        {
+            if (_physicsImpactRegistered)
+                return;
+
+            RebindPhysicsStateEventService(_physicsStateEvents ?? GlobalRegistry.PhysicsStateEvents);
+        }
+
+        private void TryUnregisterPhysicsImpactListener()
+        {
+            if (!_physicsImpactRegistered)
+            {
+                _physicsStateEvents = null;
+                return;
+            }
+
+            _physicsStateEvents?.UnregisterImpactListener(this);
+            _physicsStateEvents = null;
+            _physicsImpactRegistered = false;
+        }
+
+        private void RebindPhysicsStateEventService(IPhysicsStateEventService physicsStateEvents)
+        {
+            if (ReferenceEquals(_physicsStateEvents, physicsStateEvents) && _physicsImpactRegistered)
+                return;
+
+            if (_physicsImpactRegistered)
+                _physicsStateEvents?.UnregisterImpactListener(this);
+
+            _physicsStateEvents = physicsStateEvents;
+            _physicsImpactRegistered = false;
+
+            if (_physicsStateEvents == null || !isActiveAndEnabled)
+                return;
+
+            _physicsStateEvents.RegisterImpactListener(this);
+            _physicsImpactRegistered = true;
         }
 
         private IAudioService ResolveAudioService()
@@ -1108,13 +1158,17 @@ namespace Hecton8.Audio
             {
                 FindPlayerBuoyancy(false);
                 if (playerBuoyancy == null)
+                {
+                    _playerBuoyancyState = null;
                     return; // Player not found yet.
+                }
             }
 
             // Unity destroyed-object check.
             if ((object)playerBuoyancy == null || playerBuoyancy == null)
             {
                 playerBuoyancy = null;
+                _playerBuoyancyState = null;
                 return;
             }
 
@@ -1148,7 +1202,7 @@ namespace Hecton8.Audio
 
             _lastZone = currentZone;
             if (currentZone != AcousticZoneState.Interior)
-                _nextExteriorTransitionAllowedTime = Time.unscaledTime + exteriorTransitionHoldTime;
+                _nextExteriorTransitionAllowedTime = ResolvePresentationClockSeconds() + exteriorTransitionHoldTime;
 
             ApplyZoneTransition(currentZone);
 
@@ -1273,7 +1327,7 @@ namespace Hecton8.Audio
 
         public void PlayMadnessWhisperCue()
         {
-            if (Time.unscaledTime < _nextMadnessWhisperTime)
+            if (ResolvePresentationClockSeconds() < _nextMadnessWhisperTime)
                 return;
 
             AudioClip clip = stormStaticPrimary;
@@ -1284,7 +1338,7 @@ namespace Hecton8.Audio
                 return;
 
             QueueMadnessWhisperCue(clip, madnessWhisperVolume);
-            _nextMadnessWhisperTime = Time.unscaledTime + math.max(0.1f, madnessWhisperCooldown);
+            _nextMadnessWhisperTime = ResolvePresentationClockSeconds() + math.max(0.1f, madnessWhisperCooldown);
         }
 
         private AudioMixerSnapshot ResolveSurfaceSnapshot()
@@ -1338,18 +1392,24 @@ namespace Hecton8.Audio
         /// </summary>
         private void FindPlayerBuoyancy(bool force)
         {
-            if (!force && Time.unscaledTime < _nextPlayerResolveTime)
+            if (!force && ResolvePresentationClockSeconds() < _nextPlayerResolveTime)
                 return;
 
-            _nextPlayerResolveTime = Time.unscaledTime + PlayerResolveRetryInterval;
+            _nextPlayerResolveTime = ResolvePresentationClockSeconds() + PlayerResolveRetryInterval;
 
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
             {
                 playerTransform.TryGetComponent(out playerBuoyancy);
                 playerTransform.TryGetComponent(out _playerMovement);
+                CachePlayerBuoyancyState();
             }
 
             UpdatePlayerFoundDiagnostic();
+        }
+
+        private void CachePlayerBuoyancyState()
+        {
+            _playerBuoyancyState = playerBuoyancy as IBuoyancyAirStateReadModel;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1377,7 +1437,7 @@ namespace Hecton8.Audio
             _hasPendingExteriorZone = false;
             _nextExteriorTransitionAllowedTime = forcedZone == AcousticZoneState.Interior
                 ? 0f
-                : Time.unscaledTime + exteriorTransitionHoldTime;
+                : ResolvePresentationClockSeconds() + exteriorTransitionHoldTime;
 
             ApplyZoneTransition(forcedZone);
 
@@ -1392,6 +1452,7 @@ namespace Hecton8.Audio
         public void SetPlayerBuoyancy(BuoyancyObject buoyancy)
         {
             playerBuoyancy = buoyancy;
+            CachePlayerBuoyancyState();
             _playerMovement = null;
             playerUnderwaterAmbientSource = null;
             _cachedPlayerAudioListener = null;
@@ -1445,7 +1506,7 @@ namespace Hecton8.Audio
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void UpdatePlayerFoundDiagnostic()
         {
-            _debugPlayerFound = playerBuoyancy != null;
+            _debugPlayerFound = _playerBuoyancyState != null;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1459,7 +1520,7 @@ namespace Hecton8.Audio
 
         private AcousticZoneState ResolveCurrentZone()
         {
-            if (playerBuoyancy != null && playerBuoyancy.IsInDryZone)
+            if (_playerBuoyancyState != null && _playerBuoyancyState.IsInDryZone)
                 return AcousticZoneState.Interior;
 
             HectonPlayerMovement movement = ResolvePlayerMovement();
@@ -1538,7 +1599,7 @@ namespace Hecton8.Audio
                 return candidateZone;
             }
 
-            float now = Time.unscaledTime;
+            float now = ResolvePresentationClockSeconds();
             if (now < _nextExteriorTransitionAllowedTime)
             {
                 _hasPendingExteriorZone = false;
@@ -1591,7 +1652,7 @@ namespace Hecton8.Audio
             if (biomeMatrixDirector != null)
                 return;
 
-            float currentTime = Time.unscaledTime;
+            float currentTime = ResolvePresentationClockSeconds();
             if (!force && currentTime < _nextBiomeMatrixResolveTime)
                 return;
 
@@ -1607,7 +1668,7 @@ namespace Hecton8.Audio
             if (_cachedSoundscapeReadModel != null)
                 return _cachedSoundscapeReadModel;
 
-            float currentTime = Time.unscaledTime;
+            float currentTime = ResolvePresentationClockSeconds();
             if (!force && currentTime < _nextSoundscapeResolveTime)
                 return null;
 
@@ -1897,7 +1958,7 @@ namespace Hecton8.Audio
                 _nextAmbientSourceHierarchyResolveTime = 0f;
             }
 
-            if (Time.unscaledTime < _nextAmbientSourceHierarchyResolveTime)
+            if (ResolvePresentationClockSeconds() < _nextAmbientSourceHierarchyResolveTime)
                 return;
 
             _playerAudioSources.Clear();
@@ -1926,7 +1987,7 @@ namespace Hecton8.Audio
                 return;
             }
 
-            _nextAmbientSourceHierarchyResolveTime = Time.unscaledTime + AmbientSourceResolveRetryInterval;
+            _nextAmbientSourceHierarchyResolveTime = ResolvePresentationClockSeconds() + AmbientSourceResolveRetryInterval;
         }
 
         private void CacheAmbientSourceDefaults(AudioSource ambientSource)
@@ -3125,9 +3186,14 @@ namespace Hecton8.Audio
             }
         }
 
+        private static float ResolvePresentationClockSeconds()
+        {
+            return (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+        }
+
         private bool IsSnapshotTransitionLocked()
         {
-            return Time.unscaledTime < _snapshotTransitionLockUntilTime;
+            return ResolvePresentationClockSeconds() < _snapshotTransitionLockUntilTime;
         }
 
         private void ArmSnapshotTransitionLock(float duration)
@@ -3135,7 +3201,7 @@ namespace Hecton8.Audio
             if (duration <= 0f)
                 return;
 
-            float unlockTime = Time.unscaledTime + duration;
+            float unlockTime = ResolvePresentationClockSeconds() + duration;
             if (unlockTime > _snapshotTransitionLockUntilTime)
                 _snapshotTransitionLockUntilTime = unlockTime;
         }
@@ -3306,7 +3372,7 @@ namespace Hecton8.Audio
 
             warnedFlag = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning(message, this);
+            Hecton8.Core.H8Debug.LogWarning(message, this);
 #endif
         }
 

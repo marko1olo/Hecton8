@@ -548,7 +548,7 @@ namespace Hecton8.Core.Determinism
         private void RefreshDependenciesFromRegistry()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _player = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _player = GlobalRegistry.Player;
             _habitat = GlobalRegistry.HabitatGraph;
             _dispatcher = GlobalRegistry.Dispatcher;
             RefreshCachedQualityWeight01();
@@ -1939,7 +1939,7 @@ namespace Hecton8.Core.Determinism
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogException(Exception ex)
         {
-            Debug.LogError(ex);
+            Hecton8.Core.H8Debug.LogException(ex);
         }
 
         private void ReplayWriterLoop()

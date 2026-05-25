@@ -89,5 +89,17 @@ namespace Hecton8.Core
         {
             Debug.LogException(exception);
         }
+
+        /// <summary>
+        /// Logs a development-only exception with Unity object context.
+        /// </summary>
+        /// <param name="exception">Exception to expose in development logs.</param>
+        /// <param name="context">Unity object context for editor navigation.</param>
+        [Conditional("UNITY_EDITOR")]
+        [Conditional("DEVELOPMENT_BUILD")]
+        public static void LogException(Exception exception, UnityEngine.Object context)
+        {
+            Debug.LogException(exception, context);
+        }
     }
 }

@@ -101,7 +101,7 @@ namespace Hecton8.VFX.Parasites
 
             if (!ParasiteSwarmContracts.ValidateRuntimeLayouts(out int failureCode))
             {
-                Debug.LogError("SHINOBU_313 ParasiteSwarm layout rejection code " + failureCode);
+                Hecton8.Core.H8Debug.LogError("SHINOBU_313 ParasiteSwarm layout rejection code " + failureCode);
                 enabled = false;
                 return;
             }
@@ -110,7 +110,7 @@ namespace Hecton8.VFX.Parasites
             if (_vault == null)
                 return;
 
-            CachePlayerContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+            CachePlayerContext(GlobalRegistry.Player);
 
             ParasiteSwarmContracts.EnsureVaultBuffers(_vault);
 #if UNITY_EDITOR

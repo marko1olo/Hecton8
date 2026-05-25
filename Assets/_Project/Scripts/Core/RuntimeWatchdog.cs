@@ -351,7 +351,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            _nextSampleFrame = Time.frameCount + SampleIntervalFrames;
+            _nextSampleFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + SampleIntervalFrames;
             _nextMmfHealthCheckTime = Time.realtimeSinceStartupAsDouble + MmfHealthCheckIntervalSeconds;
             ResetRegistryHeartbeatGuard(Time.realtimeSinceStartupAsDouble);
             GlobalTelemetryBus.Initialize();
@@ -428,7 +428,7 @@ namespace Hecton8.Core
             if (SimulationSignalRoute.SimulationPaused)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             ConsumeMmfHealthResult();
             FrameTimeWatchdog.Tick();
             EnforceFrameBudget(deltaTime);
@@ -486,7 +486,7 @@ namespace Hecton8.Core
             _steadyStateGcGen0CollectionsDelta = _steadyStateGcGen0CollectionsDelta > int.MaxValue - delta
                 ? int.MaxValue
                 : _steadyStateGcGen0CollectionsDelta + delta;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastGcSpikeFrame == frame)
                 return;
 
@@ -501,7 +501,7 @@ namespace Hecton8.Core
             _lastTotalAllocatedMemoryBytes = Profiler.GetTotalAllocatedMemoryLong();
             _lastMemorySpikeFrame = -1;
             _lastMemoryBreachFrame = -1;
-            _nextMemorySpikeSampleFrame = Time.frameCount + MemorySpikeSampleIntervalFrames;
+            _nextMemorySpikeSampleFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + MemorySpikeSampleIntervalFrames;
         }
 
         private void TickMemorySpikeTracker(int frame)
@@ -648,7 +648,7 @@ namespace Hecton8.Core
             PerformanceEvents.TryRaiseSystemDegradation(
                 deltaTime * 1000f,
                 ResolveFrameStripThresholdSeconds() * 1000f,
-                Time.frameCount);
+                Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
             GlobalTelemetryBus.PublishSystemDegradation(
                 _budgetStripHash,
                 WatchdogDegradationActionMask,
@@ -664,7 +664,7 @@ namespace Hecton8.Core
             Signal(RuntimeWatchdogLane.DispatcherLateFrame);
             BlackBoxHeartbeatThread.Ping();
             MathGuard.DrainInvalidNumberErrors();
-            ReportInputClockSkewIfUnsafe(Time.frameCount);
+            ReportInputClockSkewIfUnsafe(Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
 
             uint latencySequence = InputLatencyTracker.CompletedSequence;
             if (latencySequence == _lastInputLatencySequence)
@@ -702,7 +702,7 @@ namespace Hecton8.Core
 
         private static void ForceFaunaEmergencyColdTick(float elapsedMilliseconds)
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (frame < _nextFaunaEmergencyCullFrame)
                 return;
 

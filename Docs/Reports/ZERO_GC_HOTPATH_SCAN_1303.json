@@ -1,0 +1,135 @@
+﻿{
+    "schema":  "hecton8.tether_zero_gc_hotpath_scan.v16",
+    "agentId":  "1303",
+    "generatedAtUtc":  "2026-05-25T19:47:02.2154054Z",
+    "files":  [
+                  "Assets/_Project/Scripts/TetherInstance.cs",
+                  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                  "Assets/_Project/Scripts/Core/Contracts/Physics/CableGpuContracts.cs"
+              ],
+    "rawNewCount":  7,
+    "forbiddenPatternCount":  0,
+    "memoryMappedPatternHitCount":  0,
+    "rawUnsafeMallocCount":  1,
+    "rawUnsafeFreeCount":  2,
+    "nativeMemorySentinelRegisterCount":  1,
+    "nativeMemorySentinelUnregisterCount":  1,
+    "managedHeapNewInAuditedSolverFrameHotRanges":  0,
+    "valueTypeNewInAuditedSolverFrameHotRanges":  0,
+    "directRigidbodyAddForceInOwnedFiles":  0,
+    "roslynAuditHash":  "62d3154585aac613c1dd75a7e1c2c7f74ea0d683d07bb3c440b9de9845264454",
+    "roslynSummary":  {
+                          "scannedFiles":  4,
+                          "parseFailures":  0,
+                          "objectCreations":  6,
+                          "managedRiskCreations":  5,
+                          "nativeTempJobAllocations":  0,
+                          "nativePersistentAllocations":  0,
+                          "stringFormatCalls":  0,
+                          "toStringCalls":  0,
+                          "linqCalls":  0,
+                          "foreachStatements":  0,
+                          "interpolatedStrings":  0,
+                          "stringConcatSuspects":  0
+                      },
+    "forbiddenHits":  [
+
+                      ],
+    "hits":  [
+                 {
+                     "file":  "Assets/_Project/Scripts/TetherInstance.cs",
+                     "line":  1009,
+                     "pattern":  "new",
+                     "text":  "buffer = new GraphicsBuffer("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                     "line":  727,
+                     "pattern":  "new",
+                     "text":  "worker = new System.Threading.Thread("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                     "line":  167,
+                     "pattern":  "new",
+                     "text":  "using (FileStream stream = new FileStream("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                     "line":  213,
+                     "pattern":  "new",
+                     "text":  "using (FileStream stream = new FileStream("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                     "line":  256,
+                     "pattern":  "new",
+                     "text":  "signal = new AutoResetEvent(false);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                     "line":  263,
+                     "pattern":  "new",
+                     "text":  "worker = new Thread(DumpWorkerLoop)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                     "line":  478,
+                     "pattern":  "new",
+                     "text":  "using (FileStream stream = new FileStream("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                     "line":  295,
+                     "pattern":  "UnsafeUtility.Malloc",
+                     "text":  "byte* snapshot = (byte*)UnsafeUtility.Malloc(totalBytes, DumpSnapshotAlignment, Allocator.Persistent);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                     "line":  307,
+                     "pattern":  "UnsafeUtility.Free",
+                     "text":  "UnsafeUtility.Free(snapshot, Allocator.Persistent);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                     "line":  332,
+                     "pattern":  "UnsafeUtility.Free",
+                     "text":  "UnsafeUtility.Free((void*)s_snapshot, Allocator.Persistent);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                     "line":  299,
+                     "pattern":  "NativeMemorySentinel.RegisterPointer",
+                     "text":  "int registrationId = NativeMemorySentinel.RegisterPointer("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                     "line":  322,
+                     "pattern":  "NativeMemorySentinel.Unregister",
+                     "text":  "NativeMemorySentinel.Unregister(registrationId);"
+                 }
+             ],
+    "rawNewClassification":  [
+                                 {
+                                     "file":  "Assets/_Project/Scripts/TetherInstance.cs",
+                                     "lines":  "1009",
+                                     "class":  "cold/capacity GraphicsBuffer allocation",
+                                     "hotPath":  false
+                                 },
+                                 {
+                                     "file":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                                     "lines":  "727",
+                                     "class":  "editor-only fuzzer worker Thread",
+                                     "hotPath":  false
+                                 },
+                                 {
+                                     "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                                     "lines":  "167,213,256,263,478",
+                                     "class":  "fault/reload dump IO or background worker objects",
+                                     "hotPath":  false
+                                 }
+                             ],
+    "roslynAuditStdout":  "Docs/Reports/TETHER_ROSLYN_HOTPATH_AUDIT_1303_V16_STDOUT.txt"
+}

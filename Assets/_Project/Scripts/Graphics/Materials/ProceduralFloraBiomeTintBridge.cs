@@ -10,7 +10,7 @@ namespace Hecton8.Graphics.Materials
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-87)]
-    public sealed class ProceduralFloraBiomeTintBridge : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class ProceduralFloraBiomeTintBridge : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private static readonly int FloraBiomeTintId = Shader.PropertyToID("_HectonFloraBiomeTint");
         private static readonly int FloraBiomeTintParamsId = Shader.PropertyToID("_HectonFloraBiomeTintParams");
@@ -27,7 +27,6 @@ namespace Hecton8.Graphics.Materials
         private uint _lastBiomeHash = uint.MaxValue;
         private Vector4 _lastTint;
         private Vector4 _lastParams;
-        private bool _registered;
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
         private Vector4 _pendingTint;
@@ -50,12 +49,6 @@ namespace Hecton8.Graphics.Materials
         private void OnDisable()
         {
             TryUnregisterHotSwapListener();
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registered = false;
-            }
-
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -74,12 +67,6 @@ namespace Hecton8.Graphics.Materials
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
                 return;
 
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registered = false;
-            }
-
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -94,8 +81,6 @@ namespace Hecton8.Graphics.Materials
             if (!Application.isPlaying)
                 return;
 
-            if (!_registered)
-                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
@@ -121,7 +106,7 @@ namespace Hecton8.Graphics.Materials
         /// Consumes biome change signals and republishes flora shader globals only when the biome hash changes.
         /// </summary>
         /// <param name="deltaTime">Dispatcher delta time; unused because biome tint is signal driven.</param>
-        public void Tick(float deltaTime)
+        private void ConsumeBiomeSignals()
         {
             ReadOnlySpan<BiomeChangedSignal> signals = SignalBus<BiomeChangedSignal>.GetFrameSnapshot();
             for (int i = 0; i < signals.Length; i++)
@@ -139,6 +124,8 @@ namespace Hecton8.Graphics.Materials
 
         public void LateFrameTick()
         {
+            ConsumeBiomeSignals();
+
             if (!_tintDirty)
                 return;
 

@@ -1,0 +1,18 @@
+﻿{
+    "generatedUtc":  "2026-05-25T19:02:24.1693698Z",
+    "mode":  "in-scope-added-line-player-active-forbidden-token-scan-pass11",
+    "rawHitCount":  1,
+    "playerActiveHitCount":  0,
+    "rawHits":  [
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                        "line":  738,
+                        "token":  "CsvScratch",
+                        "playerActive":  false,
+                        "text":  "\u0026\u0026 EnsureVaultDescriptor(vault, ref _csvScratchHandle, SeaglideHydrodynamicsBufferIds.CsvScratch, SeaglideHydrodynamicsConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory)"
+                    }
+                ],
+    "playerActiveHits":  [
+
+                         ]
+}

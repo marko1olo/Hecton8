@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
@@ -39,9 +40,9 @@ namespace Hecton8.UI
         private const uint FaultDecryptionDumpBackpressure = 1u << 6;
         private const uint DecryptionDumpBackpressureHash = 0x53483237u; // SH27
         private const string NativeOwner = nameof(TerminalOsRuntime);
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_137.bin";
-        private const string DumpMirrorRelativePath = "Docs/AgentLogs/Dump_SHINOBU_137.h8dump";
-        private const string DecryptionDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_273.bin";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1309_TerminalOS.bin";
+        private const string DumpMirrorRelativePath = "Docs/AgentLogs/Dump_1309_TerminalOSMirror.h8dump";
+        private const string DecryptionDumpRelativePath = "Docs/AgentLogs/Dump_1309_TerminalDecryption.bin";
         private const BufferID TerminalStatesBufferId = (BufferID)71360;
         private const BufferID ScreenCommandsBufferId = (BufferID)71361;
         private const BufferID GlyphUvsBufferId = (BufferID)71362;
@@ -923,7 +924,7 @@ namespace Hecton8.UI
             catch (Exception exception)
             {
                 _decryptionDumpWriter = null;
-                Debug.LogException(exception);
+                Hecton8.Core.H8Debug.LogException(exception);
             }
         }
 
@@ -1202,7 +1203,7 @@ namespace Hecton8.UI
             BufferID bufferId,
             int length,
             NativeArrayOptions options,
-            out VaultGenerationHandle<T> handle) where T : struct
+            out VaultGenerationHandle<T> handle) where T : unmanaged
         {
             handle = default;
             if (vault == null)
@@ -1260,7 +1261,7 @@ namespace Hecton8.UI
                    decryptionTelemetryRing.Length >= TerminalOsConstants.BlackBoxFrameCount;
         }
 
-        private bool TryOpenVaultBuffer<T>(ref VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        private bool TryOpenVaultBuffer<T>(ref VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
             if (_vault == null || !IsValidVaultHandle(in handle))
@@ -1269,7 +1270,7 @@ namespace Hecton8.UI
             return _vault.TryResolveHandle(in handle, out buffer) && buffer.IsCreated;
         }
 
-        private bool TryReadVaultBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : struct
+        private bool TryReadVaultBuffer<T>(in VaultGenerationHandle<T> handle, out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
             if (_vault == null || !IsValidVaultHandle(in handle))
@@ -1278,7 +1279,7 @@ namespace Hecton8.UI
             return _vault.TryReadHandle(in handle, out buffer) && buffer.IsCreated;
         }
 
-        private static bool IsValidVaultHandle<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsValidVaultHandle<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
         {
             return handle.BufferID != 0u && handle.Generation != 0u;
         }
@@ -1560,7 +1561,7 @@ namespace Hecton8.UI
             _bindingsDirty = true;
         }
 
-        private static GraphicsBuffer CreateStructuredLockBuffer<T>(int count) where T : struct
+        private static GraphicsBuffer CreateStructuredLockBuffer<T>(int count) where T : unmanaged
         {
             return new GraphicsBuffer(
                 GraphicsBuffer.Target.Structured,
@@ -3101,7 +3102,7 @@ namespace Hecton8.UI
             NativeArray<ButtonAABBDTO> buttons,
             in TerminalInteractionDTO interaction)
         {
-            float3 center = plane.CenterAup.ToRuntimeFloat3();
+            float3 center = ResolveRuntimeLocalPosition(plane.CenterAup, default);
             float3 right = math.normalizesafe(plane.Right, new float3(1f, 0f, 0f));
             float3 up = math.normalizesafe(plane.Up, new float3(0f, 1f, 0f));
             float3 halfRight = right * (math.max(0.001f, plane.Width) * 0.5f);
@@ -3144,7 +3145,7 @@ namespace Hecton8.UI
             if ((puzzle.Flags & TerminalOsConstants.DecryptionFlagActive) == 0u)
                 return;
 
-            float3 center = plane.CenterAup.ToRuntimeFloat3();
+            float3 center = ResolveRuntimeLocalPosition(plane.CenterAup, default);
             float3 right = math.normalizesafe(plane.Right, new float3(1f, 0f, 0f));
             float3 up = math.normalizesafe(plane.Up, new float3(0f, 1f, 0f));
             Gizmos.color = new Color(1f, 0.55f, 0.16f, 0.7f);
@@ -3480,7 +3481,7 @@ namespace Hecton8.UI
             }
             catch (Exception exception)
             {
-                Debug.LogException(exception);
+                Hecton8.Core.H8Debug.LogException(exception);
             }
         }
 
@@ -3505,7 +3506,9 @@ namespace Hecton8.UI
                 for (int i = 0; i < telemetryRing.Length; i++)
                 {
                     TerminalTelemetryEntry entry = telemetryRing[i];
-                    stream.Write(new ReadOnlySpan<byte>(UnsafeUtility.AddressOf(ref entry), rowBytes));
+                    stream.Write(MemoryMarshal.CreateReadOnlySpan(
+                        ref UnsafeUtility.AsRef<byte>(UnsafeUtility.AddressOf(ref entry)),
+                        rowBytes));
                 }
             }
         }
@@ -3869,7 +3872,9 @@ namespace Hecton8.UI
                     for (int i = 0; i < _pendingCount; i++)
                     {
                         DecryptionTelemetryEntry entry = _records[i];
-                        stream.Write(new ReadOnlySpan<byte>(UnsafeUtility.AddressOf(ref entry), rowBytes));
+                        stream.Write(MemoryMarshal.CreateReadOnlySpan(
+                            ref UnsafeUtility.AsRef<byte>(UnsafeUtility.AddressOf(ref entry)),
+                            rowBytes));
                     }
                 }
             }

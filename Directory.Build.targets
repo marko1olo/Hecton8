@@ -123,7 +123,6 @@
     <Compile Include="Assets\_Project\Scripts\AI\Sensory\AcousticEchoLocationRuntime.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\AI\Sensory\AcousticEchoLocationRuntime.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Animation\Locomotion\LadderClimbIkJobs.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Animation\Locomotion\LadderClimbIkJobs.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Animation\Locomotion\ProceduralLadderClimbRuntime.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Animation\Locomotion\ProceduralLadderClimbRuntime.cs'))" />
-    <Compile Include="Assets\_Project\Scripts\Physics\KCC\SdfSqueezeJob.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Physics\KCC\SdfSqueezeJob.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Rendering\HectonShaderGlobalDataVaultBridge.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Rendering\HectonShaderGlobalDataVaultBridge.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Physics\Vehicles\VehicleComponentDamageContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Physics\Vehicles\VehicleComponentDamageContracts.cs'))" />
     <Compile Include="Assets\_Project\Scripts\Physics\Tethers\Contracts\TetherSignalContracts.cs" Condition="!$([System.String]::Copy('@(Compile)').Contains('Assets\_Project\Scripts\Physics\Tethers\Contracts\TetherSignalContracts.cs'))" />
@@ -353,6 +352,11 @@
       <_HectonMissingWaveHarmonicCrestProject Remove="@(_HectonMissingWaveHarmonicCrestProject)" />
     </ItemGroup>
   </Target>
+
+  <ItemGroup Condition="!Exists('$(MSBuildThisFileDirectory)Hecton8.Input.csproj')">
+    <ProjectReference Remove="Hecton8.Input.csproj" />
+    <ProjectReference Remove="$(MSBuildThisFileDirectory)Hecton8.Input.csproj" />
+  </ItemGroup>
 
   <Target Name="HectonPruneMissingGeneratedCompileItems"
           BeforeTargets="CoreCompile">

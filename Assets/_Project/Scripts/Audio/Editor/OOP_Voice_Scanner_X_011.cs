@@ -39,7 +39,7 @@ namespace Hecton8.Audio.Editor
             ScanResult result = ScanProject();
             WriteReport(result);
             AssetDatabase.Refresh();
-            Debug.Log("X_011 UX scanner wrote " + ReportPath + " with " + result.Findings.Count + " findings.");
+            Hecton8.Core.H8Debug.Log("X_011 UX scanner wrote " + ReportPath + " with " + result.Findings.Count + " findings.");
         }
 
         internal static ScanResult ScanProject()

@@ -209,7 +209,7 @@ namespace Hecton8.Physics
             if (UnsafeUtility.SizeOf<FluidCompartmentDTO>() != 64)
                 return false;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             return
                    OffsetOf(nameof(FluidCompartmentDTO.LocalCenterOfMass)) == 0 &&
                    OffsetOf(nameof(FluidCompartmentDTO.NodeHashID)) == 24 &&
@@ -222,7 +222,7 @@ namespace Hecton8.Physics
 #endif
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
         private static int OffsetOf(string fieldName)
         {
             return UnsafeUtility.GetFieldOffset(typeof(FluidCompartmentDTO).GetField(fieldName));

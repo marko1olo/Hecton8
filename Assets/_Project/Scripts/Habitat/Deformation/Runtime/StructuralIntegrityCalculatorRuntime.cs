@@ -166,7 +166,7 @@ namespace Hecton8.Habitat.Deformation
                     Color color = Color.Lerp(Color.green, Color.yellow, math.saturate(stress / 0.8f));
                     if (stress >= 0.95f)
                     {
-                        float pulse = Mathf.PingPong(Time.realtimeSinceStartup * 4f, 1f);
+                        float pulse = Mathf.PingPong((float)SystemDispatcher.CurrentUnscaledTimeSeconds * 4f, 1f);
                         color = Color.Lerp(Color.red, Color.white, pulse * 0.35f);
                     }
 
@@ -1123,10 +1123,16 @@ namespace Hecton8.Habitat.Deformation
             int writeIndex = 1 - _gpuReadIndex;
             GraphicsBuffer writeBuffer = writeIndex == 0 ? _stateBufferA : _stateBufferB;
             NativeArray<IntegrityStateDTO> mapped = writeBuffer.LockBufferForWrite<IntegrityStateDTO>(0, uploadCount);
-            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(states);
-            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)UnsafeUtility.SizeOf<IntegrityStateDTO>() * uploadCount);
-            writeBuffer.UnlockBufferAfterWrite<IntegrityStateDTO>(uploadCount);
+            try
+            {
+                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(states);
+                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)UnsafeUtility.SizeOf<IntegrityStateDTO>() * uploadCount);
+            }
+            finally
+            {
+                writeBuffer.UnlockBufferAfterWrite<IntegrityStateDTO>(uploadCount);
+            }
 
             _gpuReadIndex = writeIndex;
             if (canUseStateHash)

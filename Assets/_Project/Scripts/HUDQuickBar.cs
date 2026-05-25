@@ -99,6 +99,7 @@ namespace Hecton8.UI
         private bool _presentationDirty;
         private bool _alphaDirty;
         private float _pendingCanvasAlpha = 1f;
+        private float _currentCanvasAlpha = 1f;
         private IPlayerInventoryService _inventoryService;
         private PlayerInventory _playerInventory;
         private ItemCatalog _itemCatalog;
@@ -123,7 +124,7 @@ namespace Hecton8.UI
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             AutoResolve();
-            _nextAutoResolveAttemptTime = Time.unscaledTime + AutoResolveRetryInterval;
+            _nextAutoResolveAttemptTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds + AutoResolveRetryInterval;
             EnsureBuilt();
             Subscribe();
             MarkAllDirty();
@@ -176,12 +177,9 @@ namespace Hecton8.UI
                 _slotVisualsDirty = true;
             }
 
-            if (_canvasGroup != null)
-            {
-                float target = PlayerPDA.IsOpen ? 0.15f : 1f;
-                _pendingCanvasAlpha = math.lerp(_canvasGroup.alpha, target, ResolveFadeBlend01(deltaTime));
-                _alphaDirty = true;
-            }
+            float target = PlayerPDA.IsOpen ? 0.15f : 1f;
+            _pendingCanvasAlpha = math.lerp(_currentCanvasAlpha, target, ResolveFadeBlend01(deltaTime));
+            _alphaDirty = true;
 
             _presentationDirty = true;
         }
@@ -192,7 +190,10 @@ namespace Hecton8.UI
             {
                 _alphaDirty = false;
                 if (_canvasGroup != null)
+                {
                     _canvasGroup.alpha = _pendingCanvasAlpha;
+                    _currentCanvasAlpha = _pendingCanvasAlpha;
+                }
             }
 
             if (!_presentationDirty)
@@ -272,7 +273,7 @@ namespace Hecton8.UI
 
         private void TryAutoResolveForTick()
         {
-            float now = Time.unscaledTime;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (now < _nextAutoResolveAttemptTime)
                 return;
 
@@ -450,6 +451,7 @@ namespace Hecton8.UI
                 _canvasGroup = gameObject.AddComponent<CanvasGroup>();
             _canvasGroup.interactable = false;
             _canvasGroup.blocksRaycasts = false;
+            _currentCanvasAlpha = _canvasGroup.alpha;
             _durBars = new Image[SlotCount]; // COLD ALLOC: Image[4] - quickbar durability bar refs - owner: HUDQuickBar
             _slotBgs = new Image[SlotCount]; // COLD ALLOC: Image[4] - quickbar slot background refs - owner: HUDQuickBar
             _slotIcons = new Image[SlotCount]; // COLD ALLOC: Image[4] - quickbar slot icon refs - owner: HUDQuickBar
@@ -565,13 +567,14 @@ namespace Hecton8.UI
                 _slotVisualsDirty = false;
             }
 
-            bool shouldPollStatus = toolManager.CurrentTool != null && Time.unscaledTime >= _nextStatusRefreshAt;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            bool shouldPollStatus = toolManager.CurrentTool != null && now >= _nextStatusRefreshAt;
             if (!forceStatus && !_statusDirty && !shouldPollStatus)
                 return;
 
             RefreshStatusText();
             _statusDirty = false;
-            _nextStatusRefreshAt = Time.unscaledTime + 0.15f;
+            _nextStatusRefreshAt = now + 0.15f;
         }
 
         private void RefreshSlotVisuals()
@@ -934,7 +937,7 @@ namespace Hecton8.UI
 
         private bool TryGetCachedAdvicePreset(out string advicePreset)
         {
-            float now = Time.unscaledTime;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (now >= _nextFieldAdviceRefreshAt)
             {
                 _nextFieldAdviceRefreshAt = now + FieldAdviceRefreshInterval;

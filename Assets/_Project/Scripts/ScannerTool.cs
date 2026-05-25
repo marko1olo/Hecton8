@@ -2471,7 +2471,8 @@ namespace Hecton8.Gameplay
 
             Hecton8.Core.Contracts.IVoxelSonarSdfReadModel voxelSdfReadModel = _cachedVoxelSdfReadModel;
             if (voxelSdfReadModel != null &&
-                voxelSdfReadModel.TryRaymarchNearestSonarSdf(
+                VoxelSonarSdfMath.TryResolveNearestSdfSurface(
+                    voxelSdfReadModel,
                     new float3(origin.x, origin.y, origin.z),
                     new float3(forward.x, forward.y, forward.z),
                     range,
@@ -2640,17 +2641,13 @@ namespace Hecton8.Gameplay
             if (voxelSdfReadModel == null)
                 return false;
 
-            if (!voxelSdfReadModel.TryRaymarchNearestSonarSdf(
+            if (!VoxelSonarSdfMath.TryResolveNearestSdfSurface(
+                    voxelSdfReadModel,
                     new float3(origin.x, origin.y, origin.z),
                     direction,
                     distance + inset,
                     ResolveScientificOcclusionSdfStepMeters(distance),
-                    out VoxelSonarSdfRaycastHit sdfHit,
-                    out NativeArray<byte>.ReadOnly _,
-                    out int3 _,
-                    out float3 _,
-                    out float3 _,
-                    out float _) ||
+                    out VoxelSonarSdfRaycastHit sdfHit) ||
                 (sdfHit.Flags & VoxelSonarSdfRaycastHit.FlagHit) == 0u ||
                 !math.isfinite(sdfHit.Distance))
             {
@@ -3437,7 +3434,7 @@ namespace Hecton8.Gameplay
 
         private void BindCachedRuntimeServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedSurvivalEnvironment = SelectSurvivalEnvironmentReadModelCold(_cachedPlayerContext);
             _cachedVoxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
             _cachedEnvironmentContext = GlobalRegistry.Environment;

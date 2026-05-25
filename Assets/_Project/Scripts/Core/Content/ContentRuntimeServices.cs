@@ -480,42 +480,42 @@ namespace Hecton8.Core.Content
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogRefCountViolation(uint hash)
         {
-            Debug.LogError("[ContentBundleReferenceCounter] Invalid ref-count transition.");
+            Hecton8.Core.H8Debug.LogError("[ContentBundleReferenceCounter] Invalid ref-count transition.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogInvalidAcquireMetadata(uint hash, long bytes, ContentTier tier)
         {
-            Debug.LogError("[ContentBundleReferenceCounter] Invalid acquire metadata.");
+            Hecton8.Core.H8Debug.LogError("[ContentBundleReferenceCounter] Invalid acquire metadata.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogActiveRemoveRejected(uint hash, int refCount)
         {
-            Debug.LogError("[ContentBundleReferenceCounter] Refused to remove active bundle.");
+            Hecton8.Core.H8Debug.LogError("[ContentBundleReferenceCounter] Refused to remove active bundle.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogVaultUnavailable(string operation, uint hash)
         {
-            Debug.LogError("[ContentBundleReferenceCounter] Vault unavailable.");
+            Hecton8.Core.H8Debug.LogError("[ContentBundleReferenceCounter] Vault unavailable.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogBundleRefCapacityExceeded(uint hash, int capacity)
         {
-            Debug.LogError("[ContentBundleReferenceCounter] Bundle ref ledger full.");
+            Hecton8.Core.H8Debug.LogError("[ContentBundleReferenceCounter] Bundle ref ledger full.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogLedgerCountCorruption()
         {
-            Debug.LogError("[ContentBundleReferenceCounter] Vault ledger count exceeded fixed capacity; cleared residency ledger.");
+            Hecton8.Core.H8Debug.LogError("[ContentBundleReferenceCounter] Vault ledger count exceeded fixed capacity; cleared residency ledger.");
         }
     }
 
@@ -840,7 +840,7 @@ namespace Hecton8.Core.Content
             pendingLoads[count] = new ContentPendingLoadState
             {
                 Hash = hash,
-                StartTime = Time.unscaledTime,
+                StartTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
                 HologramIndex = -1
             };
             _pendingLoadTargets[count] = targetRenderer;
@@ -947,7 +947,7 @@ namespace Hecton8.Core.Content
             if (hologramProxyMesh == null || hologramMaterial == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[ContentAuthorityRuntime] Hologram proxy mesh/material missing.", this);
+                Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Hologram proxy mesh/material missing.", this);
 #endif
                 return;
             }
@@ -975,7 +975,7 @@ namespace Hecton8.Core.Content
             if (count == 0)
                 return;
 
-            float now = Time.unscaledTime;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             for (int i = 0; i < count; i++)
             {
                 ContentPendingLoadState pending = pendingLoads[i];
@@ -1333,7 +1333,7 @@ namespace Hecton8.Core.Content
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[ContentAuthorityRuntime] Bundle handle table exhausted.", this);
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Bundle handle table exhausted.", this);
 #endif
             TryReleaseExternalAddressableFault(handle);
             return false;
@@ -1804,133 +1804,133 @@ namespace Hecton8.Core.Content
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogMissingAssetHashMap(uint hash)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Asset hash map missing.");
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Asset hash map missing.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogMissingAssetHash(uint hash)
         {
-            Debug.LogError("[ContentAuthorityRuntime] No content registry entry.");
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] No content registry entry.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogBundleHandleTrackFailed(uint hash)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Failed to track Addressables bundle handle.");
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Failed to track Addressables bundle handle.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogBundleHandleReleaseMiss(uint hash)
         {
-            Debug.LogError("[ContentAuthorityRuntime] No tracked Addressables bundle handle during release.");
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] No tracked Addressables bundle handle during release.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogInvalidBundleHandle(uint hash)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Invalid Addressables bundle handle.");
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Invalid Addressables bundle handle.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogInvalidAsyncLoadTrack(uint hash, bool nullTarget)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Rejected async load tracking.");
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Rejected async load tracking.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogPendingLoadVaultUnavailable(uint hash)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Pending-load vault unavailable.");
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Pending-load vault unavailable.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogPendingLoadCapacityExceeded(uint hash)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Pending-load ledger full.");
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Pending-load ledger full.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogAsyncLoadCompletionMiss(uint hash, bool nullTarget)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Async load completion had no pending entry.");
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Async load completion had no pending entry.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogInvalidVfxPrewarmReference(int index, bool particle)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Invalid VFX prewarm Addressables reference.");
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Invalid VFX prewarm Addressables reference.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogVfxPrewarmLedgerFull(bool particle)
         {
-            Debug.LogError("[ContentAuthorityRuntime] VFX prewarm handle ledger full.");
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] VFX prewarm handle ledger full.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogInvalidVfxPrewarmHandle(int index, bool particle)
         {
-            Debug.LogError("[ContentAuthorityRuntime] VFX prewarm returned invalid Addressables handle.");
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] VFX prewarm returned invalid Addressables handle.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogVfxResidentLedgerFull()
         {
-            Debug.LogError("[ContentAuthorityRuntime] Resident VFX handle ledger full; releasing completed prewarm handle.");
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Resident VFX handle ledger full; releasing completed prewarm handle.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogVfxPrewarmFailed()
         {
-            Debug.LogError("[ContentAuthorityRuntime] VFX prewarm handle failed; releasing Addressables handle.");
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] VFX prewarm handle failed; releasing Addressables handle.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogHologramProxyUnavailable(bool nullTarget)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Hologram proxy unavailable.");
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Hologram proxy unavailable.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogHologramPoolExhausted()
         {
-            Debug.LogError("[ContentAuthorityRuntime] Hologram proxy pool exhausted; pending asset will remain invisible until a proxy frees.");
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Hologram proxy pool exhausted; pending asset will remain invisible until a proxy frees.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogPendingLoadCountCorruption()
         {
-            Debug.LogError("[ContentAuthorityRuntime] Pending load vault count exceeded fixed capacity; cleared pending-load ledger.");
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Pending load vault count exceeded fixed capacity; cleared pending-load ledger.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogBlackBoxDumpFailure(string path, Exception exception)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Failed to write content blackbox dump.");
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Failed to write content blackbox dump.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogBlackBoxPathFailure(Exception exception)
         {
-            Debug.LogError("[ContentAuthorityRuntime] Failed to resolve content blackbox dump path.");
+            Hecton8.Core.H8Debug.LogError("[ContentAuthorityRuntime] Failed to resolve content blackbox dump path.");
         }
 
         private static bool IsFinite(float value)
@@ -2144,7 +2144,7 @@ namespace Hecton8.Core.Content
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogInvalidContentTier(ContentTier tier)
         {
-            Debug.LogError("[ContentTieredGroupPolicy] Invalid content tier value.");
+            Hecton8.Core.H8Debug.LogError("[ContentTieredGroupPolicy] Invalid content tier value.");
         }
     }
 }

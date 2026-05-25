@@ -1,9 +1,9 @@
 using Hecton8.Core;
 using Hecton8.Items;
-using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
+using CurrentVolume = Hecton8.Physics.CurrentVolume;
 
 namespace Hecton8.Caves
 {
@@ -53,7 +53,7 @@ namespace Hecton8.Caves
         private uint _mineralEjectionSeed;
         private uint _volcanicVentSourceHash;
         private VolcanicUpdraftDirector _volcanicDirector;
-        private PersistentWorldRegistry _persistentWorldRegistry;
+        private IPersistentDroppedItemRegistry _persistentWorldRegistry;
 
         internal void Configure(ThermalGeyserConfig config, float globalIntensity)
         {
@@ -151,7 +151,7 @@ namespace Hecton8.Caves
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.PersistentWorldRegistry:
-                    _persistentWorldRegistry = currentService as PersistentWorldRegistry;
+                    _persistentWorldRegistry = currentService as IPersistentDroppedItemRegistry;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _registeredTick = false;
@@ -177,7 +177,7 @@ namespace Hecton8.Caves
 
         private void EjectMineralBurst()
         {
-            PersistentWorldRegistry registry = _persistentWorldRegistry;
+            IPersistentDroppedItemRegistry registry = _persistentWorldRegistry;
             if (registry == null || ejectedMineralItem == null)
                 return;
 
@@ -298,7 +298,7 @@ namespace Hecton8.Caves
 
         private void CacheRegistryServicesCold()
         {
-            _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            _persistentWorldRegistry = GlobalRegistry.PersistentDroppedItems;
         }
 
         private void TryRegisterHotSwapListener()

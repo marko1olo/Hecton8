@@ -167,7 +167,7 @@ namespace Hecton8.Core.Data
             }
             else
             {
-                Debug.LogError("[H8DataBaker] " + result.Message);
+                Hecton8.Core.H8Debug.LogError("[H8DataBaker] " + result.Message);
             }
         }
 #endif
@@ -1312,7 +1312,7 @@ namespace Hecton8.Core.Data
             _dirty = false;
             H8DataBakeResult result = H8DataBaker.BakeDefault();
             if (!result.Success)
-                Debug.LogError("[H8DataHotReload] " + result.Message);
+                Hecton8.Core.H8Debug.LogError("[H8DataHotReload] " + result.Message);
             else
                 AssetDatabase.Refresh();
         }

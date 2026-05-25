@@ -15,8 +15,8 @@
 
 namespace Hecton8.UI
 {
-    using System.Collections.Generic;
     using Hecton8.Core;
+    using Hecton8.Core.Contracts;
     using Hecton8.Gameplay;
     using Hecton8.World;
     using Hecton.Localization;
@@ -28,16 +28,13 @@ namespace Hecton8.UI
     /// HUD element that displays deployed beacons on screen.
     /// Uses ITickable for updates. Zero GC in hot paths.
     /// </summary>
-    public class BeaconHUDElement : MonoBehaviour, IUpdatable, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public class BeaconHUDElement : MonoBehaviour, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private static readonly char[] s_EmptyChars = new char[1]; // COLD ALLOC: char[1] — empty TMP payload sentinel — owner: BeaconHUDElement
         private const int BeaconLabelTextCapacity = 96;
         private const int DistanceTextCapacity = 32;
         private const uint LabelHashSeed = 2166136261u;
         private const uint LabelHashPrime = 16777619u;
-        // COLD ALLOC: List<Graphic>[8] — temporary prefab graphic raycast pruning scratch — owner: BeaconHUDElement
-        private static readonly List<Graphic> s_GraphicRaycastDisableScratch = new List<Graphic>(8);
-
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -157,11 +154,6 @@ namespace Hecton8.UI
             SampleBeaconDisplay(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
         }
 
-        /// <inheritdoc />
-        public void Tick(float deltaTime)
-        {
-        }
-
         private void SampleBeaconDisplay(float deltaTime)
         {
             float safeDeltaTime = math.max(0f, deltaTime);
@@ -258,6 +250,33 @@ namespace Hecton8.UI
             return false;
         }
 
+        private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition targetAup, out Vector3 runtimePosition)
+        {
+            runtimePosition = default;
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            double3 localDelta = AupPrecisionMath.LocalDeltaDouble(
+                targetAup.ToAbsoluteDouble3(),
+                originAup.ToAbsoluteDouble3());
+
+            if (!math.all(math.isfinite(localDelta)) ||
+                math.abs(localDelta.x) > AupPrecisionMath.DefaultMaxLocalCastMeters ||
+                math.abs(localDelta.y) > AupPrecisionMath.DefaultMaxLocalCastMeters ||
+                math.abs(localDelta.z) > AupPrecisionMath.DefaultMaxLocalCastMeters)
+            {
+                return false;
+            }
+
+            float3 local = default;
+            local.x = (float)localDelta.x;
+            local.y = (float)localDelta.y;
+            local.z = (float)localDelta.z;
+            if (!math.all(math.isfinite(local)))
+                return false;
+
+            runtimePosition = (Vector3)local;
+            return true;
+        }
+
         private bool TryResolveCamera()
         {
             if (_mainCamera != null && _mainCamera.isActiveAndEnabled)
@@ -314,7 +333,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
             if (_mainCamera == null && _cachedPlayerContext != null)
                 _mainCamera = _cachedPlayerContext.PlayerCamera;
@@ -344,9 +363,12 @@ namespace Hecton8.UI
                 return;
             }
 
-            // World to screen
-            float3 runtimePosition = beaconAup.ToRuntimeFloat3();
-            Vector3 worldPos = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!TryResolveRuntimePosition(in beaconAup, out Vector3 worldPos))
+            {
+                ApplyDisplayVisible(display, false, 0f);
+                return;
+            }
+
             Vector3 screenPos = _mainCamera.WorldToScreenPoint(worldPos);
 
             // Check if behind camera
@@ -570,16 +592,20 @@ namespace Hecton8.UI
             if (root == null)
                 return;
 
-            s_GraphicRaycastDisableScratch.Clear();
-            root.GetComponentsInChildren(true, s_GraphicRaycastDisableScratch);
-            for (int i = 0; i < s_GraphicRaycastDisableScratch.Count; i++)
-            {
-                Graphic graphic = s_GraphicRaycastDisableScratch[i];
-                if (graphic != null)
-                    graphic.raycastTarget = false;
-            }
+            DisableGraphicRaycastsRecursive(root.transform);
+        }
 
-            s_GraphicRaycastDisableScratch.Clear();
+        private static void DisableGraphicRaycastsRecursive(Transform root)
+        {
+            if (root == null)
+                return;
+
+            if (root.TryGetComponent(out Graphic graphic) && graphic != null)
+                graphic.raycastTarget = false;
+
+            int childCount = root.childCount;
+            for (int i = 0; i < childCount; i++)
+                DisableGraphicRaycastsRecursive(root.GetChild(i));
         }
 
         private void RegisterToTick()

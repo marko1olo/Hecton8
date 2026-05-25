@@ -25,11 +25,12 @@ using System.Threading;
 using Hecton8.Core;
 using Hecton8.Caves;
 using Hecton8.Environment;
-using Hecton8.Physics;
 using UnityEngine;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+
+using CurrentVolume = global::Hecton8.Physics.CurrentVolume;
 
 namespace Hecton8.World
 {
@@ -1685,21 +1686,21 @@ namespace Hecton8.World
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogNoGeometry(Vector3 position)
         {
-            Debug.LogWarning("[WorldCaveDirector] Cave generation produced no geometry.");
+            Hecton8.Core.H8Debug.LogWarning("[WorldCaveDirector] Cave generation produced no geometry.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogCaveSpawnFailure(Vector3 position, string message)
         {
-            Debug.LogError(message);
+            Hecton8.Core.H8Debug.LogError(message);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogMissingVoxelEngine()
         {
-            Debug.LogWarning("[WorldCaveDirector] No voxel engine available for cave generation");
+            Hecton8.Core.H8Debug.LogWarning("[WorldCaveDirector] No voxel engine available for cave generation");
         }
     }
 }

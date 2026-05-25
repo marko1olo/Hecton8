@@ -192,7 +192,7 @@ namespace Hecton8.UI
         private static CachedTextLabel CreateSuffixedNumericLabel(int value, char suffix)
         {
             char[] buffer = new char[CountPositiveDecimalDigits(value) + 1]; // COLD ALLOC: numeric label char cache at type initialization.
-            value.TryFormat(new System.Span<char>(buffer), out int written);
+            value.TryFormat(buffer.AsSpan(), out int written);
             buffer[written] = suffix;
             return new CachedTextLabel(buffer, written + 1);
         }
@@ -270,7 +270,7 @@ namespace Hecton8.UI
             if (_settings == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SettingsPanel] SettingsManager runtime is null. Settings unavailable.");
+                Hecton8.Core.H8Debug.LogWarning("[SettingsPanel] SettingsManager runtime is null. Settings unavailable.");
 #endif
                 return;
             }
@@ -746,10 +746,10 @@ namespace Hecton8.UI
         private void OnFieldOfViewChanged(float value)
         {
             // Throttle slider updates
-            if (Time.unscaledTime < _nextSliderUpdateTime)
+            if (ResolvePresentationClockSeconds() < _nextSliderUpdateTime)
                 return;
 
-            _nextSliderUpdateTime = Time.unscaledTime + sliderThrottleInterval;
+            _nextSliderUpdateTime = ResolvePresentationClockSeconds() + sliderThrottleInterval;
 
             _cachedFieldOfView = value;
             
@@ -783,10 +783,10 @@ namespace Hecton8.UI
         private void OnShadowDistanceChanged(float value)
         {
             // Throttle slider updates
-            if (Time.unscaledTime < _nextSliderUpdateTime)
+            if (ResolvePresentationClockSeconds() < _nextSliderUpdateTime)
                 return;
 
-            _nextSliderUpdateTime = Time.unscaledTime + sliderThrottleInterval;
+            _nextSliderUpdateTime = ResolvePresentationClockSeconds() + sliderThrottleInterval;
 
             _cachedShadowDistance = value;
             
@@ -816,10 +816,10 @@ namespace Hecton8.UI
         private void OnAmbientOcclusionChanged(bool value)
         {
             // Debounce toggle changes
-            if (Time.unscaledTime < _nextToggleUpdateTime)
+            if (ResolvePresentationClockSeconds() < _nextToggleUpdateTime)
                 return;
 
-            _nextToggleUpdateTime = Time.unscaledTime + toggleDebounceInterval;
+            _nextToggleUpdateTime = ResolvePresentationClockSeconds() + toggleDebounceInterval;
 
             _cachedAmbientOcclusion = value;
             UpdatePostProcessingPreview();
@@ -828,10 +828,10 @@ namespace Hecton8.UI
         private void OnBloomChanged(bool value)
         {
             // Debounce toggle changes
-            if (Time.unscaledTime < _nextToggleUpdateTime)
+            if (ResolvePresentationClockSeconds() < _nextToggleUpdateTime)
                 return;
 
-            _nextToggleUpdateTime = Time.unscaledTime + toggleDebounceInterval;
+            _nextToggleUpdateTime = ResolvePresentationClockSeconds() + toggleDebounceInterval;
 
             _cachedBloom = value;
             UpdatePostProcessingPreview();
@@ -840,10 +840,10 @@ namespace Hecton8.UI
         private void OnMotionBlurChanged(bool value)
         {
             // Debounce toggle changes
-            if (Time.unscaledTime < _nextToggleUpdateTime)
+            if (ResolvePresentationClockSeconds() < _nextToggleUpdateTime)
                 return;
 
-            _nextToggleUpdateTime = Time.unscaledTime + toggleDebounceInterval;
+            _nextToggleUpdateTime = ResolvePresentationClockSeconds() + toggleDebounceInterval;
 
             _cachedMotionBlur = value;
             UpdatePostProcessingPreview();
@@ -955,6 +955,11 @@ namespace Hecton8.UI
                 TmpTextNoAlloc.Set(label, text);
         }
 
+        private static float ResolvePresentationClockSeconds()
+        {
+            return (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+        }
+
         private static ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
             ILocalizationTextReadModel manager = Hecton8.Core.GlobalRegistry.LocalizationText;
@@ -1020,10 +1025,10 @@ namespace Hecton8.UI
         private void OnMasterVolumeChanged(float value)
         {
             // Throttle slider updates
-            if (Time.unscaledTime < _nextSliderUpdateTime)
+            if (ResolvePresentationClockSeconds() < _nextSliderUpdateTime)
                 return;
 
-            _nextSliderUpdateTime = Time.unscaledTime + sliderThrottleInterval;
+            _nextSliderUpdateTime = ResolvePresentationClockSeconds() + sliderThrottleInterval;
 
             _cachedMasterVolume = value;
             
@@ -1039,10 +1044,10 @@ namespace Hecton8.UI
         private void OnMusicVolumeChanged(float value)
         {
             // Throttle slider updates
-            if (Time.unscaledTime < _nextSliderUpdateTime)
+            if (ResolvePresentationClockSeconds() < _nextSliderUpdateTime)
                 return;
 
-            _nextSliderUpdateTime = Time.unscaledTime + sliderThrottleInterval;
+            _nextSliderUpdateTime = ResolvePresentationClockSeconds() + sliderThrottleInterval;
 
             _cachedMusicVolume = value;
             
@@ -1058,10 +1063,10 @@ namespace Hecton8.UI
         private void OnSfxVolumeChanged(float value)
         {
             // Throttle slider updates
-            if (Time.unscaledTime < _nextSliderUpdateTime)
+            if (ResolvePresentationClockSeconds() < _nextSliderUpdateTime)
                 return;
 
-            _nextSliderUpdateTime = Time.unscaledTime + sliderThrottleInterval;
+            _nextSliderUpdateTime = ResolvePresentationClockSeconds() + sliderThrottleInterval;
 
             _cachedSfxVolume = value;
             
@@ -1077,10 +1082,10 @@ namespace Hecton8.UI
         private void OnAmbientVolumeChanged(float value)
         {
             // Throttle slider updates
-            if (Time.unscaledTime < _nextSliderUpdateTime)
+            if (ResolvePresentationClockSeconds() < _nextSliderUpdateTime)
                 return;
 
-            _nextSliderUpdateTime = Time.unscaledTime + sliderThrottleInterval;
+            _nextSliderUpdateTime = ResolvePresentationClockSeconds() + sliderThrottleInterval;
 
             _cachedAmbientVolume = value;
             
@@ -1113,15 +1118,15 @@ namespace Hecton8.UI
                 return;
 
             // Apply button cooldown guard
-            if (Time.unscaledTime < _nextApplyTime)
+            if (ResolvePresentationClockSeconds() < _nextApplyTime)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SettingsPanel] Apply button on cooldown. Please wait.");
+                Hecton8.Core.H8Debug.LogWarning("[SettingsPanel] Apply button on cooldown. Please wait.");
 #endif
                 return;
             }
 
-            _nextApplyTime = Time.unscaledTime + applyButtonCooldown;
+            _nextApplyTime = ResolvePresentationClockSeconds() + applyButtonCooldown;
 
             // Apply live preview immediately
             if (livePreview != null)

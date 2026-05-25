@@ -49,12 +49,16 @@ namespace Hecton8.Visor
         [FieldOffset(76)] public float QualityDynamicBlendEnd;
         [FieldOffset(80)] public uint Flags;
         [FieldOffset(84)] public uint Version;
-        [FieldOffset(88)] public float _pad0;
-        [FieldOffset(92)] public float _pad1;
-        [FieldOffset(96)] private ulong _pad2;
-        [FieldOffset(104)] private ulong _pad3;
-        [FieldOffset(112)] private ulong _pad4;
-        [FieldOffset(120)] private ulong _pad5;
+        [FieldOffset(88)] private float _pad0;
+        [FieldOffset(92)] private float _pad1;
+        [FieldOffset(96)] private uint _pad2;
+        [FieldOffset(100)] private uint _pad3;
+        [FieldOffset(104)] private uint _pad4;
+        [FieldOffset(108)] private uint _pad5;
+        [FieldOffset(112)] private uint _pad6;
+        [FieldOffset(116)] private uint _pad7;
+        [FieldOffset(120)] private uint _pad8;
+        [FieldOffset(124)] private uint _pad9;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = DiegeticVisorLensLayout.MockPhysiologySignalStrideBytes)]
@@ -66,8 +70,8 @@ namespace Hecton8.Visor
         [FieldOffset(12)] public float BreathSpike01;
         [FieldOffset(16)] public uint Frame;
         [FieldOffset(20)] public uint Flags;
-        [FieldOffset(24)] public float _pad0;
-        [FieldOffset(28)] public float _pad1;
+        [FieldOffset(24)] private float _pad0;
+        [FieldOffset(28)] private float _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = DiegeticVisorLensLayout.MockVisorEnvironmentSignalStrideBytes)]
@@ -83,8 +87,8 @@ namespace Hecton8.Visor
         [FieldOffset(28)] public float WaterlineBreach01;
         [FieldOffset(32)] public uint Frame;
         [FieldOffset(36)] public uint Flags;
-        [FieldOffset(40)] public float _pad0;
-        [FieldOffset(44)] public float _pad1;
+        [FieldOffset(40)] private float _pad0;
+        [FieldOffset(44)] private float _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = DiegeticVisorLensLayout.DiegeticVisorLensGpuGlobalsDTOStrideBytes)]

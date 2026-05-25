@@ -266,9 +266,9 @@ namespace Hecton8.Physiology
         // and Visuals remain normal lane-local NativeArray writes.
         [NoAlias, NativeDisableParallelForRestriction] public NativeArray<SuitIntegrityTelemetryEntry> Telemetry;
         [ReadOnly, NoAlias] public NativeArray<SuitPressureProfileDTO> Profiles;
-        [WriteOnly, NoAlias] public NativeQueue<CombatDamageSignal>.ParallelWriter DamageWriter;
+        [WriteOnly, NoAlias] public global::Hecton8.Core.MpscSignalRingBuffer<CombatDamageSignal>.ParallelWriter DamageWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> DamageWriterBudget;
-        [WriteOnly, NoAlias] public NativeQueue<MovementAcousticSignal>.ParallelWriter AcousticWriter;
+        [WriteOnly, NoAlias] public global::Hecton8.Core.MpscSignalRingBuffer<MovementAcousticSignal>.ParallelWriter AcousticWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> AcousticWriterBudget;
         public AbsoluteUniversePosition PlayerAup;
         public double3 PlayerImpactAup;

@@ -197,7 +197,7 @@ namespace Hecton8.Gameplay
         private uint _cachedContextDirectiveStamp = uint.MaxValue;
         private bool _cachedHasContextDirective;
         private string _cachedContextDirective;
-        private Hecton8.Physics.QueryCacheContext _playerLookQueryCache;
+        private IPlayerLookQueryCache _playerLookQueryCache;
         private FixedCharBuffer _assessmentHudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — flashlight assessment HUD staging buffer — owner: FlashlightTool
 
         // ══════════════════════════════════════════════════════════
@@ -206,7 +206,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            _playerLookQueryCache = Hecton8.Physics.GlobalQueryCacheManager.PlayerLook;
+            _playerLookQueryCache = GlobalRegistry.PlayerLookQueryCache;
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: FlashlightTool
         }
 
@@ -524,7 +524,7 @@ namespace Hecton8.Gameplay
             if (!_missingFlashlightWarned)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[FlashlightTool] No PlayerFlashlight found in scene.");
+                Hecton8.Core.H8Debug.LogWarning("[FlashlightTool] No PlayerFlashlight found in scene.");
 #endif
                 _missingFlashlightWarned = true;
             }
@@ -735,24 +735,21 @@ namespace Hecton8.Gameplay
                 !TryResolveContextRay(out Vector3 origin, out Vector3 direction))
                 return false;
 
-            Hecton8.Physics.QueryCacheContext cache =
-                _playerLookQueryCache ?? Hecton8.Physics.GlobalQueryCacheManager.PlayerLook;
-            _playerLookQueryCache = cache;
+            IPlayerLookQueryCache cache = _playerLookQueryCache;
+            if (cache == null)
+                return false;
+
             Ray ray = new Ray(origin, direction);
             
             const QueryTriggerInteraction triggerMode = QueryTriggerInteraction.Collide;
-            if (!cache.TryGet(ray, contextProbeRange, contextMask, triggerMode, out Hecton8.Physics.QueryResult qResult))
+            if (!cache.TryGetHit(ray, contextProbeRange, contextMask, triggerMode, out InteractionSurfaceHit finalHit))
             {
                 if (!TryResolvePrimarySurfaceHit(ray.origin, ray.direction, contextProbeRange, contextMask.value, triggerMode, out InteractionSurfaceHit hit))
                     return false;
-                qResult = new Hecton8.Physics.QueryResult { hasHit = true, hit = hit };
-                cache.Set(ray, contextProbeRange, contextMask, triggerMode, qResult);
+
+                finalHit = hit;
+                cache.SetHit(ray, contextProbeRange, contextMask, triggerMode, finalHit);
             }
-
-            if (!qResult.hasHit) 
-                return false;
-
-            InteractionSurfaceHit finalHit = qResult.hit;
 
             Collider collider = finalHit.collider;
             if (collider == null)

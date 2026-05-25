@@ -1163,7 +1163,7 @@ namespace Hecton8.Construction
             int cursor = SanitizeDockTelemetryCursor(cursorBuffer[0], telemetryLength);
             telemetry[cursor] = new DockTelemetryEntry
             {
-                Frame = Time.frameCount,
+                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                 State = _dockingInProgress ? (byte)1 : (_isDocked ? (byte)2 : (byte)0),
                 HasPower = _hasPower ? (byte)1 : (byte)0,
                 HasRelativeAup = _hasDockedRelativeAup ? (byte)1 : (byte)0,
@@ -1214,7 +1214,7 @@ namespace Hecton8.Construction
             if (!TryResolveDockTelemetry(out NativeArray<DockTelemetryEntry> telemetry, out int telemetryLength, out NativeArray<int> cursorBuffer))
                 return;
 
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (frame - _lastDockTelemetryDumpFrame < DockTelemetryDumpCooldownFrames)
                 return;
             _lastDockTelemetryDumpFrame = frame;

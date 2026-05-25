@@ -642,7 +642,7 @@ namespace Hecton8.World
         private void CacheRuntimeServices()
         {
             if (_playerContext == null)
-                _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerContext = GlobalRegistry.Player;
 
             RefreshCachedPlayerRuntimeReference();
 
@@ -2693,8 +2693,14 @@ namespace Hecton8.World
 
             NativeArray<GeologyIndirectArgsDTO> argsWrite =
                 _argsBuffer.LockBufferForWrite<GeologyIndirectArgsDTO>(0, 1);
-            argsWrite[0] = _pendingIndirectArgsGpu;
-            _argsBuffer.UnlockBufferAfterWrite<GeologyIndirectArgsDTO>(1);
+            try
+            {
+                argsWrite[0] = _pendingIndirectArgsGpu;
+            }
+            finally
+            {
+                _argsBuffer.UnlockBufferAfterWrite<GeologyIndirectArgsDTO>(1);
+            }
             _pendingIndirectArgsGpuDirty = false;
         }
 
@@ -3101,17 +3107,22 @@ namespace Hecton8.World
                 return;
 
             NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
-            unsafe
+            try
             {
-                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
-                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                long copyBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
-                long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
-                if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
-                    UnsafeMemoryCopyGuard.ReportRejectedCopy(OwnerName);
+                unsafe
+                {
+                    void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                    void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                    long copyBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+                    long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
+                    if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
+                        UnsafeMemoryCopyGuard.ReportRejectedCopy(OwnerName);
+                }
             }
-
-            destination.UnlockBufferAfterWrite<T>(safeCount);
+            finally
+            {
+                destination.UnlockBufferAfterWrite<T>(safeCount);
+            }
         }
 
         private static int ResolveSafeWriteCount<T>(GraphicsBuffer destination, int sourceLength, int requestedCount) where T : struct

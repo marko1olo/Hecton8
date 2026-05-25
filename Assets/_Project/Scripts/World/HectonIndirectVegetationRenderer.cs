@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -22,7 +23,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-90)]
-    public class HectonIndirectVegetationRenderer : MonoBehaviour, ITickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public class HectonIndirectVegetationRenderer : MonoBehaviour, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         /// <summary>Stride of one Matrix4x4 entry expected in the external instance matrix buffer.</summary>
         public const int InstanceMatrixStride = 64;
@@ -56,6 +57,9 @@ namespace Hecton8.World
         private const int ScatterCullTelemetryOcclusionCounter = 2;
         private const int ScatterCullTelemetryVisibleCounter = 3;
         private const int ScatterCullOverdrawWarningVisibleCount = 50000;
+        private const SystemID VaultOwnerSystemId = SystemID.GraphicsScalability;
+        private const BufferID FloraGrowthTelemetryBufferId = BufferID.IndirectVegetationFloraGrowthTelemetryRing;
+        private const BufferID ScatterCullTelemetryBufferId = BufferID.IndirectVegetationScatterCullTelemetryRing;
         private const int MockScatterDefaultAxisCount = 100;
         private const float MockScatterDefaultSpacing = 2f;
         private const uint MockScatterDefaultSeed = 0x53484939u;
@@ -64,7 +68,6 @@ namespace Hecton8.World
         private const Allocator DataVaultExemptVegetationMockScatterAllocator = Allocator.Persistent;
         private const Allocator DataVaultExemptVegetationBrgMetadataAllocator = Allocator.Persistent;
         private const Allocator DataVaultExemptVegetationAgeLaneAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptVegetationTelemetryAllocator = Allocator.Persistent;
         private const Allocator DataVaultExemptVegetationCpuCullingAllocator = Allocator.Persistent;
         private const Allocator DataVaultExemptVegetationCpuScratchAllocator = Allocator.Persistent;
 #if UNITY_EDITOR
@@ -352,11 +355,9 @@ namespace Hecton8.World
         private IHectonIndirectVegetationBufferSource _bufferSource;
         private Bounds _explicitBounds;
         private bool _hasBoundsOverride;
-        private bool _isRegistered;
         private bool _isLateFrameRegistered;
         private bool _originShiftRegistered;
         private bool _hotSwapRegistered;
-        private bool _visualTickRequested;
         private bool _legacyDataDirty = true;
         private int _instanceCount;
         private Camera _cachedCullCamera;
@@ -491,8 +492,9 @@ namespace Hecton8.World
         [SerializeField]
         private bool _drawEditorScatterDebugGizmos;
 #endif
-        private NativeArray<FloraGrowthTelemetryEntry> _floraGrowthTelemetry;
-        private NativeArray<ScatterCullTelemetryEntry> _scatterCullTelemetry;
+        private VaultGenerationHandle<FloraGrowthTelemetryEntry> _floraGrowthTelemetryHandle;
+        private VaultGenerationHandle<ScatterCullTelemetryEntry> _scatterCullTelemetryHandle;
+        private IDataVault _dataVault;
         private uint[] _cullTelemetryClearPayload;
         private int _floraGrowthTelemetryCursor;
         private int _lastFloraGrowthTelemetryFrame = -1;
@@ -1309,14 +1311,14 @@ namespace Hecton8.World
         public bool TryGetLatestCullTelemetry(out VegetationCullTelemetrySnapshot snapshot)
         {
             snapshot = default;
-            if (!_scatterCullTelemetry.IsCreated)
+            if (!TryReadScatterCullTelemetry(out NativeArray<ScatterCullTelemetryEntry>.ReadOnly scatterCullTelemetry))
                 return false;
 
             int readIndex = _scatterCullTelemetryCursor - 1;
             if (readIndex < 0)
                 readIndex = ScatterCullTelemetryFrameCount - 1;
 
-            ScatterCullTelemetryEntry entry = _scatterCullTelemetry[readIndex];
+            ScatterCullTelemetryEntry entry = scatterCullTelemetry[readIndex];
             if (entry.FrameIndex <= 0)
                 return false;
 
@@ -1506,7 +1508,7 @@ namespace Hecton8.World
             if (!EnsureRenderMaterialResolved())
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[HectonIndirectVegetationRenderer] Material is required and fallback shader resolution failed.", this);
+                Hecton8.Core.H8Debug.LogError("[HectonIndirectVegetationRenderer] Material is required and fallback shader resolution failed.", this);
 #endif
                 enabled = false;
                 return;
@@ -1528,7 +1530,7 @@ namespace Hecton8.World
             if (ResolveNearRenderMesh() == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[HectonIndirectVegetationRenderer] No near render mesh resolved.", this);
+                Hecton8.Core.H8Debug.LogError("[HectonIndirectVegetationRenderer] No near render mesh resolved.", this);
 #endif
                 enabled = false;
                 return;
@@ -1620,6 +1622,15 @@ namespace Hecton8.World
             if (serviceSlot == GlobalRegistryServiceSlot.VRAMPressureRuntime)
             {
                 _vramPressure = currentService as IVramPressureReadModel;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                IDataVault previousVault = _dataVault ?? previousService as IDataVault;
+                ReleaseFloraGrowthTelemetryResources(previousVault);
+                ReleaseScatterCullTelemetryResources(previousVault);
+                _dataVault = currentService as IDataVault;
                 return;
             }
 
@@ -1875,17 +1886,8 @@ namespace Hecton8.World
         /// Executes the BRG-backed vegetation submission.
         /// </summary>
         /// <param name="deltaTime">Unused current frame delta required by ITickable.</param>
-        public void Tick(float deltaTime)
-        {
-            _visualTickRequested = true;
-        }
-
         public void LateFrameTick()
         {
-            if (!_visualTickRequested)
-                return;
-
-            _visualTickRequested = false;
             RunVisualTick();
         }
 
@@ -2944,25 +2946,41 @@ namespace Hecton8.World
             return 1f;
         }
 
-        private void EnsureFloraGrowthTelemetry()
+        private bool EnsureFloraGrowthTelemetry()
         {
-            if (_floraGrowthTelemetry.IsCreated)
-                return;
+            return EnsureTelemetryBuffer(
+                ref _floraGrowthTelemetryHandle,
+                FloraGrowthTelemetryBufferId,
+                FloraGrowthTelemetryFrameCount);
+        }
 
-            _floraGrowthTelemetry = new NativeArray<FloraGrowthTelemetryEntry>(
+        private bool TryAcquireFloraGrowthTelemetry(out IDataVault vault, out NativeArray<FloraGrowthTelemetryEntry> floraGrowthTelemetry)
+        {
+            return TryAcquireTelemetryBuffer(
+                ref _floraGrowthTelemetryHandle,
+                FloraGrowthTelemetryBufferId,
                 FloraGrowthTelemetryFrameCount,
-                DataVaultExemptVegetationTelemetryAllocator,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<FloraGrowthTelemetryEntry>[300] - flora growth black-box circular telemetry - owner: HectonIndirectVegetationRenderer
-            NativeMemorySentinel.RegisterNativeArray(_floraGrowthTelemetry, nameof(HectonIndirectVegetationRenderer), nameof(_floraGrowthTelemetry), NativeAllocationLifetime.Session);
+                out vault,
+                out floraGrowthTelemetry);
+        }
+
+        private bool TryReadFloraGrowthTelemetry(out NativeArray<FloraGrowthTelemetryEntry>.ReadOnly floraGrowthTelemetry)
+        {
+            return TryReadTelemetryBuffer(
+                in _floraGrowthTelemetryHandle,
+                FloraGrowthTelemetryBufferId,
+                FloraGrowthTelemetryFrameCount,
+                out floraGrowthTelemetry);
         }
 
         private void ReleaseFloraGrowthTelemetryResources()
         {
-            if (!_floraGrowthTelemetry.IsCreated)
-                return;
+            ReleaseFloraGrowthTelemetryResources(_dataVault);
+        }
 
-            NativeMemorySentinel.UnregisterNativeArray(_floraGrowthTelemetry);
-            _floraGrowthTelemetry.Dispose();
+        private void ReleaseFloraGrowthTelemetryResources(IDataVault vault)
+        {
+            ReleaseVaultHandle(vault, ref _floraGrowthTelemetryHandle);
             _floraGrowthTelemetryCursor = 0;
             _lastFloraGrowthTelemetryFrame = -1;
         }
@@ -2972,70 +2990,76 @@ namespace Hecton8.World
             if (instanceCount <= 0 || !_floraAges01.IsCreated)
                 return;
 
-            int frameIndex = Time.frameCount;
+            int frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastFloraGrowthTelemetryFrame == frameIndex)
                 return;
 
             _lastFloraGrowthTelemetryFrame = frameIndex;
-            EnsureFloraGrowthTelemetry();
-            if (!_floraGrowthTelemetry.IsCreated)
+            if (!TryAcquireFloraGrowthTelemetry(out IDataVault vault, out NativeArray<FloraGrowthTelemetryEntry> floraGrowthTelemetry))
                 return;
 
-            int safeCount = math.min(instanceCount, _floraAges01.Length);
-            int sampleLimit = fullScan ? safeCount : math.min(safeCount, FloraGrowthTelemetryMaxSamples);
-            int stride = sampleLimit > 0 ? math.max(1, (safeCount + sampleLimit - 1) / sampleLimit) : 1;
-            int sampled = 0;
-            int negativeCount = 0;
             int nanCount = 0;
-            uint ageHash = FloraGrowthTelemetryHashSeed;
-            float minAge = 1f;
-            float maxAge = 0f;
-
-            for (int instanceIndex = 0; instanceIndex < safeCount; instanceIndex += stride)
+            try
             {
-                float age = _floraAges01[instanceIndex];
-                if (!math.isfinite(age))
+                int safeCount = math.min(instanceCount, _floraAges01.Length);
+                int sampleLimit = fullScan ? safeCount : math.min(safeCount, FloraGrowthTelemetryMaxSamples);
+                int stride = sampleLimit > 0 ? math.max(1, (safeCount + sampleLimit - 1) / sampleLimit) : 1;
+                int sampled = 0;
+                int negativeCount = 0;
+                uint ageHash = FloraGrowthTelemetryHashSeed;
+                float minAge = 1f;
+                float maxAge = 0f;
+
+                for (int instanceIndex = 0; instanceIndex < safeCount; instanceIndex += stride)
                 {
-                    nanCount++;
-                    age = -1f;
+                    float age = _floraAges01[instanceIndex];
+                    if (!math.isfinite(age))
+                    {
+                        nanCount++;
+                        age = -1f;
+                    }
+
+                    if (age < 0f)
+                    {
+                        negativeCount++;
+                    }
+                    else
+                    {
+                        minAge = math.min(minAge, age);
+                        maxAge = math.max(maxAge, age);
+                    }
+
+                    ageHash = HashFloraGrowthSample(ageHash, instanceIndex, age);
+                    sampled++;
+                    if (!fullScan && sampled >= FloraGrowthTelemetryMaxSamples)
+                        break;
                 }
 
-                if (age < 0f)
+                if (sampled == 0)
                 {
-                    negativeCount++;
-                }
-                else
-                {
-                    minAge = math.min(minAge, age);
-                    maxAge = math.max(maxAge, age);
+                    minAge = 0f;
+                    maxAge = 0f;
                 }
 
-                ageHash = HashFloraGrowthSample(ageHash, instanceIndex, age);
-                sampled++;
-                if (!fullScan && sampled >= FloraGrowthTelemetryMaxSamples)
-                    break;
+                int writeIndex = _floraGrowthTelemetryCursor;
+                floraGrowthTelemetry[writeIndex] = new FloraGrowthTelemetryEntry
+                {
+                    FrameIndex = frameIndex,
+                    InstanceCount = safeCount,
+                    SampleCount = sampled,
+                    NegativeAgeCount = negativeCount,
+                    NanAgeCount = nanCount,
+                    DirtyUpload = fullScan ? 1 : 0,
+                    MinAge01 = minAge,
+                    MaxAge01 = maxAge,
+                    AgeHash = ageHash
+                };
+                _floraGrowthTelemetryCursor = (_floraGrowthTelemetryCursor + 1) % FloraGrowthTelemetryFrameCount;
             }
-
-            if (sampled == 0)
+            finally
             {
-                minAge = 0f;
-                maxAge = 0f;
+                vault.ReleaseWriteLock(in _floraGrowthTelemetryHandle, VaultOwnerSystemId);
             }
-
-            int writeIndex = _floraGrowthTelemetryCursor;
-            _floraGrowthTelemetry[writeIndex] = new FloraGrowthTelemetryEntry
-            {
-                FrameIndex = frameIndex,
-                InstanceCount = safeCount,
-                SampleCount = sampled,
-                NegativeAgeCount = negativeCount,
-                NanAgeCount = nanCount,
-                DirtyUpload = fullScan ? 1 : 0,
-                MinAge01 = minAge,
-                MaxAge01 = maxAge,
-                AgeHash = ageHash
-            };
-            _floraGrowthTelemetryCursor = (_floraGrowthTelemetryCursor + 1) % FloraGrowthTelemetryFrameCount;
 
             if (nanCount > 0 && !_floraGrowthTelemetryDumped)
                 DumpFloraGrowthTelemetry();
@@ -3055,7 +3079,7 @@ namespace Hecton8.World
         private void DumpFloraGrowthTelemetry()
         {
             _floraGrowthTelemetryDumped = true;
-            if (!_floraGrowthTelemetry.IsCreated)
+            if (!TryReadFloraGrowthTelemetry(out NativeArray<FloraGrowthTelemetryEntry>.ReadOnly floraGrowthTelemetry))
                 return;
 
             try
@@ -3077,7 +3101,7 @@ namespace Hecton8.World
                     for (int offset = 0; offset < FloraGrowthTelemetryFrameCount; offset++)
                     {
                         int readIndex = (_floraGrowthTelemetryCursor + offset) % FloraGrowthTelemetryFrameCount;
-                        FloraGrowthTelemetryEntry entry = _floraGrowthTelemetry[readIndex];
+                        FloraGrowthTelemetryEntry entry = floraGrowthTelemetry[readIndex];
                         writer.Write(entry.FrameIndex);
                         writer.Write(entry.InstanceCount);
                         writer.Write(entry.SampleCount);
@@ -3094,7 +3118,7 @@ namespace Hecton8.World
             catch (Exception exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError($"[HectonIndirectVegetationRenderer] Failed to dump flora growth telemetry: {exception.Message}", this);
+                Hecton8.Core.H8Debug.LogError($"[HectonIndirectVegetationRenderer] Failed to dump flora growth telemetry: {exception.Message}", this);
 #endif
             }
         }
@@ -3109,7 +3133,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            int frameIndex = Time.frameCount;
+            int frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (frameIndex == _lastScatterCullTelemetrySampleFrame ||
                 frameIndex % ScatterCullTelemetryReadbackStrideFrames != 0)
             {
@@ -3153,27 +3177,41 @@ namespace Hecton8.World
             RecordScatterCullTelemetry(totalCount, frustumCount, occlusionCount, visibleCount);
         }
 
-        private void EnsureScatterCullTelemetry()
+        private bool EnsureScatterCullTelemetry()
         {
-            if (_scatterCullTelemetry.IsCreated)
-                return;
+            return EnsureTelemetryBuffer(
+                ref _scatterCullTelemetryHandle,
+                ScatterCullTelemetryBufferId,
+                ScatterCullTelemetryFrameCount);
+        }
 
-            _scatterCullTelemetry = new NativeArray<ScatterCullTelemetryEntry>(
+        private bool TryAcquireScatterCullTelemetry(out IDataVault vault, out NativeArray<ScatterCullTelemetryEntry> scatterCullTelemetry)
+        {
+            return TryAcquireTelemetryBuffer(
+                ref _scatterCullTelemetryHandle,
+                ScatterCullTelemetryBufferId,
                 ScatterCullTelemetryFrameCount,
-                DataVaultExemptVegetationTelemetryAllocator,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ScatterCullTelemetryEntry>[300] - SHINOBU_09 cull black-box circular telemetry - owner: HectonIndirectVegetationRenderer
-            NativeMemorySentinel.RegisterNativeArray(_scatterCullTelemetry, nameof(HectonIndirectVegetationRenderer), nameof(_scatterCullTelemetry), NativeAllocationLifetime.Session);
+                out vault,
+                out scatterCullTelemetry);
+        }
+
+        private bool TryReadScatterCullTelemetry(out NativeArray<ScatterCullTelemetryEntry>.ReadOnly scatterCullTelemetry)
+        {
+            return TryReadTelemetryBuffer(
+                in _scatterCullTelemetryHandle,
+                ScatterCullTelemetryBufferId,
+                ScatterCullTelemetryFrameCount,
+                out scatterCullTelemetry);
         }
 
         private void RecordScatterCullTelemetry(int totalCount, int frustumCount, int occlusionCount, int visibleCount)
         {
-            int frameIndex = Time.frameCount;
+            int frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastScatterCullTelemetryFrame == frameIndex)
                 return;
 
             _lastScatterCullTelemetryFrame = frameIndex;
-            EnsureScatterCullTelemetry();
-            if (!_scatterCullTelemetry.IsCreated)
+            if (!TryAcquireScatterCullTelemetry(out IDataVault vault, out NativeArray<ScatterCullTelemetryEntry> scatterCullTelemetry))
                 return;
 
             bool invalidCounterState =
@@ -3184,19 +3222,26 @@ namespace Hecton8.World
                 visibleCount > totalCount + _resolvedDensityDecimationStep;
             _lastCullOverdrawWarning = visibleCount > ScatterCullOverdrawWarningVisibleCount;
 
-            _scatterCullTelemetry[_scatterCullTelemetryCursor] = new ScatterCullTelemetryEntry
+            try
             {
-                FrameIndex = frameIndex,
-                TotalInstances = totalCount,
-                FrustumCulledCount = frustumCount,
-                OcclusionCulledCount = occlusionCount,
-                VisibleCount = visibleCount,
-                DensityDecimationStep = _resolvedDensityDecimationStep,
-                OverdrawWarning = _lastCullOverdrawWarning ? 1 : 0,
-                SystemStress01 = _cachedSystemStress01,
-                MaxDensity01 = _maxDensity01
-            };
-            _scatterCullTelemetryCursor = (_scatterCullTelemetryCursor + 1) % ScatterCullTelemetryFrameCount;
+                scatterCullTelemetry[_scatterCullTelemetryCursor] = new ScatterCullTelemetryEntry
+                {
+                    FrameIndex = frameIndex,
+                    TotalInstances = totalCount,
+                    FrustumCulledCount = frustumCount,
+                    OcclusionCulledCount = occlusionCount,
+                    VisibleCount = visibleCount,
+                    DensityDecimationStep = _resolvedDensityDecimationStep,
+                    OverdrawWarning = _lastCullOverdrawWarning ? 1 : 0,
+                    SystemStress01 = _cachedSystemStress01,
+                    MaxDensity01 = _maxDensity01
+                };
+                _scatterCullTelemetryCursor = (_scatterCullTelemetryCursor + 1) % ScatterCullTelemetryFrameCount;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _scatterCullTelemetryHandle, VaultOwnerSystemId);
+            }
 
             if (invalidCounterState && !_scatterCullTelemetryDumped)
                 DumpScatterCullTelemetry();
@@ -3204,12 +3249,12 @@ namespace Hecton8.World
 
         private void ReleaseScatterCullTelemetryResources()
         {
-            if (_scatterCullTelemetry.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_scatterCullTelemetry);
-                _scatterCullTelemetry.Dispose();
-            }
+            ReleaseScatterCullTelemetryResources(_dataVault);
+        }
 
+        private void ReleaseScatterCullTelemetryResources(IDataVault vault)
+        {
+            ReleaseVaultHandle(vault, ref _scatterCullTelemetryHandle);
             _scatterCullTelemetryCursor = 0;
             _lastScatterCullTelemetryFrame = -1;
             _lastScatterCullTelemetrySampleFrame = -1;
@@ -3219,7 +3264,7 @@ namespace Hecton8.World
         private void DumpScatterCullTelemetry()
         {
             _scatterCullTelemetryDumped = true;
-            if (!_scatterCullTelemetry.IsCreated)
+            if (!TryReadScatterCullTelemetry(out _))
                 return;
 
             TryWriteScatterCullTelemetryDump(ScatterCullDumpRelativePath);
@@ -3228,6 +3273,9 @@ namespace Hecton8.World
 
         private void TryWriteScatterCullTelemetryDump(string relativePath)
         {
+            if (!TryReadScatterCullTelemetry(out NativeArray<ScatterCullTelemetryEntry>.ReadOnly scatterCullTelemetry))
+                return;
+
             try
             {
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
@@ -3246,7 +3294,7 @@ namespace Hecton8.World
                     for (int offset = 0; offset < ScatterCullTelemetryFrameCount; offset++)
                     {
                         int readIndex = (_scatterCullTelemetryCursor + offset) % ScatterCullTelemetryFrameCount;
-                        ScatterCullTelemetryEntry entry = _scatterCullTelemetry[readIndex];
+                        ScatterCullTelemetryEntry entry = scatterCullTelemetry[readIndex];
                         writer.Write(entry.FrameIndex);
                         writer.Write(entry.TotalInstances);
                         writer.Write(entry.FrustumCulledCount);
@@ -3263,9 +3311,89 @@ namespace Hecton8.World
             catch (Exception exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError($"[HectonIndirectVegetationRenderer] Failed to dump scatter cull telemetry: {exception.Message}", this);
+                Hecton8.Core.H8Debug.LogError($"[HectonIndirectVegetationRenderer] Failed to dump scatter cull telemetry: {exception.Message}", this);
 #endif
             }
+        }
+
+        private bool EnsureTelemetryBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int length)
+            where T : struct
+        {
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null)
+                return false;
+
+            if (IsExactVaultHandle(in handle, bufferId))
+                return true;
+
+            handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                length,
+                VaultOwnerSystemId,
+                NativeArrayOptions.ClearMemory);
+            return IsExactVaultHandle(in handle, bufferId);
+        }
+
+        private bool TryAcquireTelemetryBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int length,
+            out IDataVault vault,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            vault = null;
+            buffer = default;
+            if (!EnsureTelemetryBuffer(ref handle, bufferId, length))
+                return false;
+
+            vault = _dataVault;
+            if (vault == null ||
+                !vault.TryAcquireWriteLock(in handle, VaultOwnerSystemId, out buffer))
+            {
+                buffer = default;
+                return false;
+            }
+
+            if (buffer.IsCreated && buffer.Length >= length)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+            buffer = default;
+            return false;
+        }
+
+        private bool TryReadTelemetryBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int length,
+            out NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   IsExactVaultHandle(in handle, bufferId) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.Length >= length;
+        }
+
+        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId)
+            where T : struct
+        {
+            return handle.BufferID == unchecked((uint)(int)expectedBufferId) && handle.Generation != 0u;
+        }
+
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
         }
 
         private static int ClampCounterToInt(uint counter)
@@ -5009,7 +5137,6 @@ namespace Hecton8.World
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            TryRegisterUpdatable();
             TryRegisterLateFrameTickable();
         }
 
@@ -5018,7 +5145,7 @@ namespace Hecton8.World
             if (_cachedPlayerContext != null)
                 return _cachedPlayerContext;
 
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             return _cachedPlayerContext;
         }
 
@@ -5026,6 +5153,15 @@ namespace Hecton8.World
         {
             if (_vramPressure == null)
                 _vramPressure = GlobalRegistry.VRAMPressureReadModel;
+
+            CacheDataVaultCold();
+        }
+
+        private IDataVault CacheDataVaultCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+            return _dataVault;
         }
 
         private float ResolveBrgLodDistanceScalar()
@@ -5036,14 +5172,6 @@ namespace Hecton8.World
 
             float scalar = pressure.BrgLodDistanceScalar;
             return math.select(1f, math.max(0.05f, scalar), math.isfinite(scalar));
-        }
-
-        private void TryRegisterUpdatable()
-        {
-            if (_isRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
-                return;
-
-            _isRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryRegisterLateFrameTickable()
@@ -5062,11 +5190,6 @@ namespace Hecton8.World
                 _isLateFrameRegistered = false;
             }
 
-            if (!_isRegistered)
-                return;
-
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _isRegistered = false;
         }
 
         private void TryRegisterOriginShiftListener()

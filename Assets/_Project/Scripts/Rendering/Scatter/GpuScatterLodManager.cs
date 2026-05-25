@@ -124,7 +124,6 @@ namespace Hecton8.Rendering.Scatter
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Rendering/GPU Scatter LOD Manager")]
     public sealed unsafe class GpuScatterLodManager : MonoBehaviour,
-        IUpdatable,
         ILateFrameTickable,
         IOriginShiftListener,
         IGlobalRegistryHotSwapListener,
@@ -356,7 +355,6 @@ namespace Hecton8.Rendering.Scatter
         private int _frameIndex;
         private int _lastVisibleFloraCount;
         private int _nextMissingRegistryRefreshFrame;
-        private bool _registered;
         private bool _registeredLateFrame;
         private bool _hotSwapRegistered;
         private bool _originShiftListenerRegistered;
@@ -376,8 +374,6 @@ namespace Hecton8.Rendering.Scatter
         private bool _qualityCacheInitialized;
         private bool _visibleStateDirty;
         private bool _auxiliaryShaderLanesInitialized;
-        private bool _pendingVisualTickDirty;
-        private float _pendingVisualTickDeltaTime;
         private bool _visualPayloadDefaultsInitialized;
         private bool _abiLayoutValid;
         private bool _materialVariantCacheInitialized;
@@ -505,14 +501,12 @@ namespace Hecton8.Rendering.Scatter
             TryRegisterHotSwapListener();
             RefreshContinuousQualityPolicy(forceCommit: true);
             TryRegisterOriginShiftListener();
-            TryRegisterTick();
             TryRegisterLateFrame();
             _forceUpload = true;
         }
 
         private void OnDisable()
         {
-            TryUnregisterTick();
             TryUnregisterLateFrame();
             TryUnregisterOriginShiftListener();
             TryUnregisterHotSwapListener();
@@ -533,22 +527,9 @@ namespace Hecton8.Rendering.Scatter
         }
 
         /// <inheritdoc />
-        public void Tick(float deltaTime)
-        {
-            _pendingVisualTickDeltaTime += math.max(0f, deltaTime);
-            _pendingVisualTickDirty = true;
-            TryRegisterLateFrame();
-        }
-
         public void LateFrameTick()
         {
-            if (!_pendingVisualTickDirty)
-                return;
-
-            float deltaTime = _pendingVisualTickDeltaTime;
-            _pendingVisualTickDeltaTime = 0f;
-            _pendingVisualTickDirty = false;
-            RunScatterVisualTick(deltaTime);
+            RunScatterVisualTick(math.max(0f, SystemDispatcher.CurrentFrameDeltaTime));
         }
 
         private void RunScatterVisualTick(float deltaTime)
@@ -644,23 +625,6 @@ namespace Hecton8.Rendering.Scatter
             ApplyRegistryServiceRebind(serviceSlot, currentService);
         }
 
-        private void TryRegisterTick()
-        {
-            if (_registered)
-                return;
-
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-        }
-
-        private void TryUnregisterTick()
-        {
-            if (!_registered)
-                return;
-
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _registered = false;
-        }
-
         private void TryRegisterLateFrame()
         {
             if (_registeredLateFrame)
@@ -716,7 +680,7 @@ namespace Hecton8.Rendering.Scatter
         private void RefreshCachedRegistryServices()
         {
             _registryDataVault = GlobalRegistry.DataVault;
-            _nextMissingRegistryRefreshFrame = Time.frameCount + MissingRegistryRefreshStrideFrames;
+            _nextMissingRegistryRefreshFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + MissingRegistryRefreshStrideFrames;
         }
 
         private void RefreshMissingRegistryServicesIfNeeded()
@@ -724,7 +688,7 @@ namespace Hecton8.Rendering.Scatter
             if (_registryDataVault != null)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (frame < _nextMissingRegistryRefreshFrame)
                 return;
 
@@ -1142,15 +1106,21 @@ namespace Hecton8.Rendering.Scatter
             }
 
             var argsWrite = _argsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            try
             {
-                indexCountPerInstance = indexCount,
-                instanceCount = 0u,
-                startIndex = startIndex,
-                baseVertexIndex = baseVertex,
-                startInstance = 0u
-            };
-            _argsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+                argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+                {
+                    indexCountPerInstance = indexCount,
+                    instanceCount = 0u,
+                    startIndex = startIndex,
+                    baseVertexIndex = baseVertex,
+                    startInstance = 0u
+                };
+            }
+            finally
+            {
+                _argsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            }
 
             _boundMesh = mesh;
             _boundIndexCount = indexCount;
@@ -1974,7 +1944,7 @@ namespace Hecton8.Rendering.Scatter
             int index = _blackBoxCursor % blackBoxLength;
             blackBox[index] = new ScatterBlackBoxEntry
             {
-                Frame = Time.frameCount,
+                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                 ActiveInstanceCount = activeCount,
                 VisibleFloraCount = _lastVisibleFloraCount,
                 CullDistanceMeters = _effectiveCullDistanceMeters,

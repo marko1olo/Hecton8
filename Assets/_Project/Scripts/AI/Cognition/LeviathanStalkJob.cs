@@ -53,9 +53,10 @@ namespace Hecton8.AI.Cognition
                 sonarPingIntensity > AlphaLeviathanStalkConstants.DirectionEpsilon;
             bool hasTrackingAnchor = hasPlayerAnchor | sonarActive;
             bool eligibleToAct = active & hasTrackingAnchor;
-            const float mathLodPressure01 = 0f;
-            const float visualQuality01 = 1f;
-            const bool survivalMathLod = false;
+            float mathLodPressure01 = math.saturate(math.select(0f, stimulus.SystemStress01, math.isfinite(stimulus.SystemStress01)));
+            float survivalBlend01 = SmoothStep01(mathLodPressure01);
+            float visualQuality01 = 1f - survivalBlend01;
+            bool survivalMathLod = survivalBlend01 > AlphaLeviathanStalkConstants.DirectionEpsilon;
             bool shiftFenceActive = (stimulus.RuntimeFlags & AlphaLeviathanStalkRuntimeFlags.ShiftFenceActive) != 0u;
             bool shiftChanged = stimulus.ObservedShiftFrameId != state.LastShiftFrameId;
             AlphaLeviathanAup rawAnchor = SelectAup(stimulus.PlayerAup, stimulus.PingAup, sonarActive);
@@ -157,7 +158,7 @@ namespace Hecton8.AI.Cognition
 
             float3 previous = NormalizeSafe(statePrevious, phaseSteer);
             previous = math.select(previous, phaseSteer, shiftChanged);
-            float blend = math.lerp(AlphaLeviathanStalkConstants.PrecisionSteeringBlend, AlphaLeviathanStalkConstants.SurvivalSteeringBlend, mathLodPressure01);
+            float blend = math.lerp(AlphaLeviathanStalkConstants.PrecisionSteeringBlend, AlphaLeviathanStalkConstants.SurvivalSteeringBlend, survivalBlend01);
             float3 desiredDirection = NormalizeSafe(math.lerp(previous, phaseSteer, blend), phaseSteer);
             float activeIntent = math.select(0f, 1f, safeToAct);
             float reportedAggression = math.select(0f, aggression, safeToAct);
@@ -205,7 +206,7 @@ namespace Hecton8.AI.Cognition
             float recommendedCadence = math.lerp(
                 AlphaLeviathanStalkConstants.PrecisionCadenceSeconds,
                 AlphaLeviathanStalkConstants.SurvivalCadenceSeconds,
-                mathLodPressure01);
+                survivalBlend01);
             recommendedCadence = math.select(0f, recommendedCadence, safeToAct);
             float charge01 = math.select(0f, 1f, phase == AlphaLeviathanStalkPhase.Charge);
             float saltGrowth = math.select(0f, math.lerp(0.03f, math.saturate(0.25f + aggression * 0.55f + sdfWeight * 0.2f), sdfOverkill01), safeToAct);
@@ -213,7 +214,7 @@ namespace Hecton8.AI.Cognition
             float sssPulse = math.saturate((0.05f + charge01 * 0.8f + 0.15f * sdfOverkill01) * activeIntent);
             float particleBudget = math.select(0f, math.lerp(0.18f, 1f, sdfOverkill01), safeToAct);
             float triangleNoise = Triangle01(((float)((Frame + (uint)(index * 17)) & 1023u)) * AlphaLeviathanStalkConstants.TriangleNoiseInvPeriod + aggression);
-            float silhouetteNoise = math.select(0f, math.lerp(triangleNoise, triangleNoise * 0.2f, mathLodPressure01), safeToAct);
+            float silhouetteNoise = math.select(0f, math.lerp(triangleNoise, triangleNoise * 0.2f, survivalBlend01), safeToAct);
             SteeringOutputs[index] = new AlphaLeviathanSteeringOutput
             {
                 DesiredDirection = outputDirection,
@@ -249,8 +250,8 @@ namespace Hecton8.AI.Cognition
                 Flags = flags,
                 DistanceToPlayerMeters = reportedDistanceMeters,
                 FogRingDistanceMeters = reportedRingDistance,
-                Position = SanitizeTelemetryPosition(leviathanAbsolute),
-                PlayerPosition = SanitizeTelemetryPosition(anchorAbsolute),
+                Position = float3.zero,
+                PlayerPosition = SanitizeTelemetryLocalPosition(toAnchorDouble),
                 DesiredDirection = outputDirection,
                 StateHash = stateHash,
                 LeviathanAgressivity01 = reportedAggression,
@@ -339,12 +340,14 @@ namespace Hecton8.AI.Cognition
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float3 SanitizeTelemetryPosition(double3 value)
+        private static float3 SanitizeTelemetryLocalPosition(double3 localDelta)
         {
+            double maxLocal = AlphaLeviathanStalkConstants.MaxFogDistanceMeters;
+            double3 clamped = math.clamp(localDelta, new double3(-maxLocal), new double3(maxLocal));
             float3 telemetryPosition = new float3(
-                (float)math.clamp(value.x, (double)-float.MaxValue, (double)float.MaxValue),
-                (float)math.clamp(value.y, (double)-float.MaxValue, (double)float.MaxValue),
-                (float)math.clamp(value.z, (double)-float.MaxValue, (double)float.MaxValue));
+                (float)clamped.x,
+                (float)clamped.y,
+                (float)clamped.z);
             return math.select(float3.zero, telemetryPosition, math.all(math.isfinite(telemetryPosition)));
         }
 

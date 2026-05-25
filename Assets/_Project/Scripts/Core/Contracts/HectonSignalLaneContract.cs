@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using UnityEngine.Scripting;
@@ -16,7 +17,10 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(8)] public long GridY;
         [FieldOffset(16)] public long GridZ;
         [FieldOffset(24)] public float3 Local;
-        [FieldOffset(36)] private uint _pad0;
+        [FieldOffset(36)] private byte _pad0;
+        [FieldOffset(37)] private byte _pad1;
+        [FieldOffset(38)] private byte _pad2;
+        [FieldOffset(39)] private byte _pad3;
 
         public AcousticAup(long gridX, long gridY, long gridZ, float3 local)
         {
@@ -24,33 +28,61 @@ namespace Hecton8.Core.Contracts
             GridY = gridY;
             GridZ = gridZ;
             Local = local;
-            _pad0 = 0u;
+            _pad0 = 0;
+            _pad1 = 0;
+            _pad2 = 0;
+            _pad3 = 0;
         }
 
         public static float3 RelativeFloat3(in AcousticAup position, in AcousticAup origin)
         {
-            const double maxFloatSafe = HectonPhysicsContract.AupMaxFloatSafeMeters;
             double cellSize = CellSizeMeters;
-            double x = ((position.GridX - origin.GridX) * cellSize) + (double)position.Local.x - origin.Local.x;
-            double y = ((position.GridY - origin.GridY) * cellSize) + (double)position.Local.y - origin.Local.y;
-            double z = ((position.GridZ - origin.GridZ) * cellSize) + (double)position.Local.z - origin.Local.z;
+            double gridDeltaX = (double)position.GridX - origin.GridX;
+            double gridDeltaY = (double)position.GridY - origin.GridY;
+            double gridDeltaZ = (double)position.GridZ - origin.GridZ;
+            double x = (gridDeltaX * cellSize) + (double)position.Local.x - origin.Local.x;
+            double y = (gridDeltaY * cellSize) + (double)position.Local.y - origin.Local.y;
+            double z = (gridDeltaZ * cellSize) + (double)position.Local.z - origin.Local.z;
             return new float3(
-                (float)math.clamp(x, -maxFloatSafe, maxFloatSafe),
-                (float)math.clamp(y, -maxFloatSafe, maxFloatSafe),
-                (float)math.clamp(z, -maxFloatSafe, maxFloatSafe));
+                ClampRelativeComponentToFloat(x),
+                ClampRelativeComponentToFloat(y),
+                ClampRelativeComponentToFloat(z));
         }
 
         public static float DistanceMeters(in AcousticAup a, in AcousticAup b)
         {
             double cellSize = CellSizeMeters;
-            double x = ((a.GridX - b.GridX) * cellSize) + (double)a.Local.x - b.Local.x;
-            double y = ((a.GridY - b.GridY) * cellSize) + (double)a.Local.y - b.Local.y;
-            double z = ((a.GridZ - b.GridZ) * cellSize) + (double)a.Local.z - b.Local.z;
+            double gridDeltaX = (double)a.GridX - b.GridX;
+            double gridDeltaY = (double)a.GridY - b.GridY;
+            double gridDeltaZ = (double)a.GridZ - b.GridZ;
+            double x = ClampDistanceComponent((gridDeltaX * cellSize) + (double)a.Local.x - b.Local.x);
+            double y = ClampDistanceComponent((gridDeltaY * cellSize) + (double)a.Local.y - b.Local.y);
+            double z = ClampDistanceComponent((gridDeltaZ * cellSize) + (double)a.Local.z - b.Local.z);
             double distanceSq = x * x + y * y + z * z;
             if (distanceSq <= 0.0 || !math.isfinite(distanceSq))
                 return 0f;
 
             return (float)math.min(HectonPhysicsContract.AupMaxDistanceReturnMeters, math.sqrt(distanceSq));
+        }
+
+        private static float ClampRelativeComponentToFloat(double value)
+        {
+            const double maxFloatSafe = HectonPhysicsContract.AupMaxFloatSafeMeters;
+            if (double.IsNaN(value))
+                return 0f;
+            if (!math.isfinite(value))
+                return value < 0.0 ? (float)-maxFloatSafe : (float)maxFloatSafe;
+            return (float)math.clamp(value, -maxFloatSafe, maxFloatSafe);
+        }
+
+        private static double ClampDistanceComponent(double value)
+        {
+            const double maxDistance = HectonPhysicsContract.AupMaxDistanceReturnMeters;
+            if (double.IsNaN(value))
+                return maxDistance;
+            if (!math.isfinite(value))
+                return value < 0.0 ? -maxDistance : maxDistance;
+            return math.clamp(value, -maxDistance, maxDistance);
         }
 
         public static bool IsFinite(in AcousticAup aup)
@@ -78,11 +110,24 @@ namespace Hecton8.Core.Contracts
         [FieldOffset(120)] public uint ClipHash;
         [FieldOffset(124)] public byte Flags;
         [FieldOffset(125)] public byte QualityTier;
-        [FieldOffset(126)] private ushort _reserved0;
-        [FieldOffset(128)] private uint _reserved1;
-        [FieldOffset(132)] private uint _reserved2;
-        [FieldOffset(136)] private uint _reserved3;
-        [FieldOffset(140)] private uint _reserved4;
+        [FieldOffset(126)] private byte _pad0;
+        [FieldOffset(127)] private byte _pad1;
+        [FieldOffset(128)] private byte _pad2;
+        [FieldOffset(129)] private byte _pad3;
+        [FieldOffset(130)] private byte _pad4;
+        [FieldOffset(131)] private byte _pad5;
+        [FieldOffset(132)] private byte _pad6;
+        [FieldOffset(133)] private byte _pad7;
+        [FieldOffset(134)] private byte _pad8;
+        [FieldOffset(135)] private byte _pad9;
+        [FieldOffset(136)] private byte _pad10;
+        [FieldOffset(137)] private byte _pad11;
+        [FieldOffset(138)] private byte _pad12;
+        [FieldOffset(139)] private byte _pad13;
+        [FieldOffset(140)] private byte _pad14;
+        [FieldOffset(141)] private byte _pad15;
+        [FieldOffset(142)] private byte _pad16;
+        [FieldOffset(143)] private byte _pad17;
     }
 }
 
@@ -182,19 +227,19 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct SignalLaneTelemetry
     {
-        [FieldOffset(0)] public uint LaneHash;
-        [FieldOffset(4)] public int QueuedBeforeFlush;
-        [FieldOffset(8)] public int SnapshotCount;
-        [FieldOffset(12)] public int DroppedCount;
-        [FieldOffset(16)] public int CoalescedCount;
-        // Bits: 0 storm, 1 non-critical VFX, 2 fatal, 3 coalesced, 4 corrupt, 5 cache-line stride debt, 6 legacy MPSC writer opened.
-        [FieldOffset(20)] public byte Flags;
-        // Payload stride bytes, saturated to 255.
-        [FieldOffset(21)] public byte Reserved0;
-        // Low byte: layout policy flags. High byte: legacy MPSC writer opens last flush, saturated to 255.
-        [FieldOffset(22)] public ushort Reserved1;
         // Low32: pushed last flush. High32: corrupted total.
-        [FieldOffset(24)] public ulong Reserved2;
+        [FieldOffset(0)] public ulong Reserved2;
+        [FieldOffset(8)] public uint LaneHash;
+        [FieldOffset(12)] public int QueuedBeforeFlush;
+        [FieldOffset(16)] public int SnapshotCount;
+        [FieldOffset(20)] public int DroppedCount;
+        [FieldOffset(24)] public int CoalescedCount;
+        // Low byte: layout policy flags. High byte: legacy MPSC writer opens last flush, saturated to 255.
+        [FieldOffset(28)] public ushort Reserved1;
+        // Bits: 0 storm, 1 non-critical VFX, 2 fatal, 3 coalesced, 4 corrupt, 5 cache-line stride debt, 6 legacy MPSC writer opened.
+        [FieldOffset(30)] public byte Flags;
+        // Payload stride bytes, saturated to 255.
+        [FieldOffset(31)] public byte Reserved0;
     }
 
     /// <summary>Procedural instance culling overload signal. Size: 32 bytes.</summary>

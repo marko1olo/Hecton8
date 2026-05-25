@@ -10,14 +10,16 @@ namespace Hecton8.EditorValidation
     public static class H8DataMonolithCorruptionFuzzer
     {
         private const string AgentId = "X_002";
+        private const string AgentId1313 = "1313";
         private const string ReportPath = "Docs/Reports/DATA_MONOLITH_CORRUPTION_FUZZER_X_002.json";
+        private const string ReportPath1313 = "Docs/Reports/DATA_MONOLITH_CORRUPTION_FUZZER_1313.json";
         private const string TempFolder = "Temp/DataMonolithFuzzer";
 
         [MenuItem("Hecton8/Data Monolith/Run Corruption Fuzzer")]
         public static void RunFromMenu()
         {
             bool passed = Run();
-            Debug.Log("[H8DataMonolithCorruptionFuzzer] passed=" + passed + " report=" + ReportPath);
+            Debug.Log("[H8DataMonolithCorruptionFuzzer] passed=" + passed + " report=" + ReportPath + " report1313=" + ReportPath1313);
         }
 
         internal static bool Run()
@@ -50,6 +52,11 @@ namespace Hecton8.EditorValidation
             RunCase(projectRoot, tempFolder, "bad_stored_checksum", baseline, MutateStoredChecksum, "checksum", ref passCount, ref failCount, ref expectedCaseCount, cases);
             RunCase(projectRoot, tempFolder, "bad_payload_checksum", baseline, MutatePayloadByte, "checksum", ref passCount, ref failCount, ref expectedCaseCount, cases);
             RunCase(projectRoot, tempFolder, "truncated_blob", baseline, MutateTruncate, "mismatch", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_header_unknown_flags", baseline, MutateHeaderUnknownFlags, "flags", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_header_reserved", baseline, MutateHeaderReserved, "reserved", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_directory_reserved", baseline, MutateDirectoryReserved, "reserved", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_header_section_count", baseline, MutateHeaderSectionCount, "sections", ref passCount, ref failCount, ref expectedCaseCount, cases);
+            RunCase(projectRoot, tempFolder, "bad_header_section_table_offset", baseline, MutateHeaderSectionTableOffset, "tableOffset", ref passCount, ref failCount, ref expectedCaseCount, cases);
             RunCase(projectRoot, tempFolder, "bad_section_table_offset", baseline, MutateSectionTableOffset, "Section table range", ref passCount, ref failCount, ref expectedCaseCount, cases);
             RunCase(projectRoot, tempFolder, "bad_directory_magic", baseline, MutateDirectoryMagic, "Directory magic", ref passCount, ref failCount, ref expectedCaseCount, cases);
             RunCase(projectRoot, tempFolder, "bad_directory_identity", baseline, MutateDirectoryIdentity, "identity", ref passCount, ref failCount, ref expectedCaseCount, cases);
@@ -127,6 +134,44 @@ namespace Hecton8.EditorValidation
             int truncatedLength = Math.Max(0, source.Length - Hecton8.Data.H8DataLayoutConstants.SectionAlignmentBytes);
             byte[] bytes = new byte[truncatedLength];
             Buffer.BlockCopy(source, 0, bytes, 0, bytes.Length);
+            return bytes;
+        }
+
+        private static byte[] MutateHeaderUnknownFlags(byte[] source)
+        {
+            byte[] bytes = Clone(source);
+            WriteUInt32(bytes, 36, Hecton8.Data.H8DataLayoutConstants.BlobFlagLittleEndian | 0x2u);
+            WriteUInt32(bytes, Hecton8.Data.H8DataLayoutConstants.HeaderSizeBytes + 32, Hecton8.Data.H8DataLayoutConstants.BlobFlagLittleEndian | 0x2u);
+            RecomputeHeaderChecksum(bytes);
+            return bytes;
+        }
+
+        private static byte[] MutateHeaderReserved(byte[] source)
+        {
+            byte[] bytes = Clone(source);
+            WriteUInt32(bytes, 52, 1u);
+            return bytes;
+        }
+
+        private static byte[] MutateDirectoryReserved(byte[] source)
+        {
+            byte[] bytes = Clone(source);
+            WriteUInt32(bytes, Hecton8.Data.H8DataLayoutConstants.HeaderSizeBytes + 44, 1u);
+            RecomputeHeaderChecksum(bytes);
+            return bytes;
+        }
+
+        private static byte[] MutateHeaderSectionCount(byte[] source)
+        {
+            byte[] bytes = Clone(source);
+            WriteUInt32(bytes, 32, (uint)Hecton8.Data.H8DataSectionId.PhysicsConstants - 1u);
+            return bytes;
+        }
+
+        private static byte[] MutateHeaderSectionTableOffset(byte[] source)
+        {
+            byte[] bytes = Clone(source);
+            WriteUInt32(bytes, 28, Hecton8.Data.H8DataLayoutConstants.HeaderSizeBytes + Hecton8.Data.H8DataLayoutConstants.DirectorySizeBytes + 64u);
             return bytes;
         }
 
@@ -260,7 +305,9 @@ namespace Hecton8.EditorValidation
             report.AppendLine();
             report.AppendLine("  ]");
             report.AppendLine("}");
-            WriteText(Path.Combine(projectRoot, ReportPath), report.ToString());
+            string text = report.ToString();
+            WriteText(Path.Combine(projectRoot, ReportPath), text);
+            WriteText(Path.Combine(projectRoot, ReportPath1313), text.Replace("\"agent\": \"" + AgentId + "\"", "\"agent\": \"" + AgentId1313 + "\""));
         }
 
         private static string ResolveProjectRoot()

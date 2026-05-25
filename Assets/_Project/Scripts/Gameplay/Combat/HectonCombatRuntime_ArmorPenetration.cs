@@ -1537,9 +1537,9 @@ namespace Hecton8.Gameplay
         }
 
         internal static void EmitArmorDeflectFeedback(
-            NativeQueue<DeflectSignal>.ParallelWriter deflectWriter,
+            global::Hecton8.Core.MpscSignalRingBuffer<DeflectSignal>.ParallelWriter deflectWriter,
             NativeArray<int> deflectWriterBudget,
-            NativeQueue<ImpactSignal>.ParallelWriter impactWriter,
+            global::Hecton8.Core.MpscSignalRingBuffer<ImpactSignal>.ParallelWriter impactWriter,
             NativeArray<int> impactWriterBudget,
             in CombatDamageRequest signal,
             in CombatDamageSignalDetail detail,
@@ -1570,7 +1570,7 @@ namespace Hecton8.Gameplay
         }
 
         internal static void EmitArmorImpactFeedback(
-            NativeQueue<ImpactSignal>.ParallelWriter impactWriter,
+            global::Hecton8.Core.MpscSignalRingBuffer<ImpactSignal>.ParallelWriter impactWriter,
             NativeArray<int> impactWriterBudget,
             in ArmorPenetrationSample sample,
             float preMitigationDamage,
@@ -1664,7 +1664,8 @@ namespace Hecton8.Gameplay
                     Health = views.CasTortureHealth,
                     Successes = views.CasTortureSuccesses
                 };
-                job.Schedule(count, 64).Complete(); // COLD EDITOR/QA ONLY: same-slot CAS storm proof, never part of FrameTick.
+                JobHandle handle = job.Schedule(count, 64);
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD EDITOR/QA ONLY: same-slot CAS storm proof, never part of FrameTick.
 
                 for (int i = 0; i < count; i++)
                     successCount += views.CasTortureSuccesses[i];
@@ -1995,7 +1996,7 @@ namespace Hecton8.Gameplay
                 };
 
                 JobHandle handle = job.Schedule(count, 32);
-                handle.Complete(); // COLD EDITOR/QA ONLY: deterministic mock data generation, never part of FrameTick.
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD EDITOR/QA ONLY: deterministic mock data generation, never part of FrameTick.
                 for (int i = 0; i < count; i++)
                 {
                     CombatDamageRequest request = views.MockRequests[i];
@@ -2082,7 +2083,7 @@ namespace Hecton8.Gameplay
                     TargetSlots = views.TortureTargetSlots
                 };
                 JobHandle mockHandle = mockJob.Schedule(count, 64);
-                mockHandle.Complete(); // COLD EDITOR/QA ONLY: synthetic pellet storm fill, not part of FrameTick.
+                DispatcherJobFence.TryComplete(ref mockHandle, forceComplete: true); // COLD EDITOR/QA ONLY: synthetic pellet storm fill, not part of FrameTick.
 
                 long startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
                 EvaluateArmorPenetrationJob job = new EvaluateArmorPenetrationJob
@@ -2104,7 +2105,7 @@ namespace Hecton8.Gameplay
                     ResolvedHits = views.TortureResolvedHits
                 };
                 JobHandle handle = job.Schedule(count, 64);
-                handle.Complete(); // COLD EDITOR/QA ONLY: measured LUT evaluator, never part of FrameTick.
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD EDITOR/QA ONLY: measured LUT evaluator, never part of FrameTick.
                 long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTicks;
                 double elapsedMicroseconds = elapsedTicks > 0L
                     ? elapsedTicks * 1000000.0d / System.Diagnostics.Stopwatch.Frequency

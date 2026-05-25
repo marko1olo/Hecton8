@@ -24,7 +24,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Loadout Tab")]
-    public sealed class PDALoadoutTab : MonoBehaviour, IUpdatable, ILateFrameTickable, IPDAEventListener, IPlayerExpressionEventListener, IGlobalRegistryHotSwapListener
+    public sealed class PDALoadoutTab : MonoBehaviour, ILateFrameTickable, IPDAEventListener, IPlayerExpressionEventListener, IGlobalRegistryHotSwapListener
     {
         private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.84f);
         private static readonly Color BoxBg = new Color(0.05f, 0.12f, 0.14f, 0.72f);
@@ -97,7 +97,6 @@ namespace Hecton8.UI
         private TextMeshProUGUI _recommendedActionLabel;
         private IPlayerInventoryService _inventoryService;
         private IPlayerExpressionReadModel _playerExpressionReadModel;
-        private bool _registeredToDispatcher;
         private bool _registeredToLateFrameDispatcher;
         private bool _registeredHotSwap;
         private IPlayerRuntimeContext _playerRuntimeContext;
@@ -155,7 +154,6 @@ namespace Hecton8.UI
             EnsureBuilt();
             Subscribe();
             TryRegisterHotSwapListener();
-            RegisterToTickManager();
             RegisterToLateFrameManager();
             _refreshDirty = true;
             RefreshAll();
@@ -165,13 +163,12 @@ namespace Hecton8.UI
         {
             TryUnregisterHotSwapListener();
             Unsubscribe();
-            UnregisterFromTickManager();
             UnregisterFromLateFrameManager();
             _playerRuntimeContext = null;
         }
 
         /// <inheritdoc />
-        public void Tick(float deltaTime)
+        private void AdvanceLoadoutPresentationState(float deltaTime)
         {
             if (IsTabActive)
             {
@@ -188,6 +185,8 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            AdvanceLoadoutPresentationState(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (_refreshDirty && IsTabActive)
                 RefreshAll();
 
@@ -327,8 +326,8 @@ namespace Hecton8.UI
                 case GlobalRegistryServiceSlot.Dispatcher:
                     if (currentService != null)
                     {
-                        UnregisterFromTickManager();
-                        RegisterToTickManager();
+                        UnregisterFromLateFrameManager();
+                        RegisterToLateFrameManager();
                     }
                     break;
             }
@@ -1545,17 +1544,6 @@ namespace Hecton8.UI
             group.blocksRaycasts = visible;
         }
 
-        private void RegisterToTickManager()
-        {
-            if (_registeredToDispatcher || !Application.isPlaying)
-                return;
-
-            if (GlobalRegistry.Dispatcher == null)
-                return;
-
-            _registeredToDispatcher = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
-        }
-
         private void RegisterToLateFrameManager()
         {
             if (_registeredToLateFrameDispatcher || !Application.isPlaying)
@@ -1565,15 +1553,6 @@ namespace Hecton8.UI
                 return;
 
             _registeredToLateFrameDispatcher = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
-        }
-
-        private void UnregisterFromTickManager()
-        {
-            if (!_registeredToDispatcher)
-                return;
-
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _registeredToDispatcher = false;
         }
 
         private void UnregisterFromLateFrameManager()
@@ -1894,15 +1873,17 @@ namespace Hecton8.UI
                 return;
             }
 
-            string description = preset.description;
-            if (string.IsNullOrWhiteSpace(description))
+            ReadOnlySpan<char> description = string.IsNullOrEmpty(preset.description)
+                ? ReadOnlySpan<char>.Empty
+                : preset.description.AsSpan();
+            if (!HasNonWhiteSpace(description))
             {
                 Append(destination, ref index, "Standard expedition slot map.".AsSpan());
                 return;
             }
 
             int end = description.Length;
-            int newline = description.IndexOf('\n');
+            int newline = IndexOfLineBreak(description);
             if (newline >= 0)
                 end = newline;
 
@@ -1913,9 +1894,31 @@ namespace Hecton8.UI
             while (end > 0 && char.IsWhiteSpace(description[end - 1]))
                 end--;
 
-            Append(destination, ref index, description.AsSpan(0, end));
+            Append(destination, ref index, description.Slice(0, end));
             if (truncated)
                 Append(destination, ref index, "...".AsSpan());
+        }
+
+        private static int IndexOfLineBreak(ReadOnlySpan<char> value)
+        {
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (value[i] == '\n')
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static bool HasNonWhiteSpace(ReadOnlySpan<char> value)
+        {
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (!char.IsWhiteSpace(value[i]))
+                    return true;
+            }
+
+            return false;
         }
 
         private static void SetSlotHeaderText(TMP_Text text, int slotNumber)

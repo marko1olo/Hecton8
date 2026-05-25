@@ -1,0 +1,9 @@
+{
+    "schema":  "hecton8.patch_added_lines_token_scan_1302.v3",
+    "generatedAt":  "2026-05-25",
+    "directUnityDebugExcludedWrapper":  "Hecton8.Core.H8Debug.* is project wrapper, not UnityEngine.Debug direct call",
+    "addedLineForbiddenTokenHits":  0,
+    "hits":  [
+
+             ]
+}

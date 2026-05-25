@@ -5,7 +5,6 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -574,7 +573,7 @@ namespace Hecton8.Modding
             if (!_modStatesByHash.TryGetValue(modHash, out ModCommandModState state))
                 return;
 
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (state.LastHeapFrame != frame)
             {
                 state.LastHeapFrame = frame;
@@ -1087,9 +1086,9 @@ namespace Hecton8.Modding
                 return;
             }
 
-            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
-            if (fluidEngine == null ||
-                !fluidEngine.TrySampleModAbyssalFlow(runtimePosition, out float3 flowVector))
+            IAbyssalFlowGpuReadModel fluidFlow = GlobalRegistry.AbyssalFlowGpu;
+            if (fluidFlow == null ||
+                !fluidFlow.TrySampleModAbyssalFlow(runtimePosition, out float3 flowVector))
             {
                 RejectCommand(command.ModHash, command.RequestId, command.Opcode, command.TargetSystem, ModCommandRejectReason.FlowUnavailable);
                 EnqueueAupResponse(command.ModHash, command.RequestId, ModAupResponseKind.FlowVector, ModAupResponseStatus.Unavailable, in position);
@@ -1119,7 +1118,7 @@ namespace Hecton8.Modding
             }
 
             float normalizedIntensity = math.saturate(intensity01);
-            IAudioService audioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            IAudioService audioManager = GlobalRegistry.Audio;
             if (audioManager == null || !audioManager.TryEmitModAcousticPing(runtimePosition, normalizedIntensity))
             {
                 RejectCommand(command.ModHash, command.RequestId, command.Opcode, command.TargetSystem, ModCommandRejectReason.AcousticUnavailable);
@@ -1152,7 +1151,7 @@ namespace Hecton8.Modding
 
         private static bool TryAccountCommandForTick(uint modHash, ref ModCommandModState state)
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (state.LastCommandFrame != frame)
             {
                 state.LastCommandFrame = frame;
@@ -1239,7 +1238,7 @@ namespace Hecton8.Modding
             return -1;
         }
 
-        private static void ConsumeDispatcherRaycastHit(int slot, in RaycastHit hit)
+        private static void ConsumeDispatcherSurfaceHit(int slot, in KinematicSurfaceHit hit)
         {
             if ((uint)slot >= (uint)_raycastRequestRecords.Length)
                 return;
@@ -1249,14 +1248,14 @@ namespace Hecton8.Modding
             if (record.IsActive == 0)
                 return;
 
-            bool hasHit = hit.collider != null && hit.distance > 0f;
+            bool hasHit = hit.hasHit && hit.distance > 0f;
             ModRaycastResultPayload payload = new ModRaycastResultPayload
             {
                 ModHash = record.ModHash,
                 RequestId = record.RequestId,
                 Status = hasHit ? (uint)ModRaycastResultStatus.Hit : (uint)ModRaycastResultStatus.Miss,
-                ColliderInstanceId = hasHit ? unchecked((int)EntityId.ToULong(hit.collider.GetEntityId())) : 0,
-                Layer = hasHit ? hit.collider.gameObject.layer : -1,
+                ColliderInstanceId = 0,
+                Layer = hasHit ? hit.Layer : -1,
                 Distance = hasHit ? hit.distance : 0f,
                 Point = hasHit ? new float3(hit.point.x, hit.point.y, hit.point.z) : default,
                 Normal = hasHit ? new float3(hit.normal.x, hit.normal.y, hit.normal.z) : default
@@ -1645,11 +1644,11 @@ namespace Hecton8.Modding
             queue = default;
         }
 
-        private sealed class ModRaycastReceiver : IDispatcherRaycastReceiver
+        private sealed class ModRaycastReceiver : IDispatcherSurfaceProbeReceiver
         {
-            public void ConsumeDispatcherRaycastHit(int requestId, in RaycastHit hit)
+            public void ConsumeDispatcherSurfaceHit(int requestId, in KinematicSurfaceHit hit)
             {
-                ModCommandDispatcher.ConsumeDispatcherRaycastHit(requestId, in hit);
+                ModCommandDispatcher.ConsumeDispatcherSurfaceHit(requestId, in hit);
             }
         }
     }

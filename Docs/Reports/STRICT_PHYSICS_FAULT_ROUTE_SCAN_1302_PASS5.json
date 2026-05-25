@@ -1,0 +1,1499 @@
+﻿{
+    "schema":  "STRICT_PHYSICS_FAULT_ROUTE_SCAN_1302_PASS5",
+    "generatedUtc":  "2026-05-25T17:23:42.5026227Z",
+    "dotnetBuildExecuted":  false,
+    "unityBuildExecuted":  false,
+    "touchedSourceFiles":  [
+                               "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                               "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                               "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                               "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                               "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs"
+                           ],
+    "touchedManagedHitCount":  131,
+    "touchedFaultWriterHits":  0,
+    "touchedCoreBridgeHits":  3,
+    "broadPhysicsDumpHitCount":  70,
+    "broadRuntimeScopedDumpHitCount":  62,
+    "touchedHits":  [
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  32,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "[SerializeField] private Vector3 gridSizeLocal = new Vector3(5.5f, 2.4f, 9.5f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  205,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "GenerateMockVehicleDamageJob mockJob = new GenerateMockVehicleDamageJob"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  217,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "CopyVehicleDamageSignalsJob copyJob = new CopyVehicleDamageSignalsJob"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  230,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "MapImpactToGridJob mapJob = new MapImpactToGridJob"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  247,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "ApplyVehicleDamageReductionJob reductionJob = new ApplyVehicleDamageReductionJob"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  265,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "EvaluateVehicleSystemsJob evaluateJob = new EvaluateVehicleSystemsJob"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  287,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "PublishVehicleDamageStateJob publishJob = new PublishVehicleDamageStateJob"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  507,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "InitializeVehicleGridJob initWrite = new InitializeVehicleGridJob"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  542,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "Vector3 safeSize = new Vector3("
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  551,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "tuning.CellSizeMeters = math.cmin(new float3(safeSize.x / tuning.GridWidth, safeSize.y / tuning.GridHeight, safeSize.z / tuning.GridDepth));"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  552,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "tuning.GridCenterLocal = new float3(gridCenterLocal.x, gridCenterLocal.y, gridCenterLocal.z);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  553,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "tuning.GridSizeLocal = new float3(safeSize.x, safeSize.y, safeSize.z);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  806,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "FileInfo info = new FileInfo(_csvPath);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  835,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "Span\u003cbyte\u003e bytes = new Span\u003cbyte\u003e(scratchPtr, (int)info.Length);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  836,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.Read))"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  913,
+                            "pattern":  "try_dump_blackbox_now",
+                            "classification":  "core_fault_dump_bridge_guarded",
+                            "text":  "bool written = GlobalTelemetryBus.TryDumpBlackboxNow(VehicleFaultDumpHash);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  931,
+                            "pattern":  "global_telemetry_initialize",
+                            "classification":  "cold_route_warmup",
+                            "text":  "GlobalTelemetryBus.Initialize();"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  956,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "rootAup = new double3(position.x, position.y, position.z);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  957,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "rootRotation = NormalizeOrIdentity(new quaternion(rotation.x, rotation.y, rotation.z, rotation.w));"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  985,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "double3 resolvedAup = origin + new double3(localPosition.x, localPosition.y, localPosition.z);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  986,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "quaternion resolvedRotation = NormalizeOrIdentity(new quaternion(localRotation.x, localRotation.y, localRotation.z, localRotation.w));"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  1009,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "double3 fallbackAup = new double3(position.x, position.y, position.z);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  1014,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "_cachedRootRotation = NormalizeOrIdentity(new quaternion(rotation.x, rotation.y, rotation.z, rotation.w));"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  1028,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "return new quaternion(value.value * math.rsqrt(math.max(lengthSq, 0.0001f)));"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  1232,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "Vector3 size = new Vector3("
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  1254,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "? new Color(1f, 0.25f, 0.05f, 0.55f)"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  1255,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  ": new Color(1f - integrity, integrity, 0.05f, 0.45f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                            "line":  1256,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "Vector3 center = min + Vector3.Scale(new Vector3(x + 0.5f, y + 0.5f, z + 0.5f), size);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  56,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "[SerializeField] private Vector3 centerOfBuoyancyLocal = new Vector3(0f, 0.75f, 0f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  57,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "[SerializeField] private Vector3 mockFloodLocal = new Vector3(0f, -0.25f, -3.2f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  243,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "CalculateAddedMassTensorJob addedMassJob = new CalculateAddedMassTensorJob"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  267,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "Submarine6DIntegratorJob integratorJob = new Submarine6DIntegratorJob"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  340,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "Quaternion rotation = new Quaternion(state.Rotation.value.x, state.Rotation.value.y, state.Rotation.value.z, state.Rotation.value.w);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  341,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "target.SetPositionAndRotation(new Vector3(state.LocalPosition.x, state.LocalPosition.y, state.LocalPosition.z), rotation);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  357,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "Gizmos.color = new Color(0.15f, 0.55f, 1f, 0.85f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  359,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "Gizmos.color = new Color(0.95f, 0.95f, 0.25f, 0.85f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  361,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "Gizmos.color = new Color(0.25f, 1f, 0.65f, 0.85f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  363,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "Gizmos.color = new Color(0.15f, 0.55f, 1f, 0.18f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  365,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "Gizmos.matrix = Matrix4x4.TRS(origin, rotation, new Vector3(axisScale.x, axisScale.y, axisScale.z));"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  383,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "origin = new Vector3(state.LocalPosition.x, state.LocalPosition.y, state.LocalPosition.z);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  385,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "rotation = new Quaternion(safeRotation.value.x, safeRotation.value.y, safeRotation.value.z, safeRotation.value.w);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  396,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "return new float3(fallbackRadius, fallbackRadius, fallbackLength * 0.5f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  402,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "return new float3(fallbackRadius, fallbackRadius, fallbackLength * 0.5f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  410,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "return new float3(fallbackRadius, fallbackRadius, fallbackLength * 0.5f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  415,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "float3 normalized = normalizedSq * math.rsqrt(math.max(normalizedSq, new float3(0.0001f)));"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  418,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "return math.max(new float3(0.25f), normalized * baseScale);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  827,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "control.ThrustLocal = new float3(0f, 0f, 1f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  837,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "control.TorqueLocal = new float3(-pitch, yaw, 0f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  850,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "mass.CargoCenterLocal = new float3(0f, -0.2f, config.CargoForwardMeters);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  975,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "force.ImpactNormalWorld = SubmarineDynamicsSimdMath.NormalizeOrFallback(normalWorld, new float3(0f, 0f, -1f));"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  1003,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "float3 safePoint = math.all(math.isfinite(localPoint)) ? localPoint : new float3(0f, 0f, 1f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  1004,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "return SubmarineDynamicsSimdMath.NormalizeOrFallback(-safePoint, new float3(0f, 0f, -1f));"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  1103,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128, FileOptions.SequentialScan))"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  1134,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128, FileOptions.SequentialScan))"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  1161,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "config.LocalOriginAup = new double3(origin.x, origin.y, origin.z);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  1201,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "state.InertiaTensor = new float3(28000f, 92000f, 92000f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  1207,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "control.ThrustLocal = new float3(0f, 0f, 1f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  1217,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "mass.CargoCenterLocal = new float3(0f, -0.2f, config.CargoForwardMeters);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  1314,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128, FileOptions.SequentialScan))"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  1363,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "info = new FileInfo(_hullProfilesCsvPath);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  1395,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "using (FileStream stream = new FileStream(_hullProfilesCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128, FileOptions.SequentialScan))"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  1487,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "hull.CenterOfBuoyancyLocal = new float3(0f, 0.7f, 0f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  1838,
+                            "pattern":  "global_telemetry_initialize",
+                            "classification":  "cold_route_warmup",
+                            "text":  "GlobalTelemetryBus.Initialize();"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  1848,
+                            "pattern":  "try_dump_blackbox_now",
+                            "classification":  "core_fault_dump_bridge_guarded",
+                            "text":  "return GlobalTelemetryBus.TryDumpBlackboxNow(dumpHash);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  1967,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "double3 absolute = SafeFinite(config.LocalOriginAup) + new double3(localPosition);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  2037,
+                            "pattern":  "new_keyword",
+                            "classification":  "review",
+                            "text":  "throw new EndOfStreamException();"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                            "line":  2052,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "return new float3(value.x, value.y, value.z);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                            "line":  99,
+                            "pattern":  "new_keyword",
+                            "classification":  "review",
+                            "text":  "_gyroVisualBufferA = new GraphicsBuffer("
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                            "line":  104,
+                            "pattern":  "new_keyword",
+                            "classification":  "review",
+                            "text":  "_gyroVisualBufferB = new GraphicsBuffer("
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                            "line":  265,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "GenerateMockTurbulenceJob mockJob = new GenerateMockTurbulenceJob"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                            "line":  276,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "CalculateGyroscopicErrorJob errorJob = new CalculateGyroscopicErrorJob"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                            "line":  287,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "EvaluatePdControllerJob pdJob = new EvaluatePdControllerJob"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                            "line":  311,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "RecordGyroTelemetryJob telemetryJob = new RecordGyroTelemetryJob"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                            "line":  566,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "info = new FileInfo(_gyroProfilesCsvPath);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                            "line":  604,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "Span\u003cbyte\u003e scratch = new Span\u003cbyte\u003e(scratchPtr, length);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                            "line":  605,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "using (FileStream stream = new FileStream(_gyroProfilesCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128, FileOptions.SequentialScan))"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                            "line":  611,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "int parsed = ParseGyroProfilesCsv(new ReadOnlySpan\u003cbyte\u003e(scratchPtr, read), gyros, profiles);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                            "line":  710,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "Vector3 origin = new Vector3((float)packet.CurrentAup.x, (float)packet.CurrentAup.y, (float)packet.CurrentAup.z);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                            "line":  720,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "Vector3 torqueEnd = origin + new Vector3(torqueDir.x, torqueDir.y, torqueDir.z) * torqueScale;"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                            "line":  721,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "Vector3 errorEnd = origin + new Vector3(error.ErrorVector.x, error.ErrorVector.y, error.ErrorVector.z) * 4f;"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                            "line":  723,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "Gizmos.color = new Color(1f, 0.9f, 0.05f, 0.95f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                            "line":  726,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "Gizmos.color = new Color(1f, 0.05f, 0.05f, 0.35f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  471,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "float3 position = Origin + (new float3(x, y, z) + new float3(0.5f)) * CellSize;"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  472,
+                            "pattern":  "new_keyword",
+                            "classification":  "review",
+                            "text":  "float pillar = 18f - SubmarineAutopilotSimdMath.LengthFromSq(math.lengthsq(new float2(position.x, position.z - 18f)));"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  518,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "float3 p = Origin + (new float3(x, y, z) + new float3(0.5f)) * CellSize;"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  519,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "FlowSamples[index] = new float3("
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  567,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "float3 up = NormalizeOrFallback(math.cross(right, forward), new float3(0f, 1f, 0f));"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  713,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "float3 dx = new float3(step, 0f, 0f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  714,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "float3 dy = new float3(0f, step, 0f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  715,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "float3 dz = new float3(0f, 0f, step);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  726,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "float3 openGradient = -new float3(px - nx, py - ny, pz - nz);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  745,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "float3 invCell = math.rcp(math.max(math.abs(Tuning.SdfCellSize), new float3(0.001f)));"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  747,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "float3 minSample = new float3(-0.5f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  748,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "float3 maxSample = new float3(dims.x - 0.5f, dims.y - 0.5f, dims.z - 0.5f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  752,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "sample = math.clamp(sample, float3.zero, new float3(dims.x - 1f, dims.y - 1f, dims.z - 1f));"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  848,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "return NormalizeOrFallback(velocity, new float3(0f, 0f, 1f));"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  849,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "return NormalizeOrFallback(math.rotate(vehicle.Rotation, new float3(0f, 0f, 1f)), new float3(0f, 0f, 1f));"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  855,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "float3 right = math.rotate(rotation, new float3(1f, 0f, 0f));"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  857,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "right = math.cross(new float3(0f, 1f, 0f), forward);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  858,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "return NormalizeOrFallback(right, new float3(1f, 0f, 0f));"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  896,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "return new float3(0f, 0f, 1f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  1033,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "float3 invCell = math.rcp(math.max(math.abs(Tuning.FlowCellSize), new float3(0.001f)));"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  1035,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "if (math.any(sample \u003c float3.zero) || math.any(sample \u003e new float3(dims.x - 1f, dims.y - 1f, dims.z - 1f)))"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  1038,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "sample = math.clamp(sample, float3.zero, new float3(dims.x - 1f, dims.y - 1f, dims.z - 1f));"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  1092,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "return new float3("
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  1264,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "localDelta = new float3((float)delta.x, (float)delta.y, (float)delta.z);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  1693,
+                            "pattern":  "new_keyword",
+                            "classification":  "review",
+                            "text":  "routeBuffer[submarineIndex] = new AutopilotRouteRangeDTO"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2051,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "InitializeAutopilotBuffersJob initJob = new InitializeAutopilotBuffersJob"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2062,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "GenerateMockObstacleSDFJob sdfJob = new GenerateMockObstacleSDFJob"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2072,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "GenerateMockFlowFieldJob flowJob = new GenerateMockFlowFieldJob"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2132,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "EvaluateCollisionAvoidanceJob evaluate = new EvaluateCollisionAvoidanceJob"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2146,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "ComputeDesiredVelocityJob compute = new ComputeDesiredVelocityJob"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2164,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "RecordAutopilotTelemetryJob telemetryJob = new RecordAutopilotTelemetryJob"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2371,
+                            "pattern":  "global_telemetry_initialize",
+                            "classification":  "cold_route_warmup",
+                            "text":  "GlobalTelemetryBus.Initialize();"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2381,
+                            "pattern":  "try_dump_blackbox_now",
+                            "classification":  "core_fault_dump_bridge_guarded",
+                            "text":  "return GlobalTelemetryBus.TryDumpBlackboxNow(dumpHash);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2426,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "ParseHandlingProfiles(new ReadOnlySpan\u003cbyte\u003e(scratch, length), profiles, profileBuffer.Length);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2444,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 256, FileOptions.SequentialScan))"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2450,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "Span\u003cbyte\u003e target = new Span\u003cbyte\u003e(destination, (int)capped);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2711,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "tuning.SdfOrigin = new float3(-96f, -48f, -96f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2712,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "tuning.SdfCellSize = new float3(4f, 4f, 4f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2713,
+                            "pattern":  "new_keyword",
+                            "classification":  "review",
+                            "text":  "tuning.SdfDimensions = new int3("
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2719,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "tuning.FlowOrigin = new float3(-128f, -48f, -128f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2720,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "tuning.FlowCellSize = new float3(16f, 12f, 16f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2721,
+                            "pattern":  "new_keyword",
+                            "classification":  "review",
+                            "text":  "tuning.FlowDimensions = new int3("
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2746,
+                            "pattern":  "new_keyword",
+                            "classification":  "review",
+                            "text":  "tuning.SdfDimensions = new int3(SubmarineAutopilotConstants.MockSdfWidth, SubmarineAutopilotConstants.MockSdfHeight, SubmarineAutopilotConstants.MockSdfDepth);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2748,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "tuning.SdfOrigin = new float3(-96f, -48f, -96f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2750,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "tuning.SdfCellSize = new float3(4f, 4f, 4f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2753,
+                            "pattern":  "new_keyword",
+                            "classification":  "review",
+                            "text":  "tuning.FlowDimensions = new int3(SubmarineAutopilotConstants.FlowWidth, SubmarineAutopilotConstants.FlowHeight, SubmarineAutopilotConstants.FlowDepth);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2755,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "tuning.FlowOrigin = new float3(-128f, -48f, -128f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2757,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "tuning.FlowCellSize = new float3(16f, 12f, 16f);"
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                            "line":  2815,
+                            "pattern":  "new_keyword",
+                            "classification":  "value_type_or_cold_csv_review",
+                            "text":  "return new Vector3(value.x, value.y, value.z);"
+                        }
+                    ],
+    "broadPhysicsDumpHits":  [
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\HabitatFluidIncursionDirector.cs",
+                                     "line":  25,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "private const string DumpPath = \"Docs/AgentLogs/Dump_SHINOBU_330.bin\";"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\HabitatFluidIncursionDirector.cs",
+                                     "line":  1448,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(\"Docs/AgentLogs\");"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\HabitatFluidIncursionDirector.cs",
+                                     "line":  1452,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "using (FileStream stream = new FileStream(DumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\HarpoonTensionSolver328.cs",
+                                     "line":  706,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  true,
+                                     "runtimeScoped":  false,
+                                     "text":  "string path = Path.Combine(root, \"Docs\", \"AgentLogs\", \"Dump_SHINOBU_328.bin\");"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\HarpoonTensionSolver328.cs",
+                                     "line":  915,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  true,
+                                     "runtimeScoped":  false,
+                                     "text":  "builder.AppendLine(\"    \u003cTASK id=\\\"15\\\" status=\\\"PASS\\\"\u003eRecordTetherTelemetryJob writes a 300-row telemetry ring and fault flags; TryDumpTelemetryIfFault writes Dump_SHINOBU_328.bin from the owner/editor completion phase.\u003c/TASK\u003e\");"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\HarpoonTensionSolver328.cs",
+                                     "line":  1095,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  true,
+                                     "runtimeScoped":  false,
+                                     "text":  "Directory.CreateDirectory(Path.GetDirectoryName(path) ?? \".\");"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\HarpoonTensionSolver328.cs",
+                                     "line":  1096,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  true,
+                                     "runtimeScoped":  false,
+                                     "text":  "using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\TetherAupVerletJobs.cs",
+                                     "line":  1116,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  true,
+                                     "runtimeScoped":  false,
+                                     "text":  "private const string LegacyDumpRelativePath = \"Docs/AgentLogs/Dump_CABLE_SURGEON.bin\";"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\TetherBlackBoxDumpWriter.cs",
+                                     "line":  159,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  true,
+                                     "runtimeScoped":  false,
+                                     "text":  "FileMode.Create,"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\TetherBlackBoxDumpWriter.cs",
+                                     "line":  352,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  true,
+                                     "runtimeScoped":  false,
+                                     "text":  "TryWriteQueuedDumpFile(primaryPath, FileMode.Create);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\TetherBlackBoxDumpWriter.cs",
+                                     "line":  514,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  true,
+                                     "runtimeScoped":  false,
+                                     "text":  "Directory.CreateDirectory(directory);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\AnalyticalGerstnerWaveContracts.cs",
+                                     "line":  42,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "public const string DumpRelativePath = \"Docs/AgentLogs/Dump_SHINOBU_263.bin\";"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\AnalyticalGerstnerWaveRuntime.cs",
+                                     "line":  871,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(directory);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\AnalyticalGerstnerWaveRuntime.cs",
+                                     "line":  875,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\BuoyancyDisplacementContracts.cs",
+                                     "line":  49,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "public const string DumpRelativePath = \"Docs/AgentLogs/Dump_FLUID_DYNAMICS.bin\";"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\BuoyancyDisplacementContracts.cs",
+                                     "line":  50,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "public const string AgentDumpRelativePath = \"Docs/AgentLogs/Dump_SHINOBU_201_Buoyancy.bin\";"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\BuoyancyDisplacementContracts.cs",
+                                     "line":  51,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "public const string SleepStateDumpRelativePath = \"Docs/AgentLogs/Dump_SHINOBU_249.bin\";"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\BuoyancyDisplacementRuntime.cs",
+                                     "line":  1867,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(directory);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\BuoyancyDisplacementRuntime.cs",
+                                     "line":  1871,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\BuoyancyDisplacementRuntime.cs",
+                                     "line":  1895,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(directory);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\BuoyancyDisplacementRuntime.cs",
+                                     "line":  1899,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\BuoyancyDisplacementRuntime.cs",
+                                     "line":  1933,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(directory);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\BuoyancyDisplacementRuntime.cs",
+                                     "line":  1937,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\BuoyancySimdVectorization.cs",
+                                     "line":  90,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "public const string SimdAgentDumpRelativePath = \"Docs/AgentLogs/Dump_SHINOBU_201.bin\";"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\AsyncReadback\\AsyncBuoyancyReadbackContracts.cs",
+                                     "line":  25,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "public const string DumpRelativePath = \"Docs/AgentLogs/Dump_SHINOBU_264.bin\";"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\AsyncReadback\\AsyncBuoyancyReadbackRuntime.cs",
+                                     "line":  1439,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(directory);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\AsyncReadback\\AsyncBuoyancyReadbackRuntime.cs",
+                                     "line":  1441,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\Editor\\RigidbodySleepScanner.cs",
+                                     "line":  115,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(directory);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\Editor\\RigidbodySleepScanner.cs",
+                                     "line":  508,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(directory);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\Editor\\SynchronousGpuReadbackScanner.cs",
+                                     "line":  345,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(directory);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\Editor\\Wave_Math_Scanner.cs",
+                                     "line":  381,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(directory);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Cable132\\CablePhysicsSolver132.cs",
+                                     "line":  519,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "string logDirectory = Path.Combine(projectRoot, \"Docs\", \"AgentLogs\");"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Cable132\\CablePhysicsSolver132.cs",
+                                     "line":  520,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(logDirectory);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Cable132\\CablePhysicsSolver132.cs",
+                                     "line":  521,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "WriteTelemetryDump(Path.Combine(logDirectory, \"Dump_SHINOBU_132.bin\"), ring, reasonFlags);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Cable132\\CablePhysicsSolver132.cs",
+                                     "line":  522,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "WriteTelemetryDump(Path.Combine(logDirectory, \"Dump_CABLE_SURGEON.bin\"), ring, reasonFlags);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Cable132\\CablePhysicsSolver132.cs",
+                                     "line":  679,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Cavitation\\AbyssalCavitationContracts.cs",
+                                     "line":  31,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "public const string DumpRelativePath = \"Docs/AgentLogs/Dump_SHINOBU_248.bin\";"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Cavitation\\AbyssalCavitationRuntime.cs",
+                                     "line":  1064,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(directory);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Cavitation\\AbyssalCavitationRuntime.cs",
+                                     "line":  1068,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "using (FileStream stream = File.Open(tempPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Exosuit\\ExosuitKinematicsRuntime.cs",
+                                     "line":  1649,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "string directory = Path.Combine(_projectRoot, \"Docs\", \"AgentLogs\");"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Exosuit\\ExosuitKinematicsRuntime.cs",
+                                     "line":  1650,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(directory);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Exosuit\\ExosuitKinematicsRuntime.cs",
+                                     "line":  1651,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "WriteTelemetryDump(Path.Combine(directory, \"Dump_EXO_KINEMATICS.bin\"), telemetry, cursorBuffer);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Exosuit\\ExosuitKinematicsRuntime.cs",
+                                     "line":  1652,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "WriteTelemetryDump(Path.Combine(directory, \"Dump_SHINOBU_276.bin\"), telemetry, cursorBuffer);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Exosuit\\ExosuitKinematicsRuntime.cs",
+                                     "line":  1674,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Exosuit\\Editor\\Exosuit_Physics_Inquisition.cs",
+                                     "line":  18,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(Path.GetDirectoryName(reportPath));"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Exosuit\\Editor\\Exosuit_Physics_Inquisition.cs",
+                                     "line":  325,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(directory);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\HydrodynamicKccRuntime.cs",
+                                     "line":  2715,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "private const string DumpFileName = \"Dump_SHINOBU_113.bin\";"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\HydrodynamicKccRuntime.cs",
+                                     "line":  2716,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "private const string AssignmentDumpFileName = \"Dump_SHINOBU_250.bin\";"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\HydrodynamicKccRuntime.cs",
+                                     "line":  2717,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "private const string LegacyAssignmentDumpFileName = \"Dump_KINEMATICS_SURGEON.bin\";"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\HydrodynamicKccRuntime.cs",
+                                     "line":  2718,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "private const string AgentDumpFileName = \"Dump_X_005.bin\";"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\HydrodynamicKccRuntime.cs",
+                                     "line":  2719,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "private const string PromptDumpFileName = \"Dump_SHINOBU_322_KCC.bin\";"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\HydrodynamicKccRuntime.cs",
+                                     "line":  4193,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "string directory = Path.Combine(root, \"Docs\", \"AgentLogs\");"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\HydrodynamicKccRuntime.cs",
+                                     "line":  4222,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(directory);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\HydrodynamicKccRuntime.cs",
+                                     "line":  4236,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\Editor\\Environment_Trigger_Scanner.cs",
+                                     "line":  36,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(reportDirectory);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\Editor\\KccSmokeArchitectureValidators.cs",
+                                     "line":  69,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(reportsDir);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\Editor\\Shinobu355KccSmokeEditorFacade.cs",
+                                     "line":  953,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(directory);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\Editor\\Shinobu355KccSmokeEditorFacade.cs",
+                                     "line":  955,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\Editor\\Shinobu355KccSmokeEditorFacade.cs",
+                                     "line":  994,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(directory);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\Editor\\Shinobu355KccSmokeEditorFacade.cs",
+                                     "line":  996,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\Editor\\Shinobu355KccSmokeEditorFacade.cs",
+                                     "line":  1038,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "string directory = Path.Combine(ProjectRoot, \"Docs\", \"AgentLogs\");"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\Editor\\Shinobu355KccSmokeEditorFacade.cs",
+                                     "line":  1039,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(directory);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\Editor\\Shinobu355KccSmokeEditorFacade.cs",
+                                     "line":  1040,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "string path = Path.Combine(directory, \"Dump_SHINOBU_355.bin\");"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\Editor\\Shinobu355KccSmokeEditorFacade.cs",
+                                     "line":  1041,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Seaglide\\SeaglideHydrodynamicsRuntime.cs",
+                                     "line":  1147,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(Path.GetDirectoryName(path));"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Seaglide\\SeaglideHydrodynamicsRuntime.cs",
+                                     "line":  1148,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Seaglide\\Editor\\SeaglideHydrodynamicsEditorTools.cs",
+                                     "line":  311,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(reports);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Vehicles\\Editor\\Euler_Angle_Scanner.cs",
+                                     "line":  80,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(Path.GetDirectoryName(agentReportPath) ?? projectRoot);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Vehicles\\Editor\\OOP_Buoyancy_Scanner.cs",
+                                     "line":  85,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(Path.GetDirectoryName(agentReportPath) ?? projectRoot);"
+                                 },
+                                 {
+                                     "file":  "Assets\\_Project\\Scripts\\Physics\\Vehicles\\Editor\\Rigidbody_Drag_Scanner.cs",
+                                     "line":  55,
+                                     "editor":  false,
+                                     "excludedTetherOrCable":  false,
+                                     "runtimeScoped":  true,
+                                     "text":  "Directory.CreateDirectory(Path.GetDirectoryName(agentReportPath) ?? projectRoot);"
+                                 }
+                             ]
+}

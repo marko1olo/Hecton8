@@ -1,0 +1,43 @@
+{
+  "agent": "1313",
+  "date": "2026-05-25",
+  "evidenceClass": "STATIC_SOURCE",
+  "runtimeFilesTouchedInThisPatch": false,
+  "dotnetRun": false,
+  "unityBuildRun": false,
+  "patches": [
+    {
+      "file": "Assets/_Project/Scripts/Editor/DataMonolith/OOP_StaticData_Scanner.cs",
+      "lines": [249, 251],
+      "change": "ScanTextFallback now reuses IsCsvRouteName(source) and reports Csv parser route token.",
+      "reason": "Fallback scanner coverage now matches the generic callable Csv + parser verb model used by the Roslyn path."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithGlobalDataVaultStressProbe.cs",
+      "lines": [413, 577, 862],
+      "change": "Internal HeaderSnapshot field renamed from DirectoryBytesValue to SectionTableBytes.",
+      "reason": "The value was directory.SectionTableBytes; the old field name was misleading proof metadata."
+    }
+  ],
+  "verification": {
+    "oopScannerIsCsvRouteNameSourceLine": 249,
+    "oopScannerCsvParserRouteTokenLine": 251,
+    "oopScannerTryLoadCsvTokenHits": 0,
+    "stressProbeSectionTableBytesLines": [413, 577, 862],
+    "stressProbeDirectoryBytesValueHits": 0,
+    "gitDiffCheckTouchedEditorFiles": "PASS_CRLF_WARNINGS_ONLY",
+    "json1313Parse": "PASS",
+    "activeWindowsReleaseForbiddenTokenHits": 0,
+    "activeAndroidReleaseForbiddenTokenHits": 0,
+    "strictOwnedBootstrapSliceForbiddenTokenHits": 0
+  },
+  "residualRejection": {
+    "questAndroidProductionHydrator": "FAIL_CLOSED_NO_NATIVE_PAL",
+    "strictGlobalParserBlockers": 262,
+    "abiBoundStrictDtoOrderViolations": 1,
+    "abiBoundStrictDtoOrderViolationNames": [
+      "H8DataBlobHeader"
+    ],
+    "h8ItemRecordStatus": "STRICT_ORDER_FIXED_STATIC_BLOB_V2_VALIDATED"
+  }
+}

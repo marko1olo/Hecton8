@@ -1,0 +1,2081 @@
+{
+  "agent": 1311,
+  "asmdefs": [
+    {
+      "allowUnsafeCode": true,
+      "file": "Assets/_Project/Scripts/Hecton8.Core.asmdef",
+      "name": "Hecton8.Core",
+      "noEngineReferences": false,
+      "references": [
+        "Hecton8.Core.Contracts",
+        "Hecton8.Core.Database",
+        "Hecton8.Core.Scheduling",
+        "Hecton8.Core.Bucketing",
+        "Hecton8.Core.Persistence.Paging",
+        "Hecton8.Core.Memory",
+        "Hecton8.Bootstrap.Contracts",
+        "Hecton8.Audio.Virtualization.Contracts",
+        "Hecton8.Logistics.Grid.Contracts",
+        "Hecton8.Inventory.Corrosion.Contracts",
+        "Hecton8.Tools.ToolKinematics.Contracts",
+        "Hecton8.UI.Diegetic.Contracts",
+        "Hecton8.World.Contracts",
+        "Hecton8.Habitat.Deformation.Contracts",
+        "Unity.InputSystem",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Addressables",
+        "Unity.ResourceManager",
+        "Unity.Profiling.Core",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "GPUInstancer"
+      ],
+      "rootNamespace": "Hecton8.Core"
+    },
+    {
+      "allowUnsafeCode": true,
+      "file": "Assets/_Project/Scripts/Core/Contracts/Hecton8.Core.Contracts.asmdef",
+      "name": "Hecton8.Core.Contracts",
+      "noEngineReferences": false,
+      "references": [
+        "Unity.Collections",
+        "Unity.Jobs",
+        "Unity.Mathematics"
+      ],
+      "rootNamespace": "Hecton8.Core.Contracts"
+    }
+  ],
+  "aupHitsInTargetFiles": [
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 15,
+      "text": "using AbsoluteUniversePosition = Hecton8.World.AbsoluteUniversePosition;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 16,
+      "text": "using AbsoluteUniversePositionBlit = Hecton8.World.AbsoluteUniversePositionBlit;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 1112,
+      "text": "private static bool IsSameAupMeterCell(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 3190,
+      "text": "signal.Vector = float3.zero;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 3215,
+      "text": "signal.Direction = new float3(0f, 0f, -1f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 3329,
+      "text": "signal.RuntimeAnchor = float3.zero;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4241,
+      "text": "signal.Normal = float3.zero;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4627,
+      "text": "if (SanitizeFloat3Zero(ref signal.AbsoluteUniversePosition))"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4631,
+      "text": "signal.SurfaceNormal = new float3(0f, 1f, 0f);"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4652,
+      "text": "int guardCode = SanitizeVector3Zero(ref signal.RuntimePosition) ? PhysicsEventPayloadGuardCode : 0;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4653,
+      "text": "if (SanitizeVector3Zero(ref signal.Direction))"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4655,
+      "text": "if (SanitizeVector3Zero(ref signal.ForceVector))"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4657,
+      "text": "if (SanitizeVector3Zero(ref signal.ImpulseVector))"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4699,
+      "text": "signal.ImpactAup = double3.zero;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4705,
+      "text": "signal.Direction = float3.zero;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4719,
+      "text": "private static bool SanitizeVector3Zero(ref Vector3 value)"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4724,
+      "text": "value = Vector3.zero;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4729,
+      "text": "private static bool SanitizeAup(ref AbsoluteUniversePosition position)"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4735,
+      "text": "math.abs(((double)position.GridX * AbsoluteUniversePosition.CellSizeMeters) + position.LocalX) > MaxSignalAupExtentMeters ||"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4736,
+      "text": "math.abs(((double)position.GridY * AbsoluteUniversePosition.CellSizeMeters) + position.LocalY) > MaxSignalAupExtentMeters ||"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4737,
+      "text": "math.abs(((double)position.GridZ * AbsoluteUniversePosition.CellSizeMeters) + position.LocalZ) > MaxSignalAupExtentMeters;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4749,
+      "text": "private static bool SanitizeAupBlit(ref AbsoluteUniversePositionBlit position)"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4754,
+      "text": "position.Local = float3.zero;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4759,
+      "text": "private static bool SanitizeFloat3Zero(ref float3 value)"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4764,
+      "text": "value = float3.zero;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4779,
+      "text": "private static bool SanitizeDouble3Zero(ref double3 value)"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4784,
+      "text": "value = double3.zero;"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4799,
+      "text": "private static bool SanitizeFloat3Forward(ref float3 value)"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4811,
+      "text": "private static bool SanitizeFloat3Up(ref float3 value)"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 4821,
+      "text": "private static void SetUp(ref float3 value)"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+      "line": 13,
+      "text": "using AbsoluteUniversePosition = Hecton8.World.AbsoluteUniversePosition;"
+    }
+  ],
+  "byteOffsetMaps": {
+    "SignalLaneDispatch": {
+      "declaredSizeBytes": 32,
+      "fieldOrderViolations": [],
+      "fields": [
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+          "line": 239,
+          "name": "Dispose",
+          "offset": 0,
+          "type": "delegate*<void>"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+          "line": 240,
+          "name": "Flush",
+          "offset": 8,
+          "type": "delegate*<int, void>"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+          "line": 241,
+          "name": "CopyTelemetry",
+          "offset": 16,
+          "type": "delegate*<ref SignalLaneTelemetry, void>"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+          "line": 242,
+          "name": "_pad0",
+          "offset": 24,
+          "type": "uint"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+          "line": 243,
+          "name": "_pad1",
+          "offset": 28,
+          "type": "ushort"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+          "line": 244,
+          "name": "FlushDuringSimulationPause",
+          "offset": 30,
+          "type": "byte"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+          "line": 245,
+          "name": "_pad2",
+          "offset": 31,
+          "type": "byte"
+        }
+      ],
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "largestToSmallestFieldOrder": true,
+      "multipleOf64": false,
+      "multipleOf8": true
+    },
+    "SignalLaneTelemetry": {
+      "declaredSizeBytes": 32,
+      "fieldOrderViolations": [],
+      "fields": [
+        {
+          "file": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+          "line": 230,
+          "name": "Reserved2",
+          "offset": 0,
+          "type": "ulong"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+          "line": 231,
+          "name": "LaneHash",
+          "offset": 8,
+          "type": "uint"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+          "line": 232,
+          "name": "QueuedBeforeFlush",
+          "offset": 12,
+          "type": "int"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+          "line": 233,
+          "name": "SnapshotCount",
+          "offset": 16,
+          "type": "int"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+          "line": 234,
+          "name": "DroppedCount",
+          "offset": 20,
+          "type": "int"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+          "line": 235,
+          "name": "CoalescedCount",
+          "offset": 24,
+          "type": "int"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+          "line": 237,
+          "name": "Reserved1",
+          "offset": 28,
+          "type": "ushort"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+          "line": 239,
+          "name": "Flags",
+          "offset": 30,
+          "type": "byte"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+          "line": 241,
+          "name": "Reserved0",
+          "offset": 31,
+          "type": "byte"
+        }
+      ],
+      "file": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+      "largestToSmallestFieldOrder": true,
+      "multipleOf64": false,
+      "multipleOf8": true
+    },
+    "SignalRingCursorState": {
+      "declaredSizeBytes": 128,
+      "fieldOrderViolations": [],
+      "fields": [
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+          "line": 14,
+          "name": "Head",
+          "offset": 0,
+          "type": "long"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+          "line": 15,
+          "name": "_headPad0",
+          "offset": 8,
+          "type": "ulong"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+          "line": 16,
+          "name": "_headPad1",
+          "offset": 16,
+          "type": "ulong"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+          "line": 17,
+          "name": "_headPad2",
+          "offset": 24,
+          "type": "ulong"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+          "line": 18,
+          "name": "_headPad3",
+          "offset": 32,
+          "type": "ulong"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+          "line": 19,
+          "name": "_headPad4",
+          "offset": 40,
+          "type": "ulong"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+          "line": 20,
+          "name": "_headPad5",
+          "offset": 48,
+          "type": "ulong"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+          "line": 21,
+          "name": "_headPad6",
+          "offset": 56,
+          "type": "ulong"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+          "line": 22,
+          "name": "Tail",
+          "offset": 64,
+          "type": "long"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+          "line": 23,
+          "name": "_tailPad0",
+          "offset": 72,
+          "type": "ulong"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+          "line": 24,
+          "name": "_tailPad1",
+          "offset": 80,
+          "type": "ulong"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+          "line": 25,
+          "name": "_tailPad2",
+          "offset": 88,
+          "type": "ulong"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+          "line": 26,
+          "name": "_tailPad3",
+          "offset": 96,
+          "type": "ulong"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+          "line": 27,
+          "name": "_tailPad4",
+          "offset": 104,
+          "type": "ulong"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+          "line": 28,
+          "name": "_tailPad5",
+          "offset": 112,
+          "type": "ulong"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+          "line": 29,
+          "name": "_tailPad6",
+          "offset": 120,
+          "type": "ulong"
+        }
+      ],
+      "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+      "largestToSmallestFieldOrder": true,
+      "multipleOf64": true,
+      "multipleOf8": true
+    },
+    "SignalStormFuzzerPayload1311": {
+      "declaredSizeBytes": 24,
+      "fieldOrderViolations": [],
+      "fields": [
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+          "line": 17,
+          "name": "Hash",
+          "offset": 0,
+          "type": "ulong"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+          "line": 18,
+          "name": "Producer",
+          "offset": 8,
+          "type": "uint"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+          "line": 19,
+          "name": "Sequence",
+          "offset": 12,
+          "type": "uint"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+          "line": 20,
+          "name": "GlobalSequence",
+          "offset": 16,
+          "type": "uint"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+          "line": 21,
+          "name": "Flags",
+          "offset": 20,
+          "type": "uint"
+        }
+      ],
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+      "largestToSmallestFieldOrder": true,
+      "multipleOf64": false,
+      "multipleOf8": true
+    },
+    "SignalStormFuzzerResult1311": {
+      "declaredSizeBytes": 64,
+      "fieldOrderViolations": [],
+      "fields": [
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+          "line": 27,
+          "name": "ResultHash",
+          "offset": 0,
+          "type": "ulong"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+          "line": 28,
+          "name": "ElapsedTicks",
+          "offset": 8,
+          "type": "long"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+          "line": 29,
+          "name": "ProducerCount",
+          "offset": 16,
+          "type": "int"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+          "line": 30,
+          "name": "WritesPerProducer",
+          "offset": 20,
+          "type": "int"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+          "line": 31,
+          "name": "ExpectedWrites",
+          "offset": 24,
+          "type": "int"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+          "line": 32,
+          "name": "AcceptedWrites",
+          "offset": 28,
+          "type": "int"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+          "line": 33,
+          "name": "DrainedWrites",
+          "offset": 32,
+          "type": "int"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+          "line": 34,
+          "name": "UniqueWrites",
+          "offset": 36,
+          "type": "int"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+          "line": 35,
+          "name": "DroppedWrites",
+          "offset": 40,
+          "type": "int"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+          "line": 36,
+          "name": "DuplicateWrites",
+          "offset": 44,
+          "type": "int"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+          "line": 37,
+          "name": "CorruptedWrites",
+          "offset": 48,
+          "type": "int"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+          "line": 38,
+          "name": "MissingWrites",
+          "offset": 52,
+          "type": "int"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+          "line": 39,
+          "name": "Status",
+          "offset": 56,
+          "type": "uint"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+          "line": 40,
+          "name": "Reserved0",
+          "offset": 60,
+          "type": "uint"
+        }
+      ],
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+      "largestToSmallestFieldOrder": true,
+      "multipleOf64": true,
+      "multipleOf8": true
+    },
+    "SignalTelemetryFrame": {
+      "declaredSizeBytes": 64,
+      "fieldOrderViolations": [],
+      "fields": [
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+          "line": 740,
+          "name": "Reserved0",
+          "offset": 0,
+          "type": "ulong"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+          "line": 741,
+          "name": "Reserved1",
+          "offset": 8,
+          "type": "ulong"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+          "line": 742,
+          "name": "Reserved2",
+          "offset": 16,
+          "type": "ulong"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+          "line": 743,
+          "name": "Frame",
+          "offset": 24,
+          "type": "uint"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+          "line": 744,
+          "name": "TotalPushedSignals",
+          "offset": 28,
+          "type": "uint"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+          "line": 745,
+          "name": "PeakSignalsPerFrame",
+          "offset": 32,
+          "type": "uint"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+          "line": 746,
+          "name": "CoalescedSignals",
+          "offset": 36,
+          "type": "uint"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+          "line": 747,
+          "name": "DroppedSignals",
+          "offset": 40,
+          "type": "uint"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+          "line": 748,
+          "name": "CorruptedSignals",
+          "offset": 44,
+          "type": "uint"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+          "line": 749,
+          "name": "ActiveLaneCount",
+          "offset": 48,
+          "type": "uint"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+          "line": 750,
+          "name": "Flags",
+          "offset": 52,
+          "type": "uint"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+          "line": 751,
+          "name": "GlobalQualityMilli",
+          "offset": 56,
+          "type": "uint"
+        },
+        {
+          "file": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+          "line": 752,
+          "name": "SystemStressMilli",
+          "offset": 60,
+          "type": "uint"
+        }
+      ],
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+      "largestToSmallestFieldOrder": true,
+      "multipleOf64": true,
+      "multipleOf8": true
+    }
+  },
+  "dumpPathHits": {
+    "existing_signal_dump_path": [],
+    "requested_dump_path": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+        "line": 765,
+        "text": "private const string DumpPath = \"Docs/AgentLogs/Dump_1311_SignalCorridor.bin\";"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+        "line": 860,
+        "text": "/// <summary>Dumps the full signal black-box ring to Docs/AgentLogs/Dump_1311_SignalCorridor.bin.</summary>"
+      }
+    ]
+  },
+  "failClosedHits": {
+    "async_dump_request": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalWardenRuntime.cs",
+        "line": 867,
+        "text": "public static bool RequestDumpToDiskAsync()"
+      }
+    ],
+    "dispatch_length_clamp": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 201,
+        "text": "int copyCount = Math.Min(Math.Min(Volatile.Read(ref _laneCount), _laneDispatch.Length), destination.Length);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 268,
+        "text": "int dispatchCount = Math.Min(Volatile.Read(ref _laneCount), _laneDispatch.Length);"
+      }
+    ],
+    "dispatch_storage_guard": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 198,
+        "text": "if (!_laneDispatch.IsCreated)"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 222,
+        "text": "if (!_laneDispatch.IsCreated)"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 265,
+        "text": "if (!_laneDispatch.IsCreated)"
+      }
+    ],
+    "failed_ring_check": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 548,
+        "text": "if (!_ring.IsCreated)"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 610,
+        "text": "if (!_ring.IsCreated)"
+      }
+    ],
+    "frame_snapshot_release_on_failure": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 571,
+        "text": "ReleaseFrameSnapshotBuffer();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 1241,
+        "text": "ReleaseFrameSnapshotBuffer();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 1432,
+        "text": "private static void ReleaseFrameSnapshotBuffer()"
+      }
+    ],
+    "fuzzer_allocation_fail_closed": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs",
+        "line": 85,
+        "text": "if (!ring.IsCreated || !seen.IsCreated)"
+      }
+    ],
+    "mpsc_partial_allocation_cleanup": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+        "line": 197,
+        "text": "if (!_buffer.IsCreated || !_publishedTickets.IsCreated || !_cursor.IsCreated)"
+      }
+    ],
+    "registered_latch_from_result": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 1331,
+        "text": "_registered = SignalBusRegistry.Register("
+      }
+    ],
+    "registration_gate_compare_exchange": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 298,
+        "text": "while (Interlocked.CompareExchange(ref _registrationGate, 1, 0) != 0)"
+      }
+    ],
+    "registration_gate_enter": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 85,
+        "text": "EnterRegistrationGate();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 164,
+        "text": "EnterRegistrationGate();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 295,
+        "text": "private static void EnterRegistrationGate()"
+      }
+    ],
+    "registration_gate_exit": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 121,
+        "text": "ExitRegistrationGate();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 186,
+        "text": "ExitRegistrationGate();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 302,
+        "text": "private static void ExitRegistrationGate()"
+      }
+    ],
+    "registration_gate_field": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 46,
+        "text": "private static int _registrationGate;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 298,
+        "text": "while (Interlocked.CompareExchange(ref _registrationGate, 1, 0) != 0)"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 304,
+        "text": "Volatile.Write(ref _registrationGate, 0);"
+      }
+    ],
+    "registration_gate_release": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 304,
+        "text": "Volatile.Write(ref _registrationGate, 0);"
+      }
+    ],
+    "registration_overflow_log_once": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 103,
+        "text": "int firstOverflow = Interlocked.Exchange(ref _registrationOverflow, 1);"
+      }
+    ],
+    "registration_returns_bool": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 76,
+        "text": "internal static bool Register("
+      }
+    ],
+    "ring_clear_drop_to_tail": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+        "line": 99,
+        "text": "Interlocked.Exchange(ref cursor->Head, tail);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+        "line": 259,
+        "text": "Interlocked.Exchange(ref cursor->Head, tail);"
+      }
+    ],
+    "ring_clear_tail_reset": [],
+    "ring_clear_ticket_loop": [],
+    "ring_dispose_on_failure": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 550,
+        "text": "_ring.Dispose();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 557,
+        "text": "_ring.Dispose();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 569,
+        "text": "_ring.Dispose();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 1230,
+        "text": "_ring.Dispose();"
+      }
+    ],
+    "spsc_partial_allocation_cleanup": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+        "line": 57,
+        "text": "if (!_buffer.IsCreated || !_cursor.IsCreated)"
+      }
+    ],
+    "writer_corrupt_drop": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 677,
+        "text": "if (writerGuardCode != 0)"
+      }
+    ],
+    "writer_sanitize_before_budget": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 676,
+        "text": "int writerGuardCode = SignalPayloadFiniteGuards.Sanitize(ref signal);"
+      }
+    ]
+  },
+  "fuzzer": {
+    "exists": true,
+    "file": "Assets/_Project/Scripts/Core/Signals/SignalStormConcurrencyFuzzer1311.cs"
+  },
+  "hardFacts": {
+    "cursorAlignment": "SignalRingCursorState is GREEN only if declared 128B, Head long at 0, Tail long at 64.",
+    "nativeQueue": "Any NativeQueue hit in SignalBusRuntime or NativeQueue writer for a SignalBus-owned payload is RED.",
+    "runtimeProof": "No Unity, Burst, IL2CPP, profiler, or GCMonitor proof is produced by this scanner."
+  },
+  "newExpressionClassifications": [
+    {
+      "classification": "value_type_parallel_writer",
+      "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+      "hotPath": "writer_open",
+      "line": 222,
+      "managedHeap": "no",
+      "text": "return new ParallelWriter(_buffer, _publishedTickets, _cursor, _mask, _capacity);"
+    },
+    {
+      "classification": "value_type_dispatch_record",
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "hotPath": "registration",
+      "line": 111,
+      "managedHeap": "no",
+      "text": "_laneDispatch[laneCount] = new SignalLaneDispatch("
+    },
+    {
+      "classification": "native_container_struct_construction",
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "hotPath": "lane_bootstrap",
+      "line": 544,
+      "managedHeap": "no",
+      "text": "_ring = new global::Hecton8.Core.MpscSignalRingBuffer<T>("
+    },
+    {
+      "classification": "ref_struct_view",
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "hotPath": "read_accessor",
+      "line": 723,
+      "managedHeap": "no",
+      "text": "return new ReadOnlySpan<T>(pointer, snapshotCount);"
+    },
+    {
+      "classification": "value_type_float3",
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "hotPath": "sanitize_default",
+      "line": 3215,
+      "managedHeap": "no",
+      "text": "signal.Direction = new float3(0f, 0f, -1f);"
+    },
+    {
+      "classification": "value_type_float3",
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "hotPath": "sanitize_default",
+      "line": 4631,
+      "managedHeap": "no",
+      "text": "signal.SurfaceNormal = new float3(0f, 1f, 0f);"
+    }
+  ],
+  "phaseHits": {
+    "dispatcher_post_sim_clear": [],
+    "dispatcher_post_sim_flush": [
+      {
+        "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+        "line": 5453,
+        "text": "SignalCorridorRuntime.FlushPostSimulation();"
+      }
+    ],
+    "dispatcher_pre_sim_flush": [],
+    "dispatcher_pre_sim_heartbeat": [
+      {
+        "file": "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+        "line": 5046,
+        "text": "SignalCorridorRuntime.PreSimulationHeartbeat();"
+      }
+    ],
+    "registry_post_sim_flush": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.RuntimeLifecycle.cs",
+        "line": 349,
+        "text": "SignalBusRegistry.FlushPostSimulation();"
+      }
+    ],
+    "registry_pre_sim_flush": [],
+    "snapshot_clear_delegate": []
+  },
+  "projectCallsiteHits": {
+    "native_queue_writer_field": [
+      {
+        "file": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+        "line": 349,
+        "text": "public NativeQueue<DroneAssignmentTaskDTO>.ParallelWriter Tasks;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
+        "line": 380,
+        "text": "NativeQueue<DroneAssignmentTaskDTO>.ParallelWriter writer,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/BurstCallback.cs",
+        "line": 76,
+        "text": "NativeQueue<int>.ParallelWriter writer = _events.IsCreated ? _events.AsParallelWriter() : default;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/BurstCallback.cs",
+        "line": 251,
+        "text": "private NativeQueue<int>.ParallelWriter _events;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/BurstCallback.cs",
+        "line": 255,
+        "text": "internal ParallelEventWriter(NativeQueue<int>.ParallelWriter events, NativeArray<int> counters, int capacity)"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "line": 4181,
+        "text": "public NativeQueue<FutureCommandEnvelope>.ParallelWriter Output;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs",
+        "line": 637,
+        "text": "[NoAlias] public NativeQueue<ModEventDto>.ParallelWriter Output;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs",
+        "line": 683,
+        "text": "[NoAlias] public NativeQueue<ModEventDto>.ParallelWriter Output;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/EntropyYieldJob.cs",
+        "line": 144,
+        "text": "public NativeQueue<ItemDropData>.ParallelWriter DropWriter;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/EntropyYieldJob.cs",
+        "line": 236,
+        "text": "NativeQueue<ItemDropData>.ParallelWriter writer,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HydraulicErosionJob.cs",
+        "line": 153,
+        "text": "NativeQueue<HydraulicErosionHeightDelta>.ParallelWriter originalHeightDeltaQueue = job.HeightDeltaQueue;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HydraulicErosionJob.cs",
+        "line": 331,
+        "text": "public NativeQueue<HydraulicErosionHeightDelta>.ParallelWriter HeightDeltaQueue;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/HydraulicErosionJob.cs",
+        "line": 1013,
+        "text": "NativeQueue<HydraulicErosionHeightDelta>.ParallelWriter writer,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+        "line": 666,
+        "text": "[NoAlias] public NativeQueue<HydrodynamicKccInputDTO>.ParallelWriter InputWriter;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+        "line": 686,
+        "text": "NativeQueue<HydrodynamicKccInputDTO>.ParallelWriter writer,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+        "line": 745,
+        "text": "NativeQueue<HydrodynamicKccInputDTO>.ParallelWriter inputWriter,"
+      }
+    ],
+    "signalbus_ring_writer_request": [
+      {
+        "file": "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs",
+        "line": 1041,
+        "text": "FabricationCompletedSignalWriter = SignalBus<FabricationCompletedSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs",
+        "line": 1043,
+        "text": "FabricationTickSignalWriter = SignalBus<FabricationTickSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs",
+        "line": 1045,
+        "text": "DeconstructResultWriter = SignalBus<DeconstructResultSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+        "line": 2045,
+        "text": "OverheatWriter = SignalBus<EquipmentOverheatSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+        "line": 2047,
+        "text": "DepletedWriter = SignalBus<ToolDepletedSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+        "line": 3268,
+        "text": "// SignalBus<T>.ParallelWriter is write-only and externally lane-owned; Unity's safety cannot prove the registry flushes it after this job fence."
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+        "line": 3276,
+        "text": "// SignalBus<T>.ParallelWriter safety is intentionally suppressed only for the depleted-tool signal lane; the queue is not snapshotted while the producer handle is live."
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime_HatchLocks.cs",
+        "line": 509,
+        "text": "AcousticWriter = SignalBus<MovementAcousticSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs",
+        "line": 229,
+        "text": "DesyncWriter = SignalBus<MemoryDesyncSignal>.OpenParallelWriter(),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+        "line": 3333,
+        "text": "job.SeismicWriter = SignalBus<SeismicSignal>.ParallelWriter;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+        "line": 3335,
+        "text": "job.ShockwaveWriter = SignalBus<SeismicShockwaveSignal>.ParallelWriter;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/SubmarineAutoLevelBallastController.cs",
+        "line": 1493,
+        "text": "AcousticWriter = SignalBus<MovementAcousticSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "line": 1165,
+        "text": "SpawnWriter = SignalBus<ModSpawnRequestSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "line": 1166,
+        "text": "AssetWriter = SignalBus<ModAssetReferenceSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "line": 1167,
+        "text": "AcousticWriter = SignalBus<MockAcousticSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "line": 1168,
+        "text": "DamageWriter = SignalBus<MockDamageSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "line": 1169,
+        "text": "DevNullSignalWriter = SignalBus<ModFutureDevNullSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "line": 1170,
+        "text": "SurvivalWriter = SignalBus<SurvivalOverrideSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "line": 1171,
+        "text": "HapticWriter = SignalBus<ModHapticPulseSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "line": 1172,
+        "text": "SubtitleWriter = SignalBus<ModSubtitleCueSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "line": 1173,
+        "text": "RejectionWriter = SignalBus<ModInteractionRejectedPayload>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "line": 2838,
+        "text": "SpawnWriter = SignalBus<ModSpawnRequestSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "line": 2839,
+        "text": "AssetWriter = SignalBus<ModAssetReferenceSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "line": 2840,
+        "text": "AcousticWriter = SignalBus<MockAcousticSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "line": 2841,
+        "text": "DamageWriter = SignalBus<MockDamageSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "line": 2842,
+        "text": "DevNullSignalWriter = SignalBus<ModFutureDevNullSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "line": 2843,
+        "text": "SurvivalWriter = SignalBus<SurvivalOverrideSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "line": 2844,
+        "text": "HapticWriter = SignalBus<ModHapticPulseSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "line": 2845,
+        "text": "SubtitleWriter = SignalBus<ModSubtitleCueSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+        "line": 2846,
+        "text": "RejectionWriter = SignalBus<ModInteractionRejectedPayload>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Narrative/HectonNarrativeDirector_PoiTriggers.cs",
+        "line": 1398,
+        "text": "ProgressionWriter = SignalBus<ProgressionEventSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs",
+        "line": 591,
+        "text": "rollbackSignals = SignalBus<RollbackRequiredSignal>.OpenParallelWriter();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+        "line": 258,
+        "text": "IncursionWriter = SignalBus<FluidIncursionSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs",
+        "line": 375,
+        "text": "PhysiologyWriter = SignalBus<PhysiologyStateSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs",
+        "line": 377,
+        "text": "DamageWriter = SignalBus<CombatDamageSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs",
+        "line": 393,
+        "text": "PhysiologyWriter = SignalBus<PhysiologyStateSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs",
+        "line": 415,
+        "text": "CardiacPulseWriter = SignalBus<CardiacPulseSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs",
+        "line": 306,
+        "text": "resetJob.InventoryCommands = SignalBus<InventoryCommandSignal>.ParallelWriter;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs",
+        "line": 308,
+        "text": "resetJob.InventoryDeathAupSignals = SignalBus<InventoryRespawnDeathAupSignal>.ParallelWriter;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs",
+        "line": 1498,
+        "text": "job.RespawnSignals = SignalBus<PlayerRespawnSignal>.ParallelWriter;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuSuitIntegrityRuntime.cs",
+        "line": 238,
+        "text": "DamageWriter = SignalBus<CombatDamageSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuSuitIntegrityRuntime.cs",
+        "line": 240,
+        "text": "AcousticWriter = SignalBus<MovementAcousticSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Quest/QuestDagMockSignalJobs.cs",
+        "line": 90,
+        "text": "PlayerPositionWriter = SignalBus<MockPlayerPositionSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Quest/QuestDagMockSignalJobs.cs",
+        "line": 92,
+        "text": "ItemAcquiredWriter = SignalBus<QuestDagMockItemAcquiredSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Quest/QuestDagMockSignalJobs.cs",
+        "line": 94,
+        "text": "StoryEventWriter = SignalBus<MockStoryEventSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Quest/QuestDagResolverRuntime.cs",
+        "line": 421,
+        "text": "StateChangedWriter = SignalBus<StateChangedSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs",
+        "line": 1487,
+        "text": "publishJob.ItemWriter = SignalBus<ItemAcquiredSignal>.ParallelWriter;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs",
+        "line": 1489,
+        "text": "publishJob.VisualWriter = SignalBus<VisualScavengeSignal>.ParallelWriter;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs",
+        "line": 1491,
+        "text": "publishJob.DepletionWriter = SignalBus<ResourceDepletionDeltaSignal>.ParallelWriter;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs",
+        "line": 1493,
+        "text": "publishJob.HudWriter = SignalBus<HUDNotificationSignal>.ParallelWriter;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsSolver.ReactorBridge.cs",
+        "line": 395,
+        "text": "publishJob.BaseModuleWriter = SignalBus<BaseModuleCompromisedSignal>.ParallelWriter;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsSolver.ReactorBridge.cs",
+        "line": 397,
+        "text": "publishJob.RadiationWriter = SignalBus<RadiationSourceSignal>.ParallelWriter;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsSolver.ReactorBridge.cs",
+        "line": 399,
+        "text": "publishJob.DamageWriter = SignalBus<CombatDamageSignal>.ParallelWriter;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsSolver.ReactorBridge.cs",
+        "line": 428,
+        "text": "injectJob.ThermalWriter = SignalBus<ThermalStateChangedSignal>.ParallelWriter;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Thermodynamics/AbyssalThermodynamicsSolver.ReactorBridge.cs",
+        "line": 430,
+        "text": "injectJob.DamageWriter = SignalBus<CombatDamageSignal>.ParallelWriter;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/Biomes/BiomeTransitionManagerRuntime.cs",
+        "line": 833,
+        "text": "BiomeChangedWriter = SignalBus<BiomeChangedSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/SeedShipAnomaly/SeedShipAnomalyRuntime.cs",
+        "line": 236,
+        "text": "RadarJamWriter = SignalBus<RadarJamSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs",
+        "line": 2136,
+        "text": "Commands = SignalBus<TerminalCommandSignal>.OpenParallelWriter(),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs",
+        "line": 2222,
+        "text": "Commands = SignalBus<TerminalCommandSignal>.OpenParallelWriter(),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs",
+        "line": 2224,
+        "text": "UiSignals = SignalBus<InteractionUiSignal>.OpenParallelWriter(),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs",
+        "line": 2292,
+        "text": "UnlockedSignals = SignalBus<TerminalUnlockedSignal>.OpenParallelWriter(),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physics/Cable132/CablePhysicsSolver132.cs",
+        "line": 478,
+        "text": "return SignalBus<PhysicsEventPayload>.ParallelWriter;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+        "line": 3236,
+        "text": "WakeWriter = SignalBus<WakeGeneratedSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+        "line": 285,
+        "text": "CavitationWriter = SignalBus<CavitationAcousticSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+        "line": 280,
+        "text": "HazardWriter = SignalBus<VehicleHazardSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+        "line": 794,
+        "text": "writer = SignalBus<LogisticsTransferSignal>.ParallelWriter;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/BaseStructuralWarningDispatcherTypes.cs",
+        "line": 1280,
+        "text": "WarningSignals = SignalBus<BaseStructuralWarningSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorRuntime.cs",
+        "line": 901,
+        "text": "IntegrityEvents = SignalBus<BaseIntegrityEventPayload>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorRuntime.cs",
+        "line": 903,
+        "text": "FluidEvents = SignalBus<FluidIncursionSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorRuntime.cs",
+        "line": 905,
+        "text": "CompromisedEvents = SignalBus<BaseModuleCompromisedSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+        "line": 723,
+        "text": "DamageWriter = SignalBus<CombatDamageSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+        "line": 806,
+        "text": "DeflectSignalWriter = SignalBus<DeflectSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+        "line": 808,
+        "text": "ImpactSignalWriter = SignalBus<ImpactSignal>.ParallelWriter,"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs",
+        "line": 493,
+        "text": "FlareWriter = SignalBus<AuxiliaryFlareLightSignal>.OpenParallelWriter(),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs",
+        "line": 495,
+        "text": "SonarWriter = SignalBus<AuxiliarySonarRequestSignal>.OpenParallelWriter(),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentRouterRuntime.cs",
+        "line": 497,
+        "text": "TetherWriter = SignalBus<AuxiliaryTetherConnectionSignal>.OpenParallelWriter(),"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 22,
+        "text": "return SignalBus<TSignal>.OpenParallelWriter();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 26,
+        "text": "// Maintained Core producer code uses SignalBus<T>.OpenParallelWriter() or owner-local scratch."
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 29,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 39,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 49,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 59,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 69,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 79,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 89,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 99,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 109,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 119,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 129,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 139,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 149,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 159,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 169,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 179,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 189,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 199,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 209,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 219,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 229,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 239,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 249,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 259,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 269,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 279,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 289,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 299,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 309,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 319,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 329,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 339,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 349,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs",
+        "line": 359,
+        "text": "[global::System.Obsolete(\"Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.\", true)]"
+      }
+    ],
+    "signalbus_try_enqueue_bounded": [
+      {
+        "file": "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs",
+        "line": 1945,
+        "text": "return SignalBus<DeconstructResultSignal>.TryEnqueueBounded(DeconstructResultWriter, DeconstructResultWriterBudget, new DeconstructResultSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs",
+        "line": 1957,
+        "text": "return SignalBus<FabricationCompletedSignal>.TryEnqueueBounded(FabricationCompletedSignalWriter, FabricationCompletedSignalWriterBudget, new FabricationCompletedSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/FabricationAssemblerRuntime.cs",
+        "line": 1982,
+        "text": "return SignalBus<FabricationTickSignal>.TryEnqueueBounded(FabricationTickSignalWriter, FabricationTickSignalWriterBudget, new FabricationTickSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+        "line": 3364,
+        "text": "if (SignalBus<ToolDepletedSignal>.TryEnqueueBounded(DepletedWriter, DepletedWriterBudget, new ToolDepletedSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+        "line": 3435,
+        "text": "if (SignalBus<EquipmentOverheatSignal>.TryEnqueueBounded(OverheatWriter, OverheatWriterBudget, new EquipmentOverheatSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Construction/HatchLockJobs.cs",
+        "line": 473,
+        "text": "SignalBus<MovementAcousticSignal>.TryEnqueueBounded(AcousticWriter, AcousticWriterBudget, signal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+        "line": 4695,
+        "text": "SignalBus<SeismicSignal>.TryEnqueueBounded(SeismicWriter, SeismicWriterBudget, seismicSignal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+        "line": 4707,
+        "text": "SignalBus<SeismicShockwaveSignal>.TryEnqueueBounded(ShockwaveWriter, ShockwaveWriterBudget, shockwaveSignal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Narrative/HectonNarrativeDirector_PoiTriggers.cs",
+        "line": 704,
+        "text": "SignalBus<ProgressionEventSignal>.TryEnqueueBounded(ProgressionWriter, ProgressionWriterBudget, new ProgressionEventSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs",
+        "line": 1437,
+        "text": "SignalBus<RollbackRequiredSignal>.TryEnqueueBounded(RollbackSignals, RollbackSignalsBudget, signal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+        "line": 320,
+        "text": "return SignalBus<FluidIncursionSignal>.TryEnqueueBounded(IncursionWriter, IncursionWriterBudget, signal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyJobs.cs",
+        "line": 977,
+        "text": "SignalBus<PhysiologyStateSignal>.TryEnqueueBounded(PhysiologyWriter, PhysiologyWriterBudget, signal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyJobs.cs",
+        "line": 995,
+        "text": "SignalBus<CombatDamageSignal>.TryEnqueueBounded(DamageWriter, DamageWriterBudget, damage);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyJobs.cs",
+        "line": 1201,
+        "text": "SignalBus<PhysiologyStateSignal>.TryEnqueueBounded(PhysiologyWriter, PhysiologyWriterBudget, signal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyJobs.cs",
+        "line": 1368,
+        "text": "SignalBus<CardiacPulseSignal>.TryEnqueueBounded(CardiacPulseWriter, CardiacPulseWriterBudget, signal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuRespawnJobs.cs",
+        "line": 107,
+        "text": "SignalBus<PlayerRespawnSignal>.TryEnqueueBounded(RespawnSignals, RespawnSignalsBudget, respawn);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuRespawnJobs.cs",
+        "line": 641,
+        "text": "SignalBus<InventoryCommandSignal>.TryEnqueueBounded(InventoryCommands, InventoryCommandsBudget, command);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuRespawnJobs.cs",
+        "line": 650,
+        "text": "SignalBus<InventoryRespawnDeathAupSignal>.TryEnqueueBounded(InventoryDeathAupSignals, InventoryDeathAupSignalsBudget, sideband);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuSuitIntegrityJobs.cs",
+        "line": 396,
+        "text": "SignalBus<CombatDamageSignal>.TryEnqueueBounded(DamageWriter, DamageWriterBudget, damage);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physiology/ShinobuSuitIntegrityJobs.cs",
+        "line": 409,
+        "text": "SignalBus<MovementAcousticSignal>.TryEnqueueBounded(AcousticWriter, AcousticWriterBudget, signal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Quest/QuestDagMockSignalJobs.cs",
+        "line": 35,
+        "text": "SignalBus<MockPlayerPositionSignal>.TryEnqueueBounded(PlayerPositionWriter, PlayerPositionWriterBudget, new MockPlayerPositionSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Quest/QuestDagMockSignalJobs.cs",
+        "line": 45,
+        "text": "SignalBus<QuestDagMockItemAcquiredSignal>.TryEnqueueBounded(ItemAcquiredWriter, ItemAcquiredWriterBudget, new QuestDagMockItemAcquiredSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Quest/QuestDagMockSignalJobs.cs",
+        "line": 57,
+        "text": "SignalBus<MockStoryEventSignal>.TryEnqueueBounded(StoryEventWriter, StoryEventWriterBudget, new MockStoryEventSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Quest/QuestDagResolverRuntime.cs",
+        "line": 1013,
+        "text": "SignalBus<StateChangedSignal>.TryEnqueueBounded(StateChangedWriter, StateChangedWriterBudget, new StateChangedSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs",
+        "line": 713,
+        "text": "SignalBus<HUDNotificationSignal>.TryEnqueueBounded(HudWriter, HudWriterBudget, hudSignal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs",
+        "line": 731,
+        "text": "SignalBus<ItemAcquiredSignal>.TryEnqueueBounded(ItemWriter, ItemWriterBudget, itemSignal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs",
+        "line": 744,
+        "text": "SignalBus<VisualScavengeSignal>.TryEnqueueBounded(VisualWriter, VisualWriterBudget, visualSignal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs",
+        "line": 757,
+        "text": "SignalBus<ResourceDepletionDeltaSignal>.TryEnqueueBounded(DepletionWriter, DepletionWriterBudget, depletionSignal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridJobs.cs",
+        "line": 819,
+        "text": "return SignalBus<BaseModuleCompromisedSignal>.TryEnqueueBounded(BaseModuleWriter, BaseModuleWriterBudget, signal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridJobs.cs",
+        "line": 832,
+        "text": "return SignalBus<RadiationSourceSignal>.TryEnqueueBounded(RadiationWriter, RadiationWriterBudget, signal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridJobs.cs",
+        "line": 850,
+        "text": "return SignalBus<CombatDamageSignal>.TryEnqueueBounded(DamageWriter, DamageWriterBudget, signal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridJobs.cs",
+        "line": 1141,
+        "text": "return SignalBus<ThermalStateChangedSignal>.TryEnqueueBounded(ThermalWriter, ThermalWriterBudget, signal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Thermodynamics/ReactorThermalGridJobs.cs",
+        "line": 1159,
+        "text": "return SignalBus<CombatDamageSignal>.TryEnqueueBounded(DamageWriter, DamageWriterBudget, signal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/BiomeTransitionFogBlendJobs.cs",
+        "line": 721,
+        "text": "SignalBus<BiomeChangedSignal>.TryEnqueueBounded(BiomeChangedWriter, BiomeChangedWriterBudget, new BiomeChangedSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/World/SeedShipAnomaly/SeedShipAnomalyJobs.cs",
+        "line": 199,
+        "text": "SignalBus<RadarJamSignal>.TryEnqueueBounded(RadarJamWriter, RadarJamWriterBudget, new RadarJamSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsTypes.cs",
+        "line": 649,
+        "text": "SignalBus<TerminalCommandSignal>.TryEnqueueBounded(Commands, CommandsBudget, new TerminalCommandSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsTypes.cs",
+        "line": 1096,
+        "text": "SignalBus<InteractionUiSignal>.TryEnqueueBounded(UiSignals, UiSignalsBudget, new InteractionUiSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsTypes.cs",
+        "line": 1107,
+        "text": "SignalBus<TerminalCommandSignal>.TryEnqueueBounded(Commands, CommandsBudget, new TerminalCommandSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsTypes.cs",
+        "line": 1347,
+        "text": "SignalBus<TerminalUnlockedSignal>.TryEnqueueBounded(UnlockedSignals, UnlockedSignalsBudget, new TerminalUnlockedSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsTypes.cs",
+        "line": 1434,
+        "text": "SignalBus<InteractionUiSignal>.TryEnqueueBounded(UiSignals, UiSignalsBudget, new InteractionUiSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsTypes.cs",
+        "line": 1445,
+        "text": "SignalBus<TerminalCommandSignal>.TryEnqueueBounded(Commands, CommandsBudget, new TerminalCommandSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physics/Cable132/CablePhysicsSolver132.cs",
+        "line": 1379,
+        "text": "!SignalBus<PhysicsEventPayload>.TryEnqueueBounded(PhysicsEventWriter, PhysicsEventWriterBudget, payload))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+        "line": 2285,
+        "text": "if (!SignalBus<WakeGeneratedSignal>.TryEnqueueBounded(WakeWriter, WakeWriterBudget, signal))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+        "line": 548,
+        "text": "if (!SignalBus<MovementAcousticSignal>.TryEnqueueBounded(AcousticWriter, AcousticWriterBudget, signal))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+        "line": 1729,
+        "text": "if (!SignalBus<CavitationAcousticSignal>.TryEnqueueBounded(CavitationWriter, CavitationWriterBudget, signal))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+        "line": 646,
+        "text": "return SignalBus<VehicleHazardSignal>.TryEnqueueBounded(HazardWriter, HazardWriterBudget, signal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Inventory/Routing/InventoryRoutingNetwork.cs",
+        "line": 1485,
+        "text": "if (!SignalBus<LogisticsTransferSignal>.TryEnqueueBounded(TransferSignalWriter, TransferSignalWriterBudget, new LogisticsTransferSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/BaseStructuralWarningDispatcherTypes.cs",
+        "line": 577,
+        "text": "if (SignalBus<BaseStructuralWarningSignal>.TryEnqueueBounded(WarningSignals, WarningSignalsBudget, signal))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorTypes.cs",
+        "line": 714,
+        "text": "if (!SignalBus<BaseIntegrityEventPayload>.TryEnqueueBounded(IntegrityEvents, IntegrityEventsBudget, evt))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorTypes.cs",
+        "line": 744,
+        "text": "if (!SignalBus<FluidIncursionSignal>.TryEnqueueBounded(FluidEvents, FluidEventsBudget, flood))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorTypes.cs",
+        "line": 746,
+        "text": "if (!SignalBus<BaseModuleCompromisedSignal>.TryEnqueueBounded(CompromisedEvents, CompromisedEventsBudget, compromised))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+        "line": 2233,
+        "text": "if (SignalBus<CombatDamageSignal>.TryEnqueueBounded(DamageWriter, DamageWriterBudget, signal))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime.cs",
+        "line": 2170,
+        "text": "if (!SignalBus<DeflectSignal>.TryEnqueueBounded(DeflectSignalWriter, DeflectSignalWriterBudget, new DeflectSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
+        "line": 1551,
+        "text": "SignalBus<DeflectSignal>.TryEnqueueBounded(deflectWriter, deflectWriterBudget, new DeflectSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
+        "line": 1584,
+        "text": "SignalBus<ImpactSignal>.TryEnqueueBounded(impactWriter, impactWriterBudget, new ImpactSignal"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+        "line": 265,
+        "text": "SignalBus<AuxiliaryFlareLightSignal>.TryEnqueueBounded(FlareWriter, FlareWriterBudget, signal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+        "line": 295,
+        "text": "SignalBus<AuxiliarySonarRequestSignal>.TryEnqueueBounded(SonarWriter, SonarWriterBudget, signal);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Equipment/Auxiliary/AuxiliaryEquipmentJobs.cs",
+        "line": 344,
+        "text": "SignalBus<AuxiliaryTetherConnectionSignal>.TryEnqueueBounded(TetherWriter, TetherWriterBudget, signal);"
+      }
+    ]
+  },
+  "role": "SIGNAL_CORRIDOR_SPSC_ARCHITECT",
+  "signalbusNativeQueueWriterHits": [],
+  "status": "GREEN_STATIC_ONLY",
+  "statusReasons": [
+    "No red token found by static scan. Runtime/profiler proof still absent."
+  ],
+  "targetFiles": [
+    "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+    "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+    "Assets/_Project/Scripts/Core/Signals/GlobalSignals.LegacyWriters.cs"
+  ],
+  "tokenHits": {
+    "count_property": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 1372,
+        "text": "return _ring.IsCreated ? _ring.Count : 0;"
+      }
+    ],
+    "debug_log": [],
+    "enqueue": [],
+    "existing_signal_dump_path": [],
+    "foreach": [],
+    "full_name": [],
+    "h8debug_log": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 106,
+        "text": "Hecton8.Core.H8Debug.LogError(\"[SIGNAL LANE REGISTRY OVERFLOW]\");"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 502,
+        "text": "Hecton8.Core.H8Debug.LogError(\"[SIGNAL CONTRACT] Rejected late reconfigure.\");"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 538,
+        "text": "Hecton8.Core.H8Debug.LogError(\"[SIGNAL ABI FENCE] Rejected payload stride.\");"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 863,
+        "text": "Hecton8.Core.H8Debug.LogWarning(\"[LANE_OVERFLOW_FAULT]\");"
+      }
+    ],
+    "interpolated_string": [],
+    "linq": [],
+    "managed_delegate_declaration": [],
+    "managed_static_array": [],
+    "native_queue": [],
+    "native_queue_writer": [],
+    "new_expression": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+        "line": 222,
+        "text": "return new ParallelWriter(_buffer, _publishedTickets, _cursor, _mask, _capacity);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 111,
+        "text": "_laneDispatch[laneCount] = new SignalLaneDispatch("
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 544,
+        "text": "_ring = new global::Hecton8.Core.MpscSignalRingBuffer<T>("
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 723,
+        "text": "return new ReadOnlySpan<T>(pointer, snapshotCount);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 3215,
+        "text": "signal.Direction = new float3(0f, 0f, -1f);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 4631,
+        "text": "signal.SurfaceNormal = new float3(0f, 1f, 0f);"
+      }
+    ],
+    "new_native_array": [],
+    "new_native_queue": [],
+    "requested_dump_path": [],
+    "string_format": [],
+    "throw": [],
+    "to_string": [],
+    "try_dequeue": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+        "line": 1377,
+        "text": "if (_ring.IsCreated && _ring.TryDequeue(out signal))"
+      }
+    ]
+  }
+}

@@ -22,6 +22,7 @@
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 using System;
+using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -175,12 +176,13 @@ namespace Hecton8.Caves
     /// Cave room node. Defines a spherical/ellipsoidal void carved from terrain.
     /// Positions are in WORLD SPACE (not relative to volume origin).
     ///
-    /// Size: 48 bytes (3 cache lines on most architectures).
+    /// Size: 40 bytes.
     /// </summary>
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 40)]
     public struct CaveNode
     {
         /// <summary>World-space center of this room.</summary>
+        [FieldOffset(0)]
         public float3 position;
 
         /// <summary>
@@ -191,26 +193,34 @@ namespace Hecton8.Caves
         /// FlatHall: x,z = horizontal spread, y = compressed height.
         /// Crevice: x,z = compressed width, y = stretched height.
         /// </summary>
+        [FieldOffset(12)]
         public float3 radii;
 
         /// <summary>Smooth blending radius when merging with adjacent nodes/tunnels.
         /// Higher = more organic, blobby transitions. Range: 4-32.</summary>
+        [FieldOffset(24)]
         public float blendRadius;
 
         /// <summary>Scale multiplier for wall noise sampling on this room's surface.
         /// Allows per-room noise variation. Range: 0.5-2.0.</summary>
+        [FieldOffset(28)]
         public float noiseScale;
 
         /// <summary>Amplitude multiplier for wall noise on this room.
         /// 0 = perfectly smooth walls. Range: 0-3.</summary>
+        [FieldOffset(32)]
         public float noiseAmplitude;
 
         /// <summary>Shape of this room. Determines SDF evaluation path.</summary>
+        [FieldOffset(36)]
         public CaveRoomType roomType;
 
-        // ── Padding to 48 bytes ──
+        // Padding to 40 bytes.
+        [FieldOffset(37)]
         public byte _pad0;
+        [FieldOffset(38)]
         public byte _pad1;
+        [FieldOffset(39)]
         public byte _pad2;
     }
 
@@ -221,46 +231,60 @@ namespace Hecton8.Caves
     ///
     /// Size: 56 bytes.
     /// </summary>
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 56)]
     public struct CaveTunnel
     {
         /// <summary>World-space start point (typically center of source room).</summary>
+        [FieldOffset(0)]
         public float3 pointA;
 
         /// <summary>World-space end point (typically center of target room).</summary>
+        [FieldOffset(12)]
         public float3 pointB;
 
         /// <summary>Radius at point A. Range: 1-15.</summary>
+        [FieldOffset(24)]
         public float radiusA;
 
         /// <summary>Radius at point B. Can differ from radiusA for tapered tunnels.
         /// Range: 1-15.</summary>
+        [FieldOffset(28)]
         public float radiusB;
 
         /// <summary>Smooth blending radius when merging with rooms.
         /// Range: 4-32.</summary>
+        [FieldOffset(32)]
         public float blendRadius;
 
         /// <summary>Vertical scale of cross-section.
         /// > 1 = tall canyon, < 1 = low crawlspace. 1 = round.</summary>
+        [FieldOffset(36)]
         public float heightScale;
 
         /// <summary>Horizontal scale of cross-section.
         /// > 1 = wide passage, < 1 = narrow crack. 1 = round.</summary>
+        [FieldOffset(40)]
         public float widthScale;
 
         /// <summary>Additional domain warp amplitude applied specifically to this tunnel.
         /// Stacks with global warp. Makes this particular tunnel more/less curvy.
         /// Range: 0-5.</summary>
+        [FieldOffset(44)]
         public float warpAmount;
 
         /// <summary>Cross-section profile type.</summary>
+        [FieldOffset(48)]
         public CaveTunnelType tunnelType;
 
-        // ── Padding ──
+        // Padding to 56 bytes.
+        [FieldOffset(49)]
         public byte _pad0;
+        [FieldOffset(50)]
         public byte _pad1;
+        [FieldOffset(51)]
         public byte _pad2;
+        [FieldOffset(52)]
+        private uint _pad3;
     }
 
     /// <summary>
@@ -268,39 +292,48 @@ namespace Hecton8.Caves
     /// Implemented as a conic capsule from surface point inward.
     /// The terrain mesh should have a hole at this location.
     ///
-    /// Size: 76 bytes.
+    /// Size: 72 bytes.
     /// </summary>
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 72)]
     public struct CaveEntrance
     {
         /// <summary>World-space position of the entrance on terrain surface.</summary>
+        [FieldOffset(0)]
         public float3 surfacePosition;
 
         /// <summary>Unit direction vector pointing INTO the cave (away from surface).
         /// Typically: normalized(nearestRoom - surfacePosition).</summary>
+        [FieldOffset(12)]
         public float3 inwardDirection;
 
         /// <summary>Radius of the entrance opening at the surface. Range: 2-10.</summary>
+        [FieldOffset(24)]
         public float radius;
 
         /// <summary>How far the entrance funnel extends before connecting to cave interior.
         /// Controls the "throat" length. Range: 5-30.</summary>
+        [FieldOffset(28)]
         public float funnelLength;
 
         /// <summary>Radius at the inner end of the funnel. Typically radius * 0.5.
         /// Creates a narrowing entrance that opens into a larger space.</summary>
+        [FieldOffset(32)]
         public float innerRadius;
 
         /// <summary>Terrain normal sampled at the cave mouth when MapMagic terrain is available.</summary>
+        [FieldOffset(36)]
         public float3 terrainNormal;
 
         /// <summary>0..1 blend weight used to conform the mouth SDF to the terrain normal.</summary>
+        [FieldOffset(48)]
         public float terrainNormalBlend;
 
         /// <summary>Terrain splat-derived RGB color at the mouth, A = valid/blend weight.</summary>
+        [FieldOffset(52)]
         public float4 terrainSplatColor;
 
         /// <summary>0..1 confidence for terrainSplatColor.</summary>
+        [FieldOffset(68)]
         public float terrainSplatBlend;
     }
 
@@ -311,12 +344,13 @@ namespace Hecton8.Caves
     ///
     /// FUTURE USE: Array can be empty (Length = 0) with zero performance cost.
     ///
-    /// Size: 52 bytes.
+    /// Size: 48 bytes.
     /// </summary>
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 48)]
     public struct CaveStructure
     {
         /// <summary>World-space center/base of the structure.</summary>
+        [FieldOffset(0)]
         public float3 position;
 
         /// <summary>
@@ -329,24 +363,32 @@ namespace Hecton8.Caves
         /// Arch: x = major radius, y = minor radius, z = thickness.
         /// Block: x,y,z = half-extents.
         /// </summary>
+        [FieldOffset(12)]
         public float3 size;
 
         /// <summary>Second point for oriented structures (Bridge end point, etc.).
         /// For non-oriented types, ignored.</summary>
+        [FieldOffset(24)]
         public float3 pointB;
 
         /// <summary>Smooth blending radius. Range: 2-16.</summary>
+        [FieldOffset(36)]
         public float blendRadius;
 
         /// <summary>Surface noise amplitude. 0 = smooth. Range: 0-1.</summary>
+        [FieldOffset(40)]
         public float noiseAmount;
 
         /// <summary>Type of structure. Determines SDF evaluation.</summary>
+        [FieldOffset(44)]
         public CaveStructureType structureType;
 
-        // ── Padding ──
+        // Padding to 48 bytes.
+        [FieldOffset(45)]
         public byte _pad0;
+        [FieldOffset(46)]
         public byte _pad1;
+        [FieldOffset(47)]
         public byte _pad2;
     }
 
@@ -357,66 +399,80 @@ namespace Hecton8.Caves
     ///
     /// Blittable. No managed references.
     ///
-    /// Size: 84 bytes.
+    /// Size: 80 bytes.
     /// </summary>
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 80)]
     public struct CaveGenerationParams
     {
         // ── Domain Warping ──────────────────────────────────────────────────
         /// <summary>Frequency of 3D noise used to distort world coordinates
         /// before SDF evaluation. Lower = larger-scale bends. Range: 0.01-0.15.</summary>
+        [FieldOffset(0)]
         public float warpFrequency;
 
         /// <summary>Maximum displacement in meters from domain warping.
         /// Higher = more distorted tunnels. Range: 0-10.</summary>
+        [FieldOffset(4)]
         public float warpAmplitude;
 
         /// <summary>Fractal octaves for domain warp noise. Range: 1-3.</summary>
+        [FieldOffset(8)]
         public int warpOctaves;
 
         // ── Wall Surface Noise ──────────────────────────────────────────────
         /// <summary>Frequency of surface detail noise. Higher = finer bumps.
         /// Range: 0.05-0.5.</summary>
+        [FieldOffset(12)]
         public float wallNoiseFrequency;
 
         /// <summary>Amplitude of surface noise in meters. Pushes SDF surface
         /// in/out to create rocky texture. Range: 0-5.</summary>
+        [FieldOffset(16)]
         public float wallNoiseAmplitude;
 
         /// <summary>Fractal octaves for wall noise. More = more detail. Range: 1-6.</summary>
+        [FieldOffset(20)]
         public int wallNoiseOctaves;
 
         /// <summary>Lacunarity (frequency multiplier per octave). Standard: 2.0.</summary>
+        [FieldOffset(24)]
         public float wallNoiseLacunarity;
 
         /// <summary>Persistence (amplitude multiplier per octave). Standard: 0.5.</summary>
+        [FieldOffset(28)]
         public float wallNoisePersistence;
 
         // ── Horizontal Terraces ─────────────────────────────────────────────
         /// <summary>Frequency of horizontal rock strata layers.
         /// Higher = more frequent ledges. Range: 0-2.</summary>
+        [FieldOffset(32)]
         public float terraceFrequency;
 
         /// <summary>Depth of terrace carving in meters. Range: 0-2.</summary>
+        [FieldOffset(36)]
         public float terraceAmplitude;
 
         /// <summary>Edge sharpness of terraces. Higher = more defined ledges.
         /// Range: 1-15.</summary>
+        [FieldOffset(40)]
         public float terraceSharpness;
 
         // ── Global Blending ─────────────────────────────────────────────────
         /// <summary>Default smooth-min blending factor for rooms/tunnels
         /// that don't specify their own. Range: 4-32.</summary>
+        [FieldOffset(44)]
         public float globalBlendK;
 
         /// <summary>Width of the border region where cave density fades to solid.
         /// Prevents cave mesh edges from showing open geometry.
         /// Must match sealMargin in HectonVoxelEngine. Range: 1-10.</summary>
+        [FieldOffset(48)]
         public float shellThickness;
 
         // ── Seed ────────────────────────────────────────────────────────────
         /// <summary>Master seed for all noise functions. Deterministic results
         /// for same seed value.</summary>
+        [FieldOffset(52)]
         public uint seed;
 
         // ── Wall Noise Detail Threshold ─────────────────────────────────────
@@ -424,30 +480,50 @@ namespace Hecton8.Caves
         /// is evaluated. Beyond this distance, noise is skipped for performance.
         /// Larger = more noise evaluated = slower but more consistent.
         /// Range: 2-20. Recommended: shellThickness * 2.</summary>
+        [FieldOffset(56)]
         public float noiseEvalDistance;
 
         // ── Floor Flattening ────────────────────────────────────────────────
         /// <summary>How aggressively floors are flattened.
         /// 0 = natural curved floor. 1 = perfectly flat.
         /// Affects bottom 30% of each room. Range: 0-1.</summary>
+        [FieldOffset(60)]
         public float floorFlatness;
 
         // ── Structure Blending ──────────────────────────────────────────────
         /// <summary>Default blend radius for CaveStructure primitives
         /// that don't specify their own. Range: 2-16.</summary>
+        [FieldOffset(64)]
         public float structureBlendK;
 
         // ── Entrance Blending ───────────────────────────────────────────────
         /// <summary>Blend radius for entrance funnels merging with cave interior.
         /// Range: 4-20.</summary>
+        [FieldOffset(68)]
         public float entranceBlendK;
+        [FieldOffset(72)]
         public byte structureOnlyMode;
         // ── Spawn Context ───────────────────────────────────────────
         /// <summary>Determines which loot table is used for spawn points
         /// extracted from this cave's floor geometry.</summary>
+        [FieldOffset(73)]
         public SpawnContext spawnContext;
+
+        [FieldOffset(74)]
+        private byte _pad0;
+        [FieldOffset(75)]
+        private byte _pad1;
+        [FieldOffset(76)]
+        private byte _pad2;
+        [FieldOffset(77)]
+        private byte _pad3;
+        [FieldOffset(78)]
+        private byte _pad4;
+        [FieldOffset(79)]
+        private byte _pad5;
     }
-        /// <summary>
+
+    /// <summary>
     /// Spawn point extracted from cave floor mesh.
     /// Contains world position and a deterministic hash ID derived from spatial coordinates.
     /// The hashId is stable across runs — same seed + same position = same hashId.
@@ -455,16 +531,18 @@ namespace Hecton8.Caves
     ///
     /// Size: 16 bytes.
     /// </summary>
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit, Size = 16)]
     public struct CaveSpawnData
     {
         /// <summary>World-space position of the spawn point on cave floor.</summary>
+        [FieldOffset(0)]
         public float3 position;
 
         /// <summary>Deterministic ID derived from spatial hash of position.
         /// Guaranteed positive (masked to 0x7FFFFFFF).
         /// Same world position always produces same hashId regardless of
         /// thread execution order in parallel jobs.</summary>
+        [FieldOffset(12)]
         public int hashId;
     }
     #endregion

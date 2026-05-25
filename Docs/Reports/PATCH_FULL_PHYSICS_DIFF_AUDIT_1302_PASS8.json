@@ -1,0 +1,264 @@
+﻿{
+    "agent":  "1302",
+    "generatedUtc":  "2026-05-25T18:23:00.9799535Z",
+    "scope":  "git diff added lines under Assets/_Project/Scripts/Physics; inScope excludes Tether/Cable/Harpoon/Editor paths; player count excludes UNITY_EDITOR guarded lines",
+    "dotnetBuildLaunched":  false,
+    "roslynExeLaunched":  false,
+    "addedLineCount":  1557,
+    "tokenHitLineCount":  24,
+    "inScopePlayerForbiddenTokenCount":  0,
+    "inScopePlayerForbiddenTokenHits":  [
+
+                                        ],
+    "inScopeEditorGuardedTokenCount":  0,
+    "inScopeEditorGuardedTokenHits":  [
+
+                                      ],
+    "excludedTokenCount":  24,
+    "excludedTokenHits":  [
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/Cable132/CablePhysicsSolver132.cs",
+                                  "line":  730,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  false,
+                                  "tokens":  [
+                                                 "new"
+                                             ],
+                                  "text":  "JobHandle uploadHandle = new CableSplineGpuMemcpyJob"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/Cable132/CablePhysicsSolver132.cs",
+                                  "line":  738,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  false,
+                                  "tokens":  [
+                                                 "new"
+                                             ],
+                                  "text":  "upload = new CableSplineUploadTicket132"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/Cable132/CablePhysicsSolver132.cs",
+                                  "line":  834,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  false,
+                                  "tokens":  [
+                                                 "new"
+                                             ],
+                                  "text":  "JobHandle uploadHandle = new CableSplineIndirectArgsJob"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/Cable132/CablePhysicsSolver132.cs",
+                                  "line":  841,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  false,
+                                  "tokens":  [
+                                                 "new"
+                                             ],
+                                  "text":  "upload = new CableSplineIndirectArgsUploadTicket132"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherAupVerletJobs.cs",
+                                  "line":  923,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  false,
+                                  "tokens":  [
+                                                 "new"
+                                             ],
+                                  "text":  "var job = new TetherSplineGpuMemcpyJob"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                                  "line":  30,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  false,
+                                  "tokens":  [
+                                                 "ThreadAlloc"
+                                             ],
+                                  "text":  "private static Thread s_dumpWorker;"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                                  "line":  31,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  false,
+                                  "tokens":  [
+                                                 "ThreadAlloc"
+                                             ],
+                                  "text":  "private static AutoResetEvent s_dumpSignal;"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                                  "line":  123,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  false,
+                                  "tokens":  [
+                                                 "ThreadAlloc"
+                                             ],
+                                  "text":  "Thread.MemoryBarrier();"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                                  "line":  126,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  false,
+                                  "tokens":  [
+                                                 "ThreadAlloc"
+                                             ],
+                                  "text":  "AutoResetEvent signal = s_dumpSignal;"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                                  "line":  274,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  false,
+                                  "tokens":  [
+                                                 "ThreadAlloc"
+                                             ],
+                                  "text":  "AutoResetEvent signal = s_dumpSignal;"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                                  "line":  275,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  false,
+                                  "tokens":  [
+                                                 "ThreadAlloc"
+                                             ],
+                                  "text":  "Thread worker = s_dumpWorker;"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                                  "line":  283,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  false,
+                                  "tokens":  [
+                                                 "new",
+                                                 "ThreadAlloc"
+                                             ],
+                                  "text":  "signal = new AutoResetEvent(false);"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                                  "line":  290,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  false,
+                                  "tokens":  [
+                                                 "new",
+                                                 "ThreadAlloc"
+                                             ],
+                                  "text":  "worker = new Thread(DumpWorkerLoop)"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                                  "line":  369,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  false,
+                                  "tokens":  [
+                                                 "ThreadAlloc"
+                                             ],
+                                  "text":  "AutoResetEvent signal = s_dumpSignal;"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                                  "line":  370,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  false,
+                                  "tokens":  [
+                                                 "ThreadAlloc"
+                                             ],
+                                  "text":  "Thread worker = s_dumpWorker;"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                                  "line":  389,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  false,
+                                  "tokens":  [
+                                                 "ThreadAlloc"
+                                             ],
+                                  "text":  "worker.ManagedThreadId != Thread.CurrentThread.ManagedThreadId)"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                                  "line":  420,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  false,
+                                  "tokens":  [
+                                                 "ThreadAlloc"
+                                             ],
+                                  "text":  "AutoResetEvent signal = s_dumpSignal;"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                                  "line":  468,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  false,
+                                  "tokens":  [
+                                                 "new",
+                                                 "FileStream"
+                                             ],
+                                  "text":  "using (FileStream stream = new FileStream("
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                                  "line":  547,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  true,
+                                  "tokens":  [
+                                                 "ThreadAlloc"
+                                             ],
+                                  "text":  "System.Threading.Thread worker = null;"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                                  "line":  727,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  true,
+                                  "tokens":  [
+                                                 "new",
+                                                 "ThreadAlloc"
+                                             ],
+                                  "text":  "worker = new System.Threading.Thread("
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                                  "line":  747,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  true,
+                                  "tokens":  [
+                                                 "ThreadAlloc"
+                                             ],
+                                  "text":  "System.Threading.Thread.SpinWait(4096);"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                                  "line":  767,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  true,
+                                  "tokens":  [
+                                                 "ThreadAlloc"
+                                             ],
+                                  "text":  "System.Threading.Thread.SpinWait(4096);"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                                  "line":  786,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  true,
+                                  "tokens":  [
+                                                 "ThreadAlloc"
+                                             ],
+                                  "text":  "System.Threading.Thread.SpinWait(4096);"
+                              },
+                              {
+                                  "file":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                                  "line":  867,
+                                  "excludedByDomain":  true,
+                                  "editorGuarded":  true,
+                                  "tokens":  [
+                                                 "ThreadAlloc"
+                                             ],
+                                  "text":  "System.Threading.Thread.SpinWait(1024);"
+                              }
+                          ]
+}

@@ -55,7 +55,8 @@ namespace Hecton8.AI.Cognition
         [FieldOffset(12)] public uint ActiveActionHash;
         [FieldOffset(16)] public uint TargetEntityHash;
         [FieldOffset(20)] public float ActionCooldown;
-        [FieldOffset(24)] private ulong _pad0;
+        [FieldOffset(24)] private uint _pad0;
+        [FieldOffset(28)] private uint _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -76,11 +77,19 @@ namespace Hecton8.AI.Cognition
         [FieldOffset(36)] public float FoodValue01;
         [FieldOffset(40)] public float Weakness01;
         [FieldOffset(44)] public float Noise01;
-        [FieldOffset(48)] public byte Flags;
-        [FieldOffset(49)] private byte _padByte0;
-        [FieldOffset(50)] private ushort _padShort0;
-        [FieldOffset(52)] public uint SpatialHash;
-        [FieldOffset(56)] private ulong _pad0;
+        [FieldOffset(48)] public uint SpatialHash;
+        [FieldOffset(52)] public byte Flags;
+        [FieldOffset(53)] private byte _pad0;
+        [FieldOffset(54)] private byte _pad1;
+        [FieldOffset(55)] private byte _pad2;
+        [FieldOffset(56)] private byte _pad3;
+        [FieldOffset(57)] private byte _pad4;
+        [FieldOffset(58)] private byte _pad5;
+        [FieldOffset(59)] private byte _pad6;
+        [FieldOffset(60)] private byte _pad7;
+        [FieldOffset(61)] private byte _pad8;
+        [FieldOffset(62)] private byte _pad9;
+        [FieldOffset(63)] private byte _pad10;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 128)]
@@ -113,8 +122,12 @@ namespace Hecton8.AI.Cognition
         [FieldOffset(52)] public uint Frame;
         [FieldOffset(56)] public byte Flags;
         [FieldOffset(57)] public byte CandidateCount;
-        [FieldOffset(58)] private ushort _pad0;
-        [FieldOffset(60)] private uint _pad1;
+        [FieldOffset(58)] private byte _pad0;
+        [FieldOffset(59)] private byte _pad1;
+        [FieldOffset(60)] private byte _pad2;
+        [FieldOffset(61)] private byte _pad3;
+        [FieldOffset(62)] private byte _pad4;
+        [FieldOffset(63)] private byte _pad5;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 96)]
@@ -143,9 +156,26 @@ namespace Hecton8.AI.Cognition
         [FieldOffset(41)] public byte SurfaceMode;
         [FieldOffset(42)] public byte Flags;
         [FieldOffset(43)] private byte _pad0;
-        [FieldOffset(44)] private uint _pad1;
-        [FieldOffset(48)] private ulong _pad2;
-        [FieldOffset(56)] private ulong _pad3;
+        [FieldOffset(44)] private byte _pad1;
+        [FieldOffset(45)] private byte _pad2;
+        [FieldOffset(46)] private byte _pad3;
+        [FieldOffset(47)] private byte _pad4;
+        [FieldOffset(48)] private byte _pad5;
+        [FieldOffset(49)] private byte _pad6;
+        [FieldOffset(50)] private byte _pad7;
+        [FieldOffset(51)] private byte _pad8;
+        [FieldOffset(52)] private byte _pad9;
+        [FieldOffset(53)] private byte _pad10;
+        [FieldOffset(54)] private byte _pad11;
+        [FieldOffset(55)] private byte _pad12;
+        [FieldOffset(56)] private byte _pad13;
+        [FieldOffset(57)] private byte _pad14;
+        [FieldOffset(58)] private byte _pad15;
+        [FieldOffset(59)] private byte _pad16;
+        [FieldOffset(60)] private byte _pad17;
+        [FieldOffset(61)] private byte _pad18;
+        [FieldOffset(62)] private byte _pad19;
+        [FieldOffset(63)] private byte _pad20;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -159,28 +189,44 @@ namespace Hecton8.AI.Cognition
         [FieldOffset(40)] public uint Frame;
         [FieldOffset(44)] public byte Flags;
         [FieldOffset(45)] private byte _pad0;
-        [FieldOffset(46)] private ushort _pad1;
-        [FieldOffset(48)] private ulong _pad2;
-        [FieldOffset(56)] private ulong _pad3;
+        [FieldOffset(46)] private byte _pad1;
+        [FieldOffset(47)] private byte _pad2;
+        [FieldOffset(48)] private byte _pad3;
+        [FieldOffset(49)] private byte _pad4;
+        [FieldOffset(50)] private byte _pad5;
+        [FieldOffset(51)] private byte _pad6;
+        [FieldOffset(52)] private byte _pad7;
+        [FieldOffset(53)] private byte _pad8;
+        [FieldOffset(54)] private byte _pad9;
+        [FieldOffset(55)] private byte _pad10;
+        [FieldOffset(56)] private byte _pad11;
+        [FieldOffset(57)] private byte _pad12;
+        [FieldOffset(58)] private byte _pad13;
+        [FieldOffset(59)] private byte _pad14;
+        [FieldOffset(60)] private byte _pad15;
+        [FieldOffset(61)] private byte _pad16;
+        [FieldOffset(62)] private byte _pad17;
+        [FieldOffset(63)] private byte _pad18;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct CognitionTelemetryEntry
     {
-        [FieldOffset(0)] public uint Frame;
-        [FieldOffset(4)] public uint ActionHashFold;
-        [FieldOffset(8)] public uint HuntingCount;
-        [FieldOffset(12)] public uint FaultFlags;
-        [FieldOffset(16)] public float AverageFear01;
-        [FieldOffset(20)] public float AverageHunger01;
-        [FieldOffset(24)] public float AverageAggression01;
-        [FieldOffset(28)] public float MaximumUtility;
-        [FieldOffset(32)] public float BurstMicroseconds;
-        [FieldOffset(36)] public float GlobalQualityWeight;
-        [FieldOffset(40)] public uint ActiveCount;
-        [FieldOffset(44)] public uint NonFiniteCount;
-        [FieldOffset(48)] public ulong TargetHashFold;
-        [FieldOffset(56)] private ulong _pad0;
+        [FieldOffset(0)] public ulong TargetHashFold;
+        [FieldOffset(8)] public uint Frame;
+        [FieldOffset(12)] public uint ActionHashFold;
+        [FieldOffset(16)] public uint HuntingCount;
+        [FieldOffset(20)] public uint FaultFlags;
+        [FieldOffset(24)] public float AverageFear01;
+        [FieldOffset(28)] public float AverageHunger01;
+        [FieldOffset(32)] public float AverageAggression01;
+        [FieldOffset(36)] public float MaximumUtility;
+        [FieldOffset(40)] public float BurstMicroseconds;
+        [FieldOffset(44)] public float GlobalQualityWeight;
+        [FieldOffset(48)] public uint ActiveCount;
+        [FieldOffset(52)] public uint NonFiniteCount;
+        [FieldOffset(56)] private uint _pad0;
+        [FieldOffset(60)] private uint _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]

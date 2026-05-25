@@ -31,27 +31,32 @@ namespace Hecton8.SaveSystem
     internal struct VoxelDeltaHeaderDTO
     {
         [FieldOffset(0)] public ulong SectorHash;
-        [FieldOffset(8)] public uint CompressedSize;
-        [FieldOffset(12)] public uint UncompressedSize;
-        [FieldOffset(16)] public ulong XXHash3Checksum;
-        [FieldOffset(24)] public uint _pad0;
-        [FieldOffset(28)] public uint _pad1;
+        [FieldOffset(8)] public ulong XXHash3Checksum;
+        [FieldOffset(16)] public uint CompressedSize;
+        [FieldOffset(20)] public uint UncompressedSize;
+        [FieldOffset(24)] public uint Flags;
+        [FieldOffset(28)] public uint LayoutMarker;
     }
 
     [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct VoxelDeltaBlockCounter64
     {
-        [FieldOffset(0)] public uint RunCount;
-        [FieldOffset(4)] public uint ModifiedCellCount;
-        [FieldOffset(8)] public uint EncodedBytes;
-        [FieldOffset(12)] public uint Flags;
-        [FieldOffset(16)] public ulong SectorHash;
-        [FieldOffset(24)] public ulong _pad0;
-        [FieldOffset(32)] public ulong _pad1;
-        [FieldOffset(40)] public ulong _pad2;
-        [FieldOffset(48)] public ulong _pad3;
-        [FieldOffset(56)] public ulong _pad4;
+        [FieldOffset(0)] public ulong SectorHash;
+        [FieldOffset(8)] public uint RunCount;
+        [FieldOffset(12)] public uint ModifiedCellCount;
+        [FieldOffset(16)] public uint EncodedBytes;
+        [FieldOffset(20)] public uint Flags;
+        [FieldOffset(24)] public uint _pad0;
+        [FieldOffset(28)] public uint _pad1;
+        [FieldOffset(32)] public uint _pad2;
+        [FieldOffset(36)] public uint _pad3;
+        [FieldOffset(40)] public uint _pad4;
+        [FieldOffset(44)] public uint _pad5;
+        [FieldOffset(48)] public uint _pad6;
+        [FieldOffset(52)] public uint _pad7;
+        [FieldOffset(56)] public uint _pad8;
+        [FieldOffset(60)] public uint _pad9;
     }
 
     [BinaryBlittableSafe]
@@ -112,7 +117,8 @@ namespace Hecton8.SaveSystem
         [FieldOffset(44)] public float VisualFade01;
         [FieldOffset(48)] public uint Flags;
         [FieldOffset(52)] public uint _pad0;
-        [FieldOffset(56)] public ulong _pad1;
+        [FieldOffset(56)] public uint _pad1;
+        [FieldOffset(60)] public uint _pad2;
     }
 
     [BinaryBlittableSafe]
@@ -134,34 +140,36 @@ namespace Hecton8.SaveSystem
     {
         [FieldOffset(0)] public ulong Magic;
         [FieldOffset(8)] public ulong SchemaHash;
-        [FieldOffset(16)] public uint Version;
-        [FieldOffset(20)] public uint ChunkResolution;
-        [FieldOffset(24)] public uint ChunkCellCount;
-        [FieldOffset(28)] public uint HeaderBytes;
-        [FieldOffset(32)] public uint RleRunBytes;
-        [FieldOffset(36)] public uint Flags;
-        [FieldOffset(40)] public ulong Seed;
-        [FieldOffset(48)] public ulong _pad0;
-        [FieldOffset(56)] public ulong _pad1;
+        [FieldOffset(16)] public ulong Seed;
+        [FieldOffset(24)] public uint Version;
+        [FieldOffset(28)] public uint ChunkResolution;
+        [FieldOffset(32)] public uint ChunkCellCount;
+        [FieldOffset(36)] public uint HeaderBytes;
+        [FieldOffset(40)] public uint RleRunBytes;
+        [FieldOffset(44)] public uint Flags;
+        [FieldOffset(48)] public uint _pad0;
+        [FieldOffset(52)] public uint _pad1;
+        [FieldOffset(56)] public uint _pad2;
+        [FieldOffset(60)] public uint _pad3;
     }
 
     [BinaryBlittableSafe]
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct VoxelDeltaTelemetryDumpHeaderDTO
     {
-        [FieldOffset(0)] public uint Magic;
-        [FieldOffset(4)] public uint Version;
-        [FieldOffset(8)] public uint EntryCount;
-        [FieldOffset(12)] public uint EntryStride;
-        [FieldOffset(16)] public uint Cursor;
-        [FieldOffset(20)] public uint ReasonFlags;
-        [FieldOffset(24)] public uint RingCapacity;
-        [FieldOffset(28)] public uint HeaderBytes;
-        [FieldOffset(32)] public ulong FirstSectorHash;
-        [FieldOffset(40)] public ulong LastSectorHash;
-        [FieldOffset(48)] public uint FirstFrame;
-        [FieldOffset(52)] public uint LastFrame;
-        [FieldOffset(56)] public ulong _pad0;
+        [FieldOffset(0)] public ulong Magic;
+        [FieldOffset(8)] public ulong FirstSectorHash;
+        [FieldOffset(16)] public ulong LastSectorHash;
+        [FieldOffset(24)] public uint Version;
+        [FieldOffset(28)] public uint EntryCount;
+        [FieldOffset(32)] public uint EntryStride;
+        [FieldOffset(36)] public uint Cursor;
+        [FieldOffset(40)] public uint ReasonFlags;
+        [FieldOffset(44)] public uint RingCapacity;
+        [FieldOffset(48)] public uint HeaderBytes;
+        [FieldOffset(52)] public uint FirstFrame;
+        [FieldOffset(56)] public uint LastFrame;
+        [FieldOffset(60)] public uint _pad0;
     }
 
     internal struct VoxelDeltaCompressionVaultBufferSet
@@ -195,6 +203,10 @@ namespace Hecton8.SaveSystem
         internal const int MaxVoxelDeltaWalPayloadBytes = (256 * 1024) - 64;
         internal const int VoxelDeltaHeaderBytes = 32;
         internal const int VoxelDeltaRleRunBytes = 8;
+        internal const int VoxelDeltaDenseFallbackDirtyMaskWordCount = ChunkCellCount / 32;
+        internal const int VoxelDeltaDenseFallbackDirtyMaskBytes = VoxelDeltaDenseFallbackDirtyMaskWordCount * sizeof(uint);
+        internal const int VoxelDeltaDenseFallbackCellBytes = sizeof(ushort) + sizeof(byte) + sizeof(byte);
+        internal const int VoxelDeltaDenseFallbackPayloadBytes = VoxelDeltaDenseFallbackDirtyMaskBytes + (ChunkCellCount * VoxelDeltaDenseFallbackCellBytes);
         internal const int MaxVoxelDeltaRleRunsPerWalPayload = (MaxVoxelDeltaWalPayloadBytes - VoxelDeltaHeaderBytes) / VoxelDeltaRleRunBytes;
         public const int HashTableSlots = 4096;
         public const int CounterCapacity = 24;
@@ -217,12 +229,14 @@ namespace Hecton8.SaveSystem
         internal const uint HeaderFlagRaw = 1u << 1;
         internal const uint HeaderFlagPruned = 1u << 2;
         internal const uint HeaderFlagChecksumValid = 1u << 3;
+        internal const uint HeaderFlagDenseFallback = 1u << 4;
         internal const uint HeaderFlagFatal = 1u << 31;
         internal const uint TelemetryFlagDiskLatencyPatched = 1u << 8;
         internal const uint TelemetryFlagDiskLatencySpike = 1u << 9;
         internal const uint TelemetryDumpMagic = 0x56445741u; // AWDV little-endian marker.
         internal const uint TelemetryDumpVersion = 1u;
-        private const string VoxelDeltaTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_308_Voxel.bin";
+        internal const uint HeaderAlignedLayoutMarker = 0x31585256u; // VXR1 little-endian marker.
+        private const string VoxelDeltaTelemetryDumpRelativePath = "Docs/AgentLogs/Dump_1312_VoxelPaging.bin";
         internal const int Lz4LastLiterals = 5;
         internal const int Lz4MfLimit = 12;
 
@@ -326,8 +340,10 @@ namespace Hecton8.SaveSystem
                 RleRunBytes = (uint)UnsafeUtility.SizeOf<VoxelDeltaRleRunDTO>(),
                 Flags = 0u,
                 Seed = seed,
-                _pad0 = 0UL,
-                _pad1 = 0UL
+                _pad0 = 0u,
+                _pad1 = 0u,
+                _pad2 = 0u,
+                _pad3 = 0u
             };
 
             void* destinationPtr = destination.GetUnsafePtr();
@@ -500,10 +516,14 @@ namespace Hecton8.SaveSystem
             {
                 Runs = buffers.RleRuns,
                 BlockCounters = buffers.BlockCounters,
+                RuntimeDensity = buffers.RuntimeDensity,
+                MaterialIds = buffers.MaterialIds,
+                CellFlags = buffers.CellFlags,
                 DestinationBytes = buffers.RleBytes,
                 Counters = buffers.Counters,
                 BlockCount = blockCount,
-                MaxRunsPerBlock = safeMaxRunsPerBlock
+                MaxRunsPerBlock = safeMaxRunsPerBlock,
+                CellCount = safeCellCount
             }.Schedule(finalize);
 
             JobHandle lz4 = new VoxelLz4CompressionJob
@@ -678,11 +698,11 @@ namespace Hecton8.SaveSystem
                 return;
 
             WriteULongLittleEndian(destination, 0, header.SectorHash);
-            WriteUIntLittleEndian(destination, 8, header.CompressedSize);
-            WriteUIntLittleEndian(destination, 12, header.UncompressedSize);
-            WriteULongLittleEndian(destination, 16, header.XXHash3Checksum);
-            WriteUIntLittleEndian(destination, 24, header._pad0);
-            WriteUIntLittleEndian(destination, 28, header._pad1);
+            WriteULongLittleEndian(destination, 8, header.XXHash3Checksum);
+            WriteUIntLittleEndian(destination, 16, header.CompressedSize);
+            WriteUIntLittleEndian(destination, 20, header.UncompressedSize);
+            WriteUIntLittleEndian(destination, 24, header.Flags);
+            WriteUIntLittleEndian(destination, 28, HeaderAlignedLayoutMarker);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -691,15 +711,43 @@ namespace Hecton8.SaveSystem
             if (source == null)
                 return default;
 
-            return new VoxelDeltaHeaderDTO
-            {
-                SectorHash = ReadULongLittleEndian(source, 0),
-                CompressedSize = ReadUIntLittleEndian(source, 8),
-                UncompressedSize = ReadUIntLittleEndian(source, 12),
-                XXHash3Checksum = ReadULongLittleEndian(source, 16),
-                _pad0 = ReadUIntLittleEndian(source, 24),
-                _pad1 = ReadUIntLittleEndian(source, 28)
-            };
+            VoxelDeltaHeaderDTO header = default;
+            header.SectorHash = ReadULongLittleEndian(source, 0);
+            header.XXHash3Checksum = ReadULongLittleEndian(source, 8);
+            header.CompressedSize = ReadUIntLittleEndian(source, 16);
+            header.UncompressedSize = ReadUIntLittleEndian(source, 20);
+            header.Flags = ReadUIntLittleEndian(source, 24);
+            header.LayoutMarker = ReadUIntLittleEndian(source, 28);
+            return header;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static VoxelDeltaHeaderDTO ReadLegacyHeaderLittleEndian(byte* source)
+        {
+            if (source == null)
+                return default;
+
+            VoxelDeltaHeaderDTO header = default;
+            header.SectorHash = ReadULongLittleEndian(source, 0);
+            header.CompressedSize = ReadUIntLittleEndian(source, 8);
+            header.UncompressedSize = ReadUIntLittleEndian(source, 12);
+            header.XXHash3Checksum = ReadULongLittleEndian(source, 16);
+            header.Flags = ReadUIntLittleEndian(source, 24);
+            header.LayoutMarker = ReadUIntLittleEndian(source, 28);
+            return header;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static bool IsWalHeaderByteCountValid(int byteCount, int headerBytes, in VoxelDeltaHeaderDTO header, bool requireLayoutMarker)
+        {
+            if (requireLayoutMarker && header.LayoutMarker != HeaderAlignedLayoutMarker)
+                return false;
+
+            if (header.CompressedSize > int.MaxValue)
+                return false;
+
+            int compressedBytes = (int)header.CompressedSize;
+            return compressedBytes >= 0 && compressedBytes <= byteCount - headerBytes;
         }
 
         internal static bool VerifyCompressedPayloadChecksum(NativeArray<byte> compressedBytes, int byteCount, in VoxelDeltaHeaderDTO header)
@@ -728,11 +776,23 @@ namespace Hecton8.SaveSystem
 
             byte* ptr = (byte*)walPayloadBytes.GetUnsafeReadOnlyPtr();
             header = ReadHeaderLittleEndian(ptr);
-            int compressedBytes = header.CompressedSize > int.MaxValue ? -1 : (int)header.CompressedSize;
-            if (compressedBytes < 0 || compressedBytes > count - headerBytes)
+            if (IsWalHeaderByteCountValid(count, headerBytes, in header, true))
+            {
+                int compressedBytes = (int)header.CompressedSize;
+                if (VerifyCompressedPayloadChecksum(ptr + headerBytes, compressedBytes, in header))
+                    return true;
+            }
+
+            VoxelDeltaHeaderDTO legacyHeader = ReadLegacyHeaderLittleEndian(ptr);
+            if (!IsWalHeaderByteCountValid(count, headerBytes, in legacyHeader, false))
                 return false;
 
-            return VerifyCompressedPayloadChecksum(ptr + headerBytes, compressedBytes, in header);
+            int legacyCompressedBytes = (int)legacyHeader.CompressedSize;
+            if (!VerifyCompressedPayloadChecksum(ptr + headerBytes, legacyCompressedBytes, in legacyHeader))
+                return false;
+
+            header = legacyHeader;
+            return true;
         }
 
         private static bool VerifyCompressedPayloadChecksum(byte* ptr, int count, in VoxelDeltaHeaderDTO header)
@@ -854,7 +914,7 @@ namespace Hecton8.SaveSystem
                     LastSectorHash = last.SectorHash,
                     FirstFrame = first.Frame,
                     LastFrame = last.Frame,
-                    _pad0 = 0UL
+                    _pad0 = 0u
                 };
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
@@ -1274,11 +1334,16 @@ namespace Hecton8.SaveSystem
                     EncodedBytes = runCount * (uint)UnsafeUtility.SizeOf<VoxelDeltaRleRunDTO>(),
                     Flags = overflow ? HeaderFlagFatal : 0u,
                     SectorHash = SectorHash,
-                    _pad0 = 0UL,
-                    _pad1 = 0UL,
-                    _pad2 = 0UL,
-                    _pad3 = 0UL,
-                    _pad4 = 0UL
+                    _pad0 = 0u,
+                    _pad1 = 0u,
+                    _pad2 = 0u,
+                    _pad3 = 0u,
+                    _pad4 = 0u,
+                    _pad5 = 0u,
+                    _pad6 = 0u,
+                    _pad7 = 0u,
+                    _pad8 = 0u,
+                    _pad9 = 0u
                 };
             }
         }
@@ -1325,6 +1390,19 @@ namespace Hecton8.SaveSystem
                     flags |= HeaderFlagPruned;
                 }
 
+                uint rlePayloadLimit = (uint)(MaxVoxelDeltaWalPayloadBytes - VoxelDeltaHeaderBytes);
+                bool rlePayloadOverflow =
+                    !pruned &&
+                    modified > 0u &&
+                    (runCount > (uint)MaxVoxelDeltaRleRunsPerWalPayload ||
+                     encodedBytes > rlePayloadLimit ||
+                     (flags & HeaderFlagFatal) != 0u);
+                if (rlePayloadOverflow)
+                {
+                    encodedBytes = (uint)ResolveDenseRawBytes(safeCells);
+                    flags = (flags & ~HeaderFlagFatal) | HeaderFlagDenseFallback;
+                }
+
                 Counters[CounterRleRunCount] = SaturatingUIntToInt(runCount);
                 Counters[CounterModifiedCellCount] = SaturatingUIntToInt(modified);
                 Counters[CounterRleBytes] = SaturatingUIntToInt(encodedBytes);
@@ -1343,8 +1421,8 @@ namespace Hecton8.SaveSystem
                         CompressedSize = 0u,
                         UncompressedSize = encodedBytes,
                         XXHash3Checksum = 0UL,
-                        _pad0 = 0u,
-                        _pad1 = 0u
+                        Flags = flags,
+                        LayoutMarker = HeaderAlignedLayoutMarker
                     };
                 }
 
@@ -1365,14 +1443,18 @@ namespace Hecton8.SaveSystem
                         VisualFade01 = 0f,
                         Flags = flags,
                         _pad0 = 0u,
-                        _pad1 = 0UL
+                        _pad1 = 0u,
+                        _pad2 = 0u
                     };
                 }
             }
 
             private static int ResolveDenseRawBytes(int safeCells)
             {
-                return safeCells > int.MaxValue / 3 ? int.MaxValue : safeCells * 3;
+                int dirtyMaskBytes = (((safeCells + 31) >> 5) * sizeof(uint));
+                return safeCells > (int.MaxValue - dirtyMaskBytes) / VoxelDeltaDenseFallbackCellBytes
+                    ? int.MaxValue
+                    : dirtyMaskBytes + (safeCells * VoxelDeltaDenseFallbackCellBytes);
             }
         }
 
@@ -1381,15 +1463,33 @@ namespace Hecton8.SaveSystem
         {
             [ReadOnly, NoAlias] public NativeArray<VoxelDeltaRleRunDTO> Runs;
             [ReadOnly, NoAlias] public NativeArray<VoxelDeltaBlockCounter64> BlockCounters;
+            [ReadOnly, NoAlias] public NativeArray<sbyte> RuntimeDensity;
+            [ReadOnly, NoAlias] public NativeArray<byte> MaterialIds;
+            [ReadOnly, NoAlias] public NativeArray<byte> CellFlags;
             [NoAlias] public NativeArray<byte> DestinationBytes;
             [NoAlias] public NativeArray<int> Counters;
             public int BlockCount;
             public int MaxRunsPerBlock;
+            public int CellCount;
 
             public void Execute()
             {
-                if (!Runs.IsCreated || !BlockCounters.IsCreated || !DestinationBytes.IsCreated || !Counters.IsCreated || Counters.Length < CounterCapacity)
+                if (!DestinationBytes.IsCreated || !Counters.IsCreated || Counters.Length < CounterCapacity)
                     return;
+
+                if ((unchecked((uint)Counters[CounterCompressionFlags]) & HeaderFlagDenseFallback) != 0u)
+                {
+                    PackDenseFallback();
+                    return;
+                }
+
+                if (!Runs.IsCreated || !BlockCounters.IsCreated)
+                {
+                    Counters[CounterFailure] = 1;
+                    Counters[CounterRleBytes] = 0;
+                    Counters[CounterCompressionFlags] |= unchecked((int)HeaderFlagFatal);
+                    return;
+                }
 
                 if (Counters[CounterPruned] != 0 || Counters[CounterFailure] != 0)
                 {
@@ -1423,6 +1523,53 @@ namespace Hecton8.SaveSystem
 
                 Counters[CounterRleBytes] = write;
             }
+
+            private void PackDenseFallback()
+            {
+                if (!RuntimeDensity.IsCreated || !MaterialIds.IsCreated || !CellFlags.IsCreated)
+                {
+                    Counters[CounterFailure] = 1;
+                    Counters[CounterRleBytes] = 0;
+                    Counters[CounterCompressionFlags] |= unchecked((int)HeaderFlagFatal);
+                    return;
+                }
+
+                int cells = math.clamp(CellCount, 0, math.min(RuntimeDensity.Length, math.min(MaterialIds.Length, CellFlags.Length)));
+                int dirtyMaskWords = (cells + 31) >> 5;
+                int dirtyMaskBytes = dirtyMaskWords * sizeof(uint);
+                int denseBytes = dirtyMaskBytes + (cells * VoxelDeltaDenseFallbackCellBytes);
+                int destinationLimit = math.max(0, DestinationBytes.Length - 64);
+                if (cells <= 0 || denseBytes > destinationLimit || denseBytes > MaxVoxelDeltaWalPayloadBytes - VoxelDeltaHeaderBytes)
+                {
+                    Counters[CounterFailure] = 1;
+                    Counters[CounterRleBytes] = 0;
+                    Counters[CounterCompressionFlags] |= unchecked((int)HeaderFlagFatal);
+                    return;
+                }
+
+                byte* destination = (byte*)DestinationBytes.GetUnsafePtr();
+                sbyte* density = (sbyte*)RuntimeDensity.GetUnsafeReadOnlyPtr();
+                byte* material = (byte*)MaterialIds.GetUnsafeReadOnlyPtr();
+                byte* flags = (byte*)CellFlags.GetUnsafeReadOnlyPtr();
+                uint* dirtyMask = (uint*)destination;
+                for (int word = 0; word < dirtyMaskWords; word++)
+                    dirtyMask[word] = 0xFFFFFFFFu;
+
+                int tailBits = cells & 31;
+                if (tailBits != 0)
+                    dirtyMask[dirtyMaskWords - 1] = (1u << tailBits) - 1u;
+
+                ushort* sdf = (ushort*)(destination + dirtyMaskBytes);
+                for (int i = 0; i < cells; i++)
+                    sdf[i] = (ushort)(math.clamp((int)density[i] + 128, 0, 255) << 8);
+
+                int materialOffset = dirtyMaskBytes + (cells * sizeof(ushort));
+                int flagsOffset = materialOffset + cells;
+                UnsafeUtility.MemCpy(destination + materialOffset, material, cells);
+                UnsafeUtility.MemCpy(destination + flagsOffset, flags, cells);
+                Counters[CounterRleBytes] = denseBytes;
+                Counters[CounterFailure] = 0;
+            }
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -1454,8 +1601,8 @@ namespace Hecton8.SaveSystem
                         CompressedSize = 0u,
                         UncompressedSize = 0u,
                         XXHash3Checksum = 0UL,
-                        _pad0 = 0u,
-                        _pad1 = 0u
+                        Flags = unchecked((uint)Counters[CounterCompressionFlags]),
+                        LayoutMarker = HeaderAlignedLayoutMarker
                     };
                     Counters[CounterCompressedBytes] = 0;
                     Counters[CounterWalPayloadBytes] = UnsafeUtility.SizeOf<VoxelDeltaHeaderDTO>();
@@ -1493,6 +1640,7 @@ namespace Hecton8.SaveSystem
 
                 Counters[CounterCompressedBytes] = storedBytes;
                 Counters[CounterCompressionFlags] = (Counters[CounterCompressionFlags] & ~(int)(HeaderFlagLz4 | HeaderFlagRaw)) | (useRaw ? (int)HeaderFlagRaw : (int)HeaderFlagLz4);
+                uint headerFlags = unchecked((uint)Counters[CounterCompressionFlags]);
                 Counters[CounterWalPayloadBytes] = UnsafeUtility.SizeOf<VoxelDeltaHeaderDTO>() + storedBytes;
                 Headers[0] = new VoxelDeltaHeaderDTO
                 {
@@ -1500,8 +1648,8 @@ namespace Hecton8.SaveSystem
                     CompressedSize = (uint)storedBytes,
                     UncompressedSize = (uint)sourceLength,
                     XXHash3Checksum = 0UL,
-                    _pad0 = 0u,
-                    _pad1 = 0u
+                    Flags = headerFlags,
+                    LayoutMarker = HeaderAlignedLayoutMarker
                 };
                 WriteSectorStatsCompression(storedBytes, Counters[CounterCompressionFlags]);
             }
@@ -1681,6 +1829,8 @@ namespace Hecton8.SaveSystem
                     Counters[CounterFailure] = 1;
                     Counters[CounterCompressionFlags] |= unchecked((int)HeaderFlagFatal);
                     header.XXHash3Checksum = 0UL;
+                    header.Flags = unchecked((uint)Counters[CounterCompressionFlags]);
+                    header.LayoutMarker = HeaderAlignedLayoutMarker;
                     Headers[0] = header;
                     return;
                 }
@@ -1695,8 +1845,10 @@ namespace Hecton8.SaveSystem
                 byte* ptr = (byte*)CompressedBytes.GetUnsafeReadOnlyPtr();
                 SaveStateMerkleTree.Hash128(ptr, count, SectorHash ^ 0x58584833564F5845UL, out ulong lo, out ulong hi);
                 header.XXHash3Checksum = lo ^ ((hi << 32) | (hi >> 32));
-                Headers[0] = header;
                 Counters[CounterCompressionFlags] |= (int)HeaderFlagChecksumValid;
+                header.Flags = unchecked((uint)Counters[CounterCompressionFlags]);
+                header.LayoutMarker = HeaderAlignedLayoutMarker;
+                Headers[0] = header;
                 if (SectorStats.IsCreated && SectorStats.Length > 0)
                 {
                     VoxelDeltaSectorStatsDTO stats = SectorStats[0];

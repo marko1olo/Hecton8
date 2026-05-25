@@ -17,6 +17,196 @@ using UnityEngine;
 namespace Hecton8.UI
 {
     /// <summary>
+    /// Fixed-capacity, allocation-free UI event lane for main-thread presentation dispatch.
+    /// Kept in an existing compiled Unity source file because the generated csproj has an explicit source list.
+    /// </summary>
+    internal struct FixedUiEventQueue<T>
+        where T : unmanaged
+    {
+        private const int MaxCapacity = 24;
+
+        private T _item0;
+        private T _item1;
+        private T _item2;
+        private T _item3;
+        private T _item4;
+        private T _item5;
+        private T _item6;
+        private T _item7;
+        private T _item8;
+        private T _item9;
+        private T _item10;
+        private T _item11;
+        private T _item12;
+        private T _item13;
+        private T _item14;
+        private T _item15;
+        private T _item16;
+        private T _item17;
+        private T _item18;
+        private T _item19;
+        private T _item20;
+        private T _item21;
+        private T _item22;
+        private T _item23;
+
+        private int _capacity;
+        private int _head;
+        private int _count;
+
+        public bool IsCreated => _capacity > 0;
+
+        public void Configure(int capacity)
+        {
+            _capacity = capacity > MaxCapacity ? MaxCapacity : capacity;
+            _item0 = default;
+            _item1 = default;
+            _item2 = default;
+            _item3 = default;
+            _item4 = default;
+            _item5 = default;
+            _item6 = default;
+            _item7 = default;
+            _item8 = default;
+            _item9 = default;
+            _item10 = default;
+            _item11 = default;
+            _item12 = default;
+            _item13 = default;
+            _item14 = default;
+            _item15 = default;
+            _item16 = default;
+            _item17 = default;
+            _item18 = default;
+            _item19 = default;
+            _item20 = default;
+            _item21 = default;
+            _item22 = default;
+            _item23 = default;
+            _head = 0;
+            _count = 0;
+        }
+
+        public bool IsEmpty()
+        {
+            return _count <= 0;
+        }
+
+        public bool Enqueue(in T value)
+        {
+            if (_capacity <= 0 || _count >= _capacity)
+                return false;
+
+            int index = _head + _count;
+            if (index >= _capacity)
+                index -= _capacity;
+
+            SetSlot(index, in value);
+            _count++;
+            return true;
+        }
+
+        public bool TryDequeue(out T value)
+        {
+            if (_capacity <= 0 || _count <= 0)
+            {
+                value = default;
+                return false;
+            }
+
+            value = GetSlot(_head);
+            ClearSlot(_head);
+            _head++;
+            if (_head >= _capacity)
+                _head = 0;
+
+            _count--;
+            return true;
+        }
+
+        public void Clear()
+        {
+            if (_capacity <= 0)
+                return;
+
+            for (int i = 0; i < _capacity; i++)
+                ClearSlot(i);
+
+            _head = 0;
+            _count = 0;
+        }
+
+        private T GetSlot(int index)
+        {
+            switch (index)
+            {
+                case 0: return _item0;
+                case 1: return _item1;
+                case 2: return _item2;
+                case 3: return _item3;
+                case 4: return _item4;
+                case 5: return _item5;
+                case 6: return _item6;
+                case 7: return _item7;
+                case 8: return _item8;
+                case 9: return _item9;
+                case 10: return _item10;
+                case 11: return _item11;
+                case 12: return _item12;
+                case 13: return _item13;
+                case 14: return _item14;
+                case 15: return _item15;
+                case 16: return _item16;
+                case 17: return _item17;
+                case 18: return _item18;
+                case 19: return _item19;
+                case 20: return _item20;
+                case 21: return _item21;
+                case 22: return _item22;
+                case 23: return _item23;
+                default: return default;
+            }
+        }
+
+        private void ClearSlot(int index)
+        {
+            T value = default;
+            SetSlot(index, in value);
+        }
+
+        private void SetSlot(int index, in T value)
+        {
+            switch (index)
+            {
+                case 0: _item0 = value; break;
+                case 1: _item1 = value; break;
+                case 2: _item2 = value; break;
+                case 3: _item3 = value; break;
+                case 4: _item4 = value; break;
+                case 5: _item5 = value; break;
+                case 6: _item6 = value; break;
+                case 7: _item7 = value; break;
+                case 8: _item8 = value; break;
+                case 9: _item9 = value; break;
+                case 10: _item10 = value; break;
+                case 11: _item11 = value; break;
+                case 12: _item12 = value; break;
+                case 13: _item13 = value; break;
+                case 14: _item14 = value; break;
+                case 15: _item15 = value; break;
+                case 16: _item16 = value; break;
+                case 17: _item17 = value; break;
+                case 18: _item18 = value; break;
+                case 19: _item19 = value; break;
+                case 20: _item20 = value; break;
+                case 21: _item21 = value; break;
+                case 22: _item22 = value; break;
+                case 23: _item23 = value; break;
+            }
+        }
+    }
+
+    /// <summary>
     /// Base integrity event identifiers queued by <see cref="BaseIntegrityEvents"/>.
     /// </summary>
     public enum BaseIntegrityEventType : byte
@@ -70,39 +260,34 @@ namespace Hecton8.UI
     {
         private const int ListenerCapacity = 8;
         private const int PendingEventCapacity = 8;
-        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const uint BaseIntegrityListenerRejectedWarningHash = 0x4249524Au; // BIRJ
         private const uint BaseIntegrityListenerExceptionWarningHash = 0x42494558u; // BIEX
         private const uint BaseIntegrityListenerContextHash = 0x42494C53u; // BILS
 
-        private struct ListenerSlot
-        {
-            public IBaseIntegrityEventListener Listener;
-
-            public void Clear()
-            {
-                Listener = null;
-            }
-        }
-
         private struct BaseIntegrityListenerRegistry
         {
-            private readonly ListenerSlot[] _slots;
             private int _count;
-
-            public BaseIntegrityListenerRegistry(int capacity)
-            {
-                _slots = new ListenerSlot[capacity];
-                _count = 0;
-            }
+            private IBaseIntegrityEventListener _slot0;
+            private IBaseIntegrityEventListener _slot1;
+            private IBaseIntegrityEventListener _slot2;
+            private IBaseIntegrityEventListener _slot3;
+            private IBaseIntegrityEventListener _slot4;
+            private IBaseIntegrityEventListener _slot5;
+            private IBaseIntegrityEventListener _slot6;
+            private IBaseIntegrityEventListener _slot7;
 
             public int Count => _count;
 
             public void Clear()
             {
-                for (int i = 0; i < _count; i++)
-                    _slots[i].Clear();
-
+                _slot0 = null;
+                _slot1 = null;
+                _slot2 = null;
+                _slot3 = null;
+                _slot4 = null;
+                _slot5 = null;
+                _slot6 = null;
+                _slot7 = null;
                 _count = 0;
             }
 
@@ -110,7 +295,7 @@ namespace Hecton8.UI
             {
                 for (int i = 0; i < _count; i++)
                 {
-                    if (ReferenceEquals(_slots[i].Listener, listener))
+                    if (ReferenceEquals(GetAt(i), listener))
                         return true;
                 }
 
@@ -119,10 +304,11 @@ namespace Hecton8.UI
 
             public bool TryRegister(IBaseIntegrityEventListener listener)
             {
-                if (listener == null || _count >= _slots.Length)
+                if (listener == null || _count >= ListenerCapacity)
                     return false;
 
-                _slots[_count++].Listener = listener;
+                SetAt(_count, listener);
+                _count++;
                 return true;
             }
 
@@ -130,12 +316,12 @@ namespace Hecton8.UI
             {
                 for (int i = 0; i < _count; i++)
                 {
-                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                    if (!ReferenceEquals(GetAt(i), listener))
                         continue;
 
                     _count--;
-                    _slots[i] = _slots[_count];
-                    _slots[_count].Clear();
+                    SetAt(i, GetAt(_count));
+                    SetAt(_count, null);
                     return true;
                 }
 
@@ -144,22 +330,61 @@ namespace Hecton8.UI
 
             public IBaseIntegrityEventListener GetAt(int index)
             {
-                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+                return index switch
+                {
+                    0 => _slot0,
+                    1 => _slot1,
+                    2 => _slot2,
+                    3 => _slot3,
+                    4 => _slot4,
+                    5 => _slot5,
+                    6 => _slot6,
+                    7 => _slot7,
+                    _ => null
+                };
+            }
+
+            private void SetAt(int index, IBaseIntegrityEventListener listener)
+            {
+                switch (index)
+                {
+                    case 0:
+                        _slot0 = listener;
+                        break;
+                    case 1:
+                        _slot1 = listener;
+                        break;
+                    case 2:
+                        _slot2 = listener;
+                        break;
+                    case 3:
+                        _slot3 = listener;
+                        break;
+                    case 4:
+                        _slot4 = listener;
+                        break;
+                    case 5:
+                        _slot5 = listener;
+                        break;
+                    case 6:
+                        _slot6 = listener;
+                        break;
+                    case 7:
+                        _slot7 = listener;
+                        break;
+                }
             }
         }
 
-        // COLD ALLOC: ListenerSlot[8] - base integrity listeners drained by SystemDispatcher LateUpdate - owner: BaseIntegrityEvents
-        private static BaseIntegrityListenerRegistry _listeners = new BaseIntegrityListenerRegistry(ListenerCapacity);
-        // COLD ALLOC: ListenerSlot[8] - listener additions deferred while dispatching base integrity events - owner: BaseIntegrityEvents
-        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
-        // COLD ALLOC: ListenerSlot[8] - listener removals deferred while dispatching base integrity events - owner: BaseIntegrityEvents
-        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
-        private static NativeQueue<BaseIntegrityEventPayload> _pendingEvents;
-        private static NativeQueue<BaseIntegrityEventPayload> _nextFrameEvents;
+        private static BaseIntegrityListenerRegistry _listeners;
+        private static BaseIntegrityListenerRegistry _deferredRegisterListeners;
+        private static BaseIntegrityListenerRegistry _deferredUnregisterListeners;
+        // Fixed inline slots: BaseIntegrityEventPayload[8] - deferred lane flushed by SystemDispatcher LateUpdate - owner: BaseIntegrityEvents
+        private static FixedUiEventQueue<BaseIntegrityEventPayload> _pendingEvents;
+        // Fixed inline slots: BaseIntegrityEventPayload[8] - next-frame lane prevents same-frame reentrant dispatch - owner: BaseIntegrityEvents
+        private static FixedUiEventQueue<BaseIntegrityEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
-        private static int _deferredRegisterCount;
-        private static int _deferredUnregisterCount;
         private static int _droppedListenerRegistrationCount;
         private static int _listenerExceptionCount;
         private static int _lastListenerRejectedTelemetryFrame = -1;
@@ -184,27 +409,13 @@ namespace Hecton8.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(BaseIntegrityEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(BaseIntegrityEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
-
+            _pendingEvents.Clear();
+            _nextFrameEvents.Clear();
             _listeners.Clear();
-            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
-            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
+            _deferredRegisterListeners.Clear();
+            _deferredUnregisterListeners.Clear();
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
-            _deferredRegisterCount = 0;
-            _deferredUnregisterCount = 0;
             _droppedListenerRegistrationCount = 0;
             _listenerExceptionCount = 0;
             _lastListenerRejectedTelemetryFrame = -1;
@@ -262,7 +473,7 @@ namespace Hecton8.UI
                 return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.LogError("[BaseIntegrityEvents] Listener destroyed while still registered.");
+            Hecton8.Core.H8Debug.LogError("[BaseIntegrityEvents] Listener destroyed while still registered.");
 #endif
         }
 
@@ -312,7 +523,7 @@ namespace Hecton8.UI
         /// </summary>
         public static void FlushPending()
         {
-            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            if (_listeners.Count <= 0)
             {
                 DrainWithoutDispatch();
                 return;
@@ -367,22 +578,24 @@ namespace Hecton8.UI
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
                 return false;
 
-            BaseIntegrityEventPayload payload = new BaseIntegrityEventPayload
-            {
-                Value = value,
-                FailureMode = (byte)failureMode,
-                EventType = (byte)eventType,
-                Reserved = 0
-            };
+            BaseIntegrityEventPayload payload = default;
+            payload.Value = value;
+            payload.FailureMode = (byte)failureMode;
+            payload.EventType = (byte)eventType;
+            payload.Reserved = 0;
 
             if (_isDispatching)
             {
-                _nextFrameEvents.Enqueue(payload);
+                if (!_nextFrameEvents.Enqueue(in payload))
+                    return false;
+
                 _nextFrameEventCount++;
                 return true;
             }
 
-            _pendingEvents.Enqueue(payload);
+            if (!_pendingEvents.Enqueue(in payload))
+                return false;
+
             _pendingEventCount++;
             return true;
         }
@@ -390,42 +603,10 @@ namespace Hecton8.UI
         private static void EnsureInitialized()
         {
             if (!_pendingEvents.IsCreated)
-            {
-                _pendingEvents = new NativeQueue<BaseIntegrityEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<BaseIntegrityEventPayload>[8] — deferred base integrity lane flushed by SystemDispatcher LateUpdate — owner: BaseIntegrityEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(BaseIntegrityEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
-            }
+                _pendingEvents.Configure(PendingEventCapacity);
 
             if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<BaseIntegrityEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<BaseIntegrityEventPayload>[8] — next-frame base integrity lane prevents same-frame reentrant dispatch — owner: BaseIntegrityEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(BaseIntegrityEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
-            }
-        }
-
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
-        {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
-
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
-            {
-            }
+                _nextFrameEvents.Configure(PendingEventCapacity);
         }
 
         private static void DrainWithoutDispatch()
@@ -440,17 +621,13 @@ namespace Hecton8.UI
                     return;
             }
 
-            if (_nextFrameEvents.IsCreated)
-                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+            DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
         }
 
         private static bool DrainQueueWithoutDispatch(
-            ref NativeQueue<BaseIntegrityEventPayload> queue,
+            ref FixedUiEventQueue<BaseIntegrityEventPayload> queue,
             ref int pendingCount)
         {
-            if (!queue.IsCreated)
-                return true;
-
             int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
             while (scanBudget-- > 0 && !queue.IsEmpty())
             {
@@ -475,15 +652,13 @@ namespace Hecton8.UI
 
         private static void PromoteNextFrameEventsIfFrontEmpty()
         {
-            if (!_pendingEvents.IsCreated ||
-                !_nextFrameEvents.IsCreated ||
-                _pendingEventCount > 0 ||
+            if (_pendingEventCount > 0 ||
                 _nextFrameEventCount <= 0)
             {
                 return;
             }
 
-            NativeQueue<BaseIntegrityEventPayload> swap = _pendingEvents;
+            FixedUiEventQueue<BaseIntegrityEventPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
             _pendingEventCount = _nextFrameEventCount;
@@ -508,7 +683,7 @@ namespace Hecton8.UI
         private static void LogListenerDispatchException(Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.LogException(exception);
+            Hecton8.Core.H8Debug.LogException(exception);
 #endif
         }
 
@@ -523,13 +698,11 @@ namespace Hecton8.UI
             if (IsDeferredRegisterPending(listener))
                 return;
 
-            if (_deferredRegisterCount >= ListenerCapacity)
+            if (!_deferredRegisterListeners.TryRegister(listener))
             {
                 ReportListenerRegistrationRejected();
                 return;
             }
-
-            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredUnregister(IBaseIntegrityEventListener listener)
@@ -540,65 +713,30 @@ namespace Hecton8.UI
             if (!_listeners.Contains(listener) || IsDeferredUnregisterPending(listener))
                 return;
 
-            if (_deferredUnregisterCount >= ListenerCapacity)
+            if (!_deferredUnregisterListeners.TryRegister(listener))
             {
                 ReportListenerRegistrationRejected();
-                return;
             }
-
-            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
         }
 
         private static bool CancelDeferredRegister(IBaseIntegrityEventListener listener)
         {
-            for (int i = 0; i < _deferredRegisterCount; i++)
-            {
-                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
-                    continue;
-
-                _deferredRegisterCount--;
-                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
-                _deferredRegisterListeners[_deferredRegisterCount].Clear();
-                return true;
-            }
-
-            return false;
+            return _deferredRegisterListeners.TryUnregister(listener);
         }
 
         private static void CancelDeferredUnregister(IBaseIntegrityEventListener listener)
         {
-            for (int i = 0; i < _deferredUnregisterCount; i++)
-            {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
-                    continue;
-
-                _deferredUnregisterCount--;
-                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
-                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
-                return;
-            }
+            _deferredUnregisterListeners.TryUnregister(listener);
         }
 
         private static bool IsDeferredRegisterPending(IBaseIntegrityEventListener listener)
         {
-            for (int i = 0; i < _deferredRegisterCount; i++)
-            {
-                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
-                    return true;
-            }
-
-            return false;
+            return _deferredRegisterListeners.Contains(listener);
         }
 
         private static bool IsDeferredUnregisterPending(IBaseIntegrityEventListener listener)
         {
-            for (int i = 0; i < _deferredUnregisterCount; i++)
-            {
-                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
-                    return true;
-            }
-
-            return false;
+            return _deferredUnregisterListeners.Contains(listener);
         }
 
         private static bool IsEffectivelyRegistered(IBaseIntegrityEventListener listener)
@@ -609,25 +747,25 @@ namespace Hecton8.UI
 
         private static void ApplyDeferredListenerMutations()
         {
-            for (int i = 0; i < _deferredUnregisterCount; i++)
+            int unregisterCount = _deferredUnregisterListeners.Count;
+            for (int i = 0; i < unregisterCount; i++)
             {
-                IBaseIntegrityEventListener listener = _deferredUnregisterListeners[i].Listener;
-                _deferredUnregisterListeners[i].Clear();
+                IBaseIntegrityEventListener listener = _deferredUnregisterListeners.GetAt(i);
                 if (listener != null)
                     _listeners.TryUnregister(listener);
             }
 
-            _deferredUnregisterCount = 0;
+            _deferredUnregisterListeners.Clear();
 
-            for (int i = 0; i < _deferredRegisterCount; i++)
+            int registerCount = _deferredRegisterListeners.Count;
+            for (int i = 0; i < registerCount; i++)
             {
-                IBaseIntegrityEventListener listener = _deferredRegisterListeners[i].Listener;
-                _deferredRegisterListeners[i].Clear();
+                IBaseIntegrityEventListener listener = _deferredRegisterListeners.GetAt(i);
                 if (listener != null)
                     RegisterImmediate(listener);
             }
 
-            _deferredRegisterCount = 0;
+            _deferredRegisterListeners.Clear();
         }
 
         private static void RegisterImmediate(IBaseIntegrityEventListener listener)
@@ -853,9 +991,11 @@ namespace Hecton8.UI
             }
 
             AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
-            moduleAup = AbsoluteUniversePosition.OffsetMeters(
-                in originAup,
-                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            double3 offsetMeters = default;
+            offsetMeters.x = runtimePosition.x;
+            offsetMeters.y = runtimePosition.y;
+            offsetMeters.z = runtimePosition.z;
+            moduleAup = AbsoluteUniversePosition.OffsetMeters(in originAup, offsetMeters);
             return moduleAup.IsFinite();
         }
 
@@ -863,7 +1003,8 @@ namespace Hecton8.UI
         {
             PublishEmergencyState(module, integrity);
 
-            if (Time.time < _nextWarningTime)
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (now < _nextWarningTime)
                 return;
 
             if (math.abs(integrity - _lastWarningIntegrity) < 0.05f)
@@ -874,7 +1015,7 @@ namespace Hecton8.UI
 
             if (integrity <= dangerThreshold)
             {
-                _nextWarningTime = Time.time + WarningCooldown * 0.3f;
+                _nextWarningTime = now + WarningCooldown * 0.3f;
                 uint messageHash = GetPercentNotificationHash(
                     _dangerNotificationHashes,
                     ref _dangerFormatHash,
@@ -887,7 +1028,7 @@ namespace Hecton8.UI
 
             if (integrity <= criticalThreshold)
             {
-                _nextWarningTime = Time.time + WarningCooldown * 0.5f;
+                _nextWarningTime = now + WarningCooldown * 0.5f;
                 uint messageHash = GetPercentNotificationHash(
                     _criticalNotificationHashes,
                     ref _criticalFormatHash,
@@ -900,7 +1041,7 @@ namespace Hecton8.UI
 
             if (integrity <= warningThreshold)
             {
-                _nextWarningTime = Time.time + WarningCooldown;
+                _nextWarningTime = now + WarningCooldown;
                 uint messageHash = GetPercentNotificationHash(
                     _warningNotificationHashes,
                     ref _warningFormatHash,
@@ -931,12 +1072,13 @@ namespace Hecton8.UI
 
             bool moduleChanged = !ReferenceEquals(_lastEmergencyModule, module);
             bool modeChanged = _lastEmergencyMode != failureMode;
-            if (!moduleChanged && !modeChanged && Time.time < _nextEmergencyTime)
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (!moduleChanged && !modeChanged && now < _nextEmergencyTime)
                 return;
 
             _lastEmergencyModule = module;
             _lastEmergencyMode = failureMode;
-            _nextEmergencyTime = Time.time + EmergencyCooldown;
+            _nextEmergencyTime = now + EmergencyCooldown;
             BaseIntegrityEvents.TryRaiseEmergency(failureMode, integrity);
         }
 
@@ -955,11 +1097,12 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (Time.time < _nextAirWarningTime && math.abs(airQuality - _lastAirQuality) < 0.05f)
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (now < _nextAirWarningTime && math.abs(airQuality - _lastAirQuality) < 0.05f)
                 return;
 
             _lastAirQuality = airQuality;
-            _nextAirWarningTime = Time.time + AirWarningCooldown;
+            _nextAirWarningTime = now + AirWarningCooldown;
             BaseIntegrityEvents.TryRaiseAirQualityWarning(airQuality);
 
             if (airQuality <= airCriticalThreshold)
@@ -1073,7 +1216,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedLocalization = GlobalRegistry.LocalizationText;
         }
 

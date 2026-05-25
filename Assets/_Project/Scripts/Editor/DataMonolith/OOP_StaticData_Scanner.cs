@@ -13,7 +13,9 @@ namespace Hecton8.EditorValidation
     public static class OOP_StaticData_Scanner
     {
         private const string AgentId = "X_002";
+        private const string AgentId1313 = "1313";
         private const string ReportPath = "Docs/Reports/DATA_PIPELINE_OPTIMIZATION_REPORT_X_002.json";
+        private const string ReportPath1313 = "Docs/Reports/DATA_PIPELINE_OPTIMIZATION_REPORT_1313.json";
         private const int MaxFindingsWritten = 512;
 
         private static readonly string[] ScanRoots =
@@ -37,7 +39,8 @@ namespace Hecton8.EditorValidation
             for (int i = 0; i < ScanRoots.Length; i++)
                 ScanRoot(projectRoot, ScanRoots[i], ref stats, findings);
 
-            WriteText(Path.Combine(projectRoot, ReportPath), BuildReport(stats, findings));
+            WriteText(Path.Combine(projectRoot, ReportPath), BuildReport(stats, findings, AgentId));
+            WriteText(Path.Combine(projectRoot, ReportPath1313), BuildReport(stats, findings, AgentId1313));
             AssetDatabase.Refresh();
             return stats.ProductionFindingCount;
         }
@@ -128,6 +131,12 @@ namespace Hecton8.EditorValidation
                         if (!string.IsNullOrEmpty(kind))
                             AppendFinding(findings, ref stats, editorOnly, kind, relativePath, LineOf(node), Trim(invocation.ToString()), "RoslynAST");
                     }
+                    else if (node is MethodDeclarationSyntax method)
+                    {
+                        string kind = ClassifyMethodDeclaration(method);
+                        if (!string.IsNullOrEmpty(kind))
+                            AppendFinding(findings, ref stats, editorOnly, kind, relativePath, LineOf(node), Trim(method.Identifier.ValueText), "RoslynAST");
+                    }
                     else if (node is ObjectCreationExpressionSyntax creation)
                     {
                         string kind = ClassifyObjectCreation(creation);
@@ -161,6 +170,9 @@ namespace Hecton8.EditorValidation
             if (string.Equals(member, "Split", StringComparison.Ordinal))
                 return "managedStringSplit";
 
+            if (IsCsvRouteName(member) || IsCsvRouteName(expression))
+                return "csvParserRoute";
+
             if (expression.IndexOf("File.ReadAllText", StringComparison.Ordinal) >= 0 ||
                 expression.IndexOf("File.ReadAllLines", StringComparison.Ordinal) >= 0 ||
                 expression.IndexOf("File.ReadAllBytes", StringComparison.Ordinal) >= 0)
@@ -177,6 +189,11 @@ namespace Hecton8.EditorValidation
             return string.Empty;
         }
 
+        private static string ClassifyMethodDeclaration(MethodDeclarationSyntax method)
+        {
+            return IsCsvRouteName(method.Identifier.ValueText) ? "csvParserRouteDeclaration" : string.Empty;
+        }
+
         private static string ClassifyObjectCreation(ObjectCreationExpressionSyntax creation)
         {
             string typeName = creation.Type.ToString();
@@ -189,6 +206,23 @@ namespace Hecton8.EditorValidation
             }
 
             return string.Empty;
+        }
+
+        private static bool IsCsvRouteName(string value)
+        {
+            if (string.IsNullOrEmpty(value) ||
+                value.IndexOf("Csv", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                return false;
+            }
+
+            return value.IndexOf("TryLoad", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   value.IndexOf("TryReload", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   value.IndexOf("TryApply", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   value.IndexOf("TryIngest", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   value.IndexOf("Reload", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   value.IndexOf("Load", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   value.IndexOf("Parse", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static void ScanTextFallback(
@@ -210,6 +244,11 @@ namespace Hecton8.EditorValidation
                 source.IndexOf("FromJson", StringComparison.Ordinal) >= 0)
             {
                 AppendFinding(findings, ref stats, editorOnly, "tokenWholeFileOrJson", relativePath, 0, "whole-file/json token", "TokenFallback");
+            }
+
+            if (IsCsvRouteName(source))
+            {
+                AppendFinding(findings, ref stats, editorOnly, "tokenCsvLoaderRoute", relativePath, 0, "Csv parser route token", "TokenFallback");
             }
         }
 
@@ -244,12 +283,12 @@ namespace Hecton8.EditorValidation
             stats.WrittenFindingCount++;
         }
 
-        private static string BuildReport(ScanStats stats, StringBuilder findings)
+        private static string BuildReport(ScanStats stats, StringBuilder findings, string agentId)
         {
             StringBuilder report = new StringBuilder(65536);
             report.AppendLine("{");
             report.AppendLine("  \"schema\": \"HECTON8_DATA_PIPELINE_OPTIMIZATION_REPORT_V1\",");
-            report.AppendLine("  \"agent\": \"" + AgentId + "\",");
+            report.AppendLine("  \"agent\": \"" + agentId + "\",");
             report.AppendLine("  \"scanner\": \"OOP_StaticData_Scanner\",");
             report.AppendLine("  \"mode\": \"Roslyn AST with token fallback\",");
             report.AppendLine("  \"status\": \"STATIC_SOURCE\",");

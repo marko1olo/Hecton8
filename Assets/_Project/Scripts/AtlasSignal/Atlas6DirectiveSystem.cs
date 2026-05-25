@@ -630,7 +630,7 @@ namespace Hecton8.AtlasSignal
         private static void LogListenerDispatchException(Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.LogException(exception);
+            Hecton8.Core.H8Debug.LogException(exception);
 #endif
         }
 
@@ -786,7 +786,7 @@ namespace Hecton8.AtlasSignal
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-80)]
-    public sealed class Atlas6DirectiveSystem : MonoBehaviour, ISaveable, ISlowTickable, INarrativeEventListener, IAtlas6EventListener, IGlobalRegistryHotSwapListener
+    public sealed class Atlas6DirectiveSystem : MonoBehaviour, ISaveable, ISlowTickable, INarrativeEventListener, IAtlas6EventListener, IAtlas6DirectiveCommandSink, IGlobalRegistryHotSwapListener
     {
         private const int MinimumRevealStageForDirectiveIdentity = 3;
         private const string SignalIdentityDiscoveryId = "atlas6_signal_identified";
@@ -1066,7 +1066,7 @@ namespace Hecton8.AtlasSignal
             if (_saveRegistered)
                 return;
 
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             if (_saveService == null)
                 return;
 

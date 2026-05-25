@@ -1,6 +1,6 @@
 ﻿# Root Docs Reference
 
-Date: 2026-05-25
+Date: 2026-05-26
 Status: PENDING VERIFICATION
 Owner: X_012 DOCUMENTATION_CLEANUP_AND_ACTUALIZATION_ENGINE
 Evidence class: STATIC_DOC / STATIC_FILESYSTEM / CLI_COMPILE where artifact cited
@@ -42,9 +42,10 @@ Pre-X_012 verbose root copies:
 
 Current local CLI compile slice:
 
-- `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup122_tick_registration.log` - last local zero-warning CLI PASS for `Hecton8.Editor.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false`.
-- `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log` - latest CLI compile attempt; fails before C# with `NETSDK1004` missing `Temp/obj/Hecton8.Editor/project.assets.json`, 0 warnings, no `CS*`; latest retry blocked by `BUILD_GUARD cpu=100 compiler_count=0`. Runtime proof remains pending.
-- EXTERNAL_CODEX loop162 is source-gated with an environment build wall: non-editor raw `Debug.Log` is zero outside `H8Debug.cs`; targeted frost/render membership, dispatcher lane `Contains`, HectonVoxelVolume sonar DataVault poll, pure Environment/Ocean/PlayerSensory context getter, cadence/context Dispatcher/DataVault/service/player rebind, persistent-world Save/Player/Inventory owner-cache, UI/audio/construction Dispatcher rebind, UI/Construction singleton runtime, world/environment/AI Dispatcher rebind, project-wide `ActiveRuntimeContext`/`ActiveRuntimeInstance`, project-wide `?? GlobalRegistry|GlobalRegistry.TryGet`, loop160 touched-file Dispatcher stale-registration greps, loop161 broad Dispatcher/TickManager stale candidate scans, and loop162 selected frame-authority/Biolum owner-cache greps are clean.
+- `Docs/Reports/BUILD_UNKNOWN_RECHECK_20260526_020504.log` - full `Hecton8.slnx` pass, exit `0`, `0 Warning(s)`, `0 Error(s)`.
+- Command: `dotnet build .\Hecton8.slnx -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false`.
+- Evidence class: CLI_COMPILE only. Runtime proof remains pending.
+- Older EXTERNAL_CODEX build-wall entries are historical source-gate context, not the current compile boundary.
 
 Superseded reports were moved to:
 

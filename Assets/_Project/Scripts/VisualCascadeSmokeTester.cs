@@ -130,7 +130,7 @@ namespace Hecton8.Dev
                 .Append(" caustics=").Append(_debugCausticsKb.ToString("0.00", CultureInfo.InvariantCulture)).Append("KB")
                 .Append(" biolum=").Append(_debugBiolumMb.ToString("0.00", CultureInfo.InvariantCulture)).Append("MB")
                 .Append(" exposure=").Append(_debugExposureKb.ToString("0.00", CultureInfo.InvariantCulture)).Append("KB");
-            Debug.LogError(_reportBuilder.ToString(), this);
+            Hecton8.Core.H8Debug.LogError(_reportBuilder.ToString(), this);
 #endif
             return false;
         }

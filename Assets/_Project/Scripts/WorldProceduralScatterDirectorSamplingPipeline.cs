@@ -127,7 +127,7 @@ namespace Hecton8.World
 
             float cellSize = math.max(6f, _runtimeStreamingState.CellSize);
             int radiusCells = ResolveActiveScatterSamplingRadiusCells(_runtimeStreamingState.RadiusCells);
-            float now = Time.unscaledTime;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             int groundBudget = ResolveRuntimeBudget(groundPlacementsPerCell, WorldStreamingLayer.Flora, 0, 4);
             int clusterBudget = ResolveRuntimeBudget(clusterPlacementsPerCell, WorldStreamingLayer.Debris, 0, 3);
             int structureStride = math.max(2, structureCellStride);

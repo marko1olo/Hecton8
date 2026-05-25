@@ -690,7 +690,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _currentAcousticPitchShiftCents = clampedCents;
-            if (Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is ISpatialAudioEnvironmentModulationSink spatialAudio)
+            if (GlobalRegistry.Audio is ISpatialAudioEnvironmentModulationSink spatialAudio)
                 spatialAudio.SetEclipseAcousticPitchShiftCents(clampedCents);
         }
 

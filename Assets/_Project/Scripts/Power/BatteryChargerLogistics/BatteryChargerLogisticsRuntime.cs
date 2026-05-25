@@ -780,7 +780,6 @@ namespace Hecton8.Power
                 return;
 
             ApplyTuning(in timing);
-            _ = EnsureGraphicsBuffers();
 #if UNITY_EDITOR
             if ((_lastFrame & (CsvPollCadenceFrames - 1)) == 0u)
                 MonitorProfileCsv();
@@ -1820,10 +1819,16 @@ namespace Hecton8.Power
                 return false;
 
             NativeArray<ChargerVisualStateDTO> mapped = destination.LockBufferForWrite<ChargerVisualStateDTO>(0, safeCount);
-            void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-            void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
-            UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<ChargerVisualStateDTO>());
-            destination.UnlockBufferAfterWrite<ChargerVisualStateDTO>(safeCount);
+            try
+            {
+                void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<ChargerVisualStateDTO>());
+            }
+            finally
+            {
+                destination.UnlockBufferAfterWrite<ChargerVisualStateDTO>(safeCount);
+            }
             return true;
         }
 

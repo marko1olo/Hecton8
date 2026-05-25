@@ -928,6 +928,9 @@ namespace Hecton8.World
         private bool _pdaSignalLatched;
         private bool _hasCachedFrustumState;
         private bool _visibilityUploadRequested;
+        private bool _pendingWreckSignalPing;
+        private float3 _pendingWreckSignalOrigin;
+        private float _pendingWreckSignalRadius;
 
         public int SkippedVisibilityUploadCount => _skippedVisibilityUploadCount;
 
@@ -987,9 +990,9 @@ namespace Hecton8.World
 
                 _pdaSignalLatched = true;
                 Vector3 pingCenter = _publishedWorldBounds.center;
-                ScanEvents.TryRaiseWreckSignalPing(
-                    new float3(pingCenter.x, pingCenter.y, pingCenter.z),
-                    math.max(1f, pdaSignalPingRadiusMeters));
+                _pendingWreckSignalOrigin = new float3(pingCenter.x, pingCenter.y, pingCenter.z);
+                _pendingWreckSignalRadius = math.max(1f, pdaSignalPingRadiusMeters);
+                _pendingWreckSignalPing = true;
                 return;
             }
 
@@ -1001,6 +1004,12 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
+            if (_pendingWreckSignalPing)
+            {
+                _pendingWreckSignalPing = false;
+                ScanEvents.TryRaiseWreckSignalPing(_pendingWreckSignalOrigin, _pendingWreckSignalRadius);
+            }
+
             if (!_visibilityUploadRequested)
                 return;
 

@@ -177,7 +177,7 @@ namespace Hecton8.Atmosphere
 
         private static float ResolveWeatherShaderClockSeconds()
         {
-            return Time.timeSinceLevelLoad;
+            return (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
         }
 
         /// <summary>

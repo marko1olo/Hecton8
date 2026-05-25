@@ -820,9 +820,9 @@ namespace Hecton8.Physiology
         [ReadOnly, NoAlias] public NativeArray<MockEnvironmentVitalsSignal> Environment;
         [ReadOnly, NoAlias] public NativeArray<GasPhysiologyStateDTO> GasStates;
         [NoAlias] public NativeArray<PhysiologyScalarsDTO> Scalars;
-        [WriteOnly, NoAlias] public NativeQueue<PhysiologyStateSignal>.ParallelWriter PhysiologyWriter;
+        [WriteOnly, NoAlias] public global::Hecton8.Core.MpscSignalRingBuffer<PhysiologyStateSignal>.ParallelWriter PhysiologyWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> PhysiologyWriterBudget;
-        [WriteOnly, NoAlias] public NativeQueue<CombatDamageSignal>.ParallelWriter DamageWriter;
+        [WriteOnly, NoAlias] public global::Hecton8.Core.MpscSignalRingBuffer<CombatDamageSignal>.ParallelWriter DamageWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> DamageWriterBudget;
         public PhysiologyTuningDTO Tuning;
         public float DeltaSeconds;
@@ -1082,7 +1082,7 @@ namespace Hecton8.Physiology
         [NoAlias] public NativeArray<GasPhysiologyStateDTO> GasStates;
         [NoAlias] public NativeArray<PhysiologyScalarsDTO> Scalars;
         [ReadOnly, NoAlias] public NativeArray<MockEnvironmentVitalsSignal> Environment;
-        [WriteOnly, NoAlias] public NativeQueue<PhysiologyStateSignal>.ParallelWriter PhysiologyWriter;
+        [WriteOnly, NoAlias] public global::Hecton8.Core.MpscSignalRingBuffer<PhysiologyStateSignal>.ParallelWriter PhysiologyWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> PhysiologyWriterBudget;
         public GasPhysiologyTuningDTO GasTuning;
         public float DeltaSeconds;
@@ -1222,7 +1222,7 @@ namespace Hecton8.Physiology
         [NoAlias] public NativeArray<PhysiologyTelemetryEntry> Telemetry;
         [ReadOnly, NoAlias] public NativeArray<DecompressionStateDTO> DecompressionStates;
         [NoAlias] public NativeArray<DecompressionTelemetryEntry> DecompressionTelemetry;
-        [WriteOnly, NoAlias] public NativeQueue<CardiacPulseSignal>.ParallelWriter CardiacPulseWriter;
+        [WriteOnly, NoAlias] public global::Hecton8.Core.MpscSignalRingBuffer<CardiacPulseSignal>.ParallelWriter CardiacPulseWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> CardiacPulseWriterBudget;
         public PhysiologyTuningDTO Tuning;
         public GasPhysiologyTuningDTO GasTuning;

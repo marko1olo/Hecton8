@@ -1,0 +1,2650 @@
+﻿[
+    {
+        "name":  "H8DataBlobHeader",
+        "structLine":  128,
+        "layoutLine":  127,
+        "declaredSizeExpression":  "H8DataLayoutConstants.HeaderSizeBytes",
+        "declaredSize":  64,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  131,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "Magic",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  134,
+                           "offset":  4,
+                           "type":  "ushort",
+                           "name":  "FormatVersion",
+                           "size":  2,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  137,
+                           "offset":  6,
+                           "type":  "ushort",
+                           "name":  "HeaderBytes",
+                           "size":  2,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  140,
+                           "offset":  8,
+                           "type":  "ulong",
+                           "name":  "Checksum64",
+                           "size":  8,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  143,
+                           "offset":  16,
+                           "type":  "uint",
+                           "name":  "BlobBytes",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  146,
+                           "offset":  20,
+                           "type":  "uint",
+                           "name":  "DirectoryOffset",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  149,
+                           "offset":  24,
+                           "type":  "uint",
+                           "name":  "DirectoryBytes",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  152,
+                           "offset":  28,
+                           "type":  "uint",
+                           "name":  "SectionTableOffset",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  155,
+                           "offset":  32,
+                           "type":  "uint",
+                           "name":  "SectionCount",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  158,
+                           "offset":  36,
+                           "type":  "uint",
+                           "name":  "Flags",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  161,
+                           "offset":  40,
+                           "type":  "uint",
+                           "name":  "WorldSeed",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  164,
+                           "offset":  44,
+                           "type":  "uint",
+                           "name":  "AppVersionHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  167,
+                           "offset":  48,
+                           "type":  "uint",
+                           "name":  "SchemaHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  169,
+                           "offset":  52,
+                           "type":  "uint",
+                           "name":  "Reserved0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  170,
+                           "offset":  56,
+                           "type":  "uint",
+                           "name":  "Reserved1",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  171,
+                           "offset":  60,
+                           "type":  "uint",
+                           "name":  "Reserved2",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+                           "8-byte field Checksum64 begins at offset 8 after smaller fields; alignment OK but strict field-order policy FAIL"
+                       ]
+    },
+    {
+        "name":  "H8DataBlobDirectory",
+        "structLine":  178,
+        "layoutLine":  177,
+        "declaredSizeExpression":  "H8DataLayoutConstants.DirectorySizeBytes",
+        "declaredSize":  64,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  180,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "Magic",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  181,
+                           "offset":  4,
+                           "type":  "ushort",
+                           "name":  "FormatVersion",
+                           "size":  2,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  182,
+                           "offset":  6,
+                           "type":  "ushort",
+                           "name":  "SectionCount",
+                           "size":  2,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  183,
+                           "offset":  8,
+                           "type":  "uint",
+                           "name":  "SectionTableOffset",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  184,
+                           "offset":  12,
+                           "type":  "uint",
+                           "name":  "SectionTableBytes",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  185,
+                           "offset":  16,
+                           "type":  "uint",
+                           "name":  "BlobBytes",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  186,
+                           "offset":  20,
+                           "type":  "uint",
+                           "name":  "DataStartOffset",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  187,
+                           "offset":  24,
+                           "type":  "uint",
+                           "name":  "LocalizationOffset",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  188,
+                           "offset":  28,
+                           "type":  "uint",
+                           "name":  "LocalizationBytes",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  189,
+                           "offset":  32,
+                           "type":  "uint",
+                           "name":  "Flags",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  190,
+                           "offset":  36,
+                           "type":  "uint",
+                           "name":  "WorldSeed",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  191,
+                           "offset":  40,
+                           "type":  "uint",
+                           "name":  "AppVersionHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  192,
+                           "offset":  44,
+                           "type":  "uint",
+                           "name":  "Reserved0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  193,
+                           "offset":  48,
+                           "type":  "uint",
+                           "name":  "Reserved1",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  194,
+                           "offset":  52,
+                           "type":  "uint",
+                           "name":  "Reserved2",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  195,
+                           "offset":  56,
+                           "type":  "uint",
+                           "name":  "Reserved3",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  196,
+                           "offset":  60,
+                           "type":  "uint",
+                           "name":  "Reserved4",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8DataSectionEntry",
+        "structLine":  203,
+        "layoutLine":  202,
+        "declaredSizeExpression":  "16",
+        "declaredSize":  16,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  205,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "SectionId",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  206,
+                           "offset":  4,
+                           "type":  "uint",
+                           "name":  "RecordSize",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  207,
+                           "offset":  8,
+                           "type":  "uint",
+                           "name":  "Count",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  208,
+                           "offset":  12,
+                           "type":  "uint",
+                           "name":  "OffsetBytes",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8ItemRecord",
+        "structLine":  215,
+        "layoutLine":  214,
+        "declaredSizeExpression":  "80",
+        "declaredSize":  80,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  217,
+                           "offset":  0,
+                           "type":  "ulong",
+                           "name":  "RecipeMask0",
+                           "size":  8,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  218,
+                           "offset":  8,
+                           "type":  "ulong",
+                           "name":  "RecipeMask1",
+                           "size":  8,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  219,
+                           "offset":  16,
+                           "type":  "uint",
+                           "name":  "HashId",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  220,
+                           "offset":  20,
+                           "type":  "uint",
+                           "name":  "RecordIndex",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  221,
+                           "offset":  24,
+                           "type":  "uint",
+                           "name":  "CategoryHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  222,
+                           "offset":  28,
+                           "type":  "uint",
+                           "name":  "Flags",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  223,
+                           "offset":  32,
+                           "type":  "float",
+                           "name":  "MassKg",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  224,
+                           "offset":  36,
+                           "type":  "float",
+                           "name":  "VolumeM3",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  225,
+                           "offset":  40,
+                           "type":  "float",
+                           "name":  "BaseQuality",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  226,
+                           "offset":  44,
+                           "type":  "float",
+                           "name":  "HeatCapacity",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  227,
+                           "offset":  48,
+                           "type":  "uint",
+                           "name":  "YieldHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  228,
+                           "offset":  52,
+                           "type":  "uint",
+                           "name":  "NameUtf8Offset",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  229,
+                           "offset":  56,
+                           "type":  "uint",
+                           "name":  "DescriptionUtf8Offset",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  230,
+                           "offset":  60,
+                           "type":  "uint",
+                           "name":  "NameUtf8ByteLength",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  231,
+                           "offset":  64,
+                           "type":  "uint",
+                           "name":  "DescriptionUtf8ByteLength",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  232,
+                           "offset":  68,
+                           "type":  "uint",
+                           "name":  "Cost",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  233,
+                           "offset":  72,
+                           "type":  "float",
+                           "name":  "AccessFrequency",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  234,
+                           "offset":  76,
+                           "type":  "ushort",
+                           "name":  "MaxStack",
+                           "size":  2,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  235,
+                           "offset":  78,
+                           "type":  "ushort",
+                           "name":  "RecipeIngredientCount",
+                           "size":  2,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8CreatureGenomeTraitBlock",
+        "structLine":  242,
+        "layoutLine":  241,
+        "declaredSizeExpression":  "H8DataLayoutConstants.CreatureGenomeTraitBlockSize",
+        "declaredSize":  32,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  244,
+                           "offset":  0,
+                           "type":  "float",
+                           "name":  "Aggression",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  245,
+                           "offset":  4,
+                           "type":  "float",
+                           "name":  "Metabolism",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  246,
+                           "offset":  8,
+                           "type":  "float",
+                           "name":  "MaxHealth",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  247,
+                           "offset":  12,
+                           "type":  "float",
+                           "name":  "CruiseSpeed",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  248,
+                           "offset":  16,
+                           "type":  "float",
+                           "name":  "BurstSpeed",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  249,
+                           "offset":  20,
+                           "type":  "float",
+                           "name":  "SpawnCreditCost",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  250,
+                           "offset":  24,
+                           "type":  "float",
+                           "name":  "PressureMinMeters",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  251,
+                           "offset":  28,
+                           "type":  "float",
+                           "name":  "PressureMaxMeters",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8CreatureTraitRecord",
+        "structLine":  258,
+        "layoutLine":  257,
+        "declaredSizeExpression":  "H8DataLayoutConstants.CreatureTraitRecordSize",
+        "declaredSize":  64,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  260,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "SpeciesHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  261,
+                           "offset":  4,
+                           "type":  "uint",
+                           "name":  "RecordIndex",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  262,
+                           "offset":  8,
+                           "type":  "uint",
+                           "name":  "MateMask",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  263,
+                           "offset":  12,
+                           "type":  "uint",
+                           "name":  "BiomeMask",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  264,
+                           "offset":  16,
+                           "type":  "H8CreatureGenomeTraitBlock",
+                           "name":  "Genome",
+                           "size":  32,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  265,
+                           "offset":  48,
+                           "type":  "uint",
+                           "name":  "DisplayNameUtf8Offset",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  266,
+                           "offset":  52,
+                           "type":  "uint",
+                           "name":  "LootTableHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  267,
+                           "offset":  56,
+                           "type":  "uint",
+                           "name":  "Flags",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  268,
+                           "offset":  60,
+                           "type":  "uint",
+                           "name":  "DisplayNameUtf8ByteLength",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8BiomeRecord",
+        "structLine":  275,
+        "layoutLine":  274,
+        "declaredSizeExpression":  "H8DataLayoutConstants.BiomeRecordSize",
+        "declaredSize":  64,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  277,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "BiomeHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  278,
+                           "offset":  4,
+                           "type":  "uint",
+                           "name":  "RecordIndex",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  279,
+                           "offset":  8,
+                           "type":  "uint",
+                           "name":  "Flags",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  280,
+                           "offset":  12,
+                           "type":  "uint",
+                           "name":  "SurfaceId",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  281,
+                           "offset":  16,
+                           "type":  "float",
+                           "name":  "MinDepthMeters",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  282,
+                           "offset":  20,
+                           "type":  "float",
+                           "name":  "MaxDepthMeters",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  283,
+                           "offset":  24,
+                           "type":  "float",
+                           "name":  "TemperatureCelsius",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  284,
+                           "offset":  28,
+                           "type":  "float",
+                           "name":  "PressureScalar",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  285,
+                           "offset":  32,
+                           "type":  "float",
+                           "name":  "FogDensity",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  286,
+                           "offset":  36,
+                           "type":  "float",
+                           "name":  "LightScatterR",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  287,
+                           "offset":  40,
+                           "type":  "float",
+                           "name":  "LightScatterG",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  288,
+                           "offset":  44,
+                           "type":  "float",
+                           "name":  "LightScatterB",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  289,
+                           "offset":  48,
+                           "type":  "uint",
+                           "name":  "DisplayNameUtf8Offset",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  290,
+                           "offset":  52,
+                           "type":  "uint",
+                           "name":  "HeatmapId",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  291,
+                           "offset":  56,
+                           "type":  "uint",
+                           "name":  "RadiationFieldHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  292,
+                           "offset":  60,
+                           "type":  "uint",
+                           "name":  "DisplayNameUtf8ByteLength",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8RecipeRecord",
+        "structLine":  296,
+        "layoutLine":  295,
+        "declaredSizeExpression":  "64",
+        "declaredSize":  64,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  298,
+                           "offset":  0,
+                           "type":  "ulong",
+                           "name":  "IngredientMask0",
+                           "size":  8,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  299,
+                           "offset":  8,
+                           "type":  "ulong",
+                           "name":  "IngredientMask1",
+                           "size":  8,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  300,
+                           "offset":  16,
+                           "type":  "uint",
+                           "name":  "OutputHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  301,
+                           "offset":  20,
+                           "type":  "uint",
+                           "name":  "StationHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  302,
+                           "offset":  24,
+                           "type":  "uint",
+                           "name":  "Flags",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  303,
+                           "offset":  28,
+                           "type":  "uint",
+                           "name":  "IngredientCount",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  304,
+                           "offset":  32,
+                           "type":  "uint",
+                           "name":  "IngredientHash0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  305,
+                           "offset":  36,
+                           "type":  "uint",
+                           "name":  "IngredientHash1",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  306,
+                           "offset":  40,
+                           "type":  "uint",
+                           "name":  "IngredientHash2",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  307,
+                           "offset":  44,
+                           "type":  "uint",
+                           "name":  "IngredientHash3",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  308,
+                           "offset":  48,
+                           "type":  "float",
+                           "name":  "CraftSeconds",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  309,
+                           "offset":  52,
+                           "type":  "uint",
+                           "name":  "OutputCount",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  310,
+                           "offset":  56,
+                           "type":  "uint",
+                           "name":  "Reserved0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  311,
+                           "offset":  60,
+                           "type":  "uint",
+                           "name":  "Reserved1",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8BiomeHeatmapCellRecord",
+        "structLine":  315,
+        "layoutLine":  314,
+        "declaredSizeExpression":  "16",
+        "declaredSize":  16,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  317,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "BiomeHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  318,
+                           "offset":  4,
+                           "type":  "uint",
+                           "name":  "Reserved0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  319,
+                           "offset":  8,
+                           "type":  "uint",
+                           "name":  "Reserved1",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  320,
+                           "offset":  12,
+                           "type":  "ushort",
+                           "name":  "X",
+                           "size":  2,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  321,
+                           "offset":  14,
+                           "type":  "ushort",
+                           "name":  "Y",
+                           "size":  2,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8QuestNodeRecord",
+        "structLine":  325,
+        "layoutLine":  324,
+        "declaredSizeExpression":  "32",
+        "declaredSize":  32,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  327,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "NodeHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  328,
+                           "offset":  4,
+                           "type":  "uint",
+                           "name":  "CompletionFlagId",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  329,
+                           "offset":  8,
+                           "type":  "uint",
+                           "name":  "FirstEdgeIndex",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  330,
+                           "offset":  12,
+                           "type":  "uint",
+                           "name":  "RequiredMask0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  331,
+                           "offset":  16,
+                           "type":  "uint",
+                           "name":  "RequiredMask1",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  332,
+                           "offset":  20,
+                           "type":  "uint",
+                           "name":  "RequiredMask2",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  333,
+                           "offset":  24,
+                           "type":  "uint",
+                           "name":  "RequiredMask3",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  334,
+                           "offset":  28,
+                           "type":  "ushort",
+                           "name":  "EdgeCount",
+                           "size":  2,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  335,
+                           "offset":  30,
+                           "type":  "ushort",
+                           "name":  "NodeType",
+                           "size":  2,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8QuestEdgeRecord",
+        "structLine":  339,
+        "layoutLine":  338,
+        "declaredSizeExpression":  "16",
+        "declaredSize":  16,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  341,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "FromNodeHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  342,
+                           "offset":  4,
+                           "type":  "uint",
+                           "name":  "ToNodeHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  343,
+                           "offset":  8,
+                           "type":  "uint",
+                           "name":  "GateFlagId",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  344,
+                           "offset":  12,
+                           "type":  "uint",
+                           "name":  "Reserved0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8LootCdfRecord",
+        "structLine":  348,
+        "layoutLine":  347,
+        "declaredSizeExpression":  "16",
+        "declaredSize":  16,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  350,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "TableHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  351,
+                           "offset":  4,
+                           "type":  "uint",
+                           "name":  "ItemHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  352,
+                           "offset":  8,
+                           "type":  "uint",
+                           "name":  "CumulativeWeight",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  353,
+                           "offset":  12,
+                           "type":  "uint",
+                           "name":  "TotalWeight",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8VoxelMaterialRecord",
+        "structLine":  357,
+        "layoutLine":  356,
+        "declaredSizeExpression":  "32",
+        "declaredSize":  32,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  359,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "VoxelHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  360,
+                           "offset":  4,
+                           "type":  "uint",
+                           "name":  "YieldHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  361,
+                           "offset":  8,
+                           "type":  "float",
+                           "name":  "Hardness",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  362,
+                           "offset":  12,
+                           "type":  "float",
+                           "name":  "MeltingPointCelsius",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  363,
+                           "offset":  16,
+                           "type":  "float",
+                           "name":  "Density",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  364,
+                           "offset":  20,
+                           "type":  "uint",
+                           "name":  "SurfaceId",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  365,
+                           "offset":  24,
+                           "type":  "uint",
+                           "name":  "Flags",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  366,
+                           "offset":  28,
+                           "type":  "uint",
+                           "name":  "Reserved0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8AudioClipRegistryRecord",
+        "structLine":  370,
+        "layoutLine":  369,
+        "declaredSizeExpression":  "16",
+        "declaredSize":  16,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  372,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "EventHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  373,
+                           "offset":  4,
+                           "type":  "uint",
+                           "name":  "AddressableKeyUtf8Offset",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  374,
+                           "offset":  8,
+                           "type":  "uint",
+                           "name":  "BankHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  375,
+                           "offset":  12,
+                           "type":  "uint",
+                           "name":  "AddressableKeyUtf8ByteLength",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8VfxScalarRecord",
+        "structLine":  379,
+        "layoutLine":  378,
+        "declaredSizeExpression":  "32",
+        "declaredSize":  32,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  381,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "EffectHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  382,
+                           "offset":  4,
+                           "type":  "float",
+                           "name":  "EmissionRate",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  383,
+                           "offset":  8,
+                           "type":  "float",
+                           "name":  "ColorR",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  384,
+                           "offset":  12,
+                           "type":  "float",
+                           "name":  "ColorG",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  385,
+                           "offset":  16,
+                           "type":  "float",
+                           "name":  "ColorB",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  386,
+                           "offset":  20,
+                           "type":  "float",
+                           "name":  "ColorA",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  387,
+                           "offset":  24,
+                           "type":  "float",
+                           "name":  "Intensity",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  388,
+                           "offset":  28,
+                           "type":  "uint",
+                           "name":  "Flags",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8DepthPressureSampleRecord",
+        "structLine":  392,
+        "layoutLine":  391,
+        "declaredSizeExpression":  "16",
+        "declaredSize":  16,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  394,
+                           "offset":  0,
+                           "type":  "float",
+                           "name":  "DepthMeters",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  395,
+                           "offset":  4,
+                           "type":  "float",
+                           "name":  "PressureAtmospheres",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  396,
+                           "offset":  8,
+                           "type":  "float",
+                           "name":  "Normalized",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  397,
+                           "offset":  12,
+                           "type":  "uint",
+                           "name":  "Reserved0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8ToolHeatCapacityRecord",
+        "structLine":  401,
+        "layoutLine":  400,
+        "declaredSizeExpression":  "16",
+        "declaredSize":  16,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  403,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "ToolHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  404,
+                           "offset":  4,
+                           "type":  "float",
+                           "name":  "HeatCapacity",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  405,
+                           "offset":  8,
+                           "type":  "float",
+                           "name":  "MaxSafeTemperature",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  406,
+                           "offset":  12,
+                           "type":  "uint",
+                           "name":  "Reserved0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8SubmarineHullConstantRecord",
+        "structLine":  410,
+        "layoutLine":  409,
+        "declaredSizeExpression":  "32",
+        "declaredSize":  32,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  412,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "PartHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  413,
+                           "offset":  4,
+                           "type":  "float",
+                           "name":  "MassKg",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  414,
+                           "offset":  8,
+                           "type":  "float",
+                           "name":  "DragScalar",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  415,
+                           "offset":  12,
+                           "type":  "float",
+                           "name":  "BuoyancyScalar",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  416,
+                           "offset":  16,
+                           "type":  "float",
+                           "name":  "CrushDepthMeters",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  417,
+                           "offset":  20,
+                           "type":  "float",
+                           "name":  "IntegrityCap",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  418,
+                           "offset":  24,
+                           "type":  "uint",
+                           "name":  "Flags",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  419,
+                           "offset":  28,
+                           "type":  "uint",
+                           "name":  "Reserved0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8NarrativeTriggerRecord",
+        "structLine":  423,
+        "layoutLine":  422,
+        "declaredSizeExpression":  "32",
+        "declaredSize":  32,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  425,
+                           "offset":  0,
+                           "type":  "double",
+                           "name":  "AupX",
+                           "size":  8,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  426,
+                           "offset":  8,
+                           "type":  "double",
+                           "name":  "AupY",
+                           "size":  8,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  427,
+                           "offset":  16,
+                           "type":  "double",
+                           "name":  "AupZ",
+                           "size":  8,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  428,
+                           "offset":  24,
+                           "type":  "uint",
+                           "name":  "TriggerHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  429,
+                           "offset":  28,
+                           "type":  "float",
+                           "name":  "RadiusMeters",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8PhysicsMaterialRecord",
+        "structLine":  433,
+        "layoutLine":  432,
+        "declaredSizeExpression":  "16",
+        "declaredSize":  16,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  435,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "SurfaceHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  436,
+                           "offset":  4,
+                           "type":  "float",
+                           "name":  "Friction",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  437,
+                           "offset":  8,
+                           "type":  "float",
+                           "name":  "Restitution",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  438,
+                           "offset":  12,
+                           "type":  "uint",
+                           "name":  "Flags",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8GhostModuleRecord",
+        "structLine":  442,
+        "layoutLine":  441,
+        "declaredSizeExpression":  "64",
+        "declaredSize":  64,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  444,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "ModuleHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  445,
+                           "offset":  4,
+                           "type":  "uint",
+                           "name":  "Flags",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  446,
+                           "offset":  8,
+                           "type":  "float",
+                           "name":  "SnapOffsetX",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  447,
+                           "offset":  12,
+                           "type":  "float",
+                           "name":  "SnapOffsetY",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  448,
+                           "offset":  16,
+                           "type":  "float",
+                           "name":  "SnapOffsetZ",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  449,
+                           "offset":  20,
+                           "type":  "float",
+                           "name":  "PowerRequirement",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  450,
+                           "offset":  24,
+                           "type":  "float",
+                           "name":  "BuildCostScalar",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  451,
+                           "offset":  28,
+                           "type":  "uint",
+                           "name":  "RecipeHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  452,
+                           "offset":  32,
+                           "type":  "uint",
+                           "name":  "DisplayNameUtf8Offset",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  453,
+                           "offset":  36,
+                           "type":  "uint",
+                           "name":  "PortMask0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  454,
+                           "offset":  40,
+                           "type":  "uint",
+                           "name":  "PortMask1",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  455,
+                           "offset":  44,
+                           "type":  "uint",
+                           "name":  "PortMask2",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  456,
+                           "offset":  48,
+                           "type":  "uint",
+                           "name":  "PortMask3",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  457,
+                           "offset":  52,
+                           "type":  "uint",
+                           "name":  "DisplayNameUtf8ByteLength",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  458,
+                           "offset":  56,
+                           "type":  "uint",
+                           "name":  "Reserved0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  459,
+                           "offset":  60,
+                           "type":  "uint",
+                           "name":  "Reserved1",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8RadiationIntensityCellRecord",
+        "structLine":  463,
+        "layoutLine":  462,
+        "declaredSizeExpression":  "16",
+        "declaredSize":  16,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  465,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "CellHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  466,
+                           "offset":  4,
+                           "type":  "float",
+                           "name":  "IntensitySv",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  467,
+                           "offset":  8,
+                           "type":  "float",
+                           "name":  "FalloffMeters",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  468,
+                           "offset":  12,
+                           "type":  "uint",
+                           "name":  "Reserved0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8SpawnCreditCostRecord",
+        "structLine":  472,
+        "layoutLine":  471,
+        "declaredSizeExpression":  "16",
+        "declaredSize":  16,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  474,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "EntityHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  475,
+                           "offset":  4,
+                           "type":  "float",
+                           "name":  "CreditCost",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  476,
+                           "offset":  8,
+                           "type":  "uint",
+                           "name":  "DirectorMask",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  477,
+                           "offset":  12,
+                           "type":  "uint",
+                           "name":  "Reserved0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8LightAttenuationSampleRecord",
+        "structLine":  481,
+        "layoutLine":  480,
+        "declaredSizeExpression":  "32",
+        "declaredSize":  32,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  483,
+                           "offset":  0,
+                           "type":  "float",
+                           "name":  "DepthMeters",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  484,
+                           "offset":  4,
+                           "type":  "float",
+                           "name":  "FogDensity",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  485,
+                           "offset":  8,
+                           "type":  "float",
+                           "name":  "ScatterR",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  486,
+                           "offset":  12,
+                           "type":  "float",
+                           "name":  "ScatterG",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  487,
+                           "offset":  16,
+                           "type":  "float",
+                           "name":  "ScatterB",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  488,
+                           "offset":  20,
+                           "type":  "float",
+                           "name":  "Absorption",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  489,
+                           "offset":  24,
+                           "type":  "uint",
+                           "name":  "Flags",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  490,
+                           "offset":  28,
+                           "type":  "uint",
+                           "name":  "Reserved0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8SopErrorRecord",
+        "structLine":  494,
+        "layoutLine":  493,
+        "declaredSizeExpression":  "16",
+        "declaredSize":  16,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  496,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "ErrorHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  497,
+                           "offset":  4,
+                           "type":  "uint",
+                           "name":  "MessageUtf8Offset",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  498,
+                           "offset":  8,
+                           "type":  "uint",
+                           "name":  "Severity",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  499,
+                           "offset":  12,
+                           "type":  "uint",
+                           "name":  "MessageUtf8ByteLength",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8HudLayoutRecord",
+        "structLine":  503,
+        "layoutLine":  502,
+        "declaredSizeExpression":  "64",
+        "declaredSize":  64,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  505,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "ElementHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  506,
+                           "offset":  4,
+                           "type":  "uint",
+                           "name":  "Flags",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  507,
+                           "offset":  8,
+                           "type":  "float",
+                           "name":  "M00",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  508,
+                           "offset":  12,
+                           "type":  "float",
+                           "name":  "M01",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  509,
+                           "offset":  16,
+                           "type":  "float",
+                           "name":  "M02",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  510,
+                           "offset":  20,
+                           "type":  "float",
+                           "name":  "M03",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  511,
+                           "offset":  24,
+                           "type":  "float",
+                           "name":  "M10",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  512,
+                           "offset":  28,
+                           "type":  "float",
+                           "name":  "M11",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  513,
+                           "offset":  32,
+                           "type":  "float",
+                           "name":  "M12",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  514,
+                           "offset":  36,
+                           "type":  "float",
+                           "name":  "M13",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  515,
+                           "offset":  40,
+                           "type":  "float",
+                           "name":  "M20",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  516,
+                           "offset":  44,
+                           "type":  "float",
+                           "name":  "M21",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  517,
+                           "offset":  48,
+                           "type":  "float",
+                           "name":  "M22",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  518,
+                           "offset":  52,
+                           "type":  "float",
+                           "name":  "M23",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  519,
+                           "offset":  56,
+                           "type":  "float",
+                           "name":  "M30",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  520,
+                           "offset":  60,
+                           "type":  "float",
+                           "name":  "M31",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8SectorPageRecord",
+        "structLine":  524,
+        "layoutLine":  523,
+        "declaredSizeExpression":  "32",
+        "declaredSize":  32,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  526,
+                           "offset":  0,
+                           "type":  "long",
+                           "name":  "AupX",
+                           "size":  8,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  527,
+                           "offset":  8,
+                           "type":  "long",
+                           "name":  "AupZ",
+                           "size":  8,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  528,
+                           "offset":  16,
+                           "type":  "uint",
+                           "name":  "SectorHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  529,
+                           "offset":  20,
+                           "type":  "uint",
+                           "name":  "BiomeHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  530,
+                           "offset":  24,
+                           "type":  "uint",
+                           "name":  "FileOffsetBytes",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  531,
+                           "offset":  28,
+                           "type":  "uint",
+                           "name":  "ByteCount",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8EconomyRecord",
+        "structLine":  535,
+        "layoutLine":  534,
+        "declaredSizeExpression":  "H8DataLayoutConstants.EconomyRecordSize",
+        "declaredSize":  64,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  537,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "HashId",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  538,
+                           "offset":  4,
+                           "type":  "uint",
+                           "name":  "NameUtf8Offset",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  539,
+                           "offset":  8,
+                           "type":  "uint",
+                           "name":  "DescriptionUtf8Offset",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  540,
+                           "offset":  12,
+                           "type":  "float",
+                           "name":  "BasePrice",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  541,
+                           "offset":  16,
+                           "type":  "float",
+                           "name":  "Scarcity01",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  542,
+                           "offset":  20,
+                           "type":  "float",
+                           "name":  "Demand01",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  543,
+                           "offset":  24,
+                           "type":  "float",
+                           "name":  "SupplyRefreshSeconds",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  544,
+                           "offset":  28,
+                           "type":  "float",
+                           "name":  "AccessFrequency",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  545,
+                           "offset":  32,
+                           "type":  "uint",
+                           "name":  "NameUtf8ByteLength",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  546,
+                           "offset":  36,
+                           "type":  "uint",
+                           "name":  "DescriptionUtf8ByteLength",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  547,
+                           "offset":  40,
+                           "type":  "uint",
+                           "name":  "Flags",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  548,
+                           "offset":  44,
+                           "type":  "uint",
+                           "name":  "Reserved0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  549,
+                           "offset":  48,
+                           "type":  "uint",
+                           "name":  "Reserved1",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  550,
+                           "offset":  52,
+                           "type":  "uint",
+                           "name":  "Reserved2",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  551,
+                           "offset":  56,
+                           "type":  "uint",
+                           "name":  "Reserved3",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  552,
+                           "offset":  60,
+                           "type":  "uint",
+                           "name":  "Reserved4",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8PhysicsConstantsRecord",
+        "structLine":  556,
+        "layoutLine":  555,
+        "declaredSizeExpression":  "H8DataLayoutConstants.PhysicsConstantsRecordSize",
+        "declaredSize":  64,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  558,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "HashId",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  559,
+                           "offset":  4,
+                           "type":  "uint",
+                           "name":  "NameUtf8Offset",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  560,
+                           "offset":  8,
+                           "type":  "uint",
+                           "name":  "DescriptionUtf8Offset",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  561,
+                           "offset":  12,
+                           "type":  "uint",
+                           "name":  "NameUtf8ByteLength",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  562,
+                           "offset":  16,
+                           "type":  "uint",
+                           "name":  "DescriptionUtf8ByteLength",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  563,
+                           "offset":  20,
+                           "type":  "float",
+                           "name":  "MassKg",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  564,
+                           "offset":  24,
+                           "type":  "float",
+                           "name":  "AddedMass",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  565,
+                           "offset":  28,
+                           "type":  "float",
+                           "name":  "LinearDrag",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  566,
+                           "offset":  32,
+                           "type":  "float",
+                           "name":  "Buoyancy",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  567,
+                           "offset":  36,
+                           "type":  "float",
+                           "name":  "CrushDepthM",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  568,
+                           "offset":  40,
+                           "type":  "float",
+                           "name":  "AupSectorSizeMeters",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  569,
+                           "offset":  44,
+                           "type":  "float",
+                           "name":  "MaxWorldBoundsMeters",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  570,
+                           "offset":  48,
+                           "type":  "float",
+                           "name":  "AccessFrequency",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  571,
+                           "offset":  52,
+                           "type":  "uint",
+                           "name":  "Flags",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  572,
+                           "offset":  56,
+                           "type":  "uint",
+                           "name":  "Reserved0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  573,
+                           "offset":  60,
+                           "type":  "uint",
+                           "name":  "Reserved1",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8DataMonolithTelemetryEntry",
+        "structLine":  577,
+        "layoutLine":  576,
+        "declaredSizeExpression":  "H8DataLayoutConstants.TelemetryEntrySize",
+        "declaredSize":  64,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  579,
+                           "offset":  0,
+                           "type":  "ulong",
+                           "name":  "Checksum64",
+                           "size":  8,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  580,
+                           "offset":  8,
+                           "type":  "long",
+                           "name":  "LoadTicks",
+                           "size":  8,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  581,
+                           "offset":  16,
+                           "type":  "long",
+                           "name":  "IoTicks",
+                           "size":  8,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  582,
+                           "offset":  24,
+                           "type":  "uint",
+                           "name":  "FrameIndex",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  583,
+                           "offset":  28,
+                           "type":  "uint",
+                           "name":  "BlobBytes",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  584,
+                           "offset":  32,
+                           "type":  "uint",
+                           "name":  "SectionCount",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  585,
+                           "offset":  36,
+                           "type":  "uint",
+                           "name":  "LoadStatus",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  586,
+                           "offset":  40,
+                           "type":  "uint",
+                           "name":  "PathFlags",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  587,
+                           "offset":  44,
+                           "type":  "uint",
+                           "name":  "StateHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  588,
+                           "offset":  48,
+                           "type":  "uint",
+                           "name":  "Reserved0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  589,
+                           "offset":  52,
+                           "type":  "uint",
+                           "name":  "Reserved1",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  590,
+                           "offset":  56,
+                           "type":  "uint",
+                           "name":  "Reserved2",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  591,
+                           "offset":  60,
+                           "type":  "uint",
+                           "name":  "Reserved3",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8StaticLocalizationReference",
+        "structLine":  598,
+        "layoutLine":  597,
+        "declaredSizeExpression":  "16",
+        "declaredSize":  16,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  600,
+                           "offset":  0,
+                           "type":  "uint",
+                           "name":  "KeyHash",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  601,
+                           "offset":  4,
+                           "type":  "uint",
+                           "name":  "Utf8Offset",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  602,
+                           "offset":  8,
+                           "type":  "int",
+                           "name":  "ByteLength",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  603,
+                           "offset":  12,
+                           "type":  "uint",
+                           "name":  "Reserved0",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    },
+    {
+        "name":  "H8StaticLocalizationCursor",
+        "structLine":  610,
+        "layoutLine":  609,
+        "declaredSizeExpression":  "8",
+        "declaredSize":  8,
+        "sizeMultipleOf8":  true,
+        "fields":  [
+                       {
+                           "line":  612,
+                           "offset":  0,
+                           "type":  "int",
+                           "name":  "Section",
+                           "size":  4,
+                           "naturalAligned":  true
+                       },
+                       {
+                           "line":  613,
+                           "offset":  4,
+                           "type":  "int",
+                           "name":  "RecordIndex",
+                           "size":  4,
+                           "naturalAligned":  true
+                       }
+                   ],
+        "violations":  [
+
+                       ]
+    }
+]

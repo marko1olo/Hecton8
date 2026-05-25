@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
@@ -189,7 +190,7 @@ namespace Hecton8.Graphics.Culling
             {
                 BudgetPtr = Vault.BudgetPtr(0),
                 QualitySignal = MockQualitySignal,
-                Camera = MockCamera,
+                CameraData = MockCamera,
                 SourcePlanes = SourceFrustumPlanes,
                 SqueezedPlanes = SqueezedFrustumPlanes,
                 MobileBaseVertexCap = _hardVertexCap,
@@ -266,11 +267,11 @@ namespace Hecton8.Graphics.Culling
 
         public unsafe bool RunMockPipelineOnce(int requestedInstanceCount)
         {
-            float sortStart = Time.realtimeSinceStartup;
+            long sortStart = Stopwatch.GetTimestamp();
             JobHandle handle = ScheduleTBDRProtectionPass(requestedInstanceCount, default);
             // COLD/EDITOR SYNC FACADE: tuner-only mock pipeline proof, not dispatcher frame cadence.
             DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
-            CommitCompletedProtectionPass((Time.realtimeSinceStartup - sortStart) * 1000f);
+            CommitCompletedProtectionPass((float)((Stopwatch.GetTimestamp() - sortStart) * 1000d / Stopwatch.Frequency));
             return true;
         }
 

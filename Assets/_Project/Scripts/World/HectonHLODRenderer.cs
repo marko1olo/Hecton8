@@ -16,7 +16,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-89)]
-    public sealed class HectonHLODRenderer : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public sealed class HectonHLODRenderer : MonoBehaviour, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_HLODUnlitFog.shader";
@@ -114,10 +114,6 @@ namespace Hecton8.World
         }
 
         /// <inheritdoc />
-        public void Tick(float dt)
-        {
-        }
-
         public void LateFrameTick()
         {
             if (_instanceCount <= 0 || _matrixBuffer == null || _fadeBuffer == null)

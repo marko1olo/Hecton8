@@ -145,7 +145,7 @@ namespace Hecton8.MapMagicIntegration
                 if (populator == null)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError(
+                    Hecton8.Core.H8Debug.LogError(
                         "[HectonScatterOutput] ScavengePopulator registry slot is null! " +
                         "Ensure ScavengePopulator exists in the scene.");
 #endif

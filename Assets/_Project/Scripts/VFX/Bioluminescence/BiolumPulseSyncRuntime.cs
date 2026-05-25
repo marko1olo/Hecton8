@@ -178,7 +178,6 @@ namespace Hecton8.VFX.Bioluminescence
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/VFX/Bioluminescence/Pulse Sync Runtime")]
     public sealed class BiolumPulseSyncRuntime : MonoBehaviour,
-        IUpdatable,
         ILateFrameTickable,
         IGlobalRegistryHotSwapListener,
         IGlobalRegistryHotSwapRefListener,
@@ -305,7 +304,6 @@ namespace Hecton8.VFX.Bioluminescence
         private int _lastGlobalLightLevelSignalSequence;
         private int _lastGlobalSurvivalVitalsSequence;
         private byte _pendingTelemetryFlags;
-        private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _registeredHotSwap;
         private bool _stateJobScheduled;
@@ -378,7 +376,6 @@ namespace Hecton8.VFX.Bioluminescence
             if (!_mockGlowsInitialized)
                 GenerateEmergencyMockGlows();
             GenerateMockLightingState();
-            TryRegisterUpdate();
             TryRegisterLateFrame();
             EvaluateColdStartStates();
             UploadShaderGlobals(forceStateArray: true);
@@ -387,7 +384,6 @@ namespace Hecton8.VFX.Bioluminescence
 
         private void OnDisable()
         {
-            TryUnregisterUpdate();
             TryUnregisterLateFrame();
 
             TryUnregisterHotSwapListener();
@@ -409,7 +405,7 @@ namespace Hecton8.VFX.Bioluminescence
                 Dispose();
         }
 
-        public void Tick(float deltaTime)
+        private void AdvancePresentationFrame(float deltaTime)
         {
             using (_tickMarker.Auto())
             {
@@ -452,6 +448,8 @@ namespace Hecton8.VFX.Bioluminescence
         {
             using (_lateFrameMarker.Auto())
             {
+                AdvancePresentationFrame(SystemDispatcher.CurrentFrameDeltaTime);
+
                 if (!HasVaultBuffers() && !TryRefreshExistingVaultHandlesForOwnerSwap())
                     return;
 
@@ -462,7 +460,6 @@ namespace Hecton8.VFX.Bioluminescence
 
         public void Dispose()
         {
-            TryUnregisterUpdate();
             TryUnregisterLateFrame();
             CompleteScheduledJobForTeardown();
             TryUnregisterHotSwapListener();
@@ -964,16 +961,6 @@ namespace Hecton8.VFX.Bioluminescence
         }
 #endif
 
-        private void TryRegisterUpdate()
-        {
-            if (_registeredUpdate)
-                return;
-            if (_tickDispatcher == null)
-                return;
-
-            _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-        }
-
         private void TryRegisterLateFrame()
         {
             if (_registeredLateFrame)
@@ -982,15 +969,6 @@ namespace Hecton8.VFX.Bioluminescence
                 return;
 
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
-        }
-
-        private void TryUnregisterUpdate()
-        {
-            if (!_registeredUpdate)
-                return;
-
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _registeredUpdate = false;
         }
 
         private void TryUnregisterLateFrame()
@@ -1048,14 +1026,12 @@ namespace Hecton8.VFX.Bioluminescence
                     ITickDispatcher tickDispatcher = currentService as ITickDispatcher;
                     if (!ReferenceEquals(_tickDispatcher, tickDispatcher))
                     {
-                        TryUnregisterUpdate();
                         TryUnregisterLateFrame();
                         _tickDispatcher = tickDispatcher;
                     }
 
                     if (_tickDispatcher != null)
                     {
-                        TryRegisterUpdate();
                         TryRegisterLateFrame();
                     }
                     break;
@@ -1315,7 +1291,7 @@ namespace Hecton8.VFX.Bioluminescence
 
         private static bool ReportInvalidSyncLayout(string message)
         {
-            Debug.LogError(message);
+            Hecton8.Core.H8Debug.LogError(message);
             return false;
         }
 

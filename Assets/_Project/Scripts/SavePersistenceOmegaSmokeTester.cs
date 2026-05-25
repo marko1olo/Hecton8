@@ -84,7 +84,7 @@ namespace Hecton8.Dev
             if (pass)
                 Hecton8.Core.H8Debug.Log("[SavePersistenceOmegaSmokeTester] PASS artifact=CodexArtifacts/save-persistence-omega-smoke.json");
             else
-                Debug.LogError("[SavePersistenceOmegaSmokeTester] FAIL artifact=CodexArtifacts/save-persistence-omega-smoke.json");
+                Hecton8.Core.H8Debug.LogError("[SavePersistenceOmegaSmokeTester] FAIL artifact=CodexArtifacts/save-persistence-omega-smoke.json");
 
             return pass;
         }
@@ -129,7 +129,7 @@ namespace Hecton8.Dev
             }
             catch (Exception exception)
             {
-                Debug.LogError("[SavePersistenceOmegaSmokeTester] Burst bounds stress failed: " + exception.Message);
+                Hecton8.Core.H8Debug.LogError("[SavePersistenceOmegaSmokeTester] Burst bounds stress failed: " + exception.Message);
                 return false;
             }
             finally

@@ -1,0 +1,252 @@
+{
+  "agentId": "1305",
+  "codename": "MEMORY_SOVEREIGN_WORLD_PAGING_EXORCIST",
+  "phase": 0,
+  "date": "2026-05-25",
+  "status": "PENDING_PHASE1_REFACTOR_DEEP_AUDIT_PATCH_PASS15_COMPLETE",
+  "domainPromptPath": "Assets/Project/Scripts/World/Streaming",
+  "repoCanonicalPath": "Assets/_Project/Scripts/World/Streaming",
+  "strictFolderState": {
+    "runtimeOwnerFound": false,
+    "filesScanned": 1,
+    "forbiddenPersistentCandidatesBefore": 0,
+    "forbiddenPersistentCandidatesAfter": 0,
+    "scannerOutput": "Docs/Reports/VAULT_EXORCISM_REPORT_1305_strict_post.json",
+    "scannerHash": "254906112e60fba00917c34dafe995f2cc66cd70ff89c10a0df3faa68edf7087"
+  },
+  "worldScanState": {
+    "filesScanned": 271,
+    "totalNativeFields": 1407,
+    "forbiddenPersistentCandidates": 445,
+    "streamingAdjacentCandidatesBefore": 44,
+    "streamingAdjacentCandidatesAfter": 0,
+    "scannerOutput": "Docs/Reports/VAULT_EXORCISM_REPORT_1305_world_post.json",
+    "scannerHash": "3cb109531c6921d253f28d21ffcdad7f2fbb55b51697311072374aad996a12ec",
+    "scannerBlindSpots": []
+  },
+  "offenders": [
+    {
+      "file": "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs",
+      "candidateCount": 0,
+      "coreIssue": "Raw persistent pointer fields removed; class still locks DataVault buffers across runtime lifetime.",
+      "hardBlockers": [
+        "Worker thread resolves transient views, but formal GlobalDataVault background lease/fence compatibility is not proven.",
+        "Unity/solution compile and profiler GC verification were not launched."
+      ]
+    },
+    {
+      "file": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs",
+      "candidateCount": 0,
+      "coreIssue": "Direct native maps/queue/lists were replaced with vault-backed DTO buffers and scalar cursors.",
+      "hardBlockers": [
+        "Unity/solution compile and profiler GC verification were not launched.",
+        "Defragmentation race fuzzer was not launched.",
+        "Terrain pager background worker lease/fence compatibility remains unproven."
+      ]
+    }
+  ],
+  "dtoLayoutFindings": {
+    "terrainPager": [
+      "TerrainChunkSectorCoordDTO: explicit, 16B",
+      "ChunkMetadataDTO: explicit, 32B",
+      "TerrainChunkWorkerRequestDTO: explicit, 64B",
+      "TerrainChunkWorkerResultDTO: explicit, 64B",
+      "TerrainChunkPagerTuningDTO: explicit, 80B",
+      "TerrainChunkPagerCountersDTO: explicit, 64B",
+      "PagerTelemetryEntry: explicit, 64B",
+      "StreamingHardwareProfileDTO: explicit, 32B"
+    ],
+    "worldResidency": [
+      "ChunkLoadRequest: explicit, 32B",
+      "ChunkStateSlotDTO: explicit, 24B",
+      "ResidencyDecisionDTO: explicit, 16B",
+      "ChunkResidencyTelemetryEntry: explicit, 72B",
+      "AbsoluteUniversePositionBlit: explicit, 48B",
+      "StreamingHlodImpostorPoint: explicit, 48B",
+      "H8WorldPageReadTicket: explicit, 32B",
+      "HLOD_ImpostorDTO: explicit, 16B",
+      "ChunkHydrationApplyRecord: explicit, 64B"
+    ]
+  },
+  "telemetryPlan": {
+    "existingPagerRing": "PagerTelemetryEntry 64B x 300",
+    "existingResidencyRing": "ChunkResidencyTelemetryEntry 72B x 300",
+    "requiredDumpPath": "Docs/AgentLogs/Dump_1305_Streaming.bin",
+    "newCriticalRingCostBytes": 19200,
+    "privateMonoBehaviourRingRejected": true
+  },
+  "patchPass4": {
+    "dumpRouteUnified": "Docs/AgentLogs/Dump_1305_Streaming.bin",
+    "terrainPagerDumpRoutePatched": true,
+    "worldResidencyDumpRoutePatched": true,
+    "hlodAupDirectFloatCastPatched": true,
+    "hlodDtoAbsoluteCenterPatched": true,
+    "prefabActivationAbsoluteSpawnPatched": true,
+    "biomeFallbackAbsoluteCenterPatched": true,
+    "ambientBiotaAbsoluteCenterPatched": true,
+    "additiveSceneAbsoluteCenterPatched": true,
+    "remainingAbsoluteCenterRuntimeSpatialHits": 0,
+    "remainingAbsoluteCenterColdImportHits": 3,
+    "remainingDirectChunkCenterAbsoluteCastHits": 0,
+    "strictPostScanForbiddenCandidates": 0,
+    "worldPostScanForbiddenCandidates": 445,
+    "streamingAdjacentPostScanCandidates": 45,
+    "dotnetAuditToolLaunched": true,
+    "compileLaunched": false
+  },
+  "patchPass5": {
+    "mutatingResolveNamesPatched": true,
+    "concreteSaveFallbackRemoved": true,
+    "unityTimeFallbackRemovedFromTouchedResidencyPaths": true,
+    "staleAgentForensicLabelsRemoved": true,
+    "oldHelperNameScanHits": 0,
+    "staleDumpLabelScanHits": 0,
+    "compileLaunched": false
+  },
+  "patchPass6": {
+    "publicPagerTryReadTuningUsesReadOnlyHandle": true,
+    "publicPagerTryReadCountersUsesReadOnlyHandle": true,
+    "publicPagerTryGetDebugCellUsesReadOnlyHandle": true,
+    "publicPagerTryWriteTuningUsesWriteLockFinally": true,
+    "remainingTerrainPagerPersistentPointerFields": 19,
+    "remainingWorldResidencyPersistentNativeFields": 26,
+    "dotnetAuditToolLaunched": false,
+    "compileLaunched": false
+  },
+  "patchPass7": {
+    "evaluateChunkResidencyJobNativeArrayFields": true,
+    "evictStaleChunksJobNativeArrayFields": true,
+    "commitStagedChunkJobNativeArrayByteFields": true,
+    "generateMockDiskLoadJobNativeArrayByteField": true,
+    "pagerJobPointerFieldScanHits": 0,
+    "remainingWorkerSidePointerHelpers": true,
+    "compileLaunched": false
+  },
+  "patchPass8": {
+    "frameTuningUsesVaultViews": true,
+    "dispatchLoadRequestsUsesVaultViews": true,
+    "drainWorkerResultsUsesVaultViews": true,
+    "telemetryWriteUsesVaultViews": true,
+    "counterIncrementsUseWriteLocks": true,
+    "directPointerElementAccessScanHits": 0,
+    "remainingPersistentPointerFields": 19,
+    "compileLaunched": false
+  },
+    "patchPass9": {
+    "removedDeadTerrainPagerPointerFields": 10,
+    "remainingTerrainPagerPointerFields": 9,
+    "removedPointerNameScanHits": 0,
+    "telemetrySnapshotUsesLocalResolvedRing": true,
+    "compileLaunched": false
+  },
+  "patchPass10": {
+    "removedRemainingTerrainPagerPointerFields": 9,
+    "remainingTerrainPagerPointerFields": 0,
+    "terrainPagerPersistentPointerFieldScanHits": 0,
+    "workerQueuesUseTransientVaultViews": true,
+    "workerByteSlabsUseTransientVaultViews": true,
+    "telemetryDumpSnapshotUsesTransientVaultView": true,
+    "dtoOffsetOrderPatched": [
+      "ChunkLoadRequest",
+      "AddressablesRequestDTO",
+      "ChunkResidencyDTO",
+      "ChunkHydrationApplyRecord",
+      "MockAssetHandle",
+      "MockAupShiftSignal",
+      "WorldStreamingRuntimeTuning"
+    ],
+    "forbiddenManagedScanHits": 0,
+    "newTextScanClean": false,
+    "remainingManagedNewSitesClassification": "cold/static/worker/fail/editor/value-type span/vector constructors remain; absolute Zero-GC is not claimed",
+    "remainingWorldResidencyPersistentNativeFields": 26,
+    "compileLaunched": false
+  },
+  "patchPass11": {
+    "migratedPagerReadTicketsToHandle": true,
+    "remainingWorldResidencyPersistentNativeFields": 25,
+    "compileLaunched": false
+  },
+  "patchPass12": {
+    "deletedDeadChunkSpatialLookup": true,
+    "migratedMacroDatabaseEvictionScratchToHandle": true,
+    "migratedHydrationApplyRecordsToHandle": true,
+    "migratedDehydrationMetadataPayloadToHandle": true,
+    "remainingWorldResidencyPersistentNativeFields": 21,
+    "compileLaunched": false
+  },
+  "patchPass13": {
+    "migratedResidencyTelemetryToHandle": true,
+    "migratedAddressableLoadTimingToHandles": true,
+    "migratedHlodSoaToHandles": true,
+    "migratedChunkIdCenterSoaToHandles": true,
+    "removedAcquireWorldStreamingArrayFallback": true,
+    "remainingWorldResidencyPersistentNativeFields": 6,
+    "remainingWorldResidencyPersistentNativeFieldLines": [
+      844,
+      845,
+      846,
+      847,
+      848,
+      849
+    ],
+    "compileLaunched": false
+  },
+  "patchPass14": {
+    "migratedChunkStateMapToStateSlotBuffer": true,
+    "migratedChunkIndexMapToStateSlotBuffer": true,
+    "migratedNativeQueueToVaultRing": true,
+    "migratedLoadUnloadListsToResidencyDecisionBuffer": true,
+    "removedNativeListSortJob": true,
+    "predictiveChunkResidencyJobListWritersRemoved": true,
+    "remainingWorldResidencyPersistentNativeFields": 0,
+    "streamingAdjacentManualScanCandidates": 0,
+    "newDtoByteOffsets": {
+      "ChunkStateSlotDTO": {
+        "size": 24,
+        "fields": {
+          "0": "long ChunkId",
+          "8": "int DefinitionIndex",
+          "12": "int StorageIndex",
+          "16": "ushort Padding0",
+          "18": "byte State",
+          "19": "byte Occupied",
+          "20": "uint _pad0"
+        }
+      },
+      "ResidencyDecisionDTO": {
+        "size": 16,
+        "fields": {
+          "0": "long ChunkId",
+          "8": "float DistanceSq",
+          "12": "byte Action",
+          "13": "byte Priority",
+          "14": "byte Flags",
+          "15": "byte _pad0"
+        }
+      }
+    },
+    "forbiddenContainerScanHits": 0,
+    "forbiddenManagedScanHits": 0,
+    "compileLaunched": false
+  },
+  "patchPass15": {
+    "removedPagerLifetimeVaultLocks": true,
+    "removedLockVaultBuffersMethods": true,
+    "legacyLockNameScanHits": 0,
+    "persistentContainerScanHits": 0,
+    "remainingPagerWorkerLeaseProof": true,
+    "compileLaunched": false
+  },
+  "qualityWeightCompliance": {
+    "globalQualityWeightMustRemainContinuous": true,
+    "forbiddenBinaryTierSwitchesIntroduced": false,
+    "phase0RuntimeChanges": true
+  },
+  "verification": {
+    "runtimeSourceModified": true,
+    "compileLaunched": false,
+    "compileReason": "Lightweight Roslyn audit tool was launched once to refresh proof artifacts. Latest guard sample after audit reported CPU 99.75 percent and VBCSCompiler active; Unity/solution build was not launched per user instruction to run builds rarely.",
+    "runtimeMicrosecondsSaved": 0,
+    "sourceContentSha256": "bd015e94504bc087de3a524b04143e73aa7b2545cb485b50de8e7db15398e0cc"
+  }
+}

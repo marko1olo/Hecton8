@@ -26,15 +26,19 @@ namespace Hecton8.VFX
     {
         private const int CameraJuiceProfileCapacity = 16;
         private const int CameraJuiceMockSignalCapacity = 32;
+#if UNITY_EDITOR
         private const int CameraJuiceCsvScratchBytes = 4096;
-        private const string CameraJuiceTraumaProfilesRelativePath = "Hecton8/camera_trauma_profiles.csv";
+        private const string CameraJuiceTraumaProfilesFileName = "camera_trauma_profiles.csv";
+#endif
         private const BufferID CameraJuiceStateBufferId = (BufferID)73373;
         private const BufferID CameraJuiceImpulseBufferId = (BufferID)73374;
         private const BufferID CameraJuiceProjectionBufferId = (BufferID)73375;
         private const BufferID CameraJuiceTuningBufferId = (BufferID)73376;
         private const BufferID CameraJuiceProfilesBufferId = (BufferID)73377;
         private const BufferID CameraJuiceMockSignalsBufferId = (BufferID)73378;
+#if UNITY_EDITOR
         private const BufferID CameraJuiceCsvScratchBufferId = (BufferID)73379;
+#endif
         private const float CameraJuiceProjectionTranslationScale = 0.035f;
         private const float CameraJuiceProjectionRotationScale = 0.00125f;
         private const float CameraJuiceProjectionRollScale = 0.0015f;
@@ -52,7 +56,9 @@ namespace Hecton8.VFX
         private VaultGenerationHandle<CameraJuiceTuningDTO> _cameraJuiceTuningHandle;
         private VaultGenerationHandle<CameraTraumaProfileDTO> _cameraJuiceProfilesHandle;
         private VaultGenerationHandle<CameraJuiceMockSignalDTO> _cameraJuiceMockSignalsHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _cameraJuiceCsvScratchHandle;
+#endif
         private VaultGenerationHandle<LockstepPlayerKinematicState> _cameraJuicePlayerKinematicStateHandle;
         private bool _ownsCameraJuiceStateBuffer;
         private bool _ownsCameraJuiceImpulseBuffer;
@@ -60,7 +66,9 @@ namespace Hecton8.VFX
         private bool _ownsCameraJuiceTuningBuffer;
         private bool _ownsCameraJuiceProfilesBuffer;
         private bool _ownsCameraJuiceMockSignalsBuffer;
+#if UNITY_EDITOR
         private bool _ownsCameraJuiceCsvScratchBuffer;
+#endif
         private bool _cameraJuiceBuffersSeeded;
         private bool _cameraJuiceMockSignalsEnabled;
         private int _cameraJuiceMockSignalCount;
@@ -173,7 +181,7 @@ namespace Hecton8.VFX
         {
 #if UNITY_EDITOR
             if (CameraJuiceBurstMath.ValidateLayoutSizes() != 0u)
-                UnityEngine.Debug.LogError("[SHINOBU_354] Camera juice ABI violation.");
+                Hecton8.Core.H8Debug.LogError("[SHINOBU_354] Camera juice ABI violation.");
 #endif
             NativeArray<CameraJuiceStateDTO> state = default;
             NativeArray<CameraJuiceImpulseDTO> impulse = default;
@@ -181,7 +189,9 @@ namespace Hecton8.VFX
             NativeArray<CameraJuiceTuningDTO> tuning = default;
             NativeArray<CameraTraumaProfileDTO> profiles = default;
             NativeArray<CameraJuiceMockSignalDTO> mockSignals = default;
-            NativeArray<byte> csvScratch = default;
+#if UNITY_EDITOR
+            NativeArray<byte> cameraJuiceCsvScratch = default;
+#endif
             bool ready =
                 AcquireCameraJuiceBuffer(
                     ref _cameraJuiceStateHandle,
@@ -224,21 +234,28 @@ namespace Hecton8.VFX
                     CameraJuiceMockSignalsBufferId,
                     CameraJuiceMockSignalCapacity,
                     NativeArrayOptions.UninitializedMemory,
-                    out mockSignals) &&
+                    out mockSignals);
+#if UNITY_EDITOR
+            ready = ready &&
                 AcquireCameraJuiceBuffer(
                     ref _cameraJuiceCsvScratchHandle,
                     ref _ownsCameraJuiceCsvScratchBuffer,
                     CameraJuiceCsvScratchBufferId,
                     CameraJuiceCsvScratchBytes,
                     NativeArrayOptions.UninitializedMemory,
-                    out csvScratch);
+                    out cameraJuiceCsvScratch);
+#endif
 
             if (!ready)
                 return false;
 
             if (!_cameraJuiceBuffersSeeded)
             {
-                SeedProceduralCameraJuiceBuffers(state, impulse, projection, tuning, profiles, mockSignals, csvScratch);
+#if UNITY_EDITOR
+                SeedProceduralCameraJuiceBuffers(state, impulse, projection, tuning, profiles, mockSignals, cameraJuiceCsvScratch);
+#else
+                SeedProceduralCameraJuiceBuffers(state, impulse, projection, tuning, profiles, mockSignals);
+#endif
                 _cameraJuiceBuffersSeeded = true;
             }
 
@@ -253,7 +270,9 @@ namespace Hecton8.VFX
             ReleaseCameraJuiceBuffer(ref _cameraJuiceTuningHandle, ref _ownsCameraJuiceTuningBuffer);
             ReleaseCameraJuiceBuffer(ref _cameraJuiceProfilesHandle, ref _ownsCameraJuiceProfilesBuffer);
             ReleaseCameraJuiceBuffer(ref _cameraJuiceMockSignalsHandle, ref _ownsCameraJuiceMockSignalsBuffer);
+#if UNITY_EDITOR
             ReleaseCameraJuiceBuffer(ref _cameraJuiceCsvScratchHandle, ref _ownsCameraJuiceCsvScratchBuffer);
+#endif
             _cameraJuicePlayerKinematicStateHandle = default;
             _cameraJuiceBuffersSeeded = false;
             ClearProceduralCameraJuiceProjection();
@@ -362,8 +381,11 @@ namespace Hecton8.VFX
             NativeArray<CameraJuiceProjectionDTO> projection,
             NativeArray<CameraJuiceTuningDTO> tuning,
             NativeArray<CameraTraumaProfileDTO> profiles,
-            NativeArray<CameraJuiceMockSignalDTO> mockSignals,
-            NativeArray<byte> csvScratch)
+            NativeArray<CameraJuiceMockSignalDTO> mockSignals
+#if UNITY_EDITOR
+            , NativeArray<byte> cameraJuiceCsvScratch
+#endif
+            )
         {
             float quality = ResolveCameraJuiceGlobalQualityWeight();
             SeedCameraJuiceBuffersJob job = default;
@@ -377,7 +399,7 @@ namespace Hecton8.VFX
             job.Run();
 
 #if UNITY_EDITOR
-            TryLoadCameraJuiceTraumaProfilesFromCsv(profiles, csvScratch, tuning);
+            TryLoadCameraJuiceTraumaProfilesFromCsv(profiles, cameraJuiceCsvScratch, tuning);
 #endif
         }
 
@@ -715,7 +737,7 @@ namespace Hecton8.VFX
             if (!profiles.IsCreated || profiles.Length == 0 || !csvScratch.IsCreated || csvScratch.Length == 0)
                 return false;
 
-            string path = Path.GetFullPath(Path.Combine(Application.streamingAssetsPath, CameraJuiceTraumaProfilesRelativePath));
+            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "_Project", "Data", "VFX", CameraJuiceTraumaProfilesFileName));
             if (!File.Exists(path))
                 return false;
 
@@ -1352,18 +1374,18 @@ namespace Hecton8.VFX
                 if (highTapAdmission > 0f)
                 {
                     high = new float3(
-                        noise.snoise(new float3(phase * 0.31f, 11.137f, quality)),
-                        noise.snoise(new float3(phase * 0.37f, 23.719f, quality + 3.1f)),
-                        noise.snoise(new float3(phase * 0.41f, 37.031f, quality + 7.3f)));
+                        CameraJuiceBurstMath.TriangleSigned((phase * 0.31f) + 0.137f + quality * 0.071f),
+                        CameraJuiceBurstMath.TriangleSigned((phase * 0.37f) + 0.719f + quality * 0.113f),
+                        CameraJuiceBurstMath.TriangleSigned((phase * 0.41f) + 0.031f + quality * 0.173f));
                 }
                 float ultraWeight = CameraJuiceBurstMath.Smooth01(math.saturate((quality - 0.65f) * math.rcp(0.35f)));
                 float ultraTapAdmission = CameraJuiceBurstMath.TemporalAdmission01(Sequence, 0xC354U, ultraWeight);
                 if (ultraTapAdmission > 0f)
                 {
                     float3 grit = new float3(
-                        noise.snoise(new float3(phase * 0.83f, 71.411f, quality + 11.7f)),
-                        noise.snoise(new float3(phase * 0.97f, 89.173f, quality + 17.9f)),
-                        noise.snoise(new float3(phase * 1.11f, 101.53f, quality + 23.5f)));
+                        CameraJuiceBurstMath.TriangleSigned((phase * 0.83f) + 0.411f + quality * 0.197f),
+                        CameraJuiceBurstMath.TriangleSigned((phase * 0.97f) + 0.173f + quality * 0.239f),
+                        CameraJuiceBurstMath.TriangleSigned((phase * 1.11f) + 0.530f + quality * 0.293f));
                     high += grit * (ultraWeight * 0.35f);
                 }
                 float3 wave = low + (high * highOctaveGain * octaveWeight);
@@ -1557,6 +1579,7 @@ namespace Hecton8.VFX
                 return error;
             }
 
+#if UNITY_EDITOR
             private static bool TryParseProfileLine(ReadOnlySpan<byte> line, out CameraTraumaProfileDTO profile)
             {
                 profile = default;
@@ -1709,6 +1732,7 @@ namespace Hecton8.VFX
                     end--;
                 return start > end ? ReadOnlySpan<byte>.Empty : token.Slice(start, end - start + 1);
             }
+#endif
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

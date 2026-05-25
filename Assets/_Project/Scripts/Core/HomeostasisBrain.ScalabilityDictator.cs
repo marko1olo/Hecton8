@@ -2084,7 +2084,7 @@ namespace Hecton8.Core
                 thermalIndex = health.ThermalIndex;
             }
 
-            WriteDictatorState(Time.frameCount, frameMs, vramPressure01, thermalIndex, _currentKillSwitchMask);
+            WriteDictatorState(SystemDispatcher.CurrentFrameIndex, frameMs, vramPressure01, thermalIndex, _currentKillSwitchMask);
         }
 
         /// <summary>

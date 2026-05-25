@@ -1,4 +1,4 @@
-using Hecton8.Physics;
+using Hecton8.Core.Contracts;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -268,7 +268,7 @@ namespace Hecton8.Core
         private static void LogProviderCapacityExceeded()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[OceanKinematicsRuntimeService] Provider capacity exceeded. capacity=" + ProviderCapacity);
+            Hecton8.Core.H8Debug.LogError("[OceanKinematicsRuntimeService] Provider capacity exceeded. capacity=" + ProviderCapacity);
 #endif
         }
 

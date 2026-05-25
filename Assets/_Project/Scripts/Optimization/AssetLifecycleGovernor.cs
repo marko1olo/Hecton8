@@ -60,6 +60,11 @@ namespace Hecton8.Optimization
         private static readonly uint _ShaderFallbackWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AssetLifecycleGovernor.ShaderFallback"));
         private static readonly float[] _retryBackoffSeconds = { 5f, 15f, 60f };
 
+        private static float RuntimeNowSeconds()
+        {
+            return (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+        }
+
         [Header("Asset Registry")]
         [Tooltip("Pre-sized residency registry capacity. This is cold-path storage only.")]
         [SerializeField] private int maxRegistryCapacity = 512;
@@ -175,7 +180,7 @@ namespace Hecton8.Optimization
             CacheDependencies();
             EnsureManagedRecordStorage();
             EnsureNativeHandleStorage();
-            _nextHardReaperTime = Time.unscaledTime + HardReaperIntervalSeconds;
+            _nextHardReaperTime = RuntimeNowSeconds() + HardReaperIntervalSeconds;
             _hardReaperUnloadCompletedCallback = HandleHardReaperUnloadCompleted;
 #if UNITY_ADDRESSABLES_EXIST
             _hardReaperCleanBundleCacheCompletedCallback = HandleHardReaperCleanBundleCacheCompleted;
@@ -224,9 +229,9 @@ namespace Hecton8.Optimization
         private void OnValidate()
         {
             if (UnsafeUtility.SizeOf<AssetHandleMapEntryDTO>() != 64)
-                Debug.LogError("[AssetLifecycleGovernor] AssetHandleMapEntryDTO must remain 64 bytes.", this);
+                Hecton8.Core.H8Debug.LogError("[AssetLifecycleGovernor] AssetHandleMapEntryDTO must remain 64 bytes.", this);
             if (UnsafeUtility.SizeOf<AssetTrackerDTO>() != 64)
-                Debug.LogError("[AssetLifecycleGovernor] AssetTrackerDTO must remain 64 bytes.", this);
+                Hecton8.Core.H8Debug.LogError("[AssetLifecycleGovernor] AssetTrackerDTO must remain 64 bytes.", this);
         }
 #endif
 
@@ -271,7 +276,7 @@ namespace Hecton8.Optimization
             _frameSequence = 0L;
             _nextColdReleaseTime = 0f;
             _nextColdTickWarningTime = 0f;
-            _nextHardReaperTime = Time.unscaledTime + HardReaperIntervalSeconds;
+            _nextHardReaperTime = RuntimeNowSeconds() + HardReaperIntervalSeconds;
             TrackedResidentBytes = 0L;
             _orphanedHandlesReleased = 0;
             _cacheHitCount = 0;
@@ -309,7 +314,7 @@ namespace Hecton8.Optimization
             if (!_pendingReleaseOverflowDraining)
             {
                 _pendingReleaseOverflowDraining = true;
-                float panicUntil = Time.unscaledTime + 0.25f;
+                float panicUntil = RuntimeNowSeconds() + 0.25f;
                 _externalVramPanicActive = true;
                 if (_externalVramPanicUntil < panicUntil)
                     _externalVramPanicUntil = panicUntil;
@@ -338,7 +343,7 @@ namespace Hecton8.Optimization
         /// <inheritdoc />
         public void SlowTick()
         {
-            float now = Time.unscaledTime;
+            float now = RuntimeNowSeconds();
             if (now < _nextColdReleaseTime)
                 return;
 
@@ -757,7 +762,7 @@ namespace Hecton8.Optimization
         {
             _mockScreenFadeToBlackActive = active;
             _mockScreenFadeToBlackUntil = active && durationSeconds > 0f
-                ? Time.unscaledTime + durationSeconds
+                ? RuntimeNowSeconds() + durationSeconds
                 : 0f;
         }
 #endif
@@ -766,7 +771,7 @@ namespace Hecton8.Optimization
         {
             _explicitBlindFrameWindowActive = active;
             _explicitBlindFrameWindowUntil = active && durationSeconds > 0f
-                ? Time.unscaledTime + durationSeconds
+                ? RuntimeNowSeconds() + durationSeconds
                 : 0f;
         }
 
@@ -774,7 +779,7 @@ namespace Hecton8.Optimization
         {
             _externalVramPanicActive = active;
             _externalVramPanicUntil = active && durationSeconds > 0f
-                ? Time.unscaledTime + durationSeconds
+                ? RuntimeNowSeconds() + durationSeconds
                 : 0f;
         }
 
@@ -874,7 +879,7 @@ namespace Hecton8.Optimization
 
                 GlobalTelemetryBus.PublishPerformanceWarning(_DoubleReleaseWarningHash, _AssetLifecycleContextHash, key);
 #if UNITY_EDITOR
-                Debug.LogError("[AssetLifecycleGovernor] Double release detected.", this);
+                Hecton8.Core.H8Debug.LogError("[AssetLifecycleGovernor] Double release detected.", this);
 #endif
             }
 
@@ -944,7 +949,7 @@ namespace Hecton8.Optimization
 
         internal void ForceHardMemoryReaperSweep()
         {
-            ExecuteHardMemoryReaper(Time.unscaledTime);
+            ExecuteHardMemoryReaper(RuntimeNowSeconds());
         }
 
         internal void MarkLoadFailed(uint key, string error)
@@ -968,7 +973,7 @@ namespace Hecton8.Optimization
 
             if (record.RetryCount < _retryBackoffSeconds.Length)
             {
-                record.NextRetryTime = Time.unscaledTime + _retryBackoffSeconds[record.RetryCount];
+                record.NextRetryTime = RuntimeNowSeconds() + _retryBackoffSeconds[record.RetryCount];
                 record.RetryCount++;
             }
 
@@ -976,7 +981,7 @@ namespace Hecton8.Optimization
             _assetRecords.Set(key, record);
 
 #if UNITY_EDITOR
-            Debug.LogError("[AssetLifecycleGovernor] Asset load failed.", this);
+            Hecton8.Core.H8Debug.LogError("[AssetLifecycleGovernor] Asset load failed.", this);
 #endif
         }
 
@@ -2858,7 +2863,7 @@ namespace Hecton8.Optimization
         {
             if (_externalVramPanicActive)
             {
-                if (_externalVramPanicUntil <= 0f || Time.unscaledTime <= _externalVramPanicUntil)
+                if (_externalVramPanicUntil <= 0f || RuntimeNowSeconds() <= _externalVramPanicUntil)
                     return true;
 
                 _externalVramPanicActive = false;
@@ -2875,7 +2880,7 @@ namespace Hecton8.Optimization
 
             if (_explicitBlindFrameWindowActive)
             {
-                if (_explicitBlindFrameWindowUntil <= 0f || Time.unscaledTime <= _explicitBlindFrameWindowUntil)
+                if (_explicitBlindFrameWindowUntil <= 0f || RuntimeNowSeconds() <= _explicitBlindFrameWindowUntil)
                     return true;
 
                 _explicitBlindFrameWindowActive = false;
@@ -2884,7 +2889,7 @@ namespace Hecton8.Optimization
 
             if (_mockScreenFadeToBlackActive)
             {
-                if (_mockScreenFadeToBlackUntil <= 0f || Time.unscaledTime <= _mockScreenFadeToBlackUntil)
+                if (_mockScreenFadeToBlackUntil <= 0f || RuntimeNowSeconds() <= _mockScreenFadeToBlackUntil)
                     return true;
 
                 _mockScreenFadeToBlackActive = false;
@@ -3973,7 +3978,7 @@ namespace Hecton8.Optimization
             if (_cachedVramPressure == null)
                 _cachedVramPressure = GlobalRegistry.VRAMPressureReadModel;
             if (_cachedPlayer == null)
-                _cachedPlayer = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _cachedPlayer = GlobalRegistry.Player;
             if (_cachedPlayerInventory == null)
                 _cachedPlayerInventory = GlobalRegistry.PlayerInventory;
             if (_cachedScannerInterferenceUi == null)
@@ -4025,7 +4030,7 @@ namespace Hecton8.Optimization
             if (_assetRecords.Count == 0)
                 return;
 
-            float now = Time.unscaledTime;
+            float now = RuntimeNowSeconds();
             _retryCandidates.Clear();
 
             ManagedAssetRecordTable.Enumerator enumerator = _assetRecords.GetEnumerator();
@@ -4061,7 +4066,7 @@ namespace Hecton8.Optimization
             if (elapsedMilliseconds <= ColdTickWarningMilliseconds)
                 return;
 
-            float now = Time.unscaledTime;
+            float now = RuntimeNowSeconds();
             if (now < _nextColdTickWarningTime)
                 return;
 
@@ -5322,7 +5327,7 @@ namespace Hecton8.Optimization
             }
 
 #if UNITY_EDITOR
-            Debug.LogError("[AssetLifecycleGovernor] Asset key collision.");
+            Hecton8.Core.H8Debug.LogError("[AssetLifecycleGovernor] Asset key collision.");
 #endif
             return false;
         }

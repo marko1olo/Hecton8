@@ -270,7 +270,7 @@ namespace Hecton8.World
                 worldSliceDirector != null)
                 return;
 
-            float now = Time.realtimeSinceStartup;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (now < _nextAutoResolveAttemptTime)
                 return;
 

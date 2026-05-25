@@ -69,6 +69,7 @@ namespace Hecton8.AI.Cognition
         private const uint DumpMagic = 0x5053444Cu;
         private const int DumpVersion = 1;
         private const string AgentDumpFileName = "Dump_PREDATOR_STALK_DIRECTOR.bin";
+        private const string Agent1300DumpFileName = "Dump_1300_AICognition.bin";
 
         /// <summary>
         /// Acquires all persistent buffers required by the stalking solver.
@@ -357,12 +358,15 @@ namespace Hecton8.AI.Cognition
             if (!buffers.TelemetryRing.IsCreated || buffers.TelemetryRing.Length <= 0)
                 return false;
 
-            string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
-            string path = Path.Combine(root, "Docs", "AgentLogs", AgentDumpFileName);
-            string tempPath = path + ".tmp";
+            string path = null;
+            string tempPath = null;
+            string agentTempPath = null;
 
             try
             {
+                string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
+                path = Path.Combine(root, "Docs", "AgentLogs", AgentDumpFileName);
+                tempPath = BuildAlphaLeviathanDumpTempPath(path);
                 string directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
@@ -404,26 +408,37 @@ namespace Hecton8.AI.Cognition
                     }
                 }
 
-                return TryPromoteDump(tempPath, path);
+                if (!TryPromoteDump(tempPath, path))
+                    return false;
+
+                string agentPath = Path.Combine(root, "Docs", "AgentLogs", Agent1300DumpFileName);
+                agentTempPath = BuildAlphaLeviathanDumpTempPath(agentPath);
+                TryDeleteFile(agentTempPath);
+                File.Copy(path, agentTempPath, true);
+                return TryPromoteDump(agentTempPath, agentPath);
             }
             catch (IOException)
             {
                 TryDeleteFile(tempPath);
+                TryDeleteFile(agentTempPath);
                 return false;
             }
             catch (UnauthorizedAccessException)
             {
                 TryDeleteFile(tempPath);
+                TryDeleteFile(agentTempPath);
                 return false;
             }
             catch (ArgumentException)
             {
                 TryDeleteFile(tempPath);
+                TryDeleteFile(agentTempPath);
                 return false;
             }
             catch (NotSupportedException)
             {
                 TryDeleteFile(tempPath);
+                TryDeleteFile(agentTempPath);
                 return false;
             }
         }
@@ -643,6 +658,11 @@ namespace Hecton8.AI.Cognition
                 TryDeleteFile(tempPath);
                 return false;
             }
+        }
+
+        private static string BuildAlphaLeviathanDumpTempPath(string path)
+        {
+            return Path.ChangeExtension(path, ".bin.tmp");
         }
 
         private static void TryDeleteFile(string path)

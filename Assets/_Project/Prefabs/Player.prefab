@@ -136,6 +136,8 @@ GameObject:
   - component: {fileID: 5380700518078914826}
   - component: {fileID: 6846099205482869597}
   - component: {fileID: 3265406370731010970}
+  - component: {fileID: 7348103083027130801}
+  - component: {fileID: 7348103083027130802}
   - component: {fileID: 3941918104802718226}
   m_Layer: 0
   m_Name: Main Camera
@@ -369,6 +371,40 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &7348103083027130801
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2193605564943894971}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: acfd32c0ce821314fbd470b2ff615f5d, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _autoBindToSceneAudioListener: 1
+  _mixIntoExistingAudioGraph: 1
+  _mockQualityBias01: 1
+  _useMockBankWhenFileMissing: 1
+--- !u!114 &7348103083027130802
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2193605564943894971}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 265100ac4b374295a6b78bb7a4753f2e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  _csvRelativePath: Docs/Audio/synth_presets.csv
+  _mockTensionBias01: 0
+  _mockDepthMeters: 900
+  _mockQualityBias01: 1
+  _driverClip: {fileID: 8300000, guid: 0d1a03d1d70c9dd448ad1fbab16de520, type: 3}
+  _autoCreateRuntimeInstance: 1
 --- !u!114 &3941918104802718226
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,0 +1,1853 @@
+﻿{
+    "schema":  "NATIVE_COLLECTION_FIELD_TEXT_SCAN_1302_PASS10_V3",
+    "generatedUtc":  "2026-05-25T18:44:51.2171203Z",
+    "scannedFiles":  30,
+    "hitCount":  230,
+    "transientJobFieldCount":  230,
+    "nonJobOrUnknownCount":  0,
+    "nonJobOrUnknownHits":  [
+
+                            ],
+    "hits":  [
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  14,
+                     "ownerLine":  12,
+                     "owner":  "public struct GenerateMockAsyncReadbackJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cReadbackRequestDTO\u003e Requests;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  29,
+                     "ownerLine":  12,
+                     "owner":  "public struct GenerateMockAsyncReadbackJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction, NoAlias] public NativeArray\u003cReadbackRequestDTO\u003e MockRing;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  30,
+                     "ownerLine":  12,
+                     "owner":  "public struct GenerateMockAsyncReadbackJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction, NoAlias] public NativeArray\u003cReadbackRequestDTO\u003e CompletedRequests;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  31,
+                     "ownerLine":  12,
+                     "owner":  "public struct GenerateMockAsyncReadbackJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction, NoAlias] public NativeArray\u003cAsyncReadbackCounterDTO\u003e Counters;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  104,
+                     "ownerLine":  102,
+                     "owner":  "public struct ApplyDelayedBuoyancyReadbackJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cReadbackRequestDTO\u003e CompletedRequests;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  117,
+                     "ownerLine":  102,
+                     "owner":  "public struct ApplyDelayedBuoyancyReadbackJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction, NoAlias] public NativeArray\u003cReadbackResolvedHeightDTO\u003e ResolvedHeights;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  118,
+                     "ownerLine":  102,
+                     "owner":  "public struct ApplyDelayedBuoyancyReadbackJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction, NoAlias] public NativeArray\u003cReadbackResultStateDTO\u003e ResultStates;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  119,
+                     "ownerLine":  102,
+                     "owner":  "public struct ApplyDelayedBuoyancyReadbackJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction, NoAlias] public NativeArray\u003cAsyncReadbackCounterDTO\u003e Counters;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  239,
+                     "ownerLine":  237,
+                     "owner":  "public struct GenerateMockSimdBenchmarkJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e LocalPositions;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  240,
+                     "ownerLine":  237,
+                     "owner":  "public struct GenerateMockSimdBenchmarkJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e Velocities;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  241,
+                     "ownerLine":  237,
+                     "owner":  "public struct GenerateMockSimdBenchmarkJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cfloat\u003e DragCoefficients;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  296,
+                     "ownerLine":  294,
+                     "owner":  "public struct HydrodynamicStateToSoAJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cBuoyancyStateDTO\u003e States;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  297,
+                     "ownerLine":  294,
+                     "owner":  "public struct HydrodynamicStateToSoAJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e Velocities;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  298,
+                     "ownerLine":  294,
+                     "owner":  "public struct HydrodynamicStateToSoAJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cfloat\u003e DragCoefficients;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  329,
+                     "ownerLine":  327,
+                     "owner":  "public struct HydrodynamicSoAToStateJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cBuoyancyStateDTO\u003e States;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  330,
+                     "ownerLine":  327,
+                     "owner":  "public struct HydrodynamicSoAToStateJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e Velocities;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  355,
+                     "ownerLine":  353,
+                     "owner":  "public struct VectorizedHydrodynamicsJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e LocalPositions;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  356,
+                     "ownerLine":  353,
+                     "owner":  "public struct VectorizedHydrodynamicsJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e Velocities;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  357,
+                     "ownerLine":  353,
+                     "owner":  "public struct VectorizedHydrodynamicsJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cfloat\u003e DragCoefficients;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  358,
+                     "ownerLine":  353,
+                     "owner":  "public struct VectorizedHydrodynamicsJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e OutputForces;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  421,
+                     "ownerLine":  419,
+                     "owner":  "public struct VectorizedHydrodynamicsLane4Job : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e LocalPositions;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  438,
+                     "ownerLine":  419,
+                     "owner":  "public struct VectorizedHydrodynamicsLane4Job : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction, NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e Velocities;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  439,
+                     "ownerLine":  419,
+                     "owner":  "public struct VectorizedHydrodynamicsLane4Job : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cfloat\u003e DragCoefficients;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  455,
+                     "ownerLine":  419,
+                     "owner":  "public struct VectorizedHydrodynamicsLane4Job : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e OutputForces;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  583,
+                     "ownerLine":  581,
+                     "owner":  "public struct ScalarHydrodynamicsReferenceJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e LocalPositions;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  584,
+                     "ownerLine":  581,
+                     "owner":  "public struct ScalarHydrodynamicsReferenceJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e Velocities;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  585,
+                     "ownerLine":  581,
+                     "owner":  "public struct ScalarHydrodynamicsReferenceJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cfloat\u003e DragCoefficients;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  586,
+                     "ownerLine":  581,
+                     "owner":  "public struct ScalarHydrodynamicsReferenceJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e OutputForces;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  649,
+                     "ownerLine":  647,
+                     "owner":  "public struct VectorizedAupLocalizationJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cdouble3\u003e AbsoluteAups;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  650,
+                     "ownerLine":  647,
+                     "owner":  "public struct VectorizedAupLocalizationJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e LocalPositions;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  675,
+                     "ownerLine":  673,
+                     "owner":  "public struct VectorizedSpatialQueryJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e PreyPositions;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  676,
+                     "ownerLine":  673,
+                     "owner":  "public struct VectorizedSpatialQueryJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cint\u003e ValidMask;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  706,
+                     "ownerLine":  704,
+                     "owner":  "public struct VectorizedSpatialQueryLane4Job : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e PreyPositions;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  722,
+                     "ownerLine":  704,
+                     "owner":  "public struct VectorizedSpatialQueryLane4Job : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray\u003cint\u003e ValidMask;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  783,
+                     "ownerLine":  781,
+                     "owner":  "public struct VectorizedFrustumCullJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e Centers;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  784,
+                     "ownerLine":  781,
+                     "owner":  "public struct VectorizedFrustumCullJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e Extents;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  785,
+                     "ownerLine":  781,
+                     "owner":  "public struct VectorizedFrustumCullJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cfloat4\u003e Planes;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  786,
+                     "ownerLine":  781,
+                     "owner":  "public struct VectorizedFrustumCullJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cint\u003e VisibleIndexMask;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  841,
+                     "ownerLine":  839,
+                     "owner":  "public struct VectorizedFrustumCullLane8Job : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e Centers;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  842,
+                     "ownerLine":  839,
+                     "owner":  "public struct VectorizedFrustumCullLane8Job : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSimdFloat3Padded\u003e Extents;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  843,
+                     "ownerLine":  839,
+                     "owner":  "public struct VectorizedFrustumCullLane8Job : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cfloat4\u003e Planes;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  859,
+                     "ownerLine":  839,
+                     "owner":  "public struct VectorizedFrustumCullLane8Job : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NativeDisableParallelForRestriction, NoAlias] public NativeArray\u003cint\u003e VisibleIndexMask;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  1076,
+                     "ownerLine":  1074,
+                     "owner":  "public struct CompactVisibleIndicesJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cint\u003e VisibleIndexMask;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  1077,
+                     "ownerLine":  1074,
+                     "owner":  "public struct CompactVisibleIndicesJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cint\u003e VisibleIndices;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  1078,
+                     "ownerLine":  1074,
+                     "owner":  "public struct CompactVisibleIndicesJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cint\u003e VisibleCount;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  1117,
+                     "ownerLine":  1115,
+                     "owner":  "public struct LocalResourceDeltaJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cfloat\u003e Inputs;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  1118,
+                     "ownerLine":  1115,
+                     "owner":  "public struct LocalResourceDeltaJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cfloat\u003e LocalDeltas;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  1142,
+                     "ownerLine":  1140,
+                     "owner":  "public struct ReduceResourceDeltaJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cfloat\u003e LocalDeltas;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  1143,
+                     "ownerLine":  1140,
+                     "owner":  "public struct ReduceResourceDeltaJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cfloat\u003e Output;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  1168,
+                     "ownerLine":  1166,
+                     "owner":  "public struct RecordSimdTelemetryJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cSimdTelemetryEntry\u003e TelemetryRing;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  1169,
+                     "ownerLine":  1166,
+                     "owner":  "public struct RecordSimdTelemetryJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cint\u003e TelemetryCursor;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1488,
+                     "ownerLine":  1486,
+                     "owner":  "internal struct InitializeAbyssalCavitationBuffersJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cShockwaveEventDTO\u003e Shockwaves;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1489,
+                     "ownerLine":  1486,
+                     "owner":  "internal struct InitializeAbyssalCavitationBuffersJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cShockwaveCounterBlock\u003e Counters;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1490,
+                     "ownerLine":  1486,
+                     "owner":  "internal struct InitializeAbyssalCavitationBuffersJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cShockwaveEntitySnapshotDTO\u003e Entities;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1491,
+                     "ownerLine":  1486,
+                     "owner":  "internal struct InitializeAbyssalCavitationBuffersJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cShockwaveForcePacketDTO\u003e ForcePackets;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1492,
+                     "ownerLine":  1486,
+                     "owner":  "internal struct InitializeAbyssalCavitationBuffersJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cForcePacketDTO\u003e ForceTransportPackets;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1493,
+                     "ownerLine":  1486,
+                     "owner":  "internal struct InitializeAbyssalCavitationBuffersJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cCavitationVisualSphereDTO\u003e Visuals;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1494,
+                     "ownerLine":  1486,
+                     "owner":  "internal struct InitializeAbyssalCavitationBuffersJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cShockwaveTelemetryEntry\u003e Telemetry;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1495,
+                     "ownerLine":  1486,
+                     "owner":  "internal struct InitializeAbyssalCavitationBuffersJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cOrdnanceProfileDTO\u003e Profiles;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1496,
+                     "ownerLine":  1486,
+                     "owner":  "internal struct InitializeAbyssalCavitationBuffersJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cAbyssalCavitationTuningDTO\u003e Tuning;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1497,
+                     "ownerLine":  1486,
+                     "owner":  "internal struct InitializeAbyssalCavitationBuffersJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cAbyssalCavitationSdfVolumeDTO\u003e SdfDescriptors;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1498,
+                     "ownerLine":  1486,
+                     "owner":  "internal struct InitializeAbyssalCavitationBuffersJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003csbyte\u003e SdfVoxels;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1543,
+                     "ownerLine":  1541,
+                     "owner":  "internal struct GenerateMockDetonationsJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cShockwaveEventDTO\u003e Shockwaves;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1544,
+                     "ownerLine":  1541,
+                     "owner":  "internal struct GenerateMockDetonationsJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cShockwaveEntitySnapshotDTO\u003e Entities;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1545,
+                     "ownerLine":  1541,
+                     "owner":  "internal struct GenerateMockDetonationsJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cShockwaveCounterBlock\u003e Counters;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1625,
+                     "ownerLine":  1623,
+                     "owner":  "internal struct GenerateMockSingularityExplosionJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cShockwaveEventDTO\u003e Shockwaves;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1626,
+                     "ownerLine":  1623,
+                     "owner":  "internal struct GenerateMockSingularityExplosionJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cShockwaveEntitySnapshotDTO\u003e Entities;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1627,
+                     "ownerLine":  1623,
+                     "owner":  "internal struct GenerateMockSingularityExplosionJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cShockwaveCounterBlock\u003e Counters;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1628,
+                     "ownerLine":  1623,
+                     "owner":  "internal struct GenerateMockSingularityExplosionJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cShockwaveForcePacketDTO\u003e ForcePackets;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1629,
+                     "ownerLine":  1623,
+                     "owner":  "internal struct GenerateMockSingularityExplosionJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cForcePacketDTO\u003e TransportPackets;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1693,
+                     "ownerLine":  1691,
+                     "owner":  "internal struct PropagateShockwavesJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cShockwaveEventDTO\u003e Shockwaves;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1733,
+                     "ownerLine":  1731,
+                     "owner":  "internal struct CompactShockwavesJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cShockwaveEventDTO\u003e Shockwaves;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1734,
+                     "ownerLine":  1731,
+                     "owner":  "internal struct CompactShockwavesJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cShockwaveCounterBlock\u003e Counters;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1782,
+                     "ownerLine":  1780,
+                     "owner":  "internal struct EvaluateSanitizedShockwaveJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cShockwaveEventDTO\u003e Shockwaves;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1783,
+                     "ownerLine":  1780,
+                     "owner":  "internal struct EvaluateSanitizedShockwaveJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cShockwaveCounterBlock\u003e Counters;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1784,
+                     "ownerLine":  1780,
+                     "owner":  "internal struct EvaluateSanitizedShockwaveJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cShockwaveEntitySnapshotDTO\u003e Entities;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1785,
+                     "ownerLine":  1780,
+                     "owner":  "internal struct EvaluateSanitizedShockwaveJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cShockwaveForcePacketDTO\u003e ForcePackets;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1786,
+                     "ownerLine":  1780,
+                     "owner":  "internal struct EvaluateSanitizedShockwaveJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cForcePacketDTO\u003e TransportPackets;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1787,
+                     "ownerLine":  1780,
+                     "owner":  "internal struct EvaluateSanitizedShockwaveJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003csbyte\u003e SdfVoxels;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  2146,
+                     "ownerLine":  2144,
+                     "owner":  "internal struct UpdateCavityShaderParamsJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cShockwaveEventDTO\u003e Shockwaves;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  2147,
+                     "ownerLine":  2144,
+                     "owner":  "internal struct UpdateCavityShaderParamsJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cShockwaveCounterBlock\u003e Counters;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  2148,
+                     "ownerLine":  2144,
+                     "owner":  "internal struct UpdateCavityShaderParamsJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cCavitationVisualSphereDTO\u003e Visuals;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  2223,
+                     "ownerLine":  2221,
+                     "owner":  "internal struct RecordShockwaveTelemetryJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cShockwaveEventDTO\u003e Shockwaves;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  2224,
+                     "ownerLine":  2221,
+                     "owner":  "internal struct RecordShockwaveTelemetryJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cShockwaveCounterBlock\u003e Counters;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  2225,
+                     "ownerLine":  2221,
+                     "owner":  "internal struct RecordShockwaveTelemetryJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cShockwaveForcePacketDTO\u003e ForcePackets;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  2226,
+                     "ownerLine":  2221,
+                     "owner":  "internal struct RecordShockwaveTelemetryJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cShockwaveTelemetryEntry\u003e Telemetry;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/FluidImpulseJob.cs",
+                     "line":  16,
+                     "ownerLine":  12,
+                     "owner":  "public struct FluidImpulseJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cfloat4\u003e ImpulseField;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/FluidImpulseJob.cs",
+                     "line":  17,
+                     "ownerLine":  12,
+                     "owner":  "public struct FluidImpulseJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cint\u003e ImpulseStats;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  110,
+                     "ownerLine":  98,
+                     "owner":  "public unsafe struct FluidCompartmentClearJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cfloat3\u003e LocalCentroids;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  111,
+                     "ownerLine":  98,
+                     "owner":  "public unsafe struct FluidCompartmentClearJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cFluidWaterlineShaderDTO\u003e Waterlines;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  251,
+                     "ownerLine":  222,
+                     "owner":  "public unsafe struct FluidIngressJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction] public NativeArray\u003cint\u003e IncursionWriterBudget;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  369,
+                     "ownerLine":  356,
+                     "owner":  "public unsafe struct FluidBfsPressureEqualizationJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias, ReadOnly] public NativeArray\u003cint\u003e EdgeOffsets;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  370,
+                     "ownerLine":  356,
+                     "owner":  "public unsafe struct FluidBfsPressureEqualizationJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias, ReadOnly] public NativeArray\u003cint\u003e EdgeDestinations;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  371,
+                     "ownerLine":  356,
+                     "owner":  "public unsafe struct FluidBfsPressureEqualizationJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias, ReadOnly] public NativeArray\u003cbyte\u003e EdgeFlags;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  372,
+                     "ownerLine":  356,
+                     "owner":  "public unsafe struct FluidBfsPressureEqualizationJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias, ReadOnly] public NativeArray\u003cfloat\u003e EdgeConductivity;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  373,
+                     "ownerLine":  356,
+                     "owner":  "public unsafe struct FluidBfsPressureEqualizationJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cint\u003e BfsQueue;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  374,
+                     "ownerLine":  356,
+                     "owner":  "public unsafe struct FluidBfsPressureEqualizationJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cbyte\u003e BfsVisited;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  375,
+                     "ownerLine":  356,
+                     "owner":  "public unsafe struct FluidBfsPressureEqualizationJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cfloat\u003e DeltaVolumes;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  376,
+                     "ownerLine":  356,
+                     "owner":  "public unsafe struct FluidBfsPressureEqualizationJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cfloat\u003e TransferRemainders;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  384,
+                     "ownerLine":  356,
+                     "owner":  "public unsafe struct FluidBfsPressureEqualizationJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cFluidIncursionFrameSummaryDTO\u003e Summary;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  715,
+                     "ownerLine":  703,
+                     "owner":  "public unsafe struct FluidWaterlineMassSummaryJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias, ReadOnly] public NativeArray\u003cfloat3\u003e LocalCentroids;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  716,
+                     "ownerLine":  703,
+                     "owner":  "public unsafe struct FluidWaterlineMassSummaryJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cFluidWaterlineShaderDTO\u003e Waterlines;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  717,
+                     "ownerLine":  703,
+                     "owner":  "public unsafe struct FluidWaterlineMassSummaryJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cFluidCompartmentTelemetryDTO\u003e CompartmentTelemetry;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  718,
+                     "ownerLine":  703,
+                     "owner":  "public unsafe struct FluidWaterlineMassSummaryJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cFluidMassStateDTO\u003e MassState;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  719,
+                     "ownerLine":  703,
+                     "owner":  "public unsafe struct FluidWaterlineMassSummaryJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cFluidIncursionFrameSummaryDTO\u003e Summary;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  870,
+                     "ownerLine":  868,
+                     "owner":  "public struct FluidTelemetryRecorderJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias, ReadOnly] public NativeArray\u003cFluidIncursionFrameSummaryDTO\u003e Summary;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  871,
+                     "ownerLine":  868,
+                     "owner":  "public struct FluidTelemetryRecorderJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cFluidIncursionTelemetryEntry\u003e TelemetryRing;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  872,
+                     "ownerLine":  868,
+                     "owner":  "public struct FluidTelemetryRecorderJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cint\u003e TelemetryCursor;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  608,
+                     "ownerLine":  606,
+                     "owner":  "public struct GenerateMockMovementInputJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cHydrodynamicKccInputDTO\u003e Inputs;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  666,
+                     "ownerLine":  653,
+                     "owner":  "public struct GenerateMockMovementInputQueueJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeQueue\u003cHydrodynamicKccInputDTO\u003e.ParallelWriter InputWriter;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  667,
+                     "ownerLine":  653,
+                     "owner":  "public struct GenerateMockMovementInputQueueJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction] public NativeArray\u003cint\u003e InputWriterBudget;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  775,
+                     "ownerLine":  773,
+                     "owner":  "public struct ClearKccFaultFlagsJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cHydrodynamicKccFaultFlagDTO\u003e FaultFlags;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  786,
+                     "ownerLine":  784,
+                     "owner":  "public struct ClearKccInputBufferJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cHydrodynamicKccInputDTO\u003e Inputs;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  797,
+                     "ownerLine":  795,
+                     "owner":  "public struct SanitizeKccInputBufferJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cHydrodynamicKccInputDTO\u003e Inputs;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  843,
+                     "ownerLine":  841,
+                     "owner":  "public struct GenerateMockEnvironmentalForcesJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cfloat3\u003e FlowField;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  844,
+                     "ownerLine":  841,
+                     "owner":  "public struct GenerateMockEnvironmentalForcesJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cfloat\u003e SdfDistances;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  845,
+                     "ownerLine":  841,
+                     "owner":  "public struct GenerateMockEnvironmentalForcesJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cMetabolicStateDTO\u003e MockMetabolism;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  927,
+                     "ownerLine":  911,
+                     "owner":  "public unsafe struct ApplyEnvironmentalForcesJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction, NoAlias] public NativeArray\u003cKinematicStateDTO\u003e States;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  928,
+                     "ownerLine":  911,
+                     "owner":  "public unsafe struct ApplyEnvironmentalForcesJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cHydrodynamicKccInputDTO\u003e Inputs;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  929,
+                     "ownerLine":  911,
+                     "owner":  "public unsafe struct ApplyEnvironmentalForcesJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cKccEnvironmentProfileDTO\u003e EnvironmentProfiles;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  930,
+                     "ownerLine":  911,
+                     "owner":  "public unsafe struct ApplyEnvironmentalForcesJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cKccEnvironmentGridDTO\u003e EnvironmentGrids;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  931,
+                     "ownerLine":  911,
+                     "owner":  "public unsafe struct ApplyEnvironmentalForcesJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cfloat3\u003e FlowField;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  932,
+                     "ownerLine":  911,
+                     "owner":  "public unsafe struct ApplyEnvironmentalForcesJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cfloat\u003e SdfDistances;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  933,
+                     "ownerLine":  911,
+                     "owner":  "public unsafe struct ApplyEnvironmentalForcesJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cMetabolicStateDTO\u003e MetabolismStates;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  934,
+                     "ownerLine":  911,
+                     "owner":  "public unsafe struct ApplyEnvironmentalForcesJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cfloat3\u003e ProposedVelocities;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  935,
+                     "ownerLine":  911,
+                     "owner":  "public unsafe struct ApplyEnvironmentalForcesJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cHydrodynamicWakePacketDTO\u003e WakePackets;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  936,
+                     "ownerLine":  911,
+                     "owner":  "public unsafe struct ApplyEnvironmentalForcesJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cKccEnvironmentDebugOutputDTO\u003e EnvironmentDebugOutputs;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  937,
+                     "ownerLine":  911,
+                     "owner":  "public unsafe struct ApplyEnvironmentalForcesJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction, NoAlias] public NativeArray\u003cHydrodynamicKccFaultFlagDTO\u003e FaultFlags;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1443,
+                     "ownerLine":  1441,
+                     "owner":  "public struct BuildSdfCollisionHitsJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cKinematicStateDTO\u003e States;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1444,
+                     "ownerLine":  1441,
+                     "owner":  "public struct BuildSdfCollisionHitsJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cfloat3\u003e ProposedVelocities;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1445,
+                     "ownerLine":  1441,
+                     "owner":  "public struct BuildSdfCollisionHitsJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cKccEnvironmentGridDTO\u003e EnvironmentGrids;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1446,
+                     "ownerLine":  1441,
+                     "owner":  "public struct BuildSdfCollisionHitsJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cfloat\u003e SdfDistances;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1447,
+                     "ownerLine":  1441,
+                     "owner":  "public struct BuildSdfCollisionHitsJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cHydrodynamicKccCollisionHitDTO\u003e Hits;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1697,
+                     "ownerLine":  1695,
+                     "owner":  "public struct EvaluateSlopeFrictionJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cfloat3\u003e ProposedVelocities;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1698,
+                     "ownerLine":  1695,
+                     "owner":  "public struct EvaluateSlopeFrictionJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cHydrodynamicKccCollisionHitDTO\u003e CollisionHits;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1699,
+                     "ownerLine":  1695,
+                     "owner":  "public struct EvaluateSlopeFrictionJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cKccEnvironmentProfileDTO\u003e EnvironmentProfiles;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1700,
+                     "ownerLine":  1695,
+                     "owner":  "public struct EvaluateSlopeFrictionJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cKccEnvironmentDebugOutputDTO\u003e EnvironmentDebugOutputs;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1712,
+                     "ownerLine":  1695,
+                     "owner":  "public struct EvaluateSlopeFrictionJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction, NoAlias] public NativeArray\u003cHydrodynamicKccFaultFlagDTO\u003e FaultFlags;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1855,
+                     "ownerLine":  1841,
+                     "owner":  "public unsafe struct KinematicResolutionJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction, NoAlias] public NativeArray\u003cKinematicStateDTO\u003e States;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1856,
+                     "ownerLine":  1841,
+                     "owner":  "public unsafe struct KinematicResolutionJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cdouble3\u003e PreviousAup;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1857,
+                     "ownerLine":  1841,
+                     "owner":  "public unsafe struct KinematicResolutionJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cfloat3\u003e ProposedVelocities;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1858,
+                     "ownerLine":  1841,
+                     "owner":  "public unsafe struct KinematicResolutionJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cHydrodynamicKccCollisionHitDTO\u003e CollisionHits;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1859,
+                     "ownerLine":  1841,
+                     "owner":  "public unsafe struct KinematicResolutionJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cHydrodynamicKccDebugOutputDTO\u003e DebugOutputs;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1860,
+                     "ownerLine":  1841,
+                     "owner":  "public unsafe struct KinematicResolutionJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction, NoAlias] public NativeArray\u003cHydrodynamicKccFaultFlagDTO\u003e FaultFlags;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2038,
+                     "ownerLine":  2036,
+                     "owner":  "public struct KinematicTelemetryAggregateJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cKinematicStateDTO\u003e States;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2039,
+                     "ownerLine":  2036,
+                     "owner":  "public struct KinematicTelemetryAggregateJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cHydrodynamicKccDebugOutputDTO\u003e DebugOutputs;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2040,
+                     "ownerLine":  2036,
+                     "owner":  "public struct KinematicTelemetryAggregateJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cHydrodynamicKccFaultFlagDTO\u003e FaultFlags;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2041,
+                     "ownerLine":  2036,
+                     "owner":  "public struct KinematicTelemetryAggregateJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cKinematicTelemetryEntry\u003e TelemetryRing;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2042,
+                     "ownerLine":  2036,
+                     "owner":  "public struct KinematicTelemetryAggregateJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cint\u003e TelemetryCursor;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2112,
+                     "ownerLine":  2110,
+                     "owner":  "public struct KccEnvironmentTelemetryAggregateJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cKinematicStateDTO\u003e States;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2113,
+                     "ownerLine":  2110,
+                     "owner":  "public struct KccEnvironmentTelemetryAggregateJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cKccEnvironmentDebugOutputDTO\u003e EnvironmentDebugOutputs;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2114,
+                     "ownerLine":  2110,
+                     "owner":  "public struct KccEnvironmentTelemetryAggregateJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cHydrodynamicKccFaultFlagDTO\u003e FaultFlags;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2115,
+                     "ownerLine":  2110,
+                     "owner":  "public struct KccEnvironmentTelemetryAggregateJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cKccEnvironmentTelemetryEntry\u003e TelemetryRing;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2116,
+                     "ownerLine":  2110,
+                     "owner":  "public struct KccEnvironmentTelemetryAggregateJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cint\u003e TelemetryCursor;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2182,
+                     "ownerLine":  2180,
+                     "owner":  "public struct KinematicVisualSyncJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cKinematicStateDTO\u003e States;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2183,
+                     "ownerLine":  2180,
+                     "owner":  "public struct KinematicVisualSyncJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cdouble3\u003e PreviousAup;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2184,
+                     "ownerLine":  2180,
+                     "owner":  "public struct KinematicVisualSyncJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cHydrodynamicKccVisualOutputDTO\u003e VisualOutputs;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2222,
+                     "ownerLine":  2220,
+                     "owner":  "public unsafe struct KinematicRollbackFenceJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cKinematicStateDTO\u003e States;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2235,
+                     "ownerLine":  2220,
+                     "owner":  "public unsafe struct KinematicRollbackFenceJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction, NoAlias] public NativeArray\u003cbyte\u003e RollbackBytes;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2254,
+                     "ownerLine":  2252,
+                     "owner":  "public struct EmitWakeSignalsJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cHydrodynamicWakePacketDTO\u003e WakePackets;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2255,
+                     "ownerLine":  2252,
+                     "owner":  "public struct EmitWakeSignalsJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction, NoAlias] public NativeArray\u003cHydrodynamicKccFaultFlagDTO\u003e FaultFlags;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2269,
+                     "ownerLine":  2252,
+                     "owner":  "public struct EmitWakeSignalsJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction] public NativeArray\u003cint\u003e WakeWriterBudget;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  29,
+                     "ownerLine":  27,
+                     "owner":  "public struct InitializeSeaglideColdBuffersJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cSeaglideFlowSampleDTO\u003e FlowSamples;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  30,
+                     "ownerLine":  27,
+                     "owner":  "public struct InitializeSeaglideColdBuffersJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cSeaglideTelemetryEntry\u003e TelemetryRing;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  31,
+                     "ownerLine":  27,
+                     "owner":  "public struct InitializeSeaglideColdBuffersJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cint\u003e TelemetryCursor;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  32,
+                     "ownerLine":  27,
+                     "owner":  "public struct InitializeSeaglideColdBuffersJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cSeaglideCounterDTO\u003e Counters;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  33,
+                     "ownerLine":  27,
+                     "owner":  "public struct InitializeSeaglideColdBuffersJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cSeaglideBodyBindingDTO\u003e BodyBindings;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  34,
+                     "ownerLine":  27,
+                     "owner":  "public struct InitializeSeaglideColdBuffersJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cSeaglideVisualStateDTO\u003e VisualStates;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  35,
+                     "ownerLine":  27,
+                     "owner":  "public struct InitializeSeaglideColdBuffersJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cSeaglideAudioSignalDTO\u003e AudioSignals;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  36,
+                     "ownerLine":  27,
+                     "owner":  "public struct InitializeSeaglideColdBuffersJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cSeaglideCavitationVfxSignalDTO\u003e CavitationSignals;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  70,
+                     "ownerLine":  62,
+                     "owner":  "public struct GenerateMockSeaglidePropulsionDataJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSeaglideStateDTO\u003e States;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  71,
+                     "ownerLine":  62,
+                     "owner":  "public struct GenerateMockSeaglidePropulsionDataJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSeaglidePropulsionRequestDTO\u003e Requests;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  165,
+                     "ownerLine":  157,
+                     "owner":  "public struct CalculateSeaglideThrustJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSeaglideStateDTO\u003e States;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  166,
+                     "ownerLine":  157,
+                     "owner":  "public struct CalculateSeaglideThrustJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSeaglidePropulsionRequestDTO\u003e Requests;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  167,
+                     "ownerLine":  157,
+                     "owner":  "public struct CalculateSeaglideThrustJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSeaglideFlowSampleDTO\u003e FlowSamples;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  168,
+                     "ownerLine":  157,
+                     "owner":  "public struct CalculateSeaglideThrustJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSeaglideTuningDTO\u003e Tuning;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  169,
+                     "ownerLine":  157,
+                     "owner":  "public struct CalculateSeaglideThrustJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cSeaglideForcePacketDTO\u003e ForcePackets;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  170,
+                     "ownerLine":  157,
+                     "owner":  "public struct CalculateSeaglideThrustJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cSeaglideVisualStateDTO\u003e VisualStates;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  171,
+                     "ownerLine":  157,
+                     "owner":  "public struct CalculateSeaglideThrustJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cSeaglideCavitationVfxSignalDTO\u003e CavitationSignals;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  443,
+                     "ownerLine":  435,
+                     "owner":  "public struct ProcessSeaglideMetabolismJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSeaglideStateDTO\u003e States;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  444,
+                     "ownerLine":  435,
+                     "owner":  "public struct ProcessSeaglideMetabolismJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSeaglideForcePacketDTO\u003e ForcePackets;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  445,
+                     "ownerLine":  435,
+                     "owner":  "public struct ProcessSeaglideMetabolismJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSeaglideTuningDTO\u003e Tuning;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  471,
+                     "ownerLine":  469,
+                     "owner":  "public struct CalculateSeaglideAudioParametersJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSeaglidePropulsionRequestDTO\u003e Requests;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  472,
+                     "ownerLine":  469,
+                     "owner":  "public struct CalculateSeaglideAudioParametersJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSeaglideForcePacketDTO\u003e ForcePackets;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  473,
+                     "ownerLine":  469,
+                     "owner":  "public struct CalculateSeaglideAudioParametersJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSeaglideTuningDTO\u003e Tuning;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  480,
+                     "ownerLine":  469,
+                     "owner":  "public struct CalculateSeaglideAudioParametersJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[WriteOnly, NoAlias] public NativeArray\u003cSeaglideAudioSignalDTO\u003e AudioSignals;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  523,
+                     "ownerLine":  521,
+                     "owner":  "public struct ReduceSeaglideTelemetryJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSeaglideForcePacketDTO\u003e ForcePackets;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  524,
+                     "ownerLine":  521,
+                     "owner":  "public struct ReduceSeaglideTelemetryJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSeaglideStateDTO\u003e States;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  525,
+                     "ownerLine":  521,
+                     "owner":  "public struct ReduceSeaglideTelemetryJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSeaglideCounterDTO\u003e Counters;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  526,
+                     "ownerLine":  521,
+                     "owner":  "public struct ReduceSeaglideTelemetryJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSeaglideTelemetryEntry\u003e TelemetryRing;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  527,
+                     "ownerLine":  521,
+                     "owner":  "public struct ReduceSeaglideTelemetryJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cint\u003e TelemetryCursor;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                     "line":  412,
+                     "ownerLine":  410,
+                     "owner":  "public struct GenerateMockFluidDisplacementJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSubmarineBallastFluidSampleDTO\u003e FluidSamples;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                     "line":  449,
+                     "ownerLine":  447,
+                     "owner":  "public unsafe struct EvaluateBallastTanksJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias, NativeDisableParallelForRestriction] public NativeArray\u003cBallastTankDTO\u003e Tanks;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                     "line":  450,
+                     "ownerLine":  447,
+                     "owner":  "public unsafe struct EvaluateBallastTanksJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cBallastTankCommandDTO\u003e Commands;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                     "line":  451,
+                     "ownerLine":  447,
+                     "owner":  "public unsafe struct EvaluateBallastTanksJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSubmarineBallastFluidSampleDTO\u003e FluidSamples;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                     "line":  464,
+                     "ownerLine":  447,
+                     "owner":  "public unsafe struct EvaluateBallastTanksJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction] public NativeArray\u003cint\u003e AcousticWriterBudget;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                     "line":  562,
+                     "ownerLine":  560,
+                     "owner":  "public unsafe struct CalculateBuoyancyForceJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cBallastTankDTO\u003e Tanks;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                     "line":  563,
+                     "ownerLine":  560,
+                     "owner":  "public unsafe struct CalculateBuoyancyForceJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSubmarineBallastFluidSampleDTO\u003e FluidSamples;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                     "line":  564,
+                     "ownerLine":  560,
+                     "owner":  "public unsafe struct CalculateBuoyancyForceJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSubmarineBallastForcePacketDTO\u003e ForcePackets;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                     "line":  565,
+                     "ownerLine":  560,
+                     "owner":  "public unsafe struct CalculateBuoyancyForceJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias, NativeDisableParallelForRestriction] public NativeArray\u003cSubmarineBallastTelemetryEntry\u003e TelemetryRing;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1290,
+                     "ownerLine":  1288,
+                     "owner":  "public struct CalculateAddedMassTensorJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSubmarineKinematicState\u003e States;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1291,
+                     "ownerLine":  1288,
+                     "owner":  "public struct CalculateAddedMassTensorJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSubmarineMassProperties\u003e MassProperties;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1292,
+                     "ownerLine":  1288,
+                     "owner":  "public struct CalculateAddedMassTensorJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSubmarineKinematicConfig\u003e Configs;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1293,
+                     "ownerLine":  1288,
+                     "owner":  "public struct CalculateAddedMassTensorJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSubmarineHullProfileDTO\u003e HullProfiles;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1294,
+                     "ownerLine":  1288,
+                     "owner":  "public struct CalculateAddedMassTensorJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSubmarineAddedMassTuningDTO\u003e Tuning;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1295,
+                     "ownerLine":  1288,
+                     "owner":  "public struct CalculateAddedMassTensorJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cAddedMassProfileDTO\u003e AddedMassProfiles;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1296,
+                     "ownerLine":  1288,
+                     "owner":  "public struct CalculateAddedMassTensorJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSubmarineHydrodynamicsTelemetry\u003e HydrodynamicsTelemetry;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1472,
+                     "ownerLine":  1470,
+                     "owner":  "public struct ApplyTensorAccelerationJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSubmarineKinematicState\u003e States;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1473,
+                     "ownerLine":  1470,
+                     "owner":  "public struct ApplyTensorAccelerationJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSubmarineForceAccumulator\u003e Forces;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1474,
+                     "ownerLine":  1470,
+                     "owner":  "public struct ApplyTensorAccelerationJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cAddedMassProfileDTO\u003e AddedMassProfiles;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1475,
+                     "ownerLine":  1470,
+                     "owner":  "public struct ApplyTensorAccelerationJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSubmarineAddedMassTuningDTO\u003e Tuning;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1507,
+                     "ownerLine":  1505,
+                     "owner":  "public struct ApplyHydrodynamicDampingJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSubmarineKinematicState\u003e States;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1508,
+                     "ownerLine":  1505,
+                     "owner":  "public struct ApplyHydrodynamicDampingJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cAddedMassProfileDTO\u003e AddedMassProfiles;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1509,
+                     "ownerLine":  1505,
+                     "owner":  "public struct ApplyHydrodynamicDampingJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSubmarineAddedMassTuningDTO\u003e Tuning;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1537,
+                     "ownerLine":  1535,
+                     "owner":  "public struct GenerateMockAddedMassJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cAddedMassProfileDTO\u003e AddedMassProfiles;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1538,
+                     "ownerLine":  1535,
+                     "owner":  "public struct GenerateMockAddedMassJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSubmarineForceAccumulator\u003e Forces;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1571,
+                     "ownerLine":  1569,
+                     "owner":  "public struct Submarine6DIntegratorJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSubmarineKinematicState\u003e States;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1572,
+                     "ownerLine":  1569,
+                     "owner":  "public struct Submarine6DIntegratorJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSubmarineKinematicControl\u003e Controls;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1573,
+                     "ownerLine":  1569,
+                     "owner":  "public struct Submarine6DIntegratorJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSubmarinePidState\u003e PidStates;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1574,
+                     "ownerLine":  1569,
+                     "owner":  "public struct Submarine6DIntegratorJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSubmarineMassProperties\u003e MassProperties;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1575,
+                     "ownerLine":  1569,
+                     "owner":  "public struct Submarine6DIntegratorJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSubmarineForceAccumulator\u003e Forces;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1576,
+                     "ownerLine":  1569,
+                     "owner":  "public struct Submarine6DIntegratorJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cSubmarineKinematicTelemetry\u003e Telemetry;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1577,
+                     "ownerLine":  1569,
+                     "owner":  "public struct Submarine6DIntegratorJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cAddedMassProfileDTO\u003e AddedMassProfiles;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1578,
+                     "ownerLine":  1569,
+                     "owner":  "public struct Submarine6DIntegratorJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSubmarineAddedMassTuningDTO\u003e Tuning;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1579,
+                     "ownerLine":  1569,
+                     "owner":  "public struct Submarine6DIntegratorJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cSubmarineKinematicConfig\u003e Configs;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1580,
+                     "ownerLine":  1569,
+                     "owner":  "public struct Submarine6DIntegratorJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[ReadOnly, NoAlias] public NativeArray\u003cfloat\u003e DragLut;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1599,
+                     "ownerLine":  1569,
+                     "owner":  "public struct Submarine6DIntegratorJob : IJobParallelFor",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction] public NativeArray\u003cint\u003e CavitationWriterBudget;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                     "line":  452,
+                     "ownerLine":  439,
+                     "owner":  "public unsafe struct EvaluateVehicleSystemsJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cVehicleDamageTelemetryEntry\u003e Telemetry;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                     "line":  453,
+                     "ownerLine":  439,
+                     "owner":  "public unsafe struct EvaluateVehicleSystemsJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NoAlias] public NativeArray\u003cuint\u003e TelemetryCursor;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                     "line":  472,
+                     "ownerLine":  439,
+                     "owner":  "public unsafe struct EvaluateVehicleSystemsJob : IJob",
+                     "classification":  "transient_job_field",
+                     "text":  "[NativeDisableParallelForRestriction] public NativeArray\u003cint\u003e HazardWriterBudget;"
+                 }
+             ]
+}

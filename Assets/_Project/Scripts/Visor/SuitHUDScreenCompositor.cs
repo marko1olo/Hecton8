@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.UI;
 using Unity.Mathematics;
@@ -14,9 +13,10 @@ namespace NASAPunk.Visor
     [AddComponentMenu("Hecton8/HUD/Suit HUD Screen Compositor")]
     public sealed class SuitHUDScreenCompositor : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
-        private static readonly List<SuitHUDScreenCompositor> s_activeCompositors = new List<SuitHUDScreenCompositor>(2);
-        private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
-        private static readonly List<VisorHUDController> s_controllerResolveBuffer = new List<VisorHUDController>(2);
+        private const int MaxActiveCompositors = 2;
+        private static SuitHUDScreenCompositor s_activeCompositor0;
+        private static SuitHUDScreenCompositor s_activeCompositor1;
+        private static int s_activeCompositorCount;
         private const float AutoResolveRetryInterval = 1f;
 
         [Header("References")]
@@ -55,22 +55,7 @@ namespace NASAPunk.Visor
         private bool _pendingRefresh = true;
         private string _appliedOverlayName;
 
-        public static void CopyActiveCompositorsTo(List<SuitHUDScreenCompositor> results)
-        {
-            if (results == null)
-                return;
-
-            results.Clear();
-            for (int i = 0; i < s_activeCompositors.Count; i++)
-            {
-                if (results.Count >= results.Capacity)
-                    break;
-
-                SuitHUDScreenCompositor compositor = s_activeCompositors[i];
-                if (compositor != null && compositor.isActiveAndEnabled)
-                    results.Add(compositor);
-            }
-        }
+        internal static int ActiveCompositorCount => s_activeCompositorCount;
 
         private void OnEnable()
         {
@@ -182,7 +167,9 @@ namespace NASAPunk.Visor
             if (!force && !NeedsAutoResolve())
                 return;
 
-            float now = Time.realtimeSinceStartup;
+            float now = Application.isPlaying
+                ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds
+                : ResolveEditorPreviewClockSeconds();
             if (!force && now < _nextAutoResolveAt)
                 return;
 
@@ -191,11 +178,10 @@ namespace NASAPunk.Visor
 
             if (targetCanvas == null)
             {
-                SuitHUDV4CanvasOverlay.CopyActiveOverlaysTo(s_overlayResolveBuffer);
                 Transform root = transform.root;
-                for (int i = 0; i < s_overlayResolveBuffer.Count; i++)
+                for (int i = 0; i < SuitHUDV4CanvasOverlay.ActiveOverlayCount; i++)
                 {
-                    SuitHUDV4CanvasOverlay overlay = s_overlayResolveBuffer[i];
+                    SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.GetActiveOverlay(i);
                     Canvas candidateCanvas = overlay != null ? overlay.TargetCanvas : null;
                     if (candidateCanvas == null || candidateCanvas.transform.root != root)
                         continue;
@@ -209,9 +195,9 @@ namespace NASAPunk.Visor
 
                 if (targetCanvas == null)
                 {
-                    for (int i = 0; i < s_overlayResolveBuffer.Count; i++)
+                    for (int i = 0; i < SuitHUDV4CanvasOverlay.ActiveOverlayCount; i++)
                     {
-                        SuitHUDV4CanvasOverlay overlay = s_overlayResolveBuffer[i];
+                        SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.GetActiveOverlay(i);
                         Canvas candidateCanvas = overlay != null ? overlay.TargetCanvas : null;
                         if (candidateCanvas != null &&
                             (!allowHierarchySearch || candidateCanvas.name == "Suit_HUD_Canvas"))
@@ -221,8 +207,6 @@ namespace NASAPunk.Visor
                         }
                     }
                 }
-
-                s_overlayResolveBuffer.Clear();
             }
 
             if (visorController == null)
@@ -240,11 +224,10 @@ namespace NASAPunk.Visor
 
                 if (visorController == null)
                 {
-                    VisorHUDController.CopyActiveControllersTo(s_controllerResolveBuffer);
                     Transform root = transform.root;
-                    for (int i = 0; i < s_controllerResolveBuffer.Count; i++)
+                    for (int i = 0; i < VisorHUDController.ActiveControllerCount; i++)
                     {
-                        VisorHUDController controller = s_controllerResolveBuffer[i];
+                        VisorHUDController controller = VisorHUDController.GetActiveController(i);
                         if (controller != null && controller.transform.root == root)
                         {
                             visorController = controller;
@@ -252,10 +235,8 @@ namespace NASAPunk.Visor
                         }
                     }
 
-                    if (visorController == null && s_controllerResolveBuffer.Count > 0)
-                        visorController = s_controllerResolveBuffer[0];
-
-                    s_controllerResolveBuffer.Clear();
+                    if (visorController == null && VisorHUDController.ActiveControllerCount > 0)
+                        visorController = VisorHUDController.GetActiveController(0);
                 }
             }
 
@@ -268,6 +249,11 @@ namespace NASAPunk.Visor
             return targetCanvas == null ||
                    visorController == null ||
                    sharedProjectionTexture == null;
+        }
+
+        private static float ResolveEditorPreviewClockSeconds()
+        {
+            return (float)(System.Diagnostics.Stopwatch.GetTimestamp() / (double)System.Diagnostics.Stopwatch.Frequency);
         }
 
         private void EnsureCanvasState()
@@ -607,15 +593,55 @@ namespace NASAPunk.Visor
 
         private void RegisterActiveCompositor()
         {
-            if (s_activeCompositors.Contains(this))
+            for (int i = 0; i < s_activeCompositorCount; i++)
+            {
+                if (ReferenceEquals(GetActiveCompositor(i), this))
+                    return;
+            }
+
+            if (s_activeCompositorCount >= MaxActiveCompositors)
                 return;
 
-            s_activeCompositors.Add(this);
+            SetActiveCompositorSlot(s_activeCompositorCount, this);
+            s_activeCompositorCount++;
         }
 
         private void UnregisterActiveCompositor()
         {
-            s_activeCompositors.Remove(this);
+            for (int i = 0; i < s_activeCompositorCount; i++)
+            {
+                if (!ReferenceEquals(GetActiveCompositor(i), this))
+                    continue;
+
+                int lastIndex = s_activeCompositorCount - 1;
+                SetActiveCompositorSlot(i, GetActiveCompositor(lastIndex));
+                SetActiveCompositorSlot(lastIndex, null);
+                s_activeCompositorCount = lastIndex;
+                return;
+            }
+        }
+
+        internal static SuitHUDScreenCompositor GetActiveCompositor(int index)
+        {
+            switch (index)
+            {
+                case 0: return s_activeCompositor0;
+                case 1: return s_activeCompositor1;
+                default: return null;
+            }
+        }
+
+        private static void SetActiveCompositorSlot(int index, SuitHUDScreenCompositor compositor)
+        {
+            switch (index)
+            {
+                case 0:
+                    s_activeCompositor0 = compositor;
+                    break;
+                case 1:
+                    s_activeCompositor1 = compositor;
+                    break;
+            }
         }
     }
 }

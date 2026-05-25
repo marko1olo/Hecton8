@@ -30,7 +30,7 @@ namespace Hecton8.AI
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public partial class FaunaBrain : MonoBehaviour, IUpdatable, ITickable, IFixedTickable, ISlowTickable, IBucketedSlowTickable, ILateFrameTickable, IPoolable, ISerializationCallbackReceiver, ICuttable, IOriginShiftListener, ICombatMobilityModifierReceiver, IScannerFaunaScientificContact, IGlobalRegistryHotSwapListener, IFaunaSpatialContact, IFaunaPredationTarget, IFaunaNoiseSignalReceiver
+    public partial class FaunaBrain : MonoBehaviour, IUpdatable, ITickable, IFixedTickable, ISlowTickable, IBucketedSlowTickable, ILateFrameTickable, IPoolable, ISerializationCallbackReceiver, ICuttable, IOriginShiftListener, ICombatMobilityModifierReceiver, IScannerFaunaScientificContact, IGlobalRegistryHotSwapListener, IFaunaSpatialContact, IFaunaPredationTarget, IFaunaDirectorCueSink, IFaunaNoiseSignalReceiver
     {
         private static int _signalPushDropCount;
         /// <summary>
@@ -183,15 +183,50 @@ namespace Hecton8.AI
         public FaunaSpeciesProfile SpeciesProfile => _speciesProfile;
         public FaunaDataTemplate DataTemplate => _faunaDataTemplate;
         public int SpeciesId => ComputeStableSpeciesId();
+        public bool IsAggressiveContact => isAggressive;
+        public bool IsFlockingContact => ShouldApplySpatialDensityPenalty();
         public bool HasActiveApexIntimidation => _apexIntimidationUntilTime > _cognitionTimeSeconds;
         public bool IsLeviathanContact => _speciesProfile != null && _speciesProfile.isLeviathan;
         public bool IsApexPredatorContact => IsApexPredator();
+        public uint PreyMaskBits => _faunaDataTemplate != null ? _faunaDataTemplate.PreyMaskBits : 0u;
+        public bool UsesPackHuntBehaviorContact => UsesPackHuntBehavior;
         public bool IsBiolumFlashBangPrey => IsBiolumFlashBangPreyRuntime();
         public bool RespondsToParentalDefenseSignal => _faunaDataTemplate != null && _faunaDataTemplate.RespondsToParentalDefenseSignal;
         public Transform ContactTransform => transform;
         internal bool IsApexPredatorRuntime => IsApexPredator();
+
+        bool IFaunaDirectorCueSink.ShouldIgnoreAcousticPing(float energyJoules, float intensity01)
+        {
+            return ShouldIgnoreAcousticPing(energyJoules, intensity01);
+        }
+
+        void IFaunaDirectorCueSink.ApplyAcousticPingAggro(Vector3 sourcePosition, float intensity01, float durationSeconds)
+        {
+            ApplyAcousticPingAggro(sourcePosition, intensity01, durationSeconds);
+        }
+
+        void IFaunaDirectorCueSink.ApplyPredatorDeafening(Vector3 sourcePosition, float durationSeconds)
+        {
+            ApplyPredatorDeafening(sourcePosition, durationSeconds);
+        }
+
+        bool IFaunaDirectorCueSink.ApplyDirectorColdTickCull(bool enableColdTick)
+        {
+            return ApplyDirectorColdTickCull(enableColdTick);
+        }
+
+        void IFaunaDirectorCueSink.ApplyDirectorLineOfSight(
+            bool hasLineOfSight,
+            Vector3 playerPosition,
+            Vector3 playerForward,
+            Vector3 playerVelocity)
+        {
+            ApplyDirectorLineOfSight(hasLineOfSight, playerPosition, playerForward, playerVelocity);
+        }
         internal float ApexTerritoryRadiusMeters => ResolveApexTerritoryRadius();
         internal float ApexTerritoryMassScore => ResolveApexTerritoryMassScore();
+        float IFaunaSpatialContact.ApexTerritoryRadiusMeters => ResolveApexTerritoryRadius();
+        float IFaunaSpatialContact.ApexTerritoryMassScore => ResolveApexTerritoryMassScore();
         internal bool IsFlockingRuntime => ShouldApplySpatialDensityPenalty();
         /// <inheritdoc />
         public int SimulationBucketId => _simulationBucketId;
@@ -685,7 +720,7 @@ namespace Hecton8.AI
         [SerializeField, HideInInspector, FormerlySerializedAs("turnSpeed")] private float le_turnSpeed = -1f;
         [SerializeField, HideInInspector, FormerlySerializedAs("avoidanceRange")] private float le_avoidanceRange = -1f;
         [SerializeField, HideInInspector, FormerlySerializedAs("lookAheadFactor")] private float le_lookAheadFactor = -1f;
-        [SerializeField, HideInInspector, FormerlySerializedAs("maxRayLength")] private float le_maxRayLength = -1f;
+        [SerializeField, HideInInspector, FormerlySerializedAs("maxRayLength")] private float le_maxProbeLength = -1f;
         [SerializeField, HideInInspector, FormerlySerializedAs("spreadAngle")] private float le_spreadAngle = -1f;
         [SerializeField, HideInInspector, FormerlySerializedAs("wanderRadius")] private float le_wanderRadius = -1f;
         [SerializeField, HideInInspector, FormerlySerializedAs("waypointReachDistance")] private float le_waypointReachDistance = -1f;
@@ -706,7 +741,7 @@ namespace Hecton8.AI
                 if (le_turnSpeed >= 0) _steeringEngine.turnSpeed = le_turnSpeed;
                 if (le_avoidanceRange >= 0) _sensorSuite.avoidanceRange = le_avoidanceRange;
                 if (le_lookAheadFactor >= 0) _sensorSuite.lookAheadFactor = le_lookAheadFactor;
-                if (le_maxRayLength >= 0) _sensorSuite.maxRayLength = le_maxRayLength;
+                if (le_maxProbeLength >= 0) _sensorSuite.maxProbeLength = le_maxProbeLength;
                 if (le_spreadAngle >= 0) _sensorSuite.spreadAngle = le_spreadAngle;
                 if (le_wanderRadius >= 0) _stateMachine.wanderRadius = le_wanderRadius;
                 if (le_waypointReachDistance >= 0) _stateMachine.waypointReachDistance = le_waypointReachDistance;
@@ -717,7 +752,7 @@ namespace Hecton8.AI
                 if (le_deaggroDistance >= 0) _sensorSuite.deaggroDistance = le_deaggroDistance;
 
                 le_swimForce = -1f; le_maxSpeed = -1f; le_turnSpeed = -1f;
-                le_avoidanceRange = -1f; le_lookAheadFactor = -1f; le_maxRayLength = -1f; le_spreadAngle = -1f;
+                le_avoidanceRange = -1f; le_lookAheadFactor = -1f; le_maxProbeLength = -1f; le_spreadAngle = -1f;
                 le_wanderRadius = -1f; le_waypointReachDistance = -1f; le_escapeDistance = -1f;
                 le_escapeSafeDistance = -1f; le_sleepDistance = -1f; le_aggroDistance = -1f; le_deaggroDistance = -1f;
 
@@ -1122,7 +1157,7 @@ namespace Hecton8.AI
 
         private bool TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext)
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_playerRuntimeContextCacheFrame != frame)
             {
                 _playerRuntimeContextCacheFrame = frame;
@@ -1331,7 +1366,7 @@ namespace Hecton8.AI
 
             AIState oldState = _currentStateCache;
             float3 selfPosition = runtimeSelfPosition;
-            CreatureUtilityEvaluation utilityEvaluation = EvaluateCognitionBrain(Time.frameCount, dt, selfPosition, out Transform attackTarget);
+            CreatureUtilityEvaluation utilityEvaluation = EvaluateCognitionBrain(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, dt, selfPosition, out Transform attackTarget);
             ApplyCognitionEvaluation(in utilityEvaluation);
             bool predatorStunnedActive = TryApplyPredatorPhotophobia(selfPosition, in perceptionSnapshot);
             bool predatorDeafenedActive = !predatorStunnedActive && TryApplyPredatorDeafenedWander(selfPosition);
@@ -2830,7 +2865,7 @@ namespace Hecton8.AI
         {
             return _voxelRouteOriginShiftRefreshActive ||
                    HectonFloatingOrigin.IsShiftInProgress ||
-                   Time.frameCount == _voxelRouteLastOriginShiftFrame;
+                   Hecton8.Core.SystemDispatcher.CurrentFrameIndex == _voxelRouteLastOriginShiftFrame;
         }
 
         /// <summary>
@@ -2849,7 +2884,7 @@ namespace Hecton8.AI
             finally
             {
                 _voxelRouteOriginShiftRefreshActive = false;
-                _voxelRouteLastOriginShiftFrame = Time.frameCount;
+                _voxelRouteLastOriginShiftFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             }
 
             RefreshForcedMigrationTargetFromAup(in shiftData);
@@ -3977,7 +4012,7 @@ namespace Hecton8.AI
 
         private void RefreshPredatorPhotophobiaCache()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (frame < _nextPredatorPhotophobiaCacheFrame)
                 return;
 
@@ -4912,13 +4947,13 @@ namespace Hecton8.AI
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_slowTickAccumulator >= SlowTickIntervalSeconds &&
                 iterationCount >= MaxSlowTicksPerDispatcherTick &&
                 frame >= _nextSlowTickWatchdogLogFrame)
             {
                 _nextSlowTickWatchdogLogFrame = frame + 300;
-                Debug.LogError("FaunaBrain slow-tick watchdog tripped. Cadence backlog was clamped.", this);
+                Hecton8.Core.H8Debug.LogError("FaunaBrain slow-tick watchdog tripped. Cadence backlog was clamped.", this);
             }
 #endif
 
@@ -7597,7 +7632,7 @@ namespace Hecton8.AI
             if (meshCollider != null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("FaunaBrain requires primitive collider hygiene. MeshCollider detected on fauna hierarchy.", meshCollider);
+                Hecton8.Core.H8Debug.LogError("FaunaBrain requires primitive collider hygiene. MeshCollider detected on fauna hierarchy.", meshCollider);
 #endif
                 return false;
             }
@@ -7609,7 +7644,7 @@ namespace Hecton8.AI
             if (capsuleCollider == null && sphereCollider == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("FaunaBrain requires a CapsuleCollider or SphereCollider on the fauna hierarchy.", this);
+                Hecton8.Core.H8Debug.LogError("FaunaBrain requires a CapsuleCollider or SphereCollider on the fauna hierarchy.", this);
 #endif
                 return false;
             }
@@ -7632,8 +7667,6 @@ namespace Hecton8.AI
         }
 
         internal uint DietMaskBits => _faunaDataTemplate != null ? _faunaDataTemplate.DietMaskBits : 0u;
-
-        internal uint PreyMaskBits => _faunaDataTemplate != null ? _faunaDataTemplate.PreyMaskBits : 0u;
 
         private void ConfigureFaunaScanMetadata()
         {

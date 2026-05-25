@@ -17,7 +17,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer))]
-    public sealed class DiegeticVisorHudMesh : MonoBehaviour, IUpdatable, ILateFrameTickable, IPlayerSignalEventListener, IDamageReceiver, IGlobalRegistryHotSwapListener
+    public sealed class DiegeticVisorHudMesh : MonoBehaviour, ILateFrameTickable, IPlayerSignalEventListener, IDamageReceiver, IGlobalRegistryHotSwapListener
     {
         private const int BlackBoxCapacity = 300;
         private const SystemID VaultOwnerSystemId = SystemID.UI;
@@ -65,7 +65,6 @@ namespace Hecton8.UI
         private VaultGenerationHandle<DiegeticHudTelemetryEntry> _blackBoxHandle;
         private IDataVault _dataVault;
         private int _blackBoxCursor;
-        private bool _registered;
         private bool _registeredLateFrame;
         private bool _hotSwapListenerRegistered;
         private bool _playerSignalRegistered;
@@ -136,7 +135,7 @@ namespace Hecton8.UI
             ReleaseRuntimeObjects();
         }
 
-        public void Tick(float deltaTime)
+        private void AdvanceVisualHudState(float deltaTime)
         {
             float dt = math.max(0f, deltaTime);
             if (_damageGlitch01 > 0f)
@@ -154,6 +153,8 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            AdvanceVisualHudState(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (_meshRebuildDirty)
             {
                 _meshRebuildDirty = false;
@@ -314,7 +315,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedQualityWeight01 = ResolveCurrentQualityWeight(_cachedQualityWeight01);
         }
 
@@ -566,20 +567,12 @@ namespace Hecton8.UI
 
         private void TryRegisterTick()
         {
-            if (!_registered)
-                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregisterTick()
         {
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registered = false;
-            }
-
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
@@ -634,7 +627,7 @@ namespace Hecton8.UI
             return _dataVault;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
         {
             return handle.BufferID != 0u && handle.Generation != 0u;
         }
@@ -671,7 +664,7 @@ namespace Hecton8.UI
                     LocalX = localPosition.x,
                     LocalY = localPosition.y,
                     LocalZ = localPosition.z,
-                    Flags = (uint)((_registered ? 1 : 0) | (_playerSignalRegistered ? 2 : 0) | (_runtimeMaterial != null ? 4 : 0))
+                    Flags = (uint)((_registeredLateFrame ? 1 : 0) | (_playerSignalRegistered ? 2 : 0) | (_runtimeMaterial != null ? 4 : 0))
                 };
                 _blackBoxCursor++;
                 if (_blackBoxCursor >= BlackBoxCapacity)

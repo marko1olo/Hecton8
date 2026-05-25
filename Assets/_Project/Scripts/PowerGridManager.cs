@@ -215,7 +215,7 @@ namespace Hecton8.Power
         /// <inheritdoc />
         public void SlowTick()
         {
-            float now = Time.unscaledTime;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             _wfcOutpostPowerBoot?.SlowTick(now);
             _shinobuLogisticsRouter?.SlowTick(now);
             _submarineThermalGridRuntime?.TryCompleteExternalThermalInjectionPostSimulation();
@@ -252,12 +252,13 @@ namespace Hecton8.Power
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            _wfcOutpostPowerBoot?.LateFrameTick(Time.unscaledTime);
-            _shinobuLogisticsRouter?.LateFrameTick(Time.unscaledTime);
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            _wfcOutpostPowerBoot?.LateFrameTick(now);
+            _shinobuLogisticsRouter?.LateFrameTick(now);
             _submarineThermalGridRuntime?.TryCompleteExternalThermalInjectionPostSimulation();
             _submarineThermalGridRuntime?.TryCommitTopologyRebuildPostSimulation();
             _submarineThermalGridRuntime?.TryCompleteSolvePostSimulation();
-            ScheduleSubmarineThermalGridIfDue(Time.unscaledTime);
+            ScheduleSubmarineThermalGridIfDue(now);
             _submarineThermalGridRuntime?.TryPublishVisualShaderScalars();
             if (!_slowTickFinalizationPending)
                 return;
@@ -660,7 +661,7 @@ namespace Hecton8.Power
             HectonShaderGlobalDataVaultBridge.PublishPowerBrownout(new Vector4(
                 supplyRatio,
                 severity01,
-                Time.unscaledTime,
+                (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
                 math.saturate(math.isfinite(quality) ? quality : 1f)));
         }
 

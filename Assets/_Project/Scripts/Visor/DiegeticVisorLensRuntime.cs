@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -102,6 +103,12 @@ namespace Hecton8.Visor
         private bool _hasPendingEnvironment;
         private bool _pendingMockReset;
         private bool _registeredHotSwapListener;
+        private bool _nativeFaultLogged;
+
+        private static class FallbackElement<T> where T : unmanaged
+        {
+            internal static T Value;
+        }
 
         private ref VisorStateDTO GetStateRefUnsafe()
         {
@@ -143,6 +150,9 @@ namespace Hecton8.Visor
         public bool TryWriteState(in VisorStateDTO state)
         {
             EnsureNativeState();
+            if (!_nativeReady)
+                return false;
+
             if (_hasScheduledWork)
                 return false;
 
@@ -161,6 +171,9 @@ namespace Hecton8.Visor
         public bool TryWriteTuning(in VisorLensTuningDTO tuning)
         {
             EnsureNativeState();
+            if (!_nativeReady)
+                return false;
+
             if (_hasScheduledWork)
                 return false;
 
@@ -200,6 +213,8 @@ namespace Hecton8.Visor
             if (!_nativeReady)
             {
                 EnsureNativeState();
+                if (!_nativeReady)
+                    return;
             }
 
             float safeDelta = SanitizeDelta(deltaTime);
@@ -280,8 +295,6 @@ namespace Hecton8.Visor
             tuning.QualityDynamicBlendEnd = 0.72f;
             tuning.Flags = 0u;
             tuning.Version++;
-            tuning._pad0 = 0f;
-            tuning._pad1 = 0f;
 
             physiology.RespirationRate = 12f;
             physiology.HeartRate = 72f;
@@ -289,8 +302,6 @@ namespace Hecton8.Visor
             physiology.BreathSpike01 = 0f;
             physiology.Frame = _frameCounter;
             physiology.Flags = 0u;
-            physiology._pad0 = 0f;
-            physiology._pad1 = 0f;
 
             environment.ExternalWaterTemperatureC = 4f;
             environment.ExternalPressure01 = 0f;
@@ -302,8 +313,6 @@ namespace Hecton8.Visor
             environment.WaterlineBreach01 = 0f;
             environment.Frame = _frameCounter;
             environment.Flags = 0u;
-            environment._pad0 = 0f;
-            environment._pad1 = 0f;
             _mockDataActive = true;
             ClearPendingExternalInputs();
         }
@@ -445,21 +454,34 @@ namespace Hecton8.Visor
                 return;
 
             IDataVault vault = EnsureVault();
+            if (vault == null)
+            {
+                ReportNativeFaultClosed();
+                return;
+            }
+
             _vault = vault;
             try
             {
-                _stateHandle = AcquireBuffer<VisorStateDTO>(StateBufferId, 1);
-                _tuningHandle = AcquireBuffer<VisorLensTuningDTO>(TuningBufferId, 1);
-                _physiologyHandle = AcquireBuffer<MockPhysiologySignal>(PhysiologyBufferId, 1);
-                _environmentHandle = AcquireBuffer<MockVisorEnvironmentSignal>(EnvironmentBufferId, 1);
-                _gpuGlobalsHandle = AcquireBuffer<DiegeticVisorLensGpuGlobalsDTO>(GpuGlobalsBufferId, 1);
-                _telemetryHandle = AcquireBuffer<VisorLensTelemetryEntry>(TelemetryRingBufferId, TelemetryCapacity);
-                _telemetryCursorHandle = AcquireBuffer<int>(TelemetryCursorBufferId, 1);
-                _csvBytesHandle = AcquireBuffer<byte>(CsvByteBufferId, CsvBufferBytes);
-                _binaryProbeBytesHandle = AcquireBuffer<byte>(BinaryProbeByteBufferId, BinaryProbeBytes);
-                _nanFlagsHandle = AcquireBuffer<int>(NanFlagBufferId, 1);
+                if (!TryAcquireBuffer(StateBufferId, 1, out _stateHandle) ||
+                    !TryAcquireBuffer(TuningBufferId, 1, out _tuningHandle) ||
+                    !TryAcquireBuffer(PhysiologyBufferId, 1, out _physiologyHandle) ||
+                    !TryAcquireBuffer(EnvironmentBufferId, 1, out _environmentHandle) ||
+                    !TryAcquireBuffer(GpuGlobalsBufferId, 1, out _gpuGlobalsHandle) ||
+                    !TryAcquireBuffer(TelemetryRingBufferId, TelemetryCapacity, out _telemetryHandle) ||
+                    !TryAcquireBuffer(TelemetryCursorBufferId, 1, out _telemetryCursorHandle) ||
+                    !TryAcquireBuffer(CsvByteBufferId, CsvBufferBytes, out _csvBytesHandle) ||
+                    !TryAcquireBuffer(BinaryProbeByteBufferId, BinaryProbeBytes, out _binaryProbeBytesHandle) ||
+                    !TryAcquireBuffer(NanFlagBufferId, 1, out _nanFlagsHandle))
+                {
+                    ReleaseNativeState(vault, clearVault: false);
+                    ReportNativeFaultClosed();
+                    return;
+                }
+
                 ClearNativeBuffersWithMemClear();
                 _nativeReady = true;
+                _nativeFaultLogged = false;
                 PrewarmSignalLanes();
                 GenerateEmergencyMockVisorData();
 #if UNITY_EDITOR
@@ -473,7 +495,7 @@ namespace Hecton8.Visor
             catch
             {
                 ReleaseNativeState(vault, clearVault: false);
-                throw;
+                ReportNativeFaultClosed();
             }
         }
 
@@ -507,7 +529,7 @@ namespace Hecton8.Visor
             if (_vault != null)
                 return _vault;
 
-            throw new InvalidOperationException("DiegeticVisorLensRuntime requires GlobalDataVault before boot.");
+            return null;
         }
 
         private void CacheRegistryServicesCold()
@@ -516,7 +538,7 @@ namespace Hecton8.Visor
                 _vault = GlobalRegistry.DataVault;
 
             if (_playerContext == null)
-                _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerContext = GlobalRegistry.Player;
         }
 
         private void TryRegisterHotSwapListener()
@@ -536,14 +558,15 @@ namespace Hecton8.Visor
             _registeredHotSwapListener = false;
         }
 
-        private VaultGenerationHandle<T> AcquireBuffer<T>(BufferID id, int length) where T : struct
+        private bool TryAcquireBuffer<T>(BufferID id, int length, out VaultGenerationHandle<T> handle) where T : unmanaged
         {
+            handle = default;
             IDataVault vault = EnsureVault();
-            VaultGenerationHandle<T> handle = vault.EnsureGenerationHandle<T>(id, length, OwnerSystem, NativeArrayOptions.UninitializedMemory);
-            if (!TryResolveVaultArray(vault, in handle, id, length, out _))
-                throw new InvalidOperationException("DiegeticVisorLensRuntime failed to acquire Vault descriptor.");
+            if (vault == null)
+                return false;
 
-            return handle;
+            handle = vault.EnsureGenerationHandle<T>(id, length, OwnerSystem, NativeArrayOptions.UninitializedMemory);
+            return TryResolveVaultArray(vault, in handle, id, length, out _);
         }
 
         private void ReleaseNativeState(IDataVault vault, bool clearVault)
@@ -575,11 +598,18 @@ namespace Hecton8.Visor
         private NativeArray<T> OpenVaultArray<T>(
             ref VaultGenerationHandle<T> handle,
             BufferID id,
-            int length) where T : struct
+            int length) where T : unmanaged
         {
             IDataVault vault = EnsureVault();
+            if (vault == null)
+                return default;
+
             if (!TryResolveVaultArray(vault, in handle, id, length, out NativeArray<T> buffer))
-                throw new InvalidOperationException("DiegeticVisorLensRuntime Vault descriptor is unavailable.");
+            {
+                _nativeReady = false;
+                ReportNativeFaultClosed();
+                return default;
+            }
 
             return buffer;
         }
@@ -588,14 +618,26 @@ namespace Hecton8.Visor
             ref VaultGenerationHandle<T> handle,
             BufferID id,
             int length,
-            int index) where T : struct
+            int index) where T : unmanaged
         {
             NativeArray<T> buffer = OpenVaultArray(ref handle, id, length);
             if ((uint)index >= (uint)buffer.Length)
-                throw new InvalidOperationException("DiegeticVisorLensRuntime Vault index is out of range.");
+            {
+                ReportNativeFaultClosed();
+                return ref FallbackElement<T>.Value;
+            }
 
             void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(buffer);
             return ref UnsafeUtility.ArrayElementAsRef<T>(ptr, index);
+        }
+
+        private void ReportNativeFaultClosed()
+        {
+            if (_nativeFaultLogged)
+                return;
+
+            _nativeFaultLogged = true;
+            H8Debug.LogError("DIEGETIC_VISOR_LENS_NATIVE_FAIL_CLOSED");
         }
 
         private static bool TryResolveVaultArray<T>(
@@ -603,7 +645,7 @@ namespace Hecton8.Visor
             in VaultGenerationHandle<T> handle,
             BufferID id,
             int length,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
             return vault != null &&
@@ -620,7 +662,7 @@ namespace Hecton8.Visor
             in VaultGenerationHandle<T> handle,
             BufferID id,
             int length,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
             return vault != null &&
@@ -634,7 +676,7 @@ namespace Hecton8.Visor
 
         private static bool IsVisorVaultHandle<T>(
             in VaultGenerationHandle<T> handle,
-            BufferID id) where T : struct
+            BufferID id) where T : unmanaged
         {
             return handle.BufferID == unchecked((uint)(int)id) &&
                    handle.SystemID == (uint)OwnerSystem &&
@@ -644,7 +686,7 @@ namespace Hecton8.Visor
         private static void ReleaseVisorVaultHandle<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
-            BufferID id) where T : struct
+            BufferID id) where T : unmanaged
         {
             if (vault != null && IsVisorVaultHandle(in handle, id))
                 vault.ReleaseBuffer(in handle);
@@ -666,7 +708,7 @@ namespace Hecton8.Visor
             MemClearArray(OpenVaultArray(ref _nanFlagsHandle, NanFlagBufferId, 1));
         }
 
-        private static void MemClearArray<T>(NativeArray<T> array) where T : struct
+        private static void MemClearArray<T>(NativeArray<T> array) where T : unmanaged
         {
             if (!array.IsCreated || array.Length <= 0)
                 return;
@@ -677,19 +719,17 @@ namespace Hecton8.Visor
 
         private void ScheduleSimulation(float deltaTime, float qualityWeight)
         {
-            VisorCondensationJob job = new VisorCondensationJob
-            {
-                State = OpenVaultArray(ref _stateHandle, StateBufferId, 1),
-                Tuning = OpenVaultArray(ref _tuningHandle, TuningBufferId, 1),
-                Physiology = OpenVaultArray(ref _physiologyHandle, PhysiologyBufferId, 1),
-                Environment = OpenVaultArray(ref _environmentHandle, EnvironmentBufferId, 1),
-                GpuGlobals = OpenVaultArray(ref _gpuGlobalsHandle, GpuGlobalsBufferId, 1),
-                NanFlags = OpenVaultArray(ref _nanFlagsHandle, NanFlagBufferId, 1),
-                DeltaTime = deltaTime,
-                GlobalQualityWeight = qualityWeight,
-                HeadAngularVelocity = _headAngularVelocity,
-                Frame = _frameCounter
-            };
+            VisorCondensationJob job = default;
+            job.State = OpenVaultArray(ref _stateHandle, StateBufferId, 1);
+            job.Tuning = OpenVaultArray(ref _tuningHandle, TuningBufferId, 1);
+            job.Physiology = OpenVaultArray(ref _physiologyHandle, PhysiologyBufferId, 1);
+            job.Environment = OpenVaultArray(ref _environmentHandle, EnvironmentBufferId, 1);
+            job.GpuGlobals = OpenVaultArray(ref _gpuGlobalsHandle, GpuGlobalsBufferId, 1);
+            job.NanFlags = OpenVaultArray(ref _nanFlagsHandle, NanFlagBufferId, 1);
+            job.DeltaTime = deltaTime;
+            job.GlobalQualityWeight = qualityWeight;
+            job.HeadAngularVelocity = _headAngularVelocity;
+            job.Frame = _frameCounter;
 
             _scheduledHandle = job.Schedule();
             _hasScheduledWork = true;
@@ -757,8 +797,14 @@ namespace Hecton8.Visor
                 {
                     GraphicsBuffer writeBuffer = ResolveNextGpuGlobalsBuffer();
                     NativeArray<DiegeticVisorLensGpuGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<DiegeticVisorLensGpuGlobalsDTO>(0, 1);
-                    mapped[0] = _lastGpuGlobals;
-                    writeBuffer.UnlockBufferAfterWrite<DiegeticVisorLensGpuGlobalsDTO>(1);
+                    try
+                    {
+                        mapped[0] = _lastGpuGlobals;
+                    }
+                    finally
+                    {
+                        writeBuffer.UnlockBufferAfterWrite<DiegeticVisorLensGpuGlobalsDTO>(1);
+                    }
                     _activeGpuGlobalsBuffer = writeBuffer;
                 }
 
@@ -828,11 +874,24 @@ namespace Hecton8.Visor
                 _gpuGlobalsBufferB != null && _gpuGlobalsBufferB.IsValid())
             {
                 NativeArray<DiegeticVisorLensGpuGlobalsDTO> mappedA = _gpuGlobalsBufferA.LockBufferForWrite<DiegeticVisorLensGpuGlobalsDTO>(0, 1);
-                mappedA[0] = globals;
-                _gpuGlobalsBufferA.UnlockBufferAfterWrite<DiegeticVisorLensGpuGlobalsDTO>(1);
+                try
+                {
+                    mappedA[0] = globals;
+                }
+                finally
+                {
+                    _gpuGlobalsBufferA.UnlockBufferAfterWrite<DiegeticVisorLensGpuGlobalsDTO>(1);
+                }
+
                 NativeArray<DiegeticVisorLensGpuGlobalsDTO> mappedB = _gpuGlobalsBufferB.LockBufferForWrite<DiegeticVisorLensGpuGlobalsDTO>(0, 1);
-                mappedB[0] = globals;
-                _gpuGlobalsBufferB.UnlockBufferAfterWrite<DiegeticVisorLensGpuGlobalsDTO>(1);
+                try
+                {
+                    mappedB[0] = globals;
+                }
+                finally
+                {
+                    _gpuGlobalsBufferB.UnlockBufferAfterWrite<DiegeticVisorLensGpuGlobalsDTO>(1);
+                }
                 _activeGpuGlobalsBuffer = _gpuGlobalsBufferA;
                 Shader.SetGlobalConstantBuffer(GpuGlobalsNameId, _activeGpuGlobalsBuffer, 0, GpuGlobalsStrideBytes);
             }
@@ -995,7 +1054,7 @@ namespace Hecton8.Visor
 
             Vector3 angular = axis * (angleDegrees * 0.0174532924f / math.max(deltaTime, MinimumDeltaTime));
             _headAngularVelocity = math.isfinite(angular.x) && math.isfinite(angular.y) && math.isfinite(angular.z)
-                ? new float3(angular.x, angular.y, angular.z)
+                ? math.float3(angular.x, angular.y, angular.z)
                 : float3.zero;
             _lastCameraRotation = current;
         }
@@ -1005,7 +1064,11 @@ namespace Hecton8.Visor
             if (state.CrackSeverity <= 0.8f || _breachCooldown > 0f)
                 return;
 
-            MockVisorEnvironmentSignal environment = OpenVaultArray(ref _environmentHandle, EnvironmentBufferId, 1)[0];
+            NativeArray<MockVisorEnvironmentSignal> environments = OpenVaultArray(ref _environmentHandle, EnvironmentBufferId, 1);
+            if (!environments.IsCreated || environments.Length <= 0)
+                return;
+
+            MockVisorEnvironmentSignal environment = environments[0];
             VisorBreachSignal signal = default;
             signal.SourceId = RuntimeSourceHash;
             signal.Frame = _frameCounter;
@@ -1029,27 +1092,31 @@ namespace Hecton8.Visor
             if (cursor < 0 || cursor >= TelemetryCapacity)
                 cursor = 0;
 
-            MockPhysiologySignal physiology = OpenVaultArray(ref _physiologyHandle, PhysiologyBufferId, 1)[0];
-            MockVisorEnvironmentSignal environment = OpenVaultArray(ref _environmentHandle, EnvironmentBufferId, 1)[0];
-            ring[cursor] = new VisorLensTelemetryEntry
-            {
-                Frame = _frameCounter,
-                Flags = (uint)nanFlags,
-                Condensation01 = Sanitize01(state.CondensationLevel),
-                Droplets01 = Sanitize01(state.WaterDropletIntensity),
-                Crack01 = Sanitize01(state.CrackSeverity),
-                Dirt01 = Sanitize01(state.DirtAccumulation),
-                Quality01 = ResolveQualityWeight(),
-                RespirationRate = SanitizeRange(physiology.RespirationRate, 0f, 80f, 0f),
-                ExternalPressure01 = Sanitize01(environment.ExternalPressure01),
-                SiltDensity01 = Sanitize01(environment.SiltDensity01),
-                HeadAngularSpeed = math.length(_headAngularVelocity),
-                StateHash = BuildStateHash(in state),
-                GpuStateHash = BuildGpuHash(in globals),
-                RefractionScale01 = Sanitize01(globals.Params0.w),
-                ShaderUpdateComputeTimeNs = _lastShaderUpdateComputeTimeNs,
-                Anomaly01 = Sanitize01(environment.Corruption01)
-            };
+            NativeArray<MockPhysiologySignal> physiologies = OpenVaultArray(ref _physiologyHandle, PhysiologyBufferId, 1);
+            NativeArray<MockVisorEnvironmentSignal> environments = OpenVaultArray(ref _environmentHandle, EnvironmentBufferId, 1);
+            if (!physiologies.IsCreated || physiologies.Length <= 0 || !environments.IsCreated || environments.Length <= 0)
+                return;
+
+            MockPhysiologySignal physiology = physiologies[0];
+            MockVisorEnvironmentSignal environment = environments[0];
+            VisorLensTelemetryEntry entry = default;
+            entry.Frame = _frameCounter;
+            entry.Flags = (uint)nanFlags;
+            entry.Condensation01 = Sanitize01(state.CondensationLevel);
+            entry.Droplets01 = Sanitize01(state.WaterDropletIntensity);
+            entry.Crack01 = Sanitize01(state.CrackSeverity);
+            entry.Dirt01 = Sanitize01(state.DirtAccumulation);
+            entry.Quality01 = ResolveQualityWeight();
+            entry.RespirationRate = SanitizeRange(physiology.RespirationRate, 0f, 80f, 0f);
+            entry.ExternalPressure01 = Sanitize01(environment.ExternalPressure01);
+            entry.SiltDensity01 = Sanitize01(environment.SiltDensity01);
+            entry.HeadAngularSpeed = math.length(_headAngularVelocity);
+            entry.StateHash = BuildStateHash(in state);
+            entry.GpuStateHash = BuildGpuHash(in globals);
+            entry.RefractionScale01 = Sanitize01(globals.Params0.w);
+            entry.ShaderUpdateComputeTimeNs = _lastShaderUpdateComputeTimeNs;
+            entry.Anomaly01 = Sanitize01(environment.Corruption01);
+            ring[cursor] = entry;
 
             cursorBuffer[0] = cursor + 1 >= TelemetryCapacity ? 0 : cursor + 1;
         }
@@ -1162,7 +1229,7 @@ namespace Hecton8.Visor
                 unsafe
                 {
                     byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(buffer);
-                    Span<byte> destination = new Span<byte>(ptr, length);
+                    Span<byte> destination = MemoryMarshal.CreateSpan(ref UnsafeUtility.AsRef<byte>(ptr), length);
                     int total = 0;
                     while (total < length)
                     {
@@ -1326,7 +1393,12 @@ namespace Hecton8.Visor
 
         private static Vector4 ToVector4(float4 value)
         {
-            return new Vector4(value.x, value.y, value.z, value.w);
+            Vector4 vector = default;
+            vector.x = value.x;
+            vector.y = value.y;
+            vector.z = value.z;
+            vector.w = value.w;
+            return vector;
         }
 
         private static uint BuildStateHash(in VisorStateDTO state)
@@ -1481,7 +1553,7 @@ namespace Hecton8.Visor
                 MockPhysiologySignal physiology = SanitizePhysiology(Physiology[0]);
                 MockVisorEnvironmentSignal environment = SanitizeEnvironment(Environment[0]);
 
-                uint anomalyHash = math.hash(new uint3(Frame + 17u, math.asuint(environment.Corruption01), math.asuint(state.CrackSeverity)));
+                uint anomalyHash = math.hash(math.uint3(Frame + 17u, math.asuint(environment.Corruption01), math.asuint(state.CrackSeverity)));
                 float anomalyNoise = ((anomalyHash & 1023u) * (1f / 1023f) - 0.5f) * environment.Corruption01;
                 float coldDrive = math.saturate((18f - environment.ExternalWaterTemperatureC) * (1f / 28f));
                 float breathDrive = math.saturate((physiology.RespirationRate - 8f) * (1f / 28f)) * tuning.FogBreathGain;
@@ -1513,11 +1585,11 @@ namespace Hecton8.Visor
                 float refractionScale = Smooth01((quality - tuning.LowRefractionQualityCutoff) * math.rcp(math.max(0.01f, 1f - tuning.LowRefractionQualityCutoff)));
                 float3 angular = math.all(math.isfinite(HeadAngularVelocity)) ? HeadAngularVelocity : float3.zero;
                 float headSpeed = math.length(angular);
-                float2 gravity = new float2(angular.y * 0.18f + angular.z * 0.05f, -1f - angular.x * 0.08f);
+                float2 gravity = math.float2(angular.y * 0.18f + angular.z * 0.05f, -1f - angular.x * 0.08f);
                 float gravityLenSq = math.max(0.0001f, math.lengthsq(gravity));
                 gravity *= math.rsqrt(gravityLenSq);
                 gravity *= tuning.DropletGravityStrength * dynamicBlend * state.WaterDropletIntensity;
-                gravity = math.lerp(new float2(0f, -0.08f * state.WaterDropletIntensity), gravity, dynamicBlend);
+                gravity = math.lerp(math.float2(0f, -0.08f * state.WaterDropletIntensity), gravity, dynamicBlend);
 
                 float reflection = math.saturate(environment.Darkness01 * tuning.ReflectionDarknessGain * (0.24f + quality * 0.76f));
                 reflection = math.saturate(reflection + environment.Corruption01 * tuning.BiolumReflectionGain * 0.35f);
@@ -1527,40 +1599,33 @@ namespace Hecton8.Visor
                 flags |= environment.Corruption01 > 0.01f ? 4u : 0u;
 
                 State[0] = state;
-                Physiology[0] = new MockPhysiologySignal
-                {
-                    RespirationRate = physiology.RespirationRate,
-                    HeartRate = physiology.HeartRate,
-                    CoreTemperatureC = physiology.CoreTemperatureC,
-                    BreathSpike01 = physiology.BreathSpike01 * MathLodApproximation.ApproxExpNegPade33Wide40(3.2f * dt),
-                    Frame = Frame,
-                    Flags = physiology.Flags,
-                    _pad0 = 0f,
-                    _pad1 = 0f
-                };
-                Environment[0] = new MockVisorEnvironmentSignal
-                {
-                    ExternalWaterTemperatureC = environment.ExternalWaterTemperatureC,
-                    ExternalPressure01 = environment.ExternalPressure01,
-                    SiltDensity01 = math.max(0f, environment.SiltDensity01 - dt * 0.035f),
-                    Darkness01 = environment.Darkness01,
-                    SurfaceEmergence01 = math.max(0f, environment.SurfaceEmergence01 - dt * tuning.SurfaceWashDrainRate),
-                    WipeCommand01 = math.max(0f, environment.WipeCommand01 - dt * 2.5f),
-                    Corruption01 = math.max(0f, environment.Corruption01 - dt * 0.08f),
-                    WaterlineBreach01 = math.max(0f, environment.WaterlineBreach01 - dt * 0.2f),
-                    Frame = Frame,
-                    Flags = environment.Flags,
-                    _pad0 = 0f,
-                    _pad1 = 0f
-                };
+                MockPhysiologySignal physiologySignal = default;
+                physiologySignal.RespirationRate = physiology.RespirationRate;
+                physiologySignal.HeartRate = physiology.HeartRate;
+                physiologySignal.CoreTemperatureC = physiology.CoreTemperatureC;
+                physiologySignal.BreathSpike01 = physiology.BreathSpike01 * MathLodApproximation.ApproxExpNegPade33Wide40(3.2f * dt);
+                physiologySignal.Frame = Frame;
+                physiologySignal.Flags = physiology.Flags;
+                Physiology[0] = physiologySignal;
 
-                DiegeticVisorLensGpuGlobalsDTO gpu = new DiegeticVisorLensGpuGlobalsDTO
-                {
-                    State = new float4(state.CondensationLevel, state.WaterDropletIntensity, state.CrackSeverity, state.DirtAccumulation),
-                    Params0 = new float4(gravity.x, gravity.y, reflection, refractionScale),
-                    Params1 = new float4(quality, environment.Corruption01, math.max(environment.SurfaceEmergence01, environment.WaterlineBreach01), environment.Darkness01),
-                    Params2 = new float4(environment.ExternalPressure01, environment.SiltDensity01, headSpeed, math.asfloat(flags))
-                };
+                MockVisorEnvironmentSignal environmentSignal = default;
+                environmentSignal.ExternalWaterTemperatureC = environment.ExternalWaterTemperatureC;
+                environmentSignal.ExternalPressure01 = environment.ExternalPressure01;
+                environmentSignal.SiltDensity01 = math.max(0f, environment.SiltDensity01 - dt * 0.035f);
+                environmentSignal.Darkness01 = environment.Darkness01;
+                environmentSignal.SurfaceEmergence01 = math.max(0f, environment.SurfaceEmergence01 - dt * tuning.SurfaceWashDrainRate);
+                environmentSignal.WipeCommand01 = math.max(0f, environment.WipeCommand01 - dt * 2.5f);
+                environmentSignal.Corruption01 = math.max(0f, environment.Corruption01 - dt * 0.08f);
+                environmentSignal.WaterlineBreach01 = math.max(0f, environment.WaterlineBreach01 - dt * 0.2f);
+                environmentSignal.Frame = Frame;
+                environmentSignal.Flags = environment.Flags;
+                Environment[0] = environmentSignal;
+
+                DiegeticVisorLensGpuGlobalsDTO gpu = default;
+                gpu.State = math.float4(state.CondensationLevel, state.WaterDropletIntensity, state.CrackSeverity, state.DirtAccumulation);
+                gpu.Params0 = math.float4(gravity.x, gravity.y, reflection, refractionScale);
+                gpu.Params1 = math.float4(quality, environment.Corruption01, math.max(environment.SurfaceEmergence01, environment.WaterlineBreach01), environment.Darkness01);
+                gpu.Params2 = math.float4(environment.ExternalPressure01, environment.SiltDensity01, headSpeed, math.asfloat(flags));
                 GpuGlobals[0] = gpu;
 
                 if (!FiniteState(state) || !math.all(math.isfinite(gpu.State)) || !math.all(math.isfinite(gpu.Params0)) ||

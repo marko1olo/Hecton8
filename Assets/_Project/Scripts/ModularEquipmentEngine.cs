@@ -3270,7 +3270,7 @@ namespace Hecton8.Tools
             // Rejected main-thread signal emission because it would scan all tools after the job. Rejected per-tool managed events because they allocate and break Burst.
             // SAFETY_JUSTIFICATION_PARAGRAPH_3:
             // ModularEquipmentEngine schedules exactly one EquipmentStateIntegrationJob at a time, registers its JobHandle with H8Memory, and the typed lane is flushed by SignalBusRegistry after producer completion.
-            [NativeDisableContainerSafetyRestriction] public NativeQueue<EquipmentOverheatSignal>.ParallelWriter OverheatWriter;
+            [NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<EquipmentOverheatSignal>.ParallelWriter OverheatWriter;
             [NativeDisableParallelForRestriction] public NativeArray<int> OverheatWriterBudget;
             // SAFETY_JUSTIFICATION_PARAGRAPH_1:
             // SignalBus<T>.ParallelWriter safety is intentionally suppressed only for the depleted-tool signal lane; the queue is not snapshotted while the producer handle is live.
@@ -3278,7 +3278,7 @@ namespace Hecton8.Tools
             // Rejected duplicating depletion state in a second NativeArray because it adds a write stream and stale cleanup. Rejected SignalBus writes on the main thread because it blocks readback.
             // SAFETY_JUSTIFICATION_PARAGRAPH_3:
             // Single equipment producer per frame, SignalBusRegistry snapshot consumer after dispatcher fencing; no other equipment job writes this lane in the same frame.
-            [NativeDisableContainerSafetyRestriction] public NativeQueue<ToolDepletedSignal>.ParallelWriter DepletedWriter;
+            [NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<ToolDepletedSignal>.ParallelWriter DepletedWriter;
             [NativeDisableParallelForRestriction] public NativeArray<int> DepletedWriterBudget;
             public int ToolCount;
             public int ThermalWidth;

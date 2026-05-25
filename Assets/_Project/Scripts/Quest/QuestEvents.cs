@@ -503,7 +503,7 @@ namespace Hecton8.Quest
         private static void LogListenerDispatchException(Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogException(exception);
+            Hecton8.Core.H8Debug.LogException(exception);
 #endif
         }
 

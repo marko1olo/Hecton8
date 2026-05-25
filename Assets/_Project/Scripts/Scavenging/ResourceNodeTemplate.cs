@@ -725,7 +725,7 @@ namespace Hecton8.Scavenging
             validLayers = SanitizeValidLayerMask(originalValidLayerMask);
             if (HectonLayerMasks.IsEverythingLayerMask(originalValidLayerMask))
             {
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     "[ResourceNodeTemplate] validLayers was Everything (-1). Replaced with HectonLayerMasks.AllDefinedProjectLayersMask.",
                     this);
             }

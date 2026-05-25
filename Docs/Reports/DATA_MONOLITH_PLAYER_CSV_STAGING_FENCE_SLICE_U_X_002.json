@@ -1,0 +1,68 @@
+{
+  "schema": "HECTON8_DATA_MONOLITH_PLAYER_CSV_STAGING_FENCE_SLICE_U_V1",
+  "agent": "X_002",
+  "generated": "2026-05-25T08:53:00Z",
+  "status": "PASS_STATIC_CLI_CORE_BUILD_ASSEMBLY_PENDING_CPU_GATE",
+  "proofBoundary": "Source/preprocessor scan plus DataMonolith CLI and Hecton8.Core dotnet compile. Assembly-CSharp was not rerun after this slice because external dotnet/csc/VBCSCompiler processes stayed active during the legal build window.",
+  "playerCsvFence": {
+    "touchedFiles": [
+      "Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs",
+      "Assets/_Project/Scripts/Physiology/ShinobuRadiationMutationRuntime.cs",
+      "Assets/_Project/Scripts/Physiology/ShinobuSensoryImpairmentRuntime.cs",
+      "Assets/_Project/Scripts/VFX/CameraJuiceSystem_CameraJuiceBurst.cs",
+      "Assets/_Project/Scripts/UI/WristHologramHudRuntime_PdaScreenProjector.cs",
+      "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
+      "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs"
+    ],
+    "playerActiveStaticConfigTokenFindings": 0,
+    "preprocessorBalanceStatus": "PASS",
+    "notes": [
+      "Editor CSV scratch, path state, timestamps, parse helpers, and legacy physiology file fallback are now behind UNITY_EDITOR in this slice.",
+      "Player-active physiology gas override fields were renamed away from CSV ownership residue while preserving the deterministic runtime override data path.",
+      "Black-box dump FileStream write paths remain active where required; no FileStream.ReadByte static-config path is active in the slice."
+    ]
+  },
+  "compileWallClosure": {
+    "coreBuildCommand": "dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 /p:UseSharedCompilation=false /nodeReuse:false",
+    "coreBuildStatus": "PASS",
+    "coreBuildWarnings": 0,
+    "coreBuildErrors": 0,
+    "coreBuildElapsed": "00:01:07.91",
+    "fixes": [
+      "Verified current working-tree PhysicsImpactContracts owner imports for BinaryBlittableSafeAttribute and AbsoluteUniversePosition; no duplicate contract was created.",
+      "Resolved PlayerCriticalProceduralAudioRenderer hull breach interface owner alias without duplicating the contract."
+    ]
+  },
+  "dataMonolithCli": {
+    "command": "Tools/DataMonolithBakeCli/bin/Release/net10.0/DataMonolithBakeCli.exe C:\\hades\\Hecton8",
+    "status": "PASS",
+    "blobBytes": 1064384,
+    "sectionCount": 26,
+    "fuzzerStatus": "PASS",
+    "fuzzerPassCount": 18,
+    "fuzzerFailCount": 0,
+    "failClosedStatus": "PASS_FAIL_CLOSED_NO_POISON_PUBLISH",
+    "failClosedCaseCount": 13,
+    "failClosedFailedCases": 0,
+    "publishedChecksumHex": "0x0D49885F30E5DF35",
+    "parserAbsenceStatus": "PASS_PLAYER_STATIC_CONFIG_PARSER_ABSENCE",
+    "releaseBlockingFindingCount": 0,
+    "developmentBlockingFindingCount": 0,
+    "releaseDirectFileStreamReadByteCount": 0,
+    "developmentDirectFileStreamReadByteCount": 0,
+    "allowedPersistenceFindingCount": 9,
+    "loadStressStatus": "PASS_NATIVE_READ_ZERO_GC_TARGET_TIME",
+    "nativeResidentLoadEstimateMicroseconds": 404.596,
+    "nativeReadAllocatedBytes": 0,
+    "residentValidationAllocatedBytes": 0,
+    "nativeReadTimingAttempts": 5,
+    "validationTimingBatches": 5
+  },
+  "regressionModel": {
+    "cpu": "Cold-load validation only; no hot-frame work added.",
+    "gc": "Player static-config parser scan remains zero blocking findings; CLI native read and resident validation allocated 0 bytes.",
+    "memory": "Editor-only CSV scratch removed from player compilation for the touched slice; black-box dump buffers unchanged.",
+    "correctness": "Corrupt monolith candidates still fail closed before publish and before Ecology/Crafting/Audio/Physiology section access.",
+    "remainingBoundary": "No fresh Assembly-CSharp rerun after slice U due active compiler processes; previous Assembly proof remains historical, not current-slice proof."
+  }
+}

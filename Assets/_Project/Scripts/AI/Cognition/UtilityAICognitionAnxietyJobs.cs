@@ -2,7 +2,6 @@ using System.Runtime.CompilerServices;
 using Hecton8.Core.Contracts;
 using Unity.Burst;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -13,7 +12,7 @@ namespace Hecton8.AI.Cognition
     {
         [NoAlias] public NativeArray<CognitionStateDTO> States;
         [NoAlias] public NativeArray<CognitionAupDTO> Aups;
-        [NoAlias] public NativeArray<AnxietyRuntimeTuningDTO> Tuning;
+        [ReadOnly, NoAlias] public NativeArray<AnxietyRuntimeTuningDTO> Tuning;
         public uint Frame;
         public int SpikeCount;
 
@@ -92,10 +91,10 @@ namespace Hecton8.AI.Cognition
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct CalculateAnxietyDecayJob : IJobParallelFor
+    public struct CalculateAnxietyDecayJob : IJobParallelFor
     {
-        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<CognitionStateDTO> States;
-        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<CognitionAupDTO> Aups;
+        [NoAlias] public NativeArray<CognitionStateDTO> States;
+        [NoAlias] public NativeArray<CognitionAupDTO> Aups;
         [ReadOnly, NoAlias] public NativeArray<AnxietyProfileDTO> Profiles;
         [ReadOnly, NoAlias] public NativeArray<AnxietyRuntimeTuningDTO> Tuning;
         [ReadOnly, NoAlias] public NativeArray<float> ShelterSdf;
@@ -109,10 +108,8 @@ namespace Hecton8.AI.Cognition
             if (!States.IsCreated || !Aups.IsCreated || (uint)index >= (uint)States.Length || (uint)index >= (uint)Aups.Length)
                 return;
 
-            void* statePtr = NativeArrayUnsafeUtility.GetUnsafePtr(States);
-            void* aupPtr = NativeArrayUnsafeUtility.GetUnsafePtr(Aups);
-            ref CognitionStateDTO state = ref UnsafeUtility.AsRef<CognitionStateDTO>((byte*)statePtr + (UnsafeUtility.SizeOf<CognitionStateDTO>() * index));
-            ref CognitionAupDTO aup = ref UnsafeUtility.AsRef<CognitionAupDTO>((byte*)aupPtr + (UnsafeUtility.SizeOf<CognitionAupDTO>() * index));
+            CognitionStateDTO state = States[index];
+            CognitionAupDTO aup = Aups[index];
 
             AnxietyRuntimeTuningDTO tuning = AnxietyDecayJobMath.ReadTuning(Tuning);
             AnxietyProfileDTO profile = AnxietyDecayJobMath.ReadProfile(Profiles, 0, in tuning);
@@ -171,6 +168,9 @@ namespace Hecton8.AI.Cognition
                 row.EntityHash = aup.EntityHash;
                 Scratch[index] = row;
             }
+
+            States[index] = state;
+            Aups[index] = aup;
         }
     }
 
@@ -355,10 +355,20 @@ namespace Hecton8.AI.Cognition
                 return 1f;
 
             AnxietyShelterSdfHeaderDTO header = headerBuffer[0];
-            int3 dims = math.max(header.Dimensions, new int3(1));
-            int required = dims.x * dims.y * dims.z;
+            int3 dims = header.Dimensions;
+            int sdfLength = shelterSdf.Length;
+            if (!math.all(dims > int3.zero) ||
+                dims.x > sdfLength ||
+                dims.y > sdfLength / dims.x)
+                return 1f;
+
+            int xy = dims.x * dims.y;
+            if (xy <= 0 || dims.z > sdfLength / xy)
+                return 1f;
+
+            int required = xy * dims.z;
             bool validHeader = required > 0 &&
-                               required <= shelterSdf.Length &&
+                               required <= sdfLength &&
                                header.VoxelSizeMeters > 0f &&
                                math.all(math.isfinite(header.OriginAUP)) &&
                                math.all(math.isfinite(creatureAup));
@@ -371,7 +381,7 @@ namespace Hecton8.AI.Cognition
             float invVoxel = math.rcp(math.max(header.VoxelSizeMeters, UtilityAICognitionConstants.Epsilon));
             int3 cell = (int3)math.floor(local * invVoxel);
             bool inside = math.all(cell >= int3.zero) & math.all(cell < dims);
-            int index = math.clamp(cell.x + (cell.y * dims.x) + (cell.z * dims.x * dims.y), 0, shelterSdf.Length - 1);
+            int index = math.clamp(cell.x + (cell.y * dims.x) + (cell.z * xy), 0, sdfLength - 1);
             float sdf = math.select(1f, shelterSdf[index], inside);
             float range = math.max(UtilityAICognitionConstants.Epsilon, math.abs(header.SdfRangeMeters));
             float sheltered01 = math.saturate((header.SolidThreshold - sdf) * math.rcp(range));

@@ -11,7 +11,6 @@ using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Inventory;
 using Hecton8.Core.Contracts.Physics;
-using Hecton8.Physics;
 using Hecton8.Physics.KCC;
 using Hecton8.World;
 using Unity.Burst;
@@ -19,6 +18,8 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using HydrodynamicKccMath = Hecton8.Physics.KCC.HydrodynamicKccMath;
+using HydrodynamicKccRuntime = Hecton8.Physics.KCC.HydrodynamicKccRuntime;
 
 namespace Hecton8.Gameplay
 {
@@ -435,8 +436,7 @@ namespace Hecton8.Gameplay
         [FieldOffset(56)] public ulong RouteHash;
     }
 
-    [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    internal struct PlayerKinematicsHandPlacementJob : IJob
+    internal struct PlayerKinematicsHandPlacementSolver
     {
         public const byte RuntimeFlagReducedProbeSet = 1 << 0;
         public const byte RuntimeFlagImpact = 1 << 1;
@@ -966,10 +966,6 @@ namespace Hecton8.Gameplay
         private VaultBufferBinding<SdfSqueezeResult> _sdfSqueezeResults = new VaultBufferBinding<SdfSqueezeResult>(BufferID.PlayerKinematicSdfSqueezeResults, EntityCount, OwnerSystemId);
         private VaultGenerationHandle<LockstepPlayerKinematicState> _playerKinematicStateHandle;
         private VaultGenerationHandle<BulkheadCollisionResultDTO> _bulkheadCollisionResultsHandle;
-        private JobHandle _handProbeHandle;
-        private JobHandle _handPlacementHandle;
-        private bool _handProbePending;
-        private bool _handPlacementPending;
         private bool _registeredFixed;
         private bool _registeredPostFixed;
         private bool _registeredFast;
@@ -1085,7 +1081,6 @@ namespace Hecton8.Gameplay
             ClearRollSignal();
             UnregisterRuntime();
             CompleteHandFabrikIkForTeardown();
-            CompleteHandEnvironmentJobsForTeardown();
             ClearHandTargets();
         }
 
@@ -1093,7 +1088,6 @@ namespace Hecton8.Gameplay
         {
             UnregisterRuntime();
             CompleteHandFabrikIkForTeardown();
-            CompleteHandEnvironmentJobsForTeardown();
             ClearHandTargets();
             DisposeNativeState();
         }
@@ -1403,7 +1397,6 @@ namespace Hecton8.Gameplay
             _lastIkDeltaTime = safeDeltaTime;
             ConsumeEnvironmentIkSignals();
             TickEnvironmentIkState(safeDeltaTime);
-            PumpHandEnvironmentJobs(allowFinalizeOutsideSwap: true);
             ScheduleHandProbes();
             ConsumeSqueezeTelemetrySignal();
 
@@ -1417,7 +1410,6 @@ namespace Hecton8.Gameplay
 
         public void LateFrameTick()
         {
-            PumpHandEnvironmentJobs(allowFinalizeOutsideSwap: false);
             TryFinalizeHandFabrikIkJob();
             UploadHandFabrikIkGpuBuffers();
 
@@ -1524,7 +1516,6 @@ namespace Hecton8.Gameplay
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
                 _dataVault = currentService as IDataVault;
-                CompleteHandEnvironmentJobsForTeardown();
                 DisposeNativeState();
                 if (currentService != null)
                 {
@@ -1844,7 +1835,6 @@ namespace Hecton8.Gameplay
 
             if (_dataVault != null)
             {
-                CompleteHandEnvironmentJobsForTeardown();
                 DisposeNativeState();
             }
 
@@ -1856,7 +1846,7 @@ namespace Hecton8.Gameplay
             if (_fluidGpuReadModel != null && _analyticalFlowReadModel != null && _voxelEngine != null && _cameraTransform != null)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (frame < _nextColdRebindFrame)
                 return;
 
@@ -1898,7 +1888,7 @@ namespace Hecton8.Gameplay
 
         private void SnapshotGpuFlow()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_accumulatorState.LastGpuFlowFrame != 0u && (frame & ResolveGpuFlowProbeFrameMask()) != 0)
                 return;
 
@@ -2075,7 +2065,7 @@ namespace Hecton8.Gameplay
 
             bool runSampleNow = !slowCadence ||
                                 _sdfSqueezeSlowHoldFrames <= 0 ||
-                                ((Time.frameCount + _cadenceSalt) % SdfSqueezeSlowCadenceFrameInterval) == 0;
+                                ((Hecton8.Core.SystemDispatcher.CurrentFrameIndex + _cadenceSalt) % SdfSqueezeSlowCadenceFrameInterval) == 0;
             if (!runSampleNow &&
                 TryApplyCachedSdfSqueeze(safeDeltaTime, sdfSampleMode, ref inSolid, ref sdfGradientProbeRequested, ref bodyPosition, ref bodyVelocity, ref safeBodyPosition, out result))
             {
@@ -2601,12 +2591,13 @@ namespace Hecton8.Gameplay
             if (!TryConvertRuntimePositionToAup(snappedPosition, out AbsoluteUniversePosition bodyAup))
                 return;
 
-            PhysicsDeterminismSignals.TryPublishKccVelocity(
-                in bodyAup,
-                snappedVelocity,
-                Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                _sourceId,
-                flags);
+            KccVelocitySignal signal = default;
+            signal.BodyAup = bodyAup;
+            signal.Velocity = snappedVelocity;
+            signal.Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+            signal.SourceId = _sourceId;
+            signal.Flags = flags;
+            CoreDeterminismSignals.TryPublishKccVelocity(in signal);
         }
 
         private void PublishSdfSqueezeSignals(in SdfSqueezeResult result, float3 position, float3 velocity)
@@ -3063,64 +3054,20 @@ namespace Hecton8.Gameplay
         private void ScheduleHandProbes()
         {
             ClearHandTargets();
+            ResolveHandPlacementDirect();
+            ApplyHandTargets();
         }
 
-        private void PumpHandEnvironmentJobs(bool allowFinalizeOutsideSwap)
-        {
-            if (TryFinalizeHandProbe(allowFinalizeOutsideSwap))
-                ScheduleHandPlacement();
-
-            if (TryFinalizeHandPlacement(allowFinalizeOutsideSwap))
-                ApplyHandTargets();
-        }
-
-        private void CompleteHandEnvironmentJobsForTeardown()
-        {
-            if (CompleteHandProbeForTeardown())
-                ScheduleHandPlacement();
-
-            if (CompleteHandPlacementForTeardown())
-                ApplyHandTargets();
-        }
-
-        private bool TryFinalizeHandProbe(bool allowFinalizeOutsideSwap)
-        {
-            if (!_handProbePending)
-                return false;
-
-            bool completed = allowFinalizeOutsideSwap
-                ? DispatcherJobSwap.TryFinalizeCompleted(ref _handProbeHandle)
-                : DispatcherJobSwap.TryComplete(ref _handProbeHandle, false);
-            if (!completed)
-                return false;
-
-            _handProbePending = false;
-            return true;
-        }
-
-        private bool CompleteHandProbeForTeardown()
-        {
-            if (!_handProbePending)
-                return false;
-
-            if (!DispatcherJobSwap.TryComplete(ref _handProbeHandle, true))
-                return false;
-
-            _handProbePending = false;
-            return true;
-        }
-
-        private void ScheduleHandPlacement()
+        private void ResolveHandPlacementDirect()
         {
             int requiredProbeCount = math.clamp(_lastProbeCount, 1, EnvironmentProbeCount);
-            if (_handPlacementPending ||
-                !HasHandTargetWriteStorage() ||
+            if (!HasHandTargetWriteStorage() ||
                 !HasHandProbeHitStorage(requiredProbeCount))
             {
                 return;
             }
 
-            var placementJob = new PlayerKinematicsHandPlacementJob
+            var placementSolver = new PlayerKinematicsHandPlacementSolver
             {
                 Hits = _handProbeHits,
                 Targets = _handTargets,
@@ -3141,38 +3088,10 @@ namespace Hecton8.Gameplay
                 Phase = _bracePhase,
                 ProbeCount = (byte)requiredProbeCount,
                 RuntimeFlags = (byte)(
-                    (_lastProbeReduced ? PlayerKinematicsHandPlacementJob.RuntimeFlagReducedProbeSet : 0) |
-                    (_hasImpactBracePoint ? PlayerKinematicsHandPlacementJob.RuntimeFlagImpact : 0))
+                    (_lastProbeReduced ? PlayerKinematicsHandPlacementSolver.RuntimeFlagReducedProbeSet : 0) |
+                    (_hasImpactBracePoint ? PlayerKinematicsHandPlacementSolver.RuntimeFlagImpact : 0))
             };
-            _handPlacementHandle = placementJob.Schedule();
-            _handPlacementPending = true;
-        }
-
-        private bool TryFinalizeHandPlacement(bool allowFinalizeOutsideSwap)
-        {
-            if (!_handPlacementPending)
-                return false;
-
-            bool completed = allowFinalizeOutsideSwap
-                ? DispatcherJobSwap.TryFinalizeCompleted(ref _handPlacementHandle)
-                : DispatcherJobSwap.TryComplete(ref _handPlacementHandle, false);
-            if (!completed)
-                return false;
-
-            _handPlacementPending = false;
-            return true;
-        }
-
-        private bool CompleteHandPlacementForTeardown()
-        {
-            if (!_handPlacementPending)
-                return false;
-
-            if (!DispatcherJobSwap.TryComplete(ref _handPlacementHandle, true))
-                return false;
-
-            _handPlacementPending = false;
-            return true;
+            placementSolver.Execute();
         }
 
         private void ApplyHandTargets()
@@ -3427,7 +3346,7 @@ namespace Hecton8.Gameplay
 
         private void ConsumeHydrodynamicKccAuthoritySnapshot(float qualityWeight01)
         {
-            if (!PhysicsDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal) ||
+            if (!CoreDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal) ||
                 signal.SourceId != HydrodynamicKccMath.SourceHash ||
                 signal.Sequence == 0u)
             {
@@ -3757,7 +3676,7 @@ namespace Hecton8.Gameplay
         {
             for (int i = 0; i < StateCorrectionDrainLimit; i++)
             {
-                if (!PhysicsDeterminismSignals.TryDequeueStateCorrection(out StateCorrectionSignal correction))
+                if (!CoreDeterminismSignals.TryDequeueStateCorrection(out StateCorrectionSignal correction))
                     return;
 
                 if (correction.SourceId != 0u && correction.SourceId != _sourceId)
@@ -3780,7 +3699,7 @@ namespace Hecton8.Gameplay
                 float3 correctionVelocity = ResolveCorrectionVelocity(in correction);
                 quaternion correctionRotation = ResolveCorrectionRotation(in correction);
                 bool hasRotationPayload =
-                    (correction.Flags & PhysicsDeterminismSignals.StateCorrectionSignalFlagRotationValid) != 0;
+                    (correction.Flags & CoreDeterminismSignals.StateCorrectionSignalFlagRotationValid) != 0;
                 uint flags = SyncStateFlagCorrection | (uint)FaultStateCorrection;
                 if (hasRotationPayload && IsFinite(ToUnityQuaternion(correctionRotation)))
                     flags |= SyncStateFlagApplyRotation;
@@ -3822,7 +3741,7 @@ namespace Hecton8.Gameplay
             signal.Frame = _accumulatorState.LastSyncFenceFrame;
             signal.SourceId = _sourceId;
             signal.Flags = 0;
-            PhysicsDeterminismSignals.TryPublish(in signal);
+            CoreDeterminismSignals.TryPublish(in signal);
             WriteSyncFenceTelemetry(in signal, maxDriftErrorMeters);
             CrashTelemetryBuffer.ReportAupMaxDriftError(runtimePosition, maxDriftErrorMeters);
         }
@@ -3869,7 +3788,7 @@ namespace Hecton8.Gameplay
             signal.SourceId = _sourceId;
             signal.LastFenceFrame = _accumulatorState.LastSyncFenceFrame;
             signal.Flags = flags;
-            PhysicsDeterminismSignals.TryPublish(in signal);
+            CoreDeterminismSignals.TryPublish(in signal);
             AddFaultFlag(FaultDesync);
             DumpFaultTelemetryIfNeeded();
         }
@@ -4099,7 +4018,7 @@ namespace Hecton8.Gameplay
         private float3 ResolveCorrectionPosition(in StateCorrectionSignal correction)
         {
             bool runtimePositionFlagged =
-                (correction.Flags & PhysicsDeterminismSignals.StateCorrectionSignalFlagRuntimePositionValid) != 0;
+                (correction.Flags & CoreDeterminismSignals.StateCorrectionSignalFlagRuntimePositionValid) != 0;
             if (runtimePositionFlagged && math.all(math.isfinite(correction.RuntimePosition)))
                 return SnapMillimeter(correction.RuntimePosition);
 
@@ -4121,7 +4040,7 @@ namespace Hecton8.Gameplay
 
         private float3 ResolveCorrectionVelocity(in StateCorrectionSignal correction)
         {
-            if ((correction.Flags & PhysicsDeterminismSignals.StateCorrectionSignalFlagVelocityValid) != 0 &&
+            if ((correction.Flags & CoreDeterminismSignals.StateCorrectionSignalFlagVelocityValid) != 0 &&
                 math.all(math.isfinite(correction.Velocity)))
             {
                 return SnapMillimeter(correction.Velocity);
@@ -4132,7 +4051,7 @@ namespace Hecton8.Gameplay
 
         private quaternion ResolveCorrectionRotation(in StateCorrectionSignal correction)
         {
-            if ((correction.Flags & PhysicsDeterminismSignals.StateCorrectionSignalFlagRotationValid) != 0)
+            if ((correction.Flags & CoreDeterminismSignals.StateCorrectionSignalFlagRotationValid) != 0)
                 return CanonicalizeRotation(correction.Rotation);
 
             return ResolveAuthoritativeRotationSnapshot();

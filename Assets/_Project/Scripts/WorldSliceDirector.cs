@@ -182,7 +182,7 @@ namespace Hecton8.World
                 return;
             }
 
-            float now = Time.realtimeSinceStartup;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (now < _nextAutoResolveAttemptTime)
                 return;
 
@@ -274,7 +274,7 @@ namespace Hecton8.World
 
         private void CachePlayerContextCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private void TryRegisterHotSwapListener()

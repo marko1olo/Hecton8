@@ -258,7 +258,7 @@ namespace Hecton8.Dev
             _debugLastPass = false;
             _debugLastIssue = issue;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[CelestialSyncSmoke] FAIL " + issue, this);
+            Hecton8.Core.H8Debug.LogWarning("[CelestialSyncSmoke] FAIL " + issue, this);
 #endif
             return false;
         }

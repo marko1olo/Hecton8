@@ -92,6 +92,7 @@ namespace Hecton8.AI.Cognition
         private const uint AnxietyDumpEndianMarker = 0x01020304u;
         private const uint AnxietyDumpVersion = 1u;
         private const string AnxietyDumpFileName = "Dump_SHINOBU_312.bin";
+        private const string AnxietyAgent1300DumpFileName = "Dump_1300_AICognition.bin";
         private const string AnxietyCsvFileName = "fauna_psychology_profiles.csv";
 
         public static bool TryAcquireAnxietyHandles(IDataVault vault, out UtilityAIAnxietyVaultHandles handles)
@@ -105,11 +106,8 @@ namespace Hecton8.AI.Cognition
                 if (!TryReadExistingAnxietyHandles(vault, out handles))
                     return false;
 
-                if (!TryResolveAnxietyViews(vault, ref handles, out UtilityAIAnxietyVaultBuffers lockedBuffers))
-                    return false;
-
-                EnsureAnxietyColdDefaults(lockedBuffers, false);
-                return true;
+                UtilityAIAnxietyVaultBuffers lockedBuffers;
+                return TryResolveAnxietyViews(vault, ref handles, out lockedBuffers);
             }
 
             handles.Profiles = vault.EnsureGenerationHandle<AnxietyProfileDTO>(
@@ -246,7 +244,6 @@ namespace Hecton8.AI.Cognition
             if (scheduleLength <= 0)
                 return false;
 
-            PatchAnxietyFrame(anxietyBuffers.Tuning, frame);
             CalculateAnxietyDecayJob decayJob = new CalculateAnxietyDecayJob
             {
                 States = cognitionBuffers.States,
@@ -278,39 +275,66 @@ namespace Hecton8.AI.Cognition
         public static bool TryGetAnxietyTuning(IDataVault vault, ref UtilityAIAnxietyVaultHandles handles, out AnxietyRuntimeTuningDTO tuning)
         {
             tuning = default;
-            if (!TryResolveAnxietyViews(vault, ref handles, out UtilityAIAnxietyVaultBuffers buffers) ||
-                !buffers.Tuning.IsCreated ||
-                buffers.Tuning.Length <= 0)
+            if (vault == null ||
+                handles.Tuning.BufferID == 0u ||
+                handles.Tuning.Generation == 0u ||
+                !vault.TryReadOnlyHandle(in handles.Tuning, out NativeArray<AnxietyRuntimeTuningDTO>.ReadOnly tuningBuffer) ||
+                tuningBuffer.Length <= 0)
             {
                 return false;
             }
 
-            AnxietyRuntimeTuningDTO raw = buffers.Tuning[0];
+            AnxietyRuntimeTuningDTO raw = tuningBuffer[0];
             tuning = AnxietyDecayJobMath.SanitizeTuning(in raw);
             return true;
         }
 
         public static bool TrySetAnxietyTuning(IDataVault vault, ref UtilityAIAnxietyVaultHandles handles, in AnxietyRuntimeTuningDTO tuning)
         {
-            if (!TryResolveAnxietyViews(vault, ref handles, out UtilityAIAnxietyVaultBuffers buffers) ||
-                !buffers.Tuning.IsCreated ||
-                buffers.Tuning.Length <= 0)
+            if (vault == null ||
+                handles.Tuning.BufferID == 0u ||
+                handles.Tuning.Generation == 0u ||
+                !vault.TryAcquireWriteLock(in handles.Tuning, SystemID.AICognition, out NativeArray<AnxietyRuntimeTuningDTO> tuningBuffer))
             {
                 return false;
             }
 
-            AnxietyRuntimeTuningDTO sanitized = AnxietyDecayJobMath.SanitizeTuning(in tuning);
-            WriteAnxietyTuningDirect(buffers.Tuning, in sanitized);
-            if (buffers.Profiles.IsCreated && buffers.Profiles.Length > 0)
+            bool profilesLocked = false;
+            NativeArray<AnxietyProfileDTO> profiles = default;
+            try
             {
-                AnxietyProfileDTO profile = AnxietyDecayDefaults.BuildProfile();
-                profile.FearDecayRate = sanitized.BaseFearDecayRate;
-                profile.AggressionDecayRate = sanitized.BaseAggressionDecayRate;
-                profile.CalmingThreshold = sanitized.CalmingThreshold;
-                buffers.Profiles[0] = profile;
-            }
+                if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
+                    return false;
 
-            return true;
+                if (handles.Profiles.BufferID != 0u &&
+                    handles.Profiles.Generation != 0u)
+                {
+                    if (!vault.TryAcquireWriteLock(in handles.Profiles, SystemID.AICognition, out profiles))
+                        return false;
+
+                    profilesLocked = true;
+                }
+
+                AnxietyRuntimeTuningDTO sanitized = AnxietyDecayJobMath.SanitizeTuning(in tuning);
+                WriteAnxietyTuningDirect(tuningBuffer, in sanitized);
+                if (profilesLocked && profiles.IsCreated && profiles.Length > 0)
+                {
+                    AnxietyProfileDTO profile = AnxietyDecayDefaults.BuildProfile();
+                    profile.FearDecayRate = sanitized.BaseFearDecayRate;
+                    profile.AggressionDecayRate = sanitized.BaseAggressionDecayRate;
+                    profile.CalmingThreshold = sanitized.CalmingThreshold;
+                    profiles[0] = profile;
+                }
+
+                return true;
+            }
+            finally
+            {
+                if (profilesLocked)
+                    vault.ReleaseWriteLock(in handles.Profiles, SystemID.AICognition);
+
+                vault.ReleaseWriteLock(in handles.Tuning, SystemID.AICognition);
+            }
         }
 
         public static bool TryReadLatestAnxietyTelemetry(in UtilityAIAnxietyVaultBuffers buffers, out AnxietyTelemetryEntry entry)
@@ -358,10 +382,30 @@ namespace Hecton8.AI.Cognition
             if (!buffers.TelemetryRing.IsCreated || buffers.TelemetryRing.Length <= 0)
                 return false;
 
-            string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
-            string directory = Path.Combine(root, "Docs", "AgentLogs");
-            string path = Path.Combine(directory, AnxietyDumpFileName);
-            return TryWriteAnxietyDump(path, in buffers, frame);
+            try
+            {
+                string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
+                string directory = Path.Combine(root, "Docs", "AgentLogs");
+                string primary = Path.Combine(directory, AnxietyDumpFileName);
+                string agent = Path.Combine(directory, AnxietyAgent1300DumpFileName);
+                return TryWriteAnxietyDump(primary, in buffers, frame) & TryWriteAnxietyDump(agent, in buffers, frame);
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
         }
 
 #if UNITY_EDITOR
@@ -524,44 +568,49 @@ namespace Hecton8.AI.Cognition
             }
         }
 
-        private static unsafe void WriteAnxietyTuningDirect(NativeArray<AnxietyRuntimeTuningDTO> tuningBuffer, in AnxietyRuntimeTuningDTO tuning)
+        private static void WriteAnxietyTuningDirect(NativeArray<AnxietyRuntimeTuningDTO> tuningBuffer, in AnxietyRuntimeTuningDTO tuning)
         {
             if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
                 return;
 
-            void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(tuningBuffer);
-            ref AnxietyRuntimeTuningDTO destination = ref UnsafeUtility.AsRef<AnxietyRuntimeTuningDTO>(ptr);
-            destination = tuning;
-        }
-
-        private static unsafe void PatchAnxietyFrame(NativeArray<AnxietyRuntimeTuningDTO> tuningBuffer, uint frame)
-        {
-            if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
-                return;
-
-            void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(tuningBuffer);
-            ref AnxietyRuntimeTuningDTO tuning = ref UnsafeUtility.AsRef<AnxietyRuntimeTuningDTO>(ptr);
-            tuning = AnxietyDecayJobMath.SanitizeTuning(in tuning);
-            tuning.Frame = frame;
+            tuningBuffer[0] = tuning;
         }
 
 #if UNITY_EDITOR
         private static string ResolvePsychologyCsvPath(string projectRoot)
         {
-#if UNITY_EDITOR
-            string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
-            string sourceDataPath = Path.Combine(root, "Assets", "_SourceData", "AI", AnxietyCsvFileName);
-            if (File.Exists(sourceDataPath))
-                return sourceDataPath;
+            try
+            {
+                string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
+                string sourceDataPath = Path.Combine(root, "Assets", "_SourceData", "AI", AnxietyCsvFileName);
+                if (File.Exists(sourceDataPath))
+                    return sourceDataPath;
 
-            string dataPath = Path.Combine(root, "Data", "AI", AnxietyCsvFileName);
-            if (File.Exists(dataPath))
-                return dataPath;
+                string dataPath = Path.Combine(root, "Data", "AI", AnxietyCsvFileName);
+                if (File.Exists(dataPath))
+                    return dataPath;
 
-            string rootPath = Path.Combine(root, AnxietyCsvFileName);
-            if (File.Exists(rootPath))
-                return rootPath;
-#endif
+                string rootPath = Path.Combine(root, AnxietyCsvFileName);
+                if (File.Exists(rootPath))
+                    return rootPath;
+            }
+            catch (IOException)
+            {
+                return null;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return null;
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+            catch (NotSupportedException)
+            {
+                return null;
+            }
+
             return null;
         }
 
@@ -726,9 +775,10 @@ namespace Hecton8.AI.Cognition
 
         private static unsafe bool TryWriteAnxietyDump(string path, in UtilityAIAnxietyVaultBuffers buffers, uint frame)
         {
-            string tempPath = path + ".tmp";
+            string tempPath = null;
             try
             {
+                tempPath = BuildAnxietyDumpTempPath(path);
                 string directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
@@ -802,6 +852,11 @@ namespace Hecton8.AI.Cognition
             catch (NotSupportedException)
             {
             }
+        }
+
+        private static string BuildAnxietyDumpTempPath(string path)
+        {
+            return Path.ChangeExtension(path, ".bin.tmp");
         }
     }
 }

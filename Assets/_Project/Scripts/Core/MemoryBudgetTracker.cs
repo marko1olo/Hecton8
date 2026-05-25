@@ -48,7 +48,7 @@ namespace Hecton8.Core
             {
                 record.WarningIssued = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[MemoryBudgetTracker] Persistent native budget exceeded.");
+                Hecton8.Core.H8Debug.LogWarning("[MemoryBudgetTracker] Persistent native budget exceeded.");
 #endif
             }
             else if (!exceededBudget)

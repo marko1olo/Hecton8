@@ -1121,15 +1121,21 @@ namespace Hecton8.AI.Ambient
 
             NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
                 writeBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            try
             {
-                indexCountPerInstance = indexCount,
-                instanceCount = (uint)capacity,
-                startIndex = startIndex,
-                baseVertexIndex = baseVertexIndex,
-                startInstance = 0u
-            };
-            writeBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+                argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+                {
+                    indexCountPerInstance = indexCount,
+                    instanceCount = (uint)capacity,
+                    startIndex = startIndex,
+                    baseVertexIndex = baseVertexIndex,
+                    startInstance = 0u
+                };
+            }
+            finally
+            {
+                writeBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            }
             _indirectArgsBufferIndex = writeIndex;
             _indirectArgsMesh = mesh;
             _indirectArgsCapacity = capacity;
@@ -1161,14 +1167,19 @@ namespace Hecton8.AI.Ambient
                 return false;
 
             var mapped = destination.LockBufferForWrite<AmbientBiotaGpuInstance>(0, safeCount);
-            for (int i = 0; i < safeCount; i++)
+            try
             {
-                AbsoluteUniversePosition aup = aups[i];
-                AmbientBiotaState state = states[i];
-                mapped[i] = BuildGpuInstance(in aup, velocities[i], in state, in _lastPlayerAup);
+                for (int i = 0; i < safeCount; i++)
+                {
+                    AbsoluteUniversePosition aup = aups[i];
+                    AmbientBiotaState state = states[i];
+                    mapped[i] = BuildGpuInstance(in aup, velocities[i], in state, in _lastPlayerAup);
+                }
             }
-
-            destination.UnlockBufferAfterWrite<AmbientBiotaGpuInstance>(safeCount);
+            finally
+            {
+                destination.UnlockBufferAfterWrite<AmbientBiotaGpuInstance>(safeCount);
+            }
             return true;
         }
 

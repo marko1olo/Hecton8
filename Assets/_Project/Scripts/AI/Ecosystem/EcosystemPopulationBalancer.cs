@@ -380,7 +380,27 @@ namespace Hecton8.AI.Ecosystem
 
                 coefficient = JsonUtility.FromJson<EcosystemCoefficientJson>(json);
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                coefficient = default;
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                coefficient = default;
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                coefficient = default;
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                coefficient = default;
+                return false;
+            }
+            catch (InvalidOperationException)
             {
                 coefficient = default;
                 return false;
@@ -566,10 +586,15 @@ namespace Hecton8.AI.Ecosystem
             {
                 _balancerHandle = job.Schedule();
             }
-            catch (Exception)
+            catch (InvalidOperationException)
             {
                 UnlockJobBuffers();
-                throw;
+                GlobalTelemetryBus.PublishPerformanceWarning(0x45504A53u, EcologySourceHash, 0f);
+            }
+            catch (ArgumentException)
+            {
+                UnlockJobBuffers();
+                GlobalTelemetryBus.PublishPerformanceWarning(0x45504A53u, EcologySourceHash, 0f);
             }
 
             H8Memory.RegisterActiveJob(SystemID.AIEcology, _balancerHandle);
@@ -1044,7 +1069,23 @@ namespace Hecton8.AI.Ecosystem
                     }
                 }
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(BlackBoxDumpIoFaultHash, EcologySourceHash, telemetry.Length);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(BlackBoxDumpIoFaultHash, EcologySourceHash, telemetry.Length);
+            }
+            catch (ArgumentException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(BlackBoxDumpIoFaultHash, EcologySourceHash, telemetry.Length);
+            }
+            catch (NotSupportedException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(BlackBoxDumpIoFaultHash, EcologySourceHash, telemetry.Length);
+            }
+            catch (InvalidOperationException)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(BlackBoxDumpIoFaultHash, EcologySourceHash, telemetry.Length);
             }
@@ -1666,6 +1707,8 @@ namespace Hecton8.AI.Ecosystem
 
     internal static class EcosystemPopulationLayoutManifest
     {
+        private const string LayoutSizeMismatchMessage = "[EcosystemPopulationLayoutManifest] Size mismatch";
+
         private static bool _verified;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -1692,7 +1735,7 @@ namespace Hecton8.AI.Ecosystem
         {
             int observed = UnsafeUtility.SizeOf<T>();
             if (observed != expected)
-                throw new CriticalBootException("[EcosystemPopulationLayoutManifest] Layout mismatch " + typeof(T).Name + " expected=" + expected + " observed=" + observed);
+                throw new CriticalBootException(LayoutSizeMismatchMessage);
         }
     }
 

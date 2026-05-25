@@ -342,7 +342,7 @@ namespace Hecton8.Core
                     out NativeArray<HomeostasisBlackBoxEntry> blackBox))
                 return;
 
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             float targetFps = ResolveTargetFrameRate();
             float frameMs = SampleFrameMetrics(unscaledDeltaTime, targetFps, hardwareMetrics, frameTimes);
             SamplePlatformMetrics(targetFps, hardwareMetrics);

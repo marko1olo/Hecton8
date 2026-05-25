@@ -6,7 +6,10 @@
 namespace Hecton8.Gameplay
 {
     using Hecton8.Core;
-    using Hecton8.Physics;
+    using Hecton8.Core.Contracts;
+    using TetherInstance = global::Hecton8.Physics.TetherInstance;
+    using TetherManager = global::Hecton8.Physics.TetherManager;
+    using TetherSignals = global::Hecton8.Physics.TetherSignals;
     using Unity.Mathematics;
     using UnityEngine;
 
@@ -17,7 +20,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Heavy Tow Winch")]
     [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(TetherManager))]
-    public sealed class HeavyTowWinch : MonoBehaviour
+    public sealed class HeavyTowWinch : MonoBehaviour, IGlobalRegistryHotSwapListener
     {
         [Header("References")]
         [Tooltip("Optional tow origin. Falls back to the player camera and then the local transform.")]
@@ -169,7 +172,6 @@ namespace Hecton8.Gameplay
 #pragma warning restore CS0414
 
         private Transform _cachedTransform;
-        private Rigidbody _playerRigidbody;
         private HectonPlayerMotor _playerMotor;
         private TetherManager _tetherManager;
         private TetherInstance _activeTether;
@@ -178,6 +180,8 @@ namespace Hecton8.Gameplay
         private float _payloadMass;
         private Transform _overrideTowAnchor;
         private Rigidbody _overrideTowBody;
+        private IPhysicsService _physicsService;
+        private bool _hotSwapRegistered;
 
         /// <summary>True while a valid heavy tow target is currently attached.</summary>
         public bool HasActiveTow => _activeTether != null && _activeTether.IsActive;
@@ -205,6 +209,8 @@ namespace Hecton8.Gameplay
 
         internal Transform CachedTransform => _cachedTransform != null ? _cachedTransform : transform;
         internal Transform ActiveTowAnchorTransform => _overrideTowAnchor != null ? _overrideTowAnchor : (towAnchor != null ? towAnchor : CachedTransform);
+        internal HectonVoxelEngine CachedTetherManagerVoxelEngine => _tetherManager != null ? _tetherManager.CachedVoxelEngineRuntime : null;
+        internal IVoxelSonarSdfReadModel CachedTetherManagerVoxelSdf => _tetherManager != null ? _tetherManager.CachedVoxelSdfReadModel : null;
         internal Vector3 PlayerRight => ResolveSafeDirection(ActiveTowAnchorTransform.right, Vector3.right);
         internal Vector3 PlayerForward => ResolveSafeDirection(ActiveTowAnchorTransform.forward, Vector3.forward);
         internal Vector3 PlayerUp => ResolveSafeDirection(ActiveTowAnchorTransform.up, Vector3.up);
@@ -213,8 +219,6 @@ namespace Hecton8.Gameplay
         private void Awake()
         {
             _cachedTransform = transform;
-            if (!TryGetComponent(out _playerRigidbody))
-                _playerRigidbody = null;
 
             if (playerMovement == null)
                 TryGetComponent(out playerMovement);
@@ -224,6 +228,8 @@ namespace Hecton8.Gameplay
             if (!TryGetComponent(out _tetherManager))
                 _tetherManager = null;
 
+            CachePhysicsServiceCold();
+
             if (towAnchor == null)
             {
                 Camera playerCamera = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Camera>(transform);
@@ -232,9 +238,33 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void OnEnable()
+        {
+            CachePhysicsServiceCold();
+            TryRegisterHotSwapListener();
+        }
+
         private void OnDisable()
         {
             ReleaseTow(false);
+            TryUnregisterHotSwapListener();
+            _physicsService = null;
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterHotSwapListener();
+            _physicsService = null;
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Physics)
+                _physicsService = currentService as IPhysicsService;
         }
 
         /// <summary>
@@ -251,7 +281,7 @@ namespace Hecton8.Gameplay
             if (!TryResolveInitialAttachDistance(initialDistance, out float safeInitialDistance))
                 return false;
 
-            if (_playerMotor == null || _playerRigidbody == null)
+            if (_playerMotor == null)
                 return false;
 
             if (!TetherSignals.TryPublishFire(
@@ -268,7 +298,6 @@ namespace Hecton8.Gameplay
             return _tetherManager.ExecuteFireRequest(
                 this,
                 _playerMotor,
-                _playerRigidbody,
                 payloadBody,
                 payloadCollider,
                 safeInitialDistance);
@@ -533,7 +562,7 @@ namespace Hecton8.Gameplay
             _activeTether.RetargetAnchorEndpoint(null, transportBody);
             transportBody.WakeUp();
             if (velocityChange.sqrMagnitude > 0.000001f)
-                PhysicsForceRouter.QueueForce(transportBody, velocityChange, ForceMode.VelocityChange);
+                ResolvePhysicsService()?.QueueForce(transportBody, velocityChange, ForceMode.VelocityChange);
 
             ApplyTowLoad(1f);
             UpdateDiagnostics();
@@ -581,7 +610,7 @@ namespace Hecton8.Gameplay
             else
             {
                 if (activeTowBody != null && releasedVelocityChange.sqrMagnitude > 0.000001f)
-                    PhysicsForceRouter.QueueForce(activeTowBody, releasedVelocityChange, ForceMode.VelocityChange);
+                    ResolvePhysicsService()?.QueueForce(activeTowBody, releasedVelocityChange, ForceMode.VelocityChange);
             }
         }
 
@@ -605,7 +634,7 @@ namespace Hecton8.Gameplay
                 snapPayloadVelocityChangeMax,
                 clampedSeverity));
             if (payloadVelocityChange.sqrMagnitude > 0.000001f)
-                PhysicsForceRouter.QueueForce(payloadBody, payloadVelocityChange, ForceMode.VelocityChange);
+                ResolvePhysicsService()?.QueueForce(payloadBody, payloadVelocityChange, ForceMode.VelocityChange);
 
             Vector3 torqueAxis = Vector3.Cross(payloadSegmentSafe, playerUpSafe);
             float torqueAxisSq = torqueAxis.sqrMagnitude;
@@ -619,7 +648,7 @@ namespace Hecton8.Gameplay
                 snapPayloadTorqueVelocityChangeMax,
                 clampedSeverity));
             if (payloadTorqueVelocityChange.sqrMagnitude > 0.000001f)
-                PhysicsForceRouter.QueueTorque(payloadBody, payloadTorqueVelocityChange, ForceMode.VelocityChange);
+                ResolvePhysicsService()?.QueueTorque(payloadBody, payloadTorqueVelocityChange, ForceMode.VelocityChange);
 
             if (payloadBody.TryGetComponent(out ITowSnapReceiver snapReceiver))
             {
@@ -723,10 +752,22 @@ namespace Hecton8.Gameplay
 
         private bool IsTowCandidate(Rigidbody payloadBody)
         {
-            if (payloadBody == null || payloadBody == _playerRigidbody || payloadBody.isKinematic)
+            if (payloadBody == null || IsPlayerAnchorBody(payloadBody) || payloadBody.isKinematic)
                 return false;
 
             return CanTowMass(payloadBody.mass);
+        }
+
+        private bool IsPlayerAnchorBody(Rigidbody payloadBody)
+        {
+            if (payloadBody == null)
+                return false;
+
+            if (_playerMotor != null && payloadBody.TryGetComponent(out HectonPlayerMotor payloadMotor))
+                return ReferenceEquals(payloadMotor, _playerMotor);
+
+            Transform payloadTransform = payloadBody.transform;
+            return payloadTransform != null && ReferenceEquals(payloadTransform, _cachedTransform);
         }
 
         private void ResetRuntimeState()
@@ -741,12 +782,39 @@ namespace Hecton8.Gameplay
 
         private Rigidbody ResolveActiveTowBody()
         {
-            return _overrideTowBody != null ? _overrideTowBody : _playerRigidbody;
+            return _overrideTowBody;
+        }
+
+        private void CachePhysicsServiceCold()
+        {
+            _physicsService = GlobalRegistry.Physics;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private IPhysicsService ResolvePhysicsService()
+        {
+            return _physicsService;
         }
 
         private bool IsTowBoundToPlayer()
         {
-            return _overrideTowBody == null || ReferenceEquals(_overrideTowBody, _playerRigidbody);
+            return _overrideTowBody == null;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

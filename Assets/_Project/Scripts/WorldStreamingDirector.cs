@@ -1,6 +1,5 @@
 using Hecton8.Core;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -537,7 +536,7 @@ namespace Hecton8.World
 
         private float GetCurrentSpeedSq()
         {
-            if (PhysicsDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityStreamingMaxAgeFrames, out float3 velocity))
+            if (CoreDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityStreamingMaxAgeFrames, out float3 velocity))
                 return math.lengthsq(velocity);
 
             return 0f;

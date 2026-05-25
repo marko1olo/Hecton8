@@ -80,10 +80,10 @@ namespace Hecton8.AI
         private const float PredatorAcousticSightThreshold01 = 0.12f;
         private const float PredatorMovementNoiseReferenceSpeedSqr = 72.25f;
         private const float PredatorMovementNoiseInvReferenceSpeedSqr = 0.0138408304f;
-        private const int ForwardObstacleRayIndex = 0;
-        private const int LeftObstacleRayIndex = 1;
-        private const int RightObstacleRayIndex = 2;
-        private const float SideObstacleRayYawDegrees = 45f;
+        private const int ForwardObstacleProbeIndex = 0;
+        private const int LeftObstacleProbeIndex = 1;
+        private const int RightObstacleProbeIndex = 2;
+        private const float SideObstacleProbeYawDegrees = 45f;
         private const float PlayerFlashlightConeDotThreshold = 0.9f;
         private const float PlayerFlashlightBlindDistanceSq = 400f;
         private const float PlayerFlashlightBlindInvDistanceSq = 0.0025f;
@@ -96,16 +96,18 @@ namespace Hecton8.AI
         private const float VisionConeLutMaxDegrees = 360f;
         private const float VisionConeLutInvStepDegrees = 0.1f;
         private const int VisionConeLutLastIndex = 35;
-        private const float ObstacleRayYawSin45 = 0.70710678f;
-        private const float ObstacleRayYawCos45 = 0.70710678f;
+        private const float ObstacleProbeYawSin45 = 0.70710678f;
+        private const float ObstacleProbeYawCos45 = 0.70710678f;
 
         [Header("Avoidance")]
         public float avoidanceRange = 8f;
         public float lookAheadFactor = 0.5f;
-        public float maxRayLength = 15f;
+        [FormerlySerializedAs("maxRayLength")]
+        public float maxProbeLength = 15f;
         public float spreadAngle = 35f;
         public float avoidanceSphereRadius = 0.8f;
-        public LayerMask obstacleMask = HectonLayerMasks.DefaultRaycastLayerMask;
+        [FormerlySerializedAs("obstacleMask")]
+        public LayerMask obstacleLayerMask = HectonLayerMasks.StrictInteractionLayerMask;
         public float visionConeAngle = 135f;
 
         [Header("Detection")]
@@ -173,13 +175,13 @@ namespace Hecton8.AI
         private float _lastReportedPlayerTimeSeconds;
         private float _lastKnownPlayerTimeSeconds;
         private float _authoredTimeSeconds;
-        private float _queuedObstacleRayLength;
-        private Vector3 _queuedForwardObstacleRayDirection;
-        private Vector3 _queuedLeftObstacleRayDirection;
-        private Vector3 _queuedRightObstacleRayDirection;
-        private RaycastHit _deferredForwardObstacleHit;
-        private RaycastHit _deferredLeftObstacleHit;
-        private RaycastHit _deferredRightObstacleHit;
+        private float _queuedObstacleProbeLength;
+        private Vector3 _queuedForwardObstacleProbeDirection;
+        private Vector3 _queuedLeftObstacleProbeDirection;
+        private Vector3 _queuedRightObstacleProbeDirection;
+        private KinematicSurfaceHit _deferredForwardObstacleHit;
+        private KinematicSurfaceHit _deferredLeftObstacleHit;
+        private KinematicSurfaceHit _deferredRightObstacleHit;
         private bool _hasDeferredForwardObstacleHit;
         private bool _hasDeferredLeftObstacleHit;
         private bool _hasDeferredRightObstacleHit;
@@ -211,7 +213,7 @@ namespace Hecton8.AI
         public bool IsStuck => _avoidanceTimeAccumulator > 2f;
 
         // Buffers for Zero-GC
-        // COLD ALLOC: Buffers for non-allocating physics queries
+        // COLD ALLOC: Buffers for non-allocating obstacle direction sampling
         private static readonly Vector3[] _rayDirs = new Vector3[7];
         // COLD ALLOC: SpatialQueryHit[8] - fauna distractor lookup buffer over spatial grid - owner: FaunaSensorSuite
         private static readonly SpatialQueryHit[] _distractorSpatialBuffer = new SpatialQueryHit[8];
@@ -229,7 +231,7 @@ namespace Hecton8.AI
             _lastReportedPlayerTimeSeconds = float.NegativeInfinity;
             _lastKnownPlayerTimeSeconds = float.NegativeInfinity;
             _authoredTimeSeconds = 0f;
-            _queuedObstacleRayLength = avoidanceRange;
+            _queuedObstacleProbeLength = avoidanceRange;
             _deferredForwardObstacleHit = default;
             _deferredLeftObstacleHit = default;
             _deferredRightObstacleHit = default;
@@ -241,9 +243,9 @@ namespace Hecton8.AI
             _foveatedImportanceScore = 1.0f;
             _foveatedInsideFrustum = true;
             Vector3 initialForward = Vector3.forward;
-            _queuedForwardObstacleRayDirection = initialForward;
-            _queuedLeftObstacleRayDirection = initialForward;
-            _queuedRightObstacleRayDirection = initialForward;
+            _queuedForwardObstacleProbeDirection = initialForward;
+            _queuedLeftObstacleProbeDirection = initialForward;
+            _queuedRightObstacleProbeDirection = initialForward;
             _cachedSelfPosition = Vector3.zero;
             _cachedSelfForward = initialForward;
             _cachedSelfAup = default;
@@ -732,10 +734,10 @@ namespace Hecton8.AI
                 ? ResolveDominantAxisDirection(safeVelocity, _cachedSelfForward)
                 : _cachedSelfForward;
             _rayDirs[0] = forwardDirection;
-            _queuedForwardObstacleRayDirection = forwardDirection;
-            _queuedLeftObstacleRayDirection = RotateObstacleDirection(forwardDirection, -SideObstacleRayYawDegrees);
-            _queuedRightObstacleRayDirection = RotateObstacleDirection(forwardDirection, SideObstacleRayYawDegrees);
-            _queuedObstacleRayLength = length;
+            _queuedForwardObstacleProbeDirection = forwardDirection;
+            _queuedLeftObstacleProbeDirection = RotateObstacleDirection(forwardDirection, -SideObstacleProbeYawDegrees);
+            _queuedRightObstacleProbeDirection = RotateObstacleDirection(forwardDirection, SideObstacleProbeYawDegrees);
+            _queuedObstacleProbeLength = length;
             isAvoidingObstacle = TryResolveObstacleAvoidanceDirection(forwardDirection, length, out Vector3 resolvedDirection, out _);
             if (isAvoidingObstacle)
             {
@@ -978,28 +980,28 @@ namespace Hecton8.AI
             _foveatedInsideFrustum = insideFrustum;
         }
 
-        internal void ConsumeDeferredRaycastHit(int commandIndex, in RaycastHit hit)
+        internal void ConsumeDeferredSurfaceHit(int commandIndex, in KinematicSurfaceHit hit)
         {
             switch (commandIndex)
             {
-                case ForwardObstacleRayIndex:
+                case ForwardObstacleProbeIndex:
                     _deferredForwardObstacleHit = hit;
-                    _hasDeferredForwardObstacleHit = hit.collider != null;
+                    _hasDeferredForwardObstacleHit = hit.hasHit;
                     break;
-                case LeftObstacleRayIndex:
+                case LeftObstacleProbeIndex:
                     _deferredLeftObstacleHit = hit;
-                    _hasDeferredLeftObstacleHit = hit.collider != null;
+                    _hasDeferredLeftObstacleHit = hit.hasHit;
                     break;
-                case RightObstacleRayIndex:
+                case RightObstacleProbeIndex:
                     _deferredRightObstacleHit = hit;
-                    _hasDeferredRightObstacleHit = hit.collider != null;
+                    _hasDeferredRightObstacleHit = hit.hasHit;
                     break;
             }
         }
 
         internal bool TryGetDeferredObstacleAvoidance(out Vector3 avoidanceDirection, out float obstaclePressure01)
         {
-            return TryResolveObstacleAvoidanceDirection(_cachedSelfForward, _queuedObstacleRayLength, out avoidanceDirection, out obstaclePressure01);
+            return TryResolveObstacleAvoidanceDirection(_cachedSelfForward, _queuedObstacleProbeLength, out avoidanceDirection, out obstaclePressure01);
         }
 
         internal bool TryGetForwardObstacleSurface(out Vector3 surfaceNormal, out float obstaclePressure01)
@@ -1007,15 +1009,15 @@ namespace Hecton8.AI
             surfaceNormal = Vector3.zero;
             obstaclePressure01 = 0f;
 
-            if (!_hasDeferredForwardObstacleHit || _deferredForwardObstacleHit.collider == null)
+            if (!_hasDeferredForwardObstacleHit || !_deferredForwardObstacleHit.hasHit)
                 return false;
 
-            float rayLength = math.max(avoidanceRange, _queuedObstacleRayLength);
-            if (_deferredForwardObstacleHit.distance <= 0f || _deferredForwardObstacleHit.distance > rayLength)
+            float probeLength = math.max(avoidanceRange, _queuedObstacleProbeLength);
+            if (_deferredForwardObstacleHit.distance <= 0f || _deferredForwardObstacleHit.distance > probeLength)
                 return false;
 
             surfaceNormal = _deferredForwardObstacleHit.normal;
-            obstaclePressure01 = 1f - math.saturate(_deferredForwardObstacleHit.distance * math.rcp(math.max(rayLength, 0.001f)));
+            obstaclePressure01 = 1f - math.saturate(_deferredForwardObstacleHit.distance * math.rcp(math.max(probeLength, 0.001f)));
             return obstaclePressure01 > 0f && surfaceNormal.sqrMagnitude > 0.0001f;
         }
 
@@ -1026,24 +1028,24 @@ namespace Hecton8.AI
 
         private bool TryResolveObstacleAvoidanceDirection(
             Vector3 fallbackForward,
-            float rayLength,
+            float probeLength,
             out Vector3 avoidanceDirection,
             out float obstaclePressure01)
         {
-            float safeRayLength = math.max(avoidanceRange, rayLength);
+            float safeProbeLength = math.max(avoidanceRange, probeLength);
             Vector3 resolvedForward = fallbackForward.sqrMagnitude > 0.0001f
                 ? ResolveDominantAxisDirection(fallbackForward, _cachedSelfForward)
                 : _cachedSelfForward;
-            Vector3 leftDirection = _queuedLeftObstacleRayDirection.sqrMagnitude > 0.0001f
-                ? ResolveDominantAxisDirection(_queuedLeftObstacleRayDirection, resolvedForward)
-                : RotateObstacleDirection(resolvedForward, -SideObstacleRayYawDegrees);
-            Vector3 rightDirection = _queuedRightObstacleRayDirection.sqrMagnitude > 0.0001f
-                ? ResolveDominantAxisDirection(_queuedRightObstacleRayDirection, resolvedForward)
-                : RotateObstacleDirection(resolvedForward, SideObstacleRayYawDegrees);
+            Vector3 leftDirection = _queuedLeftObstacleProbeDirection.sqrMagnitude > 0.0001f
+                ? ResolveDominantAxisDirection(_queuedLeftObstacleProbeDirection, resolvedForward)
+                : RotateObstacleDirection(resolvedForward, -SideObstacleProbeYawDegrees);
+            Vector3 rightDirection = _queuedRightObstacleProbeDirection.sqrMagnitude > 0.0001f
+                ? ResolveDominantAxisDirection(_queuedRightObstacleProbeDirection, resolvedForward)
+                : RotateObstacleDirection(resolvedForward, SideObstacleProbeYawDegrees);
 
-            bool forwardClosed = TrySampleNavGridObstacle(resolvedForward, safeRayLength, out float forwardPressure01);
-            bool leftClosed = TrySampleNavGridObstacle(leftDirection, safeRayLength, out float leftPressure01);
-            bool rightClosed = TrySampleNavGridObstacle(rightDirection, safeRayLength, out float rightPressure01);
+            bool forwardClosed = TrySampleNavGridObstacle(resolvedForward, safeProbeLength, out float forwardPressure01);
+            bool leftClosed = TrySampleNavGridObstacle(leftDirection, safeProbeLength, out float leftPressure01);
+            bool rightClosed = TrySampleNavGridObstacle(rightDirection, safeProbeLength, out float rightPressure01);
             if (!forwardClosed && !leftClosed && !rightClosed)
             {
                 avoidanceDirection = Vector3.zero;
@@ -1092,11 +1094,11 @@ namespace Hecton8.AI
         {
             float3 forward = (float3)ResolveDominantAxisDirection(forwardDirection, Vector3.forward);
             float yawSign = yawDegrees < 0f ? -1f : 1f;
-            float yawSin = ObstacleRayYawSin45 * yawSign;
+            float yawSin = ObstacleProbeYawSin45 * yawSign;
             float3 rotated = new float3(
-                (forward.x * ObstacleRayYawCos45) + (forward.z * yawSin),
+                (forward.x * ObstacleProbeYawCos45) + (forward.z * yawSin),
                 forward.y,
-                (-forward.x * yawSin) + (forward.z * ObstacleRayYawCos45));
+                (-forward.x * yawSin) + (forward.z * ObstacleProbeYawCos45));
             return ResolveDominantAxisDirection((Vector3)rotated, Vector3.forward);
         }
 
@@ -1121,12 +1123,12 @@ namespace Hecton8.AI
             if (direction.sqrMagnitude <= 0.0001f)
                 return false;
 
-            float probeDistance = math.clamp(distanceMeters, math.max(0.25f, avoidanceRange * 0.5f), maxRayLength);
+            float probeDistance = math.clamp(distanceMeters, math.max(0.25f, avoidanceRange * 0.5f), maxProbeLength);
             Vector3 probePosition = _cachedSelfPosition + ResolveDominantAxisDirection(direction, _cachedSelfForward) * probeDistance;
             if (!TrySampleClosedNavGridCell(probePosition))
                 return false;
 
-            pressure01 = math.saturate(1f - (probeDistance * math.rcp(math.max(maxRayLength, 0.001f))));
+            pressure01 = math.saturate(1f - (probeDistance * math.rcp(math.max(maxProbeLength, 0.001f))));
             if (pressure01 <= 0.001f)
                 pressure01 = 1f;
             return true;
@@ -1192,7 +1194,7 @@ namespace Hecton8.AI
                         ? 2f
                         : 0f;
             float minimumLength = math.max(0f, avoidanceRange);
-            float maximumLength = math.max(minimumLength, maxRayLength);
+            float maximumLength = math.max(minimumLength, maxProbeLength);
             float desiredLength = minimumLength + (lookAheadUnits * math.max(0f, lookAheadFactor));
             return math.min(maximumLength, math.max(minimumLength, desiredLength));
         }

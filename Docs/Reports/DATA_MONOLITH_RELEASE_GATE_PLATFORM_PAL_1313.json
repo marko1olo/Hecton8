@@ -1,0 +1,55 @@
+{
+  "agent": "1313",
+  "date": "2026-05-25",
+  "evidenceClass": "STATIC_SOURCE",
+  "runtimeFilesTouchedInThisPatch": false,
+  "dotnetRun": false,
+  "unityBuildRun": false,
+  "patchedFile": "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithReleaseBuildGate.cs",
+  "lineProof": {
+    "buildTargetCapturedLine": 23,
+    "explicitTargetScanSignatureLine": 56,
+    "unsupportedPalBlockStartLine": 77,
+    "unsupportedPalBlockEndLine": 85,
+    "windowsOnlyPalSupportStartLine": 123,
+    "windowsOnlyPalSupportEndLine": 127,
+    "targetAwareScanFileLine": 129,
+    "targetAwareDirectiveLine": 161,
+    "targetAwareDirectiveSignatureLine": 288,
+    "targetAwareEvaluateLine": 344,
+    "targetAwareParserConstructLine": 349,
+    "targetAwareParserConstructorLine": 618,
+    "unityEditorFamilyFalseLine": 717,
+    "unityAndroidSymbolLine": 724,
+    "unityStandaloneWinSymbolLine": 734,
+    "unityStandaloneLinuxSymbolLine": 738,
+    "unityStandaloneOsxSymbolLine": 741,
+    "unityStandaloneSymbolLine": 744,
+    "reportFieldStartLine": 385,
+    "reportFieldEndLine": 395,
+    "platformPalStatusStartLine": 424,
+    "platformPalStatusEndLine": 431
+  },
+  "policy": {
+    "supportedProductionTargets": [
+      "StandaloneWindows",
+      "StandaloneWindows64"
+    ],
+    "unsupportedProductionFindingKind": "unsupportedStaticDataMonolithPlatformPal",
+    "unsupportedProductionStatus": "FAIL_NO_NATIVE_MONOLITH_PAL",
+    "developmentStatusWhenMissingPal": "DEVELOPMENT_TARGET_NOT_RELEASE_PROOF"
+  },
+  "verification": {
+    "rgLineProbe": "PASS",
+    "ifEndifCount": "1/1",
+    "braceCount": "87/87",
+    "targetAwarePreprocessorSymbols": "PASS",
+    "gitDiffCheck": "PASS_CRLF_WARNINGS_ONLY",
+    "json1313Parse": "PASS"
+  },
+  "residualRejection": {
+    "questAndroidProductionHydrator": "FAIL_CLOSED_NO_NATIVE_PAL",
+    "strictGlobalParserBlockers": 262,
+    "abiBoundStrictDtoOrderViolations": 2
+  }
+}

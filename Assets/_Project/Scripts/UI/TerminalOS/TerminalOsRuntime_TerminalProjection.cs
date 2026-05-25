@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -18,7 +19,7 @@ namespace Hecton8.UI
         private const BufferID TerminalInputTelemetryRingBufferId = (BufferID)71381;
         private const BufferID TerminalInputTuningBufferId = (BufferID)71382;
         private const BufferID TerminalInputRowHashesBufferId = (BufferID)71383;
-        private const string TerminalProjectionDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_331.bin";
+        private const string TerminalProjectionDumpRelativePath = "Docs/AgentLogs/Dump_1309_TerminalProjection.bin";
         private const uint TerminalProjectionFaultNonFinite = 1u << 16;
         private const uint TerminalProjectionFaultBudget = 1u << 17;
         private const uint TerminalProjectionFaultLayout = 1u << 18;
@@ -504,7 +505,7 @@ namespace Hecton8.UI
             }
             catch (Exception exception)
             {
-                Debug.LogException(exception);
+                Hecton8.Core.H8Debug.LogException(exception);
             }
         }
 
@@ -527,7 +528,9 @@ namespace Hecton8.UI
                 InputStateStrideBytes = (uint)UnsafeUtility.SizeOf<TerminalInputStateDTO>(),
                 RollbackExcluded = TerminalProjectionRollbackExcluded
             };
-            stream.Write(new ReadOnlySpan<byte>(UnsafeUtility.AddressOf(ref header), UnsafeUtility.SizeOf<TerminalInputBlackBoxHeader>()));
+            stream.Write(MemoryMarshal.CreateReadOnlySpan(
+                ref UnsafeUtility.AsRef<byte>(UnsafeUtility.AddressOf(ref header)),
+                UnsafeUtility.SizeOf<TerminalInputBlackBoxHeader>()));
 
             int count = (int)header.EntryCount;
             int start = _terminalInputTelemetryCursor;
@@ -543,7 +546,9 @@ namespace Hecton8.UI
                     index -= telemetryRing.Length;
 
                 TerminalInputTelemetryEntry entry = telemetryRing[index];
-                stream.Write(new ReadOnlySpan<byte>(UnsafeUtility.AddressOf(ref entry), rowBytes));
+                stream.Write(MemoryMarshal.CreateReadOnlySpan(
+                    ref UnsafeUtility.AsRef<byte>(UnsafeUtility.AddressOf(ref entry)),
+                    rowBytes));
             }
         }
 
@@ -630,7 +635,7 @@ namespace Hecton8.UI
             if (gazeRays.IsCreated && gazeRays.Length > 0)
             {
                 GazeRayDTO gaze = gazeRays[0];
-                float3 origin = gaze.OriginAup.ToRuntimeFloat3();
+                float3 origin = ResolveRuntimeLocalPosition(gaze.OriginAup, default);
                 float3 direction = math.normalizesafe(gaze.Direction, new float3(0f, 0f, 1f));
                 Gizmos.color = new Color(0.08f, 0.95f, 0.32f, 0.75f);
                 Gizmos.DrawLine(ToVector3(origin), ToVector3(origin + direction * 3f));
@@ -642,7 +647,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            float3 center = plane.CenterAup.ToRuntimeFloat3();
+            float3 center = ResolveRuntimeLocalPosition(plane.CenterAup, default);
             float3 right = math.normalizesafe(math.cross(inputState.UpVector, inputState.ForwardNormal), math.normalizesafe(plane.Right, new float3(1f, 0f, 0f)));
             float3 up = math.normalizesafe(inputState.UpVector, new float3(0f, 1f, 0f));
             float2 uv = ResolveTerminalProjectionHitPoint(inputState.ProjectedUV);
@@ -653,6 +658,16 @@ namespace Hecton8.UI
             Gizmos.DrawWireSphere(ToVector3(hit), 0.045f);
         }
 #endif
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 ResolveRuntimeLocalPosition(AbsoluteUniversePosition targetAup, float3 fallback)
+        {
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            return AupPrecisionMath.LocalDeltaFloat3(
+                targetAup.ToAbsoluteDouble3(),
+                originAup.ToAbsoluteDouble3(),
+                fallback);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float2 ResolveTerminalProjectionHitPoint(float2 uv)
@@ -671,10 +686,14 @@ namespace Hecton8.UI
             [FieldOffset(20)] public uint EntryStrideBytes;
             [FieldOffset(24)] public uint InputStateStrideBytes;
             [FieldOffset(28)] public uint RollbackExcluded;
-            [FieldOffset(32)] public ulong _pad0;
-            [FieldOffset(40)] public ulong _pad1;
-            [FieldOffset(48)] public ulong _pad2;
-            [FieldOffset(56)] public ulong _pad3;
+            [FieldOffset(32)] private uint _pad0;
+            [FieldOffset(36)] private uint _pad1;
+            [FieldOffset(40)] private uint _pad2;
+            [FieldOffset(44)] private uint _pad3;
+            [FieldOffset(48)] private uint _pad4;
+            [FieldOffset(52)] private uint _pad5;
+            [FieldOffset(56)] private uint _pad6;
+            [FieldOffset(60)] private uint _pad7;
         }
     }
 }

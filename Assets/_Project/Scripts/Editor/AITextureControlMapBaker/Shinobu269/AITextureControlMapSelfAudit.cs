@@ -205,7 +205,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             builder.Append("  <Scalability low=\"continuous q near 0.0: pristine authored bake resolution preserved, 512 validation samples, cheaper preview curvature\" middle=\"q around 0.5: pristine authored bake resolution preserved, middle validation density\" high=\"q 0.85: pristine authored bake resolution preserved, stricter validation\" ultra=\"q 1.0: 4096 cap when profile requests it, 4096 validation samples, full forensic reporting\" />\n");
             builder.Append("</SELF_AUDIT>\n");
             File.WriteAllText(AITextureControlMapConstants.SelfAuditReportPath, builder.ToString());
-            Debug.Log("[AITextureControlMapSelfAudit] " + (pass ? "Pending Unity verification." : "Critical warning."));
+            Hecton8.Core.H8Debug.Log("[AITextureControlMapSelfAudit] " + (pass ? "Pending Unity verification." : "Critical warning."));
             return pass;
         }
 

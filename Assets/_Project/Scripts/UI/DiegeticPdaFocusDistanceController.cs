@@ -170,7 +170,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedVoxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
         }
 
@@ -270,17 +270,13 @@ namespace Hecton8.UI
             float3 origin3 = new float3(origin.x, origin.y, origin.z);
             float3 direction3 = math.normalizesafe(new float3(forward.x, forward.y, forward.z), new float3(0f, 0f, 1f));
             float stepMeters = ResolveFocusSdfStepMeters(maxDistanceMeters);
-            if (!readModel.TryRaymarchNearestSonarSdf(
+            if (!VoxelSonarSdfMath.TryResolveNearestSdfSurface(
+                    readModel,
                     origin3,
                     direction3,
                     maxDistanceMeters,
                     stepMeters,
-                    out VoxelSonarSdfRaycastHit hit,
-                    out NativeArray<byte>.ReadOnly _,
-                    out int3 _,
-                    out float3 _,
-                    out float3 _,
-                    out float _) ||
+                    out VoxelSonarSdfRaycastHit hit) ||
                 (hit.Flags & VoxelSonarSdfRaycastHit.FlagHit) == 0u ||
                 !math.isfinite(hit.Distance) ||
                 hit.Distance <= 0f)

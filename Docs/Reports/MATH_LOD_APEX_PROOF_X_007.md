@@ -714,3 +714,316 @@ branchAudit[WfcOutpostGraphTranslationJob].floatModeFastCount = 0
 ```
 
 Boundary: this is a scoped deterministic proof, not a project-wide claim. Remaining external `FloatMode.Fast` sites are visible debt for their owners; X_007 only changed runtime atmosphere/power solver lanes in this domain.
+
+## 21. Ecosystem Voxel Logistics Solar Snapshot Route Closure
+
+The second snapshot sweep closed quality routes that could still seed ultra defaults or bypass the blackbox-backed Math-LOD config:
+
+```text
+ShinobuEcosystemBalancer:
+  ResolveGlobalQualityWeight01() reads MathLodRuntimeConfig first.
+  LotkaVolterraMacroJob.GlobalQualityWeight = visualQualityWeight, not AuthoritativeQualityWeight.
+
+PathFunnelNavmeshRuntime_VoxelAStar:
+  ResolveVoxelAStarQualityWeight() reads MathLodRuntimeConfig first, then applies tuning cap.
+
+ShinobuLogisticsRouter:
+  ResolveGlobalQualityWeight() reads MathLodRuntimeConfig first.
+  EmergencyTuning().GlobalQualityWeight = ResolveGlobalQualityWeight().
+
+PowerGridSolarContracts:
+  DefaultConditions().GlobalQualityWeight = ResolveSolarQualityWeight().
+  SanitizeConditions() uses ResolveSolarQualityWeight() as the non-finite fallback.
+
+FluidImpulseJob:
+  Burst FloatMode = Deterministic.
+```
+
+Latest proof from `Docs/Reports/MATH_LOD_OPTIMIZATION_REPORT_X_007.json`:
+
+```text
+hardFailures = []
+remainingTranscendentalTotal = 0
+runtimeContinuousCadenceAndVisualProof.ecosystemBalancerSnapshotRoute = true
+runtimeContinuousCadenceAndVisualProof.ecosystemMacroJobUsesResolvedQuality = true
+runtimeContinuousCadenceAndVisualProof.voxelAStarSnapshotRoute = true
+runtimeContinuousCadenceAndVisualProof.logisticsRouterSnapshotRoute = true
+runtimeContinuousCadenceAndVisualProof.logisticsRouterEmergencyTuningUsesResolvedQuality = true
+runtimeContinuousCadenceAndVisualProof.solarConditionsSnapshotRoute = true
+runtimeContinuousCadenceAndVisualProof.solarDefaultConditionsUseResolvedQuality = true
+runtimeContinuousCadenceAndVisualProof.solarSanitizeFallbackUsesResolvedQuality = true
+branchAudit[FluidImpulseJob].floatModeFastCount = 0
+```
+
+Boundary: quality still scales cadence, budget, search breadth, SDF samples, and visual richness. It does not scale biomass truth, solar irradiance truth, path identity, oxygen/pressure source truth, logistics topology, or DTO layout.
+
+## 22. Compile Wall Contract Fix And Final Validator Pass
+
+The post-sweep build exposed two concrete contract defects and they are fixed in source:
+
+```text
+VoxelDeltaProcessor -> IFluidDecalPresentationSink:
+  Problem: cave-in dust used double3 AUP, interface only exposed Vector3 AUP.
+  Fix: IFluidDecalPresentationSink now exposes RegisterVoxelCaveInDustAup(double3, Vector3, float).
+  Rejected: caller-side double3 -> Vector3 downcast, because it loses absolute-universe precision.
+
+LoreDatabaseManager -> GlobalRegistry.LoreDatabaseReadModel:
+  Problem: generated core build rejected implicit manager-to-read-model conversion.
+  Fix: LoreDatabaseManager explicitly implements Hecton8.Core.ILoreDatabaseReadModel.
+  Rejected: registry-side casts, because the contract should be visible at the implementation declaration.
+```
+
+Current verification:
+
+```text
+dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly
+Build succeeded in 00:01:31.17
+Warnings = 0
+Errors = 0
+
+python -B Tools/OOP_MathLOD_Scanner.py
+scanner runtime = 507.4s
+scannedCSharpFiles = 2406
+remainingTranscendentalTotal = 0
+hardFailures = []
+physiologyWorstAbsError = 6.080794978657877e-08
+```
+
+Boundary: this fixes compile proof and AUP precision. It does not create a new speed claim; verified runtime microseconds saved remain `0` until profiler evidence exists.
+
+## 23. Unity.Mathematics Fully-Qualified And Alias Scanner Bypass Proof
+
+The scanner now owns the namespace bypass route explicitly. It counts these as banned heavy-transcendental calls:
+
+```text
+Unity.Mathematics.math.exp / pow / sin / cos / sincos / log / tan / atan / atan2 / asin / acos
+global::Unity.Mathematics.math.exp / pow / sin / cos / sincos / log / tan / atan / atan2 / asin / acos
+using Alias = Unity.Mathematics.math; Alias.exp / pow / sin / cos / sincos / log / tan / atan / atan2 / asin / acos
+```
+
+The bare `math.*` regex no longer suffix-matches the fully-qualified form. That keeps the proof honest: a fully-qualified call is reported in `UnityMathematicsMath.*`, and an alias call is reported in `UnityMathAlias.*`.
+
+Current verification:
+
+```text
+python -B Tools/OOP_MathLOD_Scanner.py
+scanner runtime = 644.2s
+scannedCSharpFiles = 2406
+remainingTranscendentalTotal = 0
+hardFailures = []
+fullyQualifiedUnityMathTranscendentalTotal = 0
+unityMathAliasDeclarations = 0
+unityMathAliasTranscendentalTotal = 0
+physiologyWorstAbsError = 6.080794978657877e-08
+```
+
+Synthetic route test caught `m.exp`, `Unity.Mathematics.math.sin`, and `global::Unity.Mathematics.math.cos`. This is a scanner/proof hardening change only; verified runtime microseconds saved remain `0`.
+
+## 24. Unity.Mathematics Static Import Scanner Bypass Proof
+
+The scanner also owns static-import calls:
+
+```text
+using static Unity.Mathematics.math;
+exp / pow / sin / cos / sincos / log / tan / atan / atan2 / asin / acos
+```
+
+Static-import counting is scoped to files that actually declare `using static Unity.Mathematics.math;`. This avoids broad false positives from editor strings or local helper names while still hard-failing the namespace bypass that would matter in C# code.
+
+Current verification:
+
+```text
+python -B Tools/OOP_MathLOD_Scanner.py
+scanner runtime = 827.7s
+scannedCSharpFiles = 2406
+remainingTranscendentalTotal = 0
+hardFailures = []
+fullyQualifiedUnityMathTranscendentalTotal = 0
+unityMathAliasDeclarations = 0
+unityMathAliasTranscendentalTotal = 0
+unityMathStaticImportDeclarations = 0
+unityMathStaticImportTranscendentalTotal = 0
+physiologyWorstAbsError = 6.080794978657877e-08
+```
+
+Synthetic route test caught `m.exp`, `Unity.Mathematics.math.sin`, `global::Unity.Mathematics.math.cos`, and static-import `pow`. Build was not launched after this scanner pass because CPU was `90` and compiler processes were active.
+
+## 25. Framework Math Namespace Bypass Proof
+
+The scanner now owns these additional framework routes:
+
+```text
+UnityEngine.Mathf.Exp / Pow / Sin / Cos / Log / Tan / Atan / Atan2 / Asin / Acos
+global::UnityEngine.Mathf.Exp / Pow / Sin / Cos / Log / Tan / Atan / Atan2 / Asin / Acos
+global::System.Math.Exp / Pow / Sin / Cos / Log / Tan / Atan / Atan2 / Asin / Acos
+global::System.MathF.Exp / Pow / Sin / Cos / Log / Tan / Atan / Atan2 / Asin / Acos
+using Alias = UnityEngine.Mathf/System.Math/System.MathF; Alias.Exp / Pow / Sin / Cos / Log / Tan / Atan / Atan2 / Asin / Acos
+using static UnityEngine.Mathf/System.Math/System.MathF; Exp / Pow / Sin / Cos / Log / Tan / Atan / Atan2 / Asin / Acos
+```
+
+Current verification:
+
+```text
+python -B Tools/OOP_MathLOD_Scanner.py
+tool status = timed out after output at 1042.8s
+JSON emitted = Docs/Reports/MATH_LOD_OPTIMIZATION_REPORT_X_007.json
+scannedCSharpFiles = 2406
+remainingTranscendentalTotal = 0
+hardFailures = []
+unityEngineMathfFullyQualifiedTranscendentalTotal = 0
+frameworkMathAliasDeclarations = 0
+frameworkMathAliasTranscendentalTotal = 0
+frameworkMathStaticImportDeclarations = 0
+frameworkMathStaticImportTranscendentalTotal = 0
+physiologyWorstAbsError = 6.080794978657877e-08
+```
+
+Synthetic route test caught `SM.Exp`, `UM.Pow`, `UnityEngine.Mathf.Cos`, and static-import `Sin`. Build was blocked by CPU `81` and active compiler processes.
+
+## 26. Scanner Occurrence Evidence Pass Cleanup
+
+The scanner no longer finds `firstOccurrences` through `line x pattern` nested scanning. It now:
+
+```text
+1. Builds newline start offsets for the stripped C# source.
+2. Runs each active regex with pattern.finditer(code_text).
+3. Maps each match offset back to a one-based line number with bisect.
+4. Emits the original source line as failure evidence.
+```
+
+Current verification:
+
+```text
+python -B Tools/OOP_MathLOD_Scanner.py
+scanner runtime = 1104.4s
+scannedCSharpFiles = 2406
+remainingTranscendentalTotal = 0
+hardFailures = []
+physiologyWorstAbsError = 6.080794978657877e-08
+```
+
+Boundary: this cleanup preserves evidence shape, but it did not improve scanner wall time in the measured run. No tooling-speed or runtime-speed claim is made.
+
+## 27. Post-Bypass Build Proof
+
+After the namespace-bypass scanner expansion and occurrence-pass cleanup, the scoped core build passed:
+
+```text
+Build gate before launch:
+CPU = 24
+dotnet/csc/VBCSCompiler = none
+
+dotnet build Hecton8.Core.csproj --disable-build-servers -p:UseSharedCompilation=false /m:1 -v:minimal -clp:ErrorsOnly
+Build succeeded
+Warnings = 0
+Errors = 0
+Time Elapsed = 00:01:46.82
+```
+
+Boundary: this is source compatibility proof only. It does not establish Unity import, Burst Inspector, Play Mode, profiler, GCMonitor, player build, or hardware timing.
+
+## 28. Scanner Read/Strip Cache Proof
+
+The scanner wall-time bottleneck after section 26 was repeated source IO and repeated C# string/comment stripping, not occurrence line mapping.
+
+Implementation:
+
+```text
+READ_TEXT_CACHE[path] -> raw file text
+STRIPPED_CODE_CACHE[path] -> stripped C# code text
+read_code_text(path) -> strips once, reuses across all audits
+```
+
+Current verification:
+
+```text
+python -B Tools/OOP_MathLOD_Scanner.py
+scanner runtime = 374.9s
+previous post-occurrence runtime = 1104.4s
+delta = 729.5s proof-tool wall time
+scannedCSharpFiles = 2406
+remainingTranscendentalTotal = 0
+hardFailures = []
+fullyQualifiedUnityMathTranscendentalTotal = 0
+unityMathAliasTranscendentalTotal = 0
+unityMathStaticImportTranscendentalTotal = 0
+frameworkMathAliasTranscendentalTotal = 0
+frameworkMathStaticImportTranscendentalTotal = 0
+physiologyWorstAbsError = 6.080794978657877e-08
+```
+
+Boundary: this is scanner/proof infrastructure. It does not claim gameplay frame-time savings, Unity Burst Inspector proof, player-build proof, or hardware profiler data.
+
+## 29. Exact Decompression Residual Proof
+
+The deployed decompression decay is:
+
+```text
+decay(x) = P33(x/4)^4
+P33(y) = (1 - y/2 + y^2/10 - y^3/120) / (1 + y/2 + y^2/10 + y^3/120)
+```
+
+The scanner now computes the Taylor residual with exact rational arithmetic, not floats:
+
+```text
+P33(y) - exp(-y)
+first non-zero term = -1/100800 * y^7
+
+P33(x/4)^4 - exp(-x)
+first non-zero term = -1/412876800 * x^7
+
+P33(x/40)^40 - exp(-x)
+first non-zero term = -1/412876800000000 * x^7
+```
+
+Float scan remains as a runtime-shape check:
+
+```text
+domain [0, 4]
+step = 0.0001
+maxAbsError = 7.62934333362053e-07
+physiologyWorstAbsError = 6.080794978657877e-08
+```
+
+Quality discontinuity proof:
+
+```text
+formula = ambient + (previous - ambient) * ApproxExpNegPade33Reduced(effectiveK * dt)
+GlobalQualityWeight appears in authority formula = false
+qHigh = 1.0
+qLow = 0.1
+decay = 0.9994223713874817
+nextAtQ1 = 0.8624581098556519
+nextAtQ0_1 = 0.8624581098556519
+absDelta = 0
+```
+
+Boundary: this proves no direct tissue-state jump from a `GlobalQualityWeight` drop for equal physical inputs. It does not claim that all decompression gameplay is profiler-tested in Unity player builds.
+
+## 30. Jacobi Boundedness Stress Proof
+
+Minimum quality does not claim convergence. It claims bounded finite relaxation:
+
+```text
+iteration budget at q=0.0 = 2
+iteration budget at q=0.1 = 3
+iteration budget at q=0.5 = 26
+iteration budget at q=1.0 = 50
+omega range = 0.55..0.92
+conductance clamp = 0..4096
+net current clamp = +/-1048576
+voltage clamp = saturate [0,1]
+```
+
+The scanner now mirrors the `PowerVoltageSolverJob` update and stresses extreme values:
+
+```text
+checkedCases = 829440
+nonFiniteSolvedVoltageCount = 0
+outOfRangeSolvedVoltageCount = 0
+negativeSolvedVoltageCount = 0
+maxAbsSolvedVoltage = 1.0
+maxConductanceAfterClamp = 4096.0
+```
+
+Boundary: this does not prove a two-iteration sparse grid has converged. It proves the low-quality solver step cannot emit negative voltage, NaN voltage, or voltage outside `[0,1]` under the tested hostile input envelope.

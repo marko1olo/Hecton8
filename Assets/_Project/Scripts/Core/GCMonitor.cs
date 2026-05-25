@@ -105,7 +105,7 @@ namespace Hecton8.Core
 
         public void PostFixedTick(float fixedDeltaTime)
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             TryDispatchCriticalMemoryPressure(frame);
             TryAuditLongLivedNativeAllocations(frame);
         }
@@ -151,7 +151,7 @@ namespace Hecton8.Core
 
         private void PrimeSamplingFrames()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             _nextMemoryPressureSampleFrame = frame + MemoryPressureSampleIntervalFrames;
             _nextNativeLeakAuditFrame = frame + NativeLeakAuditIntervalFrames;
             _lastMemoryPressureDispatchFrame = frame - MemoryPressureSampleIntervalFrames;

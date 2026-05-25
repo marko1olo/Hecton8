@@ -128,7 +128,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Diegetic Panel Controller")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class DiegeticPanelController : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ICursorHost, IDepthOcclusionReceiver, IDamageReceiver, IGlobalRegistryHotSwapListener
+    public sealed class DiegeticPanelController : MonoBehaviour, ILateFrameTickable, ICursorHost, IDepthOcclusionReceiver, IDamageReceiver, IGlobalRegistryHotSwapListener
     {
         private const string WorldGeometrySortingLayer = "WorldGeometry";
         private const float MinCanvasExtent = 0.0001f;
@@ -452,14 +452,17 @@ namespace Hecton8.UI
         private bool _pendingCursorPoseDirty;
         private Vector3 _pendingCursorWorldPosition;
         private Quaternion _pendingCursorWorldRotation = Quaternion.identity;
-        private bool _pendingPanelCameraEnabledDirty;
-        private bool _pendingPanelCameraEnabled;
+        private bool _pendingPanelViewEnabledDirty;
+        private bool _pendingPanelViewEnabled;
         private bool _pendingQualityPresentationRefresh;
         private bool _pendingDistanceRenderTextureRefresh;
         private float _pendingDistanceRefreshDeltaTime;
         private bool _pendingMaterialRefresh;
         private bool _pendingMaterialTextureRefresh;
         private bool _pendingMaterialDepthRefresh;
+        private bool _pendingProxyLightFlush;
+        private bool _pendingProxyLightActive;
+        private ProxyLightData _pendingProxyLightData;
         private bool _applyingLateFramePresentation;
         private bool _matrixStateInitialized;
         private bool _canvasSettingsApplied;
@@ -534,12 +537,12 @@ namespace Hecton8.UI
             _inputAwaitingRegistration = false;
             _cursorStateInitialized = false;
             _canvasSettingsApplied = false;
-            SetPanelCameraEnabled(false);
+            SetPanelViewEnabled(false);
             if (!_retainRenderTextureOnDisable)
                 ReleaseRenderTexture();
             ClearPendingPresentationSync();
             ApplyCursorVisible(false);
-            ApplyPanelCameraEnabled(false);
+            ApplyPanelViewEnabled(false);
         }
 
         private void OnDestroy()
@@ -553,7 +556,7 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float deltaTime)
+        private void AdvancePanelInteractionPresentation(float deltaTime)
         {
             if (!EnsureRuntimeState())
                 return;
@@ -562,7 +565,8 @@ namespace Hecton8.UI
             {
                 SetCursorVisible(false);
                 ClearHoverState();
-                SetPanelCameraEnabled(false);
+                SetPanelViewEnabled(false);
+                QueueProxyLightDisable();
                 return;
             }
 
@@ -570,9 +574,9 @@ namespace Hecton8.UI
             _tickUnscaledTime = ResolveFrameTimestamp(SystemDispatcher.CurrentUnscaledTimeSeconds, _tickUnscaledTime);
             RefreshPanelData(forceRefresh: false);
             QueueQualityPresentationRefresh();
-            QueueDistanceRenderTextureRefresh(frameDeltaTime);
+            QueueDistanceSurfaceRefresh(frameDeltaTime);
             ApplyPowerLevel();
-            UpdateProxyLightRegistration();
+            QueueProxyLightRegistration();
             UpdateTerminalEffectState(frameDeltaTime);
 
             if (TryResolveFingerInteraction(
@@ -639,11 +643,13 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void LateFrameTick()
         {
+            AdvancePanelInteractionPresentation(SystemDispatcher.CurrentFrameDeltaTime);
+
             _applyingLateFramePresentation = true;
-            if (_pendingPanelCameraEnabledDirty)
+            if (_pendingPanelViewEnabledDirty)
             {
-                _pendingPanelCameraEnabledDirty = false;
-                ApplyPanelCameraEnabled(_pendingPanelCameraEnabled);
+                _pendingPanelViewEnabledDirty = false;
+                ApplyPanelViewEnabled(_pendingPanelViewEnabled);
             }
 
             if (_pendingCursorPoseDirty && cursorTransform != null)
@@ -657,6 +663,8 @@ namespace Hecton8.UI
                 _pendingCursorVisibilityDirty = false;
                 ApplyCursorVisible(_pendingCursorVisible);
             }
+
+            FlushQueuedProxyLightRegistration();
 
             if (_presentationPausedByOwner)
             {
@@ -699,7 +707,7 @@ namespace Hecton8.UI
         {
             depthFadeRange = math.max(0.001f, fadeRange);
             enableDepthOcclusion = active;
-            ApplyMaterialState(forceTextureRefresh: false, forceDepthRefresh: true);
+            QueueMaterialState(forceTextureRefresh: false, forceDepthRefresh: true);
         }
 
         /// <inheritdoc />
@@ -725,7 +733,7 @@ namespace Hecton8.UI
             _terminalDamageGlitchRemaining = math.max(_terminalDamageGlitchRemaining, safeDuration);
             _terminalDamageGlitchDuration = math.max(MinDamageGlitchDurationSeconds, _terminalDamageGlitchRemaining);
             _terminalDamageGlitch = math.max(_terminalDamageGlitch, safeMagnitude);
-            ApplyMaterialState(forceTextureRefresh: false, forceDepthRefresh: false);
+            QueueMaterialState(forceTextureRefresh: false, forceDepthRefresh: false);
         }
 
         /// <summary>
@@ -738,7 +746,7 @@ namespace Hecton8.UI
                 return;
 
             flashlightGlare = safeGlare;
-            ApplyMaterialState(forceTextureRefresh: false, forceDepthRefresh: false);
+            QueueMaterialState(forceTextureRefresh: false, forceDepthRefresh: false);
         }
 
         /// <summary>
@@ -898,7 +906,7 @@ namespace Hecton8.UI
 
             _presentationPausedByOwner = paused;
             if (paused)
-                SetPanelCameraEnabled(false);
+                SetPanelViewEnabled(false);
 
             if (paused)
             {
@@ -1108,7 +1116,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             RefreshInputService();
         }
 
@@ -1261,7 +1269,7 @@ namespace Hecton8.UI
         {
             if (_presentationPausedByOwner)
             {
-                SetPanelCameraEnabled(false);
+                SetPanelViewEnabled(false);
                 return;
             }
 
@@ -1288,7 +1296,7 @@ namespace Hecton8.UI
         {
             if (!enableRenderTexturePresentation || _presentationPausedByOwner)
             {
-                SetPanelCameraEnabled(false);
+                SetPanelViewEnabled(false);
                 if (!enableRenderTexturePresentation && _panelRenderTexture != null)
                     ReleaseRenderTexture();
                 RefreshLateFrameRegistration();
@@ -1297,7 +1305,7 @@ namespace Hecton8.UI
 
             if (externallyOwnedRenderTexture != null)
             {
-                SetPanelCameraEnabled(false);
+                SetPanelViewEnabled(false);
 
                 if (_panelRenderTexture != externallyOwnedRenderTexture)
                 {
@@ -1321,7 +1329,7 @@ namespace Hecton8.UI
 
             if (!allowLegacyPanelCameraRenderTexture || panelCamera == null)
             {
-                SetPanelCameraEnabled(false);
+                SetPanelViewEnabled(false);
                 if (_panelRenderTexture != null)
                     ReleaseRenderTexture();
                 RefreshLateFrameRegistration();
@@ -1359,7 +1367,7 @@ namespace Hecton8.UI
             _panelRenderTexture.Create();
             _ownsPanelRenderTexture = true;
             panelCamera.targetTexture = _panelRenderTexture;
-            SetPanelCameraEnabled(true);
+            SetPanelViewEnabled(true);
             _activeRenderResolution = requiredResolution;
             EnsurePhosphorResources();
 
@@ -1400,7 +1408,7 @@ namespace Hecton8.UI
             if (panelCamera != null && panelCamera.targetTexture == _panelRenderTexture)
                 panelCamera.targetTexture = null;
 
-            SetPanelCameraEnabled(false);
+            SetPanelViewEnabled(false);
 
             if (_panelRenderTexture == null)
             {
@@ -1704,7 +1712,7 @@ namespace Hecton8.UI
             RefreshLateFrameRegistration();
         }
 
-        private void QueueDistanceRenderTextureRefresh(float deltaTime)
+        private void QueueDistanceSurfaceRefresh(float deltaTime)
         {
             _pendingDistanceRenderTextureRefresh = true;
             _pendingDistanceRefreshDeltaTime = math.max(_pendingDistanceRefreshDeltaTime, math.max(0f, deltaTime));
@@ -1732,13 +1740,13 @@ namespace Hecton8.UI
             ApplyMaterialState(forceTextureRefresh, forceDepthRefresh);
         }
 
-        private void UpdateProxyLightRegistration()
+        private void QueueProxyLightRegistration()
         {
             if (!enableProxyLight ||
                 (_panelData.StateFlags & PanelStateFlags.Powered) == 0 ||
                 _appliedPowerLevel <= 0.0001f)
             {
-                UnregisterProxyLight();
+                QueueProxyLightDisable();
                 return;
             }
 
@@ -1746,14 +1754,14 @@ namespace Hecton8.UI
             float3 runtimePosition = _panelData.LocalToWorld.c3.xyz + (panelNormal * 0.025f);
             if (!math.all(math.isfinite(runtimePosition)) || !math.all(math.isfinite(panelNormal)))
             {
-                UnregisterProxyLight();
+                QueueProxyLightDisable();
                 return;
             }
 
             float safeRange = ResolveProxyLightRange();
             if (safeRange <= 0.0001f)
             {
-                UnregisterProxyLight();
+                QueueProxyLightDisable();
                 return;
             }
 
@@ -1765,13 +1773,13 @@ namespace Hecton8.UI
             float intensity = math.saturate(safeIntensity * _appliedPowerLevel * flicker01);
             if (intensity <= 0.0001f)
             {
-                UnregisterProxyLight();
+                QueueProxyLightDisable();
                 return;
             }
 
             if (!TryResolveAupFromRuntimeOrigin((Vector3)runtimePosition, out AbsoluteUniversePosition aup))
             {
-                UnregisterProxyLight();
+                QueueProxyLightDisable();
                 return;
             }
 
@@ -1787,7 +1795,32 @@ namespace Hecton8.UI
                 0f,
                 now);
 
-            if (ProxyLightRegistry.RegisterOrUpdate(_proxyLightKey, in lightData))
+            _pendingProxyLightData = lightData;
+            _pendingProxyLightActive = true;
+            _pendingProxyLightFlush = true;
+            RefreshLateFrameRegistration();
+        }
+
+        private void QueueProxyLightDisable()
+        {
+            _pendingProxyLightActive = false;
+            _pendingProxyLightFlush = true;
+            RefreshLateFrameRegistration();
+        }
+
+        private void FlushQueuedProxyLightRegistration()
+        {
+            if (!_pendingProxyLightFlush)
+                return;
+
+            _pendingProxyLightFlush = false;
+            if (!_pendingProxyLightActive)
+            {
+                UnregisterProxyLight();
+                return;
+            }
+
+            if (ProxyLightRegistry.RegisterOrUpdate(_proxyLightKey, in _pendingProxyLightData))
                 _proxyLightRegistered = true;
         }
 
@@ -2429,20 +2462,20 @@ namespace Hecton8.UI
             RefreshLateFrameRegistration();
         }
 
-        private void SetPanelCameraEnabled(bool enabled)
+        private void SetPanelViewEnabled(bool enabled)
         {
             if (_applyingLateFramePresentation)
             {
-                ApplyPanelCameraEnabled(enabled);
+                ApplyPanelViewEnabled(enabled);
                 return;
             }
 
-            _pendingPanelCameraEnabled = enabled;
-            _pendingPanelCameraEnabledDirty = true;
+            _pendingPanelViewEnabled = enabled;
+            _pendingPanelViewEnabledDirty = true;
             RefreshLateFrameRegistration();
         }
 
-        private void ApplyPanelCameraEnabled(bool enabled)
+        private void ApplyPanelViewEnabled(bool enabled)
         {
             if (panelCamera != null && panelCamera.enabled != enabled)
                 panelCamera.enabled = enabled;
@@ -2452,13 +2485,15 @@ namespace Hecton8.UI
         {
             _pendingCursorVisibilityDirty = false;
             _pendingCursorPoseDirty = false;
-            _pendingPanelCameraEnabledDirty = false;
+            _pendingPanelViewEnabledDirty = false;
             _pendingQualityPresentationRefresh = false;
             _pendingDistanceRenderTextureRefresh = false;
             _pendingDistanceRefreshDeltaTime = 0f;
             _pendingMaterialRefresh = false;
             _pendingMaterialTextureRefresh = false;
             _pendingMaterialDepthRefresh = false;
+            _pendingProxyLightFlush = false;
+            _pendingProxyLightActive = false;
         }
 
         private void TryRegisterTick()
@@ -2472,8 +2507,10 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _tickRegistered = true;
             RefreshLateFrameRegistration();
+            if (!_lateFrameRegistered)
+                _tickRegistered = false;
         }
 
         private void RefreshLateFrameRegistration()
@@ -2481,15 +2518,17 @@ namespace Hecton8.UI
             bool hasPendingLateFrameWork =
                 _pendingCursorVisibilityDirty ||
                 _pendingCursorPoseDirty ||
-                _pendingPanelCameraEnabledDirty ||
+                _pendingPanelViewEnabledDirty ||
                 _pendingQualityPresentationRefresh ||
                 _pendingDistanceRenderTextureRefresh ||
-                _pendingMaterialRefresh;
+                _pendingMaterialRefresh ||
+                _pendingProxyLightFlush;
             bool shouldRegisterLateFrame =
                 isActiveAndEnabled &&
                 Application.isPlaying &&
                 GlobalRegistry.Dispatcher != null &&
-                (hasPendingLateFrameWork ||
+                (_tickRegistered ||
+                 hasPendingLateFrameWork ||
                  (ShouldUsePhosphorDecay() &&
                   _panelRenderTexture != null &&
                   _ownsPanelRenderTexture &&
@@ -2537,11 +2576,7 @@ namespace Hecton8.UI
                 _lateFrameRegistered = false;
             }
 
-            if (_tickRegistered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _tickRegistered = false;
-            }
+            _tickRegistered = false;
         }
 
         private void RegisterRenderPipelineHook()

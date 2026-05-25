@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Unity.Mathematics;
 using UnityEngine;
@@ -213,7 +214,7 @@ namespace Hecton8.Visor
 
         private bool HasTargetsForCurrentFrame(uint requiredFlags)
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_targetProbeFrame == frame && _targetProbeFlags == requiredFlags)
                 return _targetProbeResult;
 

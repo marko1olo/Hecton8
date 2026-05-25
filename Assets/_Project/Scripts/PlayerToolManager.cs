@@ -163,7 +163,7 @@ namespace Hecton8.Gameplay
         private IPhysicsService _physicsService;
         private IPlayerMovementForceSink _playerMovementForceSink;
         private IObjectPoolService _objectPool;
-        private PersistentWorldRegistry _persistentWorldRegistry;
+        private IPersistentDroppedItemRegistry _persistentWorldRegistry;
         private IToolDurabilityService _toolDurability;
         private ISubmarineRuntimeContext _submarineRuntimeContext;
         private bool _hotSwapListenerRegistered;
@@ -502,7 +502,7 @@ namespace Hecton8.Gameplay
                 return true;
             }
 
-            PersistentWorldRegistry worldRegistry = _persistentWorldRegistry;
+            IPersistentDroppedItemRegistry worldRegistry = _persistentWorldRegistry;
             if (worldRegistry == null || playerInventory == null)
             {
                 DespawnCurrentTool();
@@ -1095,7 +1095,7 @@ namespace Hecton8.Gameplay
                     break;
 
                 case GlobalRegistryServiceSlot.PersistentWorldRegistry:
-                    _persistentWorldRegistry = currentService as PersistentWorldRegistry;
+                    _persistentWorldRegistry = currentService as IPersistentDroppedItemRegistry;
                     break;
 
                 case GlobalRegistryServiceSlot.ToolDurabilityRuntime:
@@ -1153,7 +1153,7 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold(bool forceRefresh = false)
         {
             if (forceRefresh || _playerRuntimeService == null)
-                _playerRuntimeService = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerRuntimeService = GlobalRegistry.Player;
 
             if (forceRefresh || _inputService == null)
                 _inputService = GlobalRegistry.Input;
@@ -1173,7 +1173,7 @@ namespace Hecton8.Gameplay
             }
 
             if (forceRefresh || _persistentWorldRegistry == null)
-                _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+                _persistentWorldRegistry = GlobalRegistry.PersistentDroppedItems;
 
             if (forceRefresh || _toolDurability == null)
                 _toolDurability = GlobalRegistry.ToolDurabilityService;
@@ -1408,7 +1408,7 @@ namespace Hecton8.Gameplay
                 {
                     LogToolDebug("RequestSwap abort: slot prefab null");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning("[PlayerToolManager] Slot prefab missing.");
+                    Hecton8.Core.H8Debug.LogWarning("[PlayerToolManager] Slot prefab missing.");
 #endif
                     return;
                 }
@@ -1620,7 +1620,7 @@ namespace Hecton8.Gameplay
             if (pool == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[PlayerToolManager] GlobalRegistry.ObjectPoolService is null!");
+                Hecton8.Core.H8Debug.LogError("[PlayerToolManager] GlobalRegistry.ObjectPoolService is null!");
 #endif
                 return;
             }
@@ -1635,7 +1635,7 @@ namespace Hecton8.Gameplay
             {
                 LogToolDebug("SpawnNewTool failed: pool returned null");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[PlayerToolManager] Failed to spawn assigned tool.");
+                Hecton8.Core.H8Debug.LogError("[PlayerToolManager] Failed to spawn assigned tool.");
 #endif
                 return;
             }
@@ -1657,7 +1657,7 @@ namespace Hecton8.Gameplay
             else
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[PlayerToolManager] Assigned tool prefab has no PlayerTool component.");
+                Hecton8.Core.H8Debug.LogError("[PlayerToolManager] Assigned tool prefab has no PlayerTool component.");
 #endif
                 _currentTool = null;
                 _currentActiveToolHash = 0u;
@@ -1978,7 +1978,7 @@ namespace Hecton8.Gameplay
             if (playerInventory == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[PlayerToolManager] PlayerInventory reference is null!");
+                Hecton8.Core.H8Debug.LogWarning("[PlayerToolManager] PlayerInventory reference is null!");
 #endif
                 return false;
             }

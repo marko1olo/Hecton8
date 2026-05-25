@@ -414,7 +414,7 @@ namespace Hecton8.Audio.Prologue
 
         private void RefreshRuntimeServicesCold()
         {
-            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
+            CacheAudioService(GlobalRegistry.Audio);
             _tickDispatcher = GlobalRegistry.TickDispatcher;
         }
 
@@ -545,7 +545,7 @@ namespace Hecton8.Audio.Prologue
                     return dispatcherDelta > MaxPresentationDeltaSeconds ? MaxPresentationDeltaSeconds : (float)dispatcherDelta;
             }
 
-            float fallback = Time.unscaledDeltaTime;
+            float fallback = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             return math.isfinite(fallback) && fallback > 0f ? math.min(fallback, MaxPresentationDeltaSeconds) : 0f;
         }
 
@@ -563,8 +563,7 @@ namespace Hecton8.Audio.Prologue
             if (fallback >= 0d && double.IsFinite(fallback))
                 return fallback;
 
-            double unityTime = Time.unscaledTimeAsDouble;
-            return unityTime >= 0d && double.IsFinite(unityTime) ? unityTime : 0d;
+            return 0d;
         }
 
         private static float PositiveFiniteOrMinimum(float value, float minimum)

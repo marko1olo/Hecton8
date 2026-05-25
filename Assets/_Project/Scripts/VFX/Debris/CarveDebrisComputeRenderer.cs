@@ -21,7 +21,6 @@ namespace Hecton8.VFX.Debris
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class CarveDebrisComputeRenderer : MonoBehaviour,
-        IUpdatable,
         ILateFrameTickable,
         IDebrisComputeService,
         IGlobalRegistryHotSwapListener,
@@ -187,7 +186,6 @@ namespace Hecton8.VFX.Debris
         private float _cachedGlobalSdfActive;
         private float _configuredDebrisBounce = DefaultCarveDebrisBounce;
         private int _configuredMaxActiveDebris = MaxCarveDebrisCount;
-        private bool _registered;
         private bool _gpuReady;
         private bool _blackBoxDumped;
         private bool _materialFallbackAttempted;
@@ -217,7 +215,7 @@ namespace Hecton8.VFX.Debris
             EnsureFallbackRenderResources();
             TryRegisterComputeService();
             TryRegisterHotSwapListener();
-            TryRegisterTick();
+            TryRegisterLateFrameTick();
             TryEnsureGpuState();
         }
 
@@ -225,7 +223,7 @@ namespace Hecton8.VFX.Debris
         {
             TryRegisterComputeService();
             TryRegisterHotSwapListener();
-            TryRegisterTick();
+            TryRegisterLateFrameTick();
             TryEnsureGpuState();
         }
 
@@ -233,12 +231,6 @@ namespace Hecton8.VFX.Debris
         {
             TryUnregisterComputeService();
             TryUnregisterHotSwapListener();
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registered = false;
-            }
-
             TryUnregisterLateFrameTick();
 
             ReleaseGpuState();
@@ -302,7 +294,7 @@ namespace Hecton8.VFX.Debris
             }
         }
 
-        public void Tick(float deltaTime)
+        private void AdvanceDebrisVisualState(float deltaTime)
         {
             if (!enabled)
                 return;
@@ -347,6 +339,8 @@ namespace Hecton8.VFX.Debris
 
         public void LateFrameTick()
         {
+            AdvanceDebrisVisualState(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (!_pendingVisualSync)
                 return;
 
@@ -368,14 +362,6 @@ namespace Hecton8.VFX.Debris
             _insideDebrisVisualSync = false;
             if (!_pendingDebrisUpload)
                 TryUnregisterLateFrameTick();
-        }
-
-        private void TryRegisterTick()
-        {
-            if (_registered)
-                return;
-
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryRegisterLateFrameTick()
@@ -444,7 +430,7 @@ namespace Hecton8.VFX.Debris
         {
             _registryDataVault = GlobalRegistry.DataVault;
             _abyssalFlowGpuReadModel = GlobalRegistry.AbyssalFlowGpu;
-            _nextMissingRegistryRefreshFrame = Time.frameCount + MissingRegistryRefreshStrideFrames;
+            _nextMissingRegistryRefreshFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + MissingRegistryRefreshStrideFrames;
         }
 
         private void RefreshMissingRegistryServicesIfNeeded()
@@ -452,7 +438,7 @@ namespace Hecton8.VFX.Debris
             if (_registryDataVault != null && _abyssalFlowGpuReadModel != null)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (frame < _nextMissingRegistryRefreshFrame)
                 return;
 
@@ -841,8 +827,14 @@ namespace Hecton8.VFX.Debris
             UploadRange(_velocityBufferA, debrisVelocities, 0, MaxCarveDebrisCount);
             UploadRange(_velocityBufferB, debrisVelocities, 0, MaxCarveDebrisCount);
             var empty = _emptyFlowBuffer.LockBufferForWrite<float4>(0, 1);
-            empty[0] = default;
-            _emptyFlowBuffer.UnlockBufferAfterWrite<float4>(1);
+            try
+            {
+                empty[0] = default;
+            }
+            finally
+            {
+                _emptyFlowBuffer.UnlockBufferAfterWrite<float4>(1);
+            }
         }
 
         private void AgeMirror(float dt, int activeCapacity, float lifetimeRcp, NativeArray<float4> debrisPositions, NativeArray<int> jobState)
@@ -1395,7 +1387,7 @@ namespace Hecton8.VFX.Debris
 
         private void RefreshGlobalSdfCacheIfNeeded()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (frame < _nextGlobalSdfRefreshFrame)
                 return;
 
@@ -2007,7 +1999,7 @@ namespace Hecton8.VFX.Debris
             if (!blackBox.IsCreated || blackBox.Length == 0 || !jobState.IsCreated)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastTelemetryFrame == frame)
                 return;
 
@@ -2022,7 +2014,7 @@ namespace Hecton8.VFX.Debris
             uint hash = BuildTelemetryHash(_activeMirrorCount, queuedCarves, injectedParticles, flags, appliedAupShift);
             blackBox[_blackBoxCursor] = new CarveDebrisTelemetryEntry
             {
-                FrameIndex = (uint)frame,
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 ActiveCarveDebrisCount = _activeMirrorCount,
                 QueuedCarves = queuedCarves,
                 InjectedParticles = injectedParticles,
@@ -2199,10 +2191,16 @@ namespace Hecton8.VFX.Debris
                 return;
 
             NativeArray<T> mapped = destination.LockBufferForWrite<T>(safeStart, safeCount);
-            void* sourcePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source) + UnsafeUtility.SizeOf<T>() * safeStart;
-            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, UnsafeUtility.SizeOf<T>() * safeCount);
-            destination.UnlockBufferAfterWrite<T>(safeCount);
+            try
+            {
+                void* sourcePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source) + UnsafeUtility.SizeOf<T>() * safeStart;
+                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, UnsafeUtility.SizeOf<T>() * safeCount);
+            }
+            finally
+            {
+                destination.UnlockBufferAfterWrite<T>(safeCount);
+            }
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

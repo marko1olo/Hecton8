@@ -2,6 +2,9 @@
   "agent": "X_005",
   "blackbox": {
     "agent_dump_file_present": true,
+    "crash_telemetry_no_player_rigidbody_cache": true,
+    "crash_telemetry_player_pose_snapshot_first": true,
+    "crash_telemetry_uses_kcc_velocity_signal": true,
     "dump_on_new_fault_mask": true,
     "fault_latch_resets_on_clean_frame": true,
     "late_frame_fault_scan_full_capacity": true,
@@ -12,6 +15,24 @@
   "broad_forbidden": [],
   "broad_forbidden_by_kind": {},
   "broad_forbidden_count": 0,
+  "hydro_job_lifecycle": {
+    "abort_no_wait_finalize_completed_count": 8,
+    "abort_no_wait_forced_complete_count": 0,
+    "abort_no_wait_prechecks_all_handles": true,
+    "dispatcher_finalize_checks_is_completed_before_complete": true,
+    "dispatcher_try_complete_gates_nonforced_completion": true,
+    "fixed_post_late_finalize_completed_count": 1,
+    "fixed_post_late_forced_complete_count": 0,
+    "late_frame_finalize_is_nonblocking": true,
+    "rollback_finalize_completed_count": 1,
+    "rollback_forced_complete_count": 0,
+    "runtime_private_job_handle_count": 8,
+    "runtime_private_native_array_field_count": 0,
+    "runtime_private_vault_handle_count": 27,
+    "runtime_uses_phase_local_vault_views": true,
+    "teardown_forced_complete_count": 8,
+    "teardown_is_only_force_complete_site": true
+  },
   "layouts": {
     "KinematicStateDTO": {
       "covered_bytes": 64,
@@ -245,6 +266,24 @@
     }
   },
   "legacy_bridge": {
+    "direct_managed_sdf_raymarch_consumer_count": 0,
+    "dispatcher_surface_probe_legacy_dispatcher_raycast_symbol_count": 0,
+    "dispatcher_surface_probe_unity_raycast_hit_count": 0,
+    "dispatcher_surface_probe_uses_typed_hit": true,
+    "encoded_sdf_surface_resolver_consumers": 9,
+    "encoded_sdf_surface_resolver_edit_tested": true,
+    "encoded_sdf_surface_resolver_has_bounded_loop": true,
+    "encoded_sdf_surface_resolver_no_initial_outside_hit": true,
+    "encoded_sdf_surface_resolver_overflow_guard": true,
+    "encoded_sdf_surface_resolver_prefers_owner_ray_route": true,
+    "encoded_sdf_surface_resolver_present": true,
+    "encoded_sdf_surface_resolver_uses_ray_bounds_interval": true,
+    "fauna_legacy_obstacle_raycast_symbol_count": 0,
+    "fauna_surface_probe_unity_raycast_hit_count": 0,
+    "fauna_surface_probe_uses_typed_hit": true,
+    "foveated_legacy_deferred_raycast_symbol_count": 0,
+    "foveated_surface_probe_unity_raycast_hit_count": 0,
+    "foveated_surface_probe_uses_typed_hit": true,
     "interaction_surface_legacy_method_count": 0,
     "interaction_surface_unity_raycast_hit_count": 0,
     "interaction_surface_uses_typed_hit": true,
@@ -254,11 +293,21 @@
     "kinematic_surface_hit_layout_64": true,
     "kinematic_surface_unity_raycast_hit_count": 0,
     "kinematic_surface_uses_typed_hit": true,
+    "legacy_batch_old_raycast_counter_removed": true,
     "legacy_batch_physx_calls": 0,
     "legacy_batch_query_result_arrays": 0,
+    "legacy_batch_surface_query_counter_exists": true,
+    "legacy_batch_surface_query_counter_increments": true,
     "legacy_batch_unity_raycast_hit_count": 0,
+    "legacy_sdf_surface_routes_bounded": true,
+    "legacy_sdf_surface_routes_no_initial_outside_hit": true,
+    "legacy_voxel_sdf_job_clears_stale_result": true,
+    "legacy_voxel_sdf_routes_use_ray_bounds_interval": true,
     "manta_legacy_collision_damage_route_removed": true,
     "manta_legacy_collision_damage_symbol_count": 0,
+    "performance_monitor_uses_surface_query_counter": true,
+    "physical_hand_root_no_controller_transform_authority": true,
+    "physical_hand_root_uses_player_pose_snapshot": true,
     "player_footstep_audio_raycast_hit_count": 0,
     "player_footstep_audio_uses_surface_hit": true,
     "player_hand_probe_raycast_hit_lane_count": 0,
@@ -291,9 +340,19 @@
     "player_spawner_uses_spawn_ground_hit": true,
     "sargassum_dead_collision_snag_route_removed": true,
     "sargassum_dead_collision_snag_symbol_count": 0,
+    "scoped_published_sdf_raymarch_consumer_count": 0,
     "vehicle_motor_capsule_sweep_bridge_removed": true,
     "vehicle_motor_capsule_sweep_bridge_symbol_count": 0,
-    "vehicle_motor_raycast_hit_symbol_count": 0
+    "vehicle_motor_raycast_hit_symbol_count": 0,
+    "voxel_engine_interface_raymarch_published_volume_raymarch_count": 0,
+    "voxel_engine_interface_raymarch_uses_encoded_math": true,
+    "voxel_engine_owner_ray_surface_resolver_present": true,
+    "vrsomatic_dead_head_capsulecast_job_removed": true,
+    "vrsomatic_dead_head_collision_hit_buffer_removed": true,
+    "vrsomatic_head_collision_fake_job_handle_removed": true,
+    "vrsomatic_head_collision_ready_state_not_scheduled": true,
+    "vrsomatic_root_hand_job_completions_removed": true,
+    "vrsomatic_root_hand_micro_jobs_removed": true
   },
   "lockstep_layout_gate": {
     "rollback_test_has_no_compat_property_offsets": true,
@@ -327,11 +386,11 @@
     "movement_rb_pose_read_count": 2,
     "movement_rb_pose_reads": [
       {
-        "line": 4148,
+        "line": 4173,
         "text": "_playerState.SyncKinematic(_rb.position, ResolveAuthoritativeLinearVelocity(Vector3.zero));"
       },
       {
-        "line": 8654,
+        "line": 8692,
         "text": "return _rb != null ? HectonPlayerMotor.SafeVelocity(_rb.position) : Vector3.zero;"
       }
     ],
@@ -341,17 +400,19 @@
     "player_kinematics_body_pose_read_count": 2,
     "player_kinematics_body_pose_reads": [
       {
-        "line": 1020,
+        "line": 1016,
         "text": "return _body.position;"
       },
       {
-        "line": 3608,
+        "line": 3527,
         "text": "return CanonicalizeRotation(ToQuaternion(_body.rotation));"
       }
     ],
     "player_kinematics_body_position_is_snapshot_first": true,
     "player_kinematics_body_velocity_read_count": 0,
     "player_kinematics_body_velocity_reads": [],
+    "player_kinematics_hand_placement_completion_removed": true,
+    "player_kinematics_hand_placement_micro_job_removed": true,
     "player_kinematics_has_no_body_velocity_read": true,
     "player_kinematics_has_no_hot_body_pose_read": true,
     "player_kinematics_hot_body_pose_read_count": 0,
@@ -364,29 +425,8 @@
     "central_force_router_suppresses_player_torque": true,
     "central_force_router_uses_equivalent_player_mass": true,
     "central_force_router_uses_kcc_velocity_for_player_velocity_set": true,
-    "direct_player_body_force_route_count": 4,
-    "direct_player_body_force_routes": [
-      {
-        "line": 946,
-        "path": "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
-        "text": "Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(playerRigidbody, targetAngularVelocity);"
-      },
-      {
-        "line": 3019,
-        "path": "Assets/_Project/Scripts/HectonSurvivalSystem.cs",
-        "text": "Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(_playerRigidbody, Vector3.zero, wake: false);"
-      },
-      {
-        "line": 2789,
-        "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
-        "text": "PhysicsForceRouter.QueueForce(playerBody, acceleration, ForceMode.Acceleration);"
-      },
-      {
-        "line": 2893,
-        "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
-        "text": "QueueForce(playerBody, impulse, ForceMode.Impulse);"
-      }
-    ],
+    "direct_player_body_force_route_count": 0,
+    "direct_player_body_force_routes": [],
     "fauna_light_target_uses_kcc_velocity": true,
     "fauna_predator_impact_uses_player_force_sink": true,
     "save_load_angular_reset_gated_for_hydro": true,
@@ -400,25 +440,46 @@
     "ungated_player_body_force_routes": []
   },
   "player_split_authority": {
+    "abyssal_thermal_player_convection_uses_player_movement_no_rigidbody": true,
     "airlock_hydro_teleport_uses_player_motor": true,
     "airlock_snap_start_uses_transform_pose": true,
     "camera_juice_uses_kcc_velocity": true,
+    "cave_bio_roots_uses_kcc_velocity_no_player_rigidbody": true,
+    "flora_interaction_uses_kcc_velocity_no_player_rigidbody": true,
+    "foveated_listener_uses_kcc_velocity_no_player_rigidbody": true,
+    "harpoon_no_player_rigidbody_cache": true,
+    "heavy_tow_no_player_rigidbody_anchor_cache": true,
+    "heavy_tow_physics_route_cached_no_hot_registry": true,
+    "landing_impact_uses_kcc_velocity_no_rigidbody": true,
     "maelstrom_damage_uses_player_pose_snapshot": true,
+    "mapmagic_vegetation_uses_kcc_velocity_no_player_rigidbody": true,
+    "mountable_transport_no_rider_rigidbody_cache": true,
     "player_action_uses_kcc_velocity_signal": true,
     "player_body_alias_motion_state_read_count": 0,
     "player_body_alias_motion_state_reads": [],
+    "player_critical_audio_uses_kcc_velocity_no_player_rigidbody": true,
+    "player_footstep_audio_uses_kcc_velocity_no_rigidbody": true,
     "player_inventory_impact_uses_equivalent_mass": true,
     "player_noise_uses_kcc_velocity_signal": true,
     "player_rigidbody_motion_state_read_count": 0,
     "player_rigidbody_motion_state_reads": [],
     "player_rigidbody_velocity_read_count": 0,
     "player_rigidbody_velocity_reads": [],
+    "player_swim_has_no_rigidbody_authority_field": true,
     "player_swim_has_no_rigidbody_velocity_fallback": true,
+    "player_thruster_audio_uses_kcc_velocity_no_rigidbody": true,
     "player_tool_recoil_uses_equivalent_mass": true,
+    "predictive_voxel_proxy_uses_kcc_velocity_no_player_body": true,
+    "propulsion_tractor_no_player_rigidbody_anchor": true,
+    "sargassum_micro_fauna_no_player_rigidbody_cache": true,
     "save_load_hydro_teleport_uses_player_motor": true,
     "spawner_hydro_teleport_uses_player_motor": true,
     "spawner_uses_kcc_velocity_for_teleport": true,
-    "survival_uses_kcc_velocity_signal": true
+    "survival_uses_kcc_velocity_signal": true,
+    "tether_legacy_anchor_wrapper_ignores_player_rigidbody": true,
+    "tether_player_anchor_uses_motor_not_rigidbody": true,
+    "tether_sdf_bend_uses_owner_resolver": true,
+    "underwater_visuals_uses_kcc_velocity_no_player_rigidbody": true
   },
   "player_trigger_callbacks": {
     "acoustic_reverb_try_resolve_uses_cached_player_only": true,
@@ -449,25 +510,25 @@
     "force_calls": [
       {
         "classification": "central_physics_apply_owner",
-        "line": 2468,
+        "line": 2421,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.AddForceAtPosition(sanitizedForce, impulsePosition, packet.Mode);"
       },
       {
         "classification": "central_physics_apply_owner",
-        "line": 2475,
+        "line": 2428,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.AddForce(sanitizedForce, packet.Mode);"
       },
       {
         "classification": "central_physics_apply_owner",
-        "line": 2486,
+        "line": 2439,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.AddTorque(sanitizedTorque, packet.Mode);"
       },
       {
         "classification": "central_physics_apply_owner",
-        "line": 3934,
+        "line": 3881,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.AddForce(correction / FixedStepSeconds, ForceMode.VelocityChange);"
       }
@@ -494,37 +555,37 @@
       },
       {
         "classification": "central_physics_apply_owner",
-        "line": 2439,
+        "line": 2392,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.linearVelocity = sanitizedLinearVelocity;"
       },
       {
         "classification": "central_physics_apply_owner",
-        "line": 2447,
+        "line": 2400,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.angularVelocity = sanitizedAngularVelocity;"
       },
       {
         "classification": "central_physics_apply_owner",
-        "line": 3640,
+        "line": 3587,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.linearVelocity = zeroVelocity;"
       },
       {
         "classification": "central_physics_apply_owner",
-        "line": 3641,
+        "line": 3588,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.angularVelocity = zeroVelocity;"
       },
       {
         "classification": "central_physics_apply_owner",
-        "line": 3941,
+        "line": 3888,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.linearVelocity = zeroVelocity;"
       },
       {
         "classification": "central_physics_apply_owner",
-        "line": 3942,
+        "line": 3889,
         "path": "Assets/_Project/Scripts/PhysicsApplySystem.cs",
         "text": "body.angularVelocity = zeroVelocity;"
       }
@@ -559,5 +620,10 @@
     "unity_collision_dto_count": 0,
     "unity_collision_dto_route_removed": true,
     "unity_collision_dtos": []
+  },
+  "unity_raycast_hit_dto": {
+    "unity_raycast_hit_dto_count": 0,
+    "unity_raycast_hit_dto_route_removed": true,
+    "unity_raycast_hit_dtos": []
   }
 }

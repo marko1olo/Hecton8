@@ -754,7 +754,7 @@ namespace Hecton.Localization
 #if UNITY_EDITOR
         private void PollBabelOverrideCsv(float frameDelta)
         {
-            float safeDelta = frameDelta > 0f && frameDelta < 10f ? frameDelta : Time.unscaledDeltaTime;
+            float safeDelta = frameDelta > 0f && frameDelta < 10f ? frameDelta : SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             _overrideCsvPollTimer -= safeDelta;
             if (_overrideCsvPollTimer > 0f)
                 return;
@@ -1575,8 +1575,8 @@ namespace Hecton.Localization
                 return null;
 
             _cachedPlayerToolManager =
-                Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null && Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.ToolManager != null
-                    ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.ToolManager
+                Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null
+                    ? Hecton8.Core.GlobalRegistry.Player.ToolManager
                     : ResolvePlayerToolManager(playerTransform);
             return _cachedPlayerToolManager;
         }
@@ -1781,9 +1781,9 @@ namespace Hecton.Localization
 
             _madnessLastRollBucket = rollBucket;
 
-            DepthZoneDirector depthZoneDirector = GlobalRegistry.DepthZone;
-            DepthZoneProfile currentZone = depthZoneDirector != null
-                ? depthZoneDirector.CurrentZone
+            IDepthZoneReadModel depthZoneReadModel = GlobalRegistry.DepthZoneReadModel;
+            DepthZoneProfile currentZone = depthZoneReadModel != null
+                ? depthZoneReadModel.CurrentZone
                 : null;
             string zoneToken = currentZone != null && !string.IsNullOrWhiteSpace(currentZone.zoneId)
                 ? currentZone.zoneId
@@ -1804,8 +1804,8 @@ namespace Hecton.Localization
             if (IsInDeadZoneContext())
                 return true;
 
-            DepthZoneDirector director = GlobalRegistry.DepthZone;
-            DepthZoneProfile currentZone = director != null ? director.CurrentZone : null;
+            IDepthZoneReadModel depthZoneReadModel = GlobalRegistry.DepthZoneReadModel;
+            DepthZoneProfile currentZone = depthZoneReadModel != null ? depthZoneReadModel.CurrentZone : null;
             return currentZone != null &&
                    string.Equals(currentZone.zoneId, DeepAbyssZoneId, StringComparison.Ordinal);
         }

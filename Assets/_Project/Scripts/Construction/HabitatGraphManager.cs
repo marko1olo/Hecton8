@@ -57,7 +57,21 @@ namespace Hecton8.Construction
         [FieldOffset(39)]
         public byte Reserved2;
         [FieldOffset(40)]
-        private ulong _pad0;
+        private byte _pad0;
+        [FieldOffset(41)]
+        private byte _pad1;
+        [FieldOffset(42)]
+        private byte _pad2;
+        [FieldOffset(43)]
+        private byte _pad3;
+        [FieldOffset(44)]
+        private byte _pad4;
+        [FieldOffset(45)]
+        private byte _pad5;
+        [FieldOffset(46)]
+        private byte _pad6;
+        [FieldOffset(47)]
+        private byte _pad7;
     }
 
     [Flags]
@@ -77,19 +91,6 @@ namespace Hecton8.Construction
         None = 0,
         Sealed = 1 << 0,
         Ruptured = 1 << 1
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 16)]
-    internal struct HabitatFloodConnection
-    {
-        [FieldOffset(0)]
-        public int DestinationIndex;
-        [FieldOffset(4)]
-        public int CsrEdgeIndex;
-        [FieldOffset(8)]
-        public float FlowResistance;
-        [FieldOffset(12)]
-        public uint Reserved0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 48)]
@@ -120,7 +121,21 @@ namespace Hecton8.Construction
         [FieldOffset(36)]
         public uint DeformationSequence;
         [FieldOffset(40)]
-        private ulong _pad0;
+        private byte _pad0;
+        [FieldOffset(41)]
+        private byte _pad1;
+        [FieldOffset(42)]
+        private byte _pad2;
+        [FieldOffset(43)]
+        private byte _pad3;
+        [FieldOffset(44)]
+        private byte _pad4;
+        [FieldOffset(45)]
+        private byte _pad5;
+        [FieldOffset(46)]
+        private byte _pad6;
+        [FieldOffset(47)]
+        private byte _pad7;
     }
 
     /// <summary>
@@ -146,8 +161,6 @@ namespace Hecton8.Construction
         private const float PressureRootLutStepKPaInv = 1f / PressureRootLutStepKPa;
         private const float PressureRootExcessLinearScale = 0.5f;
         private const int GraphFloodMaxTraversalNodesPerTick = 512;
-        private const int GraphFloodMidTraversalNodesPerTick = 256;
-        private const int GraphFloodLowTraversalNodesPerTick = 128;
         private const float GraphFloodTransferRateM3PerSecond = 0.35f;
         private const float GraphFloodMaxTransferPerEdgeM3 = 0.1f;
         private const float GraphFloodWaterEpsilonM3 = 0.0001f;
@@ -213,6 +226,26 @@ namespace Hecton8.Construction
         private const int InitialTemporaryBypassCapacity = 16;
         internal const int MaxSiegeTargetCount = 64;
         private const int FloodBlackBoxCapacity = 300;
+        private const BufferID HabitatFloodBlackBoxBufferId = (BufferID)72120;
+        private const BufferID HabitatFloodPropagationSummaryBufferId = (BufferID)72121;
+        private const BufferID HabitatSiegeTargetsBufferId = (BufferID)72122;
+        private const BufferID HabitatModuleStressScalarsBufferId = (BufferID)72123;
+        private const BufferID HabitatPreviousModuleStressScalarsBufferId = (BufferID)72124;
+        private const BufferID HabitatModuleImpactStressSpikesBufferId = (BufferID)72125;
+        private const BufferID HabitatModuleCompromisedFlagsBufferId = (BufferID)72126;
+        private const BufferID HabitatRoomWaterLevelsBufferId = (BufferID)72127;
+        private const BufferID HabitatRoomVolumesBufferId = (BufferID)72128;
+        private const BufferID HabitatRoomFloodDeltaLevelsBufferId = (BufferID)72129;
+        private const BufferID HabitatRoomFlagsBufferId = (BufferID)72130;
+        private const BufferID HabitatGraphNodesBufferId = (BufferID)72131;
+        private const BufferID HabitatGraphEdgeOffsetsBufferId = (BufferID)72132;
+        private const BufferID HabitatGraphEdgeDestinationsBufferId = (BufferID)72133;
+        private const BufferID HabitatGraphEdgeResistanceBufferId = (BufferID)72134;
+        private const BufferID HabitatGraphEdgeWriteCursorBufferId = (BufferID)72135;
+        private const BufferID HabitatGraphAnchorReachabilityBufferId = (BufferID)72136;
+        private const BufferID HabitatGraphTraversalVisitedBufferId = (BufferID)72137;
+        private const BufferID HabitatGraphAnchorTraversalQueueBufferId = (BufferID)72138;
+        private const BufferID HabitatGraphEdgeFlagsBufferId = (BufferID)72139;
         private const uint FloodBlackBoxMagic = 0x48464C44u; // "HFLD"
         private const uint FloodBlackBoxVersion = 3u;
         private const uint FloodBlackBoxNonFiniteFlag = 1u << 0;
@@ -231,8 +264,6 @@ namespace Hecton8.Construction
         private static readonly int HabitatModuleStressParamsId = Shader.PropertyToID("_HectonHabitatModuleStressParams");
         private static readonly int HabitatVibrationId = Shader.PropertyToID("_HectonHabitatVibration01");
         private static readonly int BaseEmergencyStateId = Shader.PropertyToID("_BaseEmergencyState");
-        private const string NativeMemoryOwner = nameof(HabitatGraphManager);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         // COLD ALLOC: float[33] - pressure ingress sqrt lookup table - owner: HabitatGraphManager
         private static readonly float[] s_pressureRootLut =
         {
@@ -242,21 +273,11 @@ namespace Hecton8.Construction
             94.86833f, 96.824584f, 98.742088f, 100.623059f, 102.469508f, 104.283268f, 106.066017f, 107.819293f,
             109.544512f
         };
-        // COLD ALLOC: float[33] - low-tier reciprocal pressure lookup, avoids hot-path rcp on office CPUs - owner: HabitatGraphManager
-        private static readonly float[] s_pressureRootInvLut =
-        {
-            1f, 0.05163978f, 0.03651484f, 0.02981424f, 0.02581989f, 0.02309401f, 0.02108185f, 0.019518f,
-            0.01825742f, 0.01721326f, 0.01632993f, 0.01556998f, 0.01490712f, 0.0143223f, 0.01380131f, 0.01333333f,
-            0.01290994f, 0.01252449f, 0.01217161f, 0.01184698f, 0.01154701f, 0.01126872f, 0.01100964f, 0.01076764f,
-            0.01054093f, 0.01032796f, 0.01012739f, 0.00993808f, 0.009759f, 0.00958927f, 0.00942809f, 0.00927478f,
-            0.00912871f
-        };
         private static readonly Color PipeSplineColor = new Color(0.30f, 0.82f, 0.95f, 0.88f);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticSiegeTargets()
         {
-            s_latestSiegeTargets = default;
             s_latestSiegeTargetOwner = null;
             s_latestSiegeTargetCount = 0;
         }
@@ -271,31 +292,37 @@ namespace Hecton8.Construction
         private readonly Dictionary<uint, int> _moduleIndexByNodeId;
         private readonly Dictionary<SocketKey, SocketMatchEntry> _socketLookup;
 
-        private NativeArray<LogisticsNetworkGraph.LogisticsNode> _nodes;
-        private NativeArray<int> _edgeOffsets;
-        private NativeArray<int> _edgeDestinations;
-        private NativeArray<float> _edgeResistance;
-        private NativeArray<int> _edgeWriteCursor;
-        private NativeArray<byte> _anchorReachability;
-        private NativeArray<byte> _traversalVisited;
-        private NativeArray<int> _anchorTraversalQueue;
-        private NativeArray<HabitatSiegeTargetSnapshot> _siegeTargets;
-        private NativeArray<float> _roomWaterLevels;
-        private NativeArray<float> _roomVolumes;
-        private NativeArray<float> _roomFloodDeltaLevels;
-        private NativeArray<float> _moduleStressScalars;
-        private NativeArray<float> _previousModuleStressScalars;
-        private NativeArray<float> _moduleImpactStressSpikes;
-        private NativeArray<byte> _moduleCompromisedFlags;
-        private NativeArray<byte> _roomFlags;
-        private NativeArray<byte> _edgeFlags;
-        private NativeArray<HabitatFloodBlackBoxEntry> _floodBlackBox;
-        private NativeArray<HabitatFloodPropagationSummary> _floodPropagationSummary;
-        private NativeParallelMultiHashMap<int, HabitatFloodConnection> _roomConnections;
+        private VaultGenerationHandle<LogisticsNetworkGraph.LogisticsNode> _nodesHandle;
+        private VaultGenerationHandle<int> _edgeOffsetsHandle;
+        private VaultGenerationHandle<int> _edgeDestinationsHandle;
+        private VaultGenerationHandle<float> _edgeResistanceHandle;
+        private VaultGenerationHandle<int> _edgeWriteCursorHandle;
+        private VaultGenerationHandle<byte> _anchorReachabilityHandle;
+        private VaultGenerationHandle<byte> _traversalVisitedHandle;
+        private VaultGenerationHandle<int> _anchorTraversalQueueHandle;
+        private VaultGenerationHandle<byte> _edgeFlagsHandle;
+        private VaultGenerationHandle<HabitatFloodBlackBoxEntry> _floodBlackBoxHandle;
+        private VaultGenerationHandle<HabitatFloodPropagationSummary> _floodPropagationSummaryHandle;
+        private VaultGenerationHandle<HabitatSiegeTargetSnapshot> _siegeTargetsHandle;
+        private VaultGenerationHandle<float> _moduleStressScalarsHandle;
+        private VaultGenerationHandle<float> _previousModuleStressScalarsHandle;
+        private VaultGenerationHandle<float> _moduleImpactStressSpikesHandle;
+        private VaultGenerationHandle<byte> _moduleCompromisedFlagsHandle;
+        private VaultGenerationHandle<float> _roomWaterLevelsHandle;
+        private VaultGenerationHandle<float> _roomVolumesHandle;
+        private VaultGenerationHandle<float> _roomFloodDeltaLevelsHandle;
+        private VaultGenerationHandle<byte> _roomFlagsHandle;
         private JobHandle _floodPropagationHandle;
         private bool _floodPropagationPending;
+        private bool _floodPropagationSummaryWriteLockHeld;
+        private IDataVault _floodPropagationSummaryWriteLockVault;
+        private bool _floodPropagationRoomWriteLockHeld;
+        private IDataVault _floodPropagationRoomWriteLockVault;
+        private bool _floodPropagationGraphWriteLockHeld;
+        private IDataVault _floodPropagationGraphWriteLockVault;
+        private bool _deconstructionGraphWriteLockHeld;
+        private IDataVault _deconstructionGraphWriteLockVault;
         private int _pendingFloodPropagationModuleCount;
-        private static NativeArray<HabitatSiegeTargetSnapshot> s_latestSiegeTargets;
         private static HabitatGraphManager s_latestSiegeTargetOwner;
         private static int s_latestSiegeTargetCount;
 
@@ -353,8 +380,31 @@ namespace Hecton8.Construction
         private float _pendingModuleStressPeak01;
         private HectonQualityTier _pendingModuleStressTier;
         private IAtmosphereReadModel _atmosphereReadModel;
+        private IAmbientCurrentReadModel _ambientCurrentReadModel;
         private IAudioService _audioService;
-        private AbyssalFluidDecalManager _fluidDecals;
+        private IFluidDecalPresentationSink _fluidDecals;
+        private IDataVault _dataVault;
+
+        private struct HabitatGraphWriteViews
+        {
+            internal NativeArray<LogisticsNetworkGraph.LogisticsNode> Nodes;
+            internal NativeArray<int> EdgeOffsets;
+            internal NativeArray<int> EdgeDestinations;
+            internal NativeArray<float> EdgeResistance;
+            internal NativeArray<int> EdgeWriteCursor;
+            internal NativeArray<byte> AnchorReachability;
+            internal NativeArray<byte> TraversalVisited;
+            internal NativeArray<int> AnchorTraversalQueue;
+            internal NativeArray<byte> EdgeFlags;
+        }
+
+        private struct HabitatFloodGraphJobViews
+        {
+            internal NativeArray<int> EdgeOffsets;
+            internal NativeArray<int> EdgeDestinations;
+            internal NativeArray<float> EdgeResistance;
+            internal NativeArray<byte> EdgeFlags;
+        }
 
         internal HabitatGraphManager(int initialModuleCapacity)
         {
@@ -384,15 +434,14 @@ namespace Hecton8.Construction
 
         internal int NodeCount => _nodeCount;
         internal int EdgeCount => _edgeCount;
-        internal NativeArray<LogisticsNetworkGraph.LogisticsNode>.ReadOnly Nodes => _nodes.IsCreated ? _nodes.AsReadOnly() : default;
-        internal NativeArray<int>.ReadOnly EdgeOffsets => _edgeOffsets.IsCreated ? _edgeOffsets.AsReadOnly() : default;
-        internal NativeArray<int>.ReadOnly EdgeDestinations => _edgeDestinations.IsCreated ? _edgeDestinations.AsReadOnly() : default;
-        internal NativeArray<float>.ReadOnly EdgeResistance => _edgeResistance.IsCreated ? _edgeResistance.AsReadOnly() : default;
-        internal NativeArray<float>.ReadOnly RoomWaterLevels => _roomWaterLevels.IsCreated ? _roomWaterLevels.AsReadOnly() : default;
-        internal NativeArray<float>.ReadOnly RoomVolumes => _roomVolumes.IsCreated ? _roomVolumes.AsReadOnly() : default;
-        internal NativeArray<byte>.ReadOnly RoomFlags => _roomFlags.IsCreated ? _roomFlags.AsReadOnly() : default;
-        internal NativeArray<byte>.ReadOnly EdgeFlags => _edgeFlags.IsCreated ? _edgeFlags.AsReadOnly() : default;
-        internal NativeParallelMultiHashMap<int, HabitatFloodConnection> RoomConnections => _roomConnections;
+        internal NativeArray<LogisticsNetworkGraph.LogisticsNode>.ReadOnly Nodes => TryReadHabitatVaultBuffer(HabitatGraphNodesBufferId, 1, in _nodesHandle, out NativeArray<LogisticsNetworkGraph.LogisticsNode>.ReadOnly nodes) ? nodes : default;
+        internal NativeArray<int>.ReadOnly EdgeOffsets => TryReadHabitatVaultBuffer(HabitatGraphEdgeOffsetsBufferId, 1, in _edgeOffsetsHandle, out NativeArray<int>.ReadOnly edgeOffsets) ? edgeOffsets : default;
+        internal NativeArray<int>.ReadOnly EdgeDestinations => TryReadHabitatVaultBuffer(HabitatGraphEdgeDestinationsBufferId, 1, in _edgeDestinationsHandle, out NativeArray<int>.ReadOnly edgeDestinations) ? edgeDestinations : default;
+        internal NativeArray<float>.ReadOnly EdgeResistance => TryReadHabitatVaultBuffer(HabitatGraphEdgeResistanceBufferId, 1, in _edgeResistanceHandle, out NativeArray<float>.ReadOnly edgeResistance) ? edgeResistance : default;
+        internal NativeArray<float>.ReadOnly RoomWaterLevels => TryReadHabitatVaultBuffer(HabitatRoomWaterLevelsBufferId, 1, in _roomWaterLevelsHandle, out NativeArray<float>.ReadOnly roomWaterLevels) ? roomWaterLevels : default;
+        internal NativeArray<float>.ReadOnly RoomVolumes => TryReadHabitatVaultBuffer(HabitatRoomVolumesBufferId, 1, in _roomVolumesHandle, out NativeArray<float>.ReadOnly roomVolumes) ? roomVolumes : default;
+        internal NativeArray<byte>.ReadOnly RoomFlags => TryReadHabitatVaultBuffer(HabitatRoomFlagsBufferId, 1, in _roomFlagsHandle, out NativeArray<byte>.ReadOnly roomFlags) ? roomFlags : default;
+        internal NativeArray<byte>.ReadOnly EdgeFlags => TryReadHabitatVaultBuffer(HabitatGraphEdgeFlagsBufferId, 1, in _edgeFlagsHandle, out NativeArray<byte>.ReadOnly edgeFlags) ? edgeFlags : default;
         internal int FloodedRoomCount => _floodedRoomCount;
         internal float BaseTotalStress => _baseTotalStress;
         internal uint FloodStateSequence => _floodBlackBoxStateHash;
@@ -453,6 +502,34 @@ namespace Hecton8.Construction
             return baseModule.TryBuildRoomWaterlineSnapshot(roomId, fill01, _floodBlackBoxStateHash, out snapshot);
         }
 
+        internal void PublishRoomSubmergedFractionsToGas(IGasDynamicsSolver gasDynamics)
+        {
+            if (gasDynamics == null ||
+                _moduleBuffer == null ||
+                _nodeCount <= 0 ||
+                !TryReadHabitatVaultBuffer(
+                    HabitatRoomWaterLevelsBufferId,
+                    1,
+                    in _roomWaterLevelsHandle,
+                    out NativeArray<float>.ReadOnly roomWaterLevels))
+            {
+                return;
+            }
+
+            int roomLimit = math.min(_nodeCount, _moduleBuffer.Count);
+            roomLimit = math.min(roomLimit, roomWaterLevels.Length);
+            roomLimit = math.min(roomLimit, math.max(0, gasDynamics.RoomCount));
+            for (int roomId = 0; roomId < roomLimit; roomId++)
+            {
+                BaseModule baseModule = _moduleBuffer[roomId].BaseModule;
+                if (baseModule == null || !baseModule.isActiveAndEnabled)
+                    continue;
+
+                float fill01 = ResolveAuthoritativeRoomWaterLevel01(roomId, baseModule, roomWaterLevels);
+                gasDynamics.TrySetRoomSubmergedFraction(roomId, fill01);
+            }
+        }
+
         private bool TryResolveCachedRoomWaterline(
             Vector3 runtimePosition,
             int cachedRoomId,
@@ -473,11 +550,24 @@ namespace Hecton8.Construction
         internal static bool TryGetLatestSiegeTargets(out NativeArray<HabitatSiegeTargetSnapshot>.ReadOnly targets, out int count)
         {
             targets = default;
-            count = s_latestSiegeTargetCount;
-            if (s_latestSiegeTargetOwner == null || !s_latestSiegeTargets.IsCreated || count <= 0)
+            count = 0;
+            int publishedCount = s_latestSiegeTargetCount;
+            HabitatGraphManager owner = s_latestSiegeTargetOwner;
+            if (owner == null ||
+                publishedCount <= 0 ||
+                !owner.TryReadHabitatVaultBuffer(
+                    HabitatSiegeTargetsBufferId,
+                    publishedCount,
+                    in owner._siegeTargetsHandle,
+                    out targets))
+            {
+                return false;
+            }
+
+            count = Mathf.Min(publishedCount, targets.Length);
+            if (count <= 0)
                 return false;
 
-            targets = s_latestSiegeTargets.AsReadOnly();
             return true;
         }
 
@@ -492,8 +582,10 @@ namespace Hecton8.Construction
             ClearVisualLinks();
             DisposeNativeBuffers();
             _atmosphereReadModel = null;
+            _ambientCurrentReadModel = null;
             _audioService = null;
             _fluidDecals = null;
+            _dataVault = null;
             _graph.Dispose();
         }
 
@@ -536,17 +628,39 @@ namespace Hecton8.Construction
             EnsureNodeCapacity(_nodeCount);
             BuildSocketAdjacency();
             AppendTemporaryBypassEdges();
-            BuildNodeRecords();
-            PruneRuptureCascadeState();
-            BuildEdgeRecords();
-            EvaluateAnchorReachability();
-            PublishAnchorState();
-            PublishComponentPowerState();
-            PublishEmergencyLockdownState();
-            SyncFloodRoomStateSnapshot();
-            PublishDegradationState();
-            PublishSiegeTargetSnapshot();
-            PublishGraphKernel();
+            int directedEdgeCapacity = math.max(1, _edgeBuffer.Count * 2);
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    directedEdgeCapacity,
+                    out HabitatGraphWriteViews graphViews,
+                    out IDataVault graphVault))
+            {
+                ClearSiegeTargetSnapshot();
+                ClearFloodRoomStateSnapshot();
+                _graph.BeginBuild(LogisticsNetworkType.OxygenPressure, 1, 1, 0);
+                BaseDegradationSystem.EndRuptureSync();
+                return;
+            }
+
+            try
+            {
+                BuildNodeRecords(ref graphViews);
+                PruneRuptureCascadeState(ref graphViews);
+                BuildEdgeRecords(ref graphViews, directedEdgeCapacity);
+                EvaluateAnchorReachability(ref graphViews);
+                PublishAnchorState(ref graphViews);
+                PublishComponentPowerState(ref graphViews);
+                PublishEmergencyLockdownState(ref graphViews);
+                SyncFloodRoomStateSnapshot();
+                PublishDegradationState(ref graphViews);
+                PublishSiegeTargetSnapshot(ref graphViews);
+                PublishGraphKernel(ref graphViews);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(graphVault);
+            }
+
             PublishVisualLinks();
             BaseDegradationSystem.EndRuptureSync();
         }
@@ -837,10 +951,17 @@ namespace Hecton8.Construction
             return math.lerp(AnalyticalMinimumDepthWeightScale, AnalyticalMaximumDepthWeightScale, depth01);
         }
 
-        private static float ResolveAnalyticalLocalCurrentScale(float3 runtimePosition, float depthMeters)
+        private float ResolveAnalyticalLocalCurrentScale(float3 runtimePosition, float depthMeters)
         {
-            Vector3 current = Hecton8.Physics.CurrentVolume.SampleCombinedCurrent(
-                new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+            Vector3 current = Vector3.zero;
+            IAmbientCurrentReadModel ambientCurrentReadModel = ResolveAmbientCurrentReadModel();
+            if (ambientCurrentReadModel != null)
+            {
+                ambientCurrentReadModel.TrySampleCombinedCurrent(
+                    new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
+                    out current);
+            }
+
             float currentSpeedSq = current.x * current.x + current.y * current.y + current.z * current.z;
             if (!math.isfinite(currentSpeedSq) || currentSpeedSq <= 0.0001f)
                 return 0f;
@@ -856,10 +977,14 @@ namespace Hecton8.Construction
             if (module.IsAnchorNode)
                 reinforcement += moduleIntegrity * AnalyticalAnchorReinforcementScale;
 
-            if (_anchorReachability.IsCreated &&
+            if (TryReadHabitatVaultBuffer(
+                    HabitatGraphAnchorReachabilityBufferId,
+                    math.max(1, nodeIndex + 1),
+                    in _anchorReachabilityHandle,
+                    out NativeArray<byte>.ReadOnly anchorReachability) &&
                 nodeIndex >= 0 &&
-                nodeIndex < _anchorReachability.Length &&
-                _anchorReachability[nodeIndex] != 0)
+                nodeIndex < anchorReachability.Length &&
+                anchorReachability[nodeIndex] != 0)
             {
                 reinforcement += moduleIntegrity * AnalyticalReachableReinforcementScale;
             }
@@ -886,6 +1011,15 @@ namespace Hecton8.Construction
 
             _atmosphereReadModel = GlobalRegistry.AtmosphereReadModel;
             return _atmosphereReadModel;
+        }
+
+        private IAmbientCurrentReadModel ResolveAmbientCurrentReadModel()
+        {
+            if (_ambientCurrentReadModel != null)
+                return _ambientCurrentReadModel;
+
+            _ambientCurrentReadModel = GlobalRegistry.AmbientCurrent;
+            return _ambientCurrentReadModel;
         }
 
         private float ResolveRuntimeDepthMeters(float3 runtimePosition)
@@ -1017,16 +1151,14 @@ namespace Hecton8.Construction
 
         private void UpdateHabitatModuleStressMatrix(float deltaTime, HectonQualityTier moduleStressTier)
         {
-            if (!_moduleStressScalars.IsCreated)
+            int moduleCount = math.min(BaseModule.ActiveModuleCount, ModuleStressShaderCapacity);
+            if (moduleCount <= 0)
             {
                 ClearModuleStressState();
                 return;
             }
 
-            int moduleCount = math.min(
-                math.min(BaseModule.ActiveModuleCount, _moduleStressScalars.Length),
-                ModuleStressShaderCapacity);
-            if (moduleCount <= 0)
+            if (!EnsureModuleStressHandles(moduleCount))
             {
                 ClearModuleStressState();
                 return;
@@ -1041,91 +1173,115 @@ namespace Hecton8.Construction
                 _moduleStressOrderHash = activeOrderHash;
             }
 
-            ConsumeModuleStressSignals(stressCount);
-
-            float safeDeltaTime = math.max(0.0001f, deltaTime);
-            float peakStress01 = 0f;
-            byte moduleStressTierProfile = ResolveModuleStressQualityTierProfileByte(moduleStressTier);
-            bool lowTier = stressCount > 0 && IsModuleStressLowTier(moduleStressTier);
-            bool changed = orderChanged ||
-                           stressCount != _lastUploadedModuleStressCount ||
-                           lowTier != _lastUploadedModuleStressLowTier ||
-                           moduleStressTier != _lastUploadedModuleStressTier;
-            float3 loudestPosition = float3.zero;
-            float loudestDeltaPerSecond = 0f;
-            float loudestStress01 = 0f;
-            float loudestDepthMeters = 0f;
-
-            for (int nodeIndex = 0; nodeIndex < stressCount; nodeIndex++)
+            if (!TryAcquireModuleStressWriteBuffers(
+                    stressCount,
+                    out NativeArray<float> moduleStressScalars,
+                    out NativeArray<float> previousModuleStressScalars,
+                    out NativeArray<float> moduleImpactStressSpikes,
+                    out NativeArray<byte> moduleCompromisedFlags,
+                    out IDataVault vault))
             {
-                BaseModule baseModule = BaseModule.GetActiveModuleAt(nodeIndex);
-                float stress01 = 0f;
-                float depthMeters = 0f;
-                float3 modulePosition = float3.zero;
-                bool hasGraphRecord = TryResolveGraphModuleRecord(baseModule, nodeIndex, out int graphNodeIndex, out ModuleRecord module);
-                if (baseModule != null && baseModule.isActiveAndEnabled)
+                ClearModuleStressState();
+                return;
+            }
+
+            try
+            {
+                ConsumeModuleStressSignals(stressCount, moduleImpactStressSpikes);
+                TryReadHabitatVaultBuffer(
+                    HabitatRoomWaterLevelsBufferId,
+                    stressCount,
+                    in _roomWaterLevelsHandle,
+                    out NativeArray<float>.ReadOnly roomWaterLevels);
+
+                float safeDeltaTime = math.max(0.0001f, deltaTime);
+                float peakStress01 = 0f;
+                byte moduleStressTierProfile = ResolveModuleStressQualityTierProfileByte(moduleStressTier);
+                bool lowTier = stressCount > 0 && IsModuleStressLowTier(moduleStressTier);
+                bool changed = orderChanged ||
+                               stressCount != _lastUploadedModuleStressCount ||
+                               lowTier != _lastUploadedModuleStressLowTier ||
+                               moduleStressTier != _lastUploadedModuleStressTier;
+                float3 loudestPosition = float3.zero;
+                float loudestDeltaPerSecond = 0f;
+                float loudestStress01 = 0f;
+                float loudestDepthMeters = 0f;
+
+                for (int nodeIndex = 0; nodeIndex < stressCount; nodeIndex++)
                 {
-                    modulePosition = hasGraphRecord ? module.Position : ResolveActiveModulePosition(baseModule);
-                    depthMeters = ResolveActiveModuleDepthMeters(baseModule, modulePosition);
-                    float floodStress01 = ResolveActiveModuleFloodStress01(baseModule, graphNodeIndex, hasGraphRecord);
-                    stress01 = ResolveModuleStress01(nodeIndex, baseModule, depthMeters, floodStress01, safeDeltaTime, out bool invalidStressInput);
-                    if (invalidStressInput)
+                    BaseModule baseModule = BaseModule.GetActiveModuleAt(nodeIndex);
+                    float stress01 = 0f;
+                    float depthMeters = 0f;
+                    float3 modulePosition = float3.zero;
+                    bool hasGraphRecord = TryResolveGraphModuleRecord(baseModule, nodeIndex, out int graphNodeIndex, out ModuleRecord module);
+                    if (baseModule != null && baseModule.isActiveAndEnabled)
                     {
+                        modulePosition = hasGraphRecord ? module.Position : ResolveActiveModulePosition(baseModule);
+                        depthMeters = ResolveActiveModuleDepthMeters(baseModule, modulePosition);
+                        float floodStress01 = ResolveActiveModuleFloodStress01(baseModule, graphNodeIndex, hasGraphRecord, roomWaterLevels);
+                        stress01 = ResolveModuleStress01(nodeIndex, baseModule, depthMeters, floodStress01, safeDeltaTime, moduleImpactStressSpikes, out bool invalidStressInput);
+                        if (invalidStressInput)
+                        {
+                            WriteFloodBlackBoxSample(FloodBlackBoxModuleStressInvalidFlag);
+                            DumpModuleStressBlackBoxOnce(FloodBlackBoxModuleStressInvalidFlag);
+                        }
+                    }
+
+                    bool finiteStress = math.isfinite(stress01);
+                    stress01 = finiteStress ? math.saturate(stress01) : 0f;
+                    if (!finiteStress)
+                    {
+                        stress01 = 0f;
                         WriteFloodBlackBoxSample(FloodBlackBoxModuleStressInvalidFlag);
                         DumpModuleStressBlackBoxOnce(FloodBlackBoxModuleStressInvalidFlag);
                     }
+
+                    float previousStress01 = previousModuleStressScalars[nodeIndex];
+                    float deltaPerSecond = math.abs(stress01 - previousStress01) * math.rcp(safeDeltaTime);
+                    if (deltaPerSecond > loudestDeltaPerSecond)
+                    {
+                        loudestDeltaPerSecond = deltaPerSecond;
+                        loudestStress01 = stress01;
+                        loudestPosition = modulePosition;
+                        loudestDepthMeters = depthMeters;
+                    }
+
+                    if (math.abs(stress01 - moduleStressScalars[nodeIndex]) > ModuleStressUploadEpsilon)
+                        changed = true;
+
+                    moduleStressScalars[nodeIndex] = stress01;
+                    previousModuleStressScalars[nodeIndex] = stress01;
+                    peakStress01 = math.max(peakStress01, stress01);
+
+                    if (baseModule != null && stress01 >= ModuleStressCompromisedThreshold01)
+                        TryPublishBaseModuleCompromisedSignal(nodeIndex, baseModule, module, hasGraphRecord, modulePosition, stress01, peakStress01, depthMeters, moduleStressTier, moduleStressTierProfile, moduleCompromisedFlags);
+                    else if (nodeIndex < moduleCompromisedFlags.Length && stress01 < ModuleStressCompromisedThreshold01 * 0.82f)
+                        moduleCompromisedFlags[nodeIndex] = 0;
                 }
 
-                bool finiteStress = math.isfinite(stress01);
-                stress01 = finiteStress ? math.saturate(stress01) : 0f;
-                if (!finiteStress)
-                {
-                    stress01 = 0f;
-                    WriteFloodBlackBoxSample(FloodBlackBoxModuleStressInvalidFlag);
-                    DumpModuleStressBlackBoxOnce(FloodBlackBoxModuleStressInvalidFlag);
-                }
-
-                float previousStress01 = _previousModuleStressScalars[nodeIndex];
-                float deltaPerSecond = math.abs(stress01 - previousStress01) * math.rcp(safeDeltaTime);
-                if (deltaPerSecond > loudestDeltaPerSecond)
-                {
-                    loudestDeltaPerSecond = deltaPerSecond;
-                    loudestStress01 = stress01;
-                    loudestPosition = modulePosition;
-                    loudestDepthMeters = depthMeters;
-                }
-
-                if (math.abs(stress01 - _moduleStressScalars[nodeIndex]) > ModuleStressUploadEpsilon)
+                _peakModuleStress01 = peakStress01;
+                if (math.abs(peakStress01 - _lastUploadedPeakModuleStress01) > ModuleStressUploadEpsilon)
                     changed = true;
 
-                _moduleStressScalars[nodeIndex] = stress01;
-                _previousModuleStressScalars[nodeIndex] = stress01;
-                peakStress01 = math.max(peakStress01, stress01);
+                if (!orderChanged &&
+                    loudestDeltaPerSecond >= ModuleStressFastDeltaGroanThresholdPerSecond &&
+                    loudestStress01 > 0.08f)
+                {
+                    PublishHullStressSignal(
+                        new Vector3(loudestPosition.x, loudestPosition.y, loudestPosition.z),
+                        loudestStress01,
+                        math.saturate(loudestDeltaPerSecond * 0.25f),
+                        loudestDepthMeters,
+                        1f + (math.saturate(loudestStress01 + loudestDeltaPerSecond * 0.08f) * StructuralGroanPitchRange));
+                }
 
-                if (baseModule != null && stress01 >= ModuleStressCompromisedThreshold01)
-                    TryPublishBaseModuleCompromisedSignal(nodeIndex, baseModule, module, hasGraphRecord, modulePosition, stress01, peakStress01, depthMeters, moduleStressTier, moduleStressTierProfile);
-                else if (nodeIndex < _moduleCompromisedFlags.Length && stress01 < ModuleStressCompromisedThreshold01 * 0.82f)
-                    _moduleCompromisedFlags[nodeIndex] = 0;
+                if (changed)
+                    UploadModuleStressMatrix(stressCount, peakStress01, moduleStressTier);
             }
-
-            _peakModuleStress01 = peakStress01;
-            if (math.abs(peakStress01 - _lastUploadedPeakModuleStress01) > ModuleStressUploadEpsilon)
-                changed = true;
-
-            if (!orderChanged &&
-                loudestDeltaPerSecond >= ModuleStressFastDeltaGroanThresholdPerSecond &&
-                loudestStress01 > 0.08f)
+            finally
             {
-                PublishHullStressSignal(
-                    new Vector3(loudestPosition.x, loudestPosition.y, loudestPosition.z),
-                    loudestStress01,
-                    math.saturate(loudestDeltaPerSecond * 0.25f),
-                    loudestDepthMeters,
-                    1f + (math.saturate(loudestStress01 + loudestDeltaPerSecond * 0.08f) * StructuralGroanPitchRange));
+                ReleaseModuleStressWriteLocks(vault);
             }
-
-            if (changed)
-                UploadModuleStressMatrix(stressCount, peakStress01, moduleStressTier);
         }
 
         private void ClearModuleStressState()
@@ -1144,32 +1300,36 @@ namespace Hecton8.Construction
             _lastUploadedModuleStressLowTier = false;
             _lastUploadedModuleStressTier = HectonQualityTier.Unknown;
             _moduleStressOrderHash = 0u;
-            if (_moduleStressScalars.IsCreated)
+            if (TryAcquireModuleStressWriteBuffers(
+                    1,
+                    out NativeArray<float> moduleStressScalars,
+                    out NativeArray<float> previousModuleStressScalars,
+                    out NativeArray<float> moduleImpactStressSpikes,
+                    out NativeArray<byte> moduleCompromisedFlags,
+                    out IDataVault vault))
             {
-                int clearCount = _moduleStressScalars.Length;
-                for (int i = 0; i < clearCount; i++)
-                    _moduleStressScalars[i] = 0f;
-            }
+                try
+                {
+                    int clearCount = moduleStressScalars.Length;
+                    for (int i = 0; i < clearCount; i++)
+                        moduleStressScalars[i] = 0f;
 
-            if (_previousModuleStressScalars.IsCreated)
-            {
-                int clearCount = _previousModuleStressScalars.Length;
-                for (int i = 0; i < clearCount; i++)
-                    _previousModuleStressScalars[i] = 0f;
-            }
+                    clearCount = previousModuleStressScalars.Length;
+                    for (int i = 0; i < clearCount; i++)
+                        previousModuleStressScalars[i] = 0f;
 
-            if (_moduleImpactStressSpikes.IsCreated)
-            {
-                int clearCount = _moduleImpactStressSpikes.Length;
-                for (int i = 0; i < clearCount; i++)
-                    _moduleImpactStressSpikes[i] = 0f;
-            }
+                    clearCount = moduleImpactStressSpikes.Length;
+                    for (int i = 0; i < clearCount; i++)
+                        moduleImpactStressSpikes[i] = 0f;
 
-            if (_moduleCompromisedFlags.IsCreated)
-            {
-                int clearCount = _moduleCompromisedFlags.Length;
-                for (int i = 0; i < clearCount; i++)
-                    _moduleCompromisedFlags[i] = 0;
+                    clearCount = moduleCompromisedFlags.Length;
+                    for (int i = 0; i < clearCount; i++)
+                        moduleCompromisedFlags[i] = 0;
+                }
+                finally
+                {
+                    ReleaseModuleStressWriteLocks(vault);
+                }
             }
 
             if (publishShaderClear && shouldPublishClear)
@@ -1264,10 +1424,14 @@ namespace Hecton8.Construction
             return hash;
         }
 
-        private float ResolveActiveModuleFloodStress01(BaseModule baseModule, int graphNodeIndex, bool hasGraphRecord)
+        private float ResolveActiveModuleFloodStress01(
+            BaseModule baseModule,
+            int graphNodeIndex,
+            bool hasGraphRecord,
+            NativeArray<float>.ReadOnly roomWaterLevels)
         {
-            if (hasGraphRecord && _roomWaterLevels.IsCreated && (uint)graphNodeIndex < (uint)_roomWaterLevels.Length)
-                return math.saturate(_roomWaterLevels[graphNodeIndex]);
+            if (hasGraphRecord && roomWaterLevels.IsCreated && (uint)graphNodeIndex < (uint)roomWaterLevels.Length)
+                return math.saturate(roomWaterLevels[graphNodeIndex]);
 
             return baseModule != null && baseModule.IsFlooded ? 1f : 0f;
         }
@@ -1278,6 +1442,7 @@ namespace Hecton8.Construction
             float depthMeters,
             float floodStress01,
             float deltaTime,
+            NativeArray<float> moduleImpactStressSpikes,
             out bool invalidState)
         {
             invalidState = false;
@@ -1304,18 +1469,18 @@ namespace Hecton8.Construction
             impactDamage01 = math.max(impactDamage01, SaturateFinite01(floodStress01, ref invalidState) * ModuleStressFloodWeight);
 
             float spike01 = 0f;
-            if (_moduleImpactStressSpikes.IsCreated && (uint)nodeIndex < (uint)_moduleImpactStressSpikes.Length)
+            if (moduleImpactStressSpikes.IsCreated && (uint)nodeIndex < (uint)moduleImpactStressSpikes.Length)
             {
-                float storedSpike01 = _moduleImpactStressSpikes[nodeIndex];
+                float storedSpike01 = moduleImpactStressSpikes[nodeIndex];
                 if (math.isfinite(storedSpike01))
                 {
                     spike01 = math.saturate(storedSpike01);
-                    _moduleImpactStressSpikes[nodeIndex] = math.max(0f, spike01 - ModuleStressImpactSpikeDecayPerSecond * deltaTime);
+                    moduleImpactStressSpikes[nodeIndex] = math.max(0f, spike01 - ModuleStressImpactSpikeDecayPerSecond * deltaTime);
                 }
                 else
                 {
                     invalidState = true;
-                    _moduleImpactStressSpikes[nodeIndex] = 0f;
+                    moduleImpactStressSpikes[nodeIndex] = 0f;
                 }
             }
 
@@ -1332,9 +1497,9 @@ namespace Hecton8.Construction
             return 0f;
         }
 
-        private void ConsumeModuleStressSignals(int moduleCount)
+        private void ConsumeModuleStressSignals(int moduleCount, NativeArray<float> moduleImpactStressSpikes)
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastProcessedModuleStressSignalFrame == frame || moduleCount <= 0)
                 return;
 
@@ -1349,7 +1514,7 @@ namespace Hecton8.Construction
                 if (!TryResolveModuleStressIndex(signal.TargetHash, signal.TargetId, float3.zero, false, moduleCount, out int moduleIndex))
                     continue;
 
-                InjectModuleStressSpike(moduleIndex, math.max(signal.Intensity01, signal.Depth));
+                InjectModuleStressSpike(moduleIndex, math.max(signal.Intensity01, signal.Depth), moduleImpactStressSpikes);
             }
 
             ReadOnlySpan<CoreCombatDamageSignal> damageSignals = SignalBus<CoreCombatDamageSignal>.GetFrameSnapshot();
@@ -1368,7 +1533,7 @@ namespace Hecton8.Construction
                 if (!TryResolveModuleStressIndex(signal.TargetHash, signal.TargetId, runtimePoint, allowNearest, moduleCount, out int moduleIndex))
                     continue;
 
-                InjectModuleStressSpike(moduleIndex, signal.Magnitude);
+                InjectModuleStressSpike(moduleIndex, signal.Magnitude, moduleImpactStressSpikes);
             }
         }
 
@@ -1555,9 +1720,9 @@ namespace Hecton8.Construction
             return entityKey != 0u ? entityKey : 0u;
         }
 
-        private void InjectModuleStressSpike(int moduleIndex, float magnitude)
+        private void InjectModuleStressSpike(int moduleIndex, float magnitude, NativeArray<float> moduleImpactStressSpikes)
         {
-            if (!_moduleImpactStressSpikes.IsCreated || (uint)moduleIndex >= (uint)_moduleImpactStressSpikes.Length)
+            if (!moduleImpactStressSpikes.IsCreated || (uint)moduleIndex >= (uint)moduleImpactStressSpikes.Length)
                 return;
 
             if (!math.isfinite(magnitude))
@@ -1567,7 +1732,7 @@ namespace Hecton8.Construction
                 return;
             }
 
-            float previousSpike01 = _moduleImpactStressSpikes[moduleIndex];
+            float previousSpike01 = moduleImpactStressSpikes[moduleIndex];
             if (!math.isfinite(previousSpike01))
             {
                 WriteFloodBlackBoxSample(FloodBlackBoxModuleStressInvalidFlag);
@@ -1576,7 +1741,7 @@ namespace Hecton8.Construction
             }
 
             float spike01 = math.saturate(math.max(0f, magnitude) * ModuleStressImpactSpikeStrength);
-            _moduleImpactStressSpikes[moduleIndex] = math.max(previousSpike01, spike01);
+            moduleImpactStressSpikes[moduleIndex] = math.max(previousSpike01, spike01);
         }
 
         private void TryPublishBaseModuleCompromisedSignal(
@@ -1589,15 +1754,16 @@ namespace Hecton8.Construction
             float peakStress01,
             float depthMeters,
             HectonQualityTier tier,
-            byte tierProfile)
+            byte tierProfile,
+            NativeArray<byte> moduleCompromisedFlags)
         {
-            if (!_moduleCompromisedFlags.IsCreated || (uint)moduleIndex >= (uint)_moduleCompromisedFlags.Length)
+            if (!moduleCompromisedFlags.IsCreated || (uint)moduleIndex >= (uint)moduleCompromisedFlags.Length)
                 return;
 
-            if (_moduleCompromisedFlags[moduleIndex] != 0)
+            if (moduleCompromisedFlags[moduleIndex] != 0)
                 return;
 
-            _moduleCompromisedFlags[moduleIndex] = 1;
+            moduleCompromisedFlags[moduleIndex] = 1;
             BaseModuleCompromisedSignal signal = new BaseModuleCompromisedSignal
             {
                 ModuleCenter = modulePosition,
@@ -1649,12 +1815,34 @@ namespace Hecton8.Construction
             {
                 EnsureModuleStressBuffer(safeModuleCount);
                 GraphicsBuffer writeBuffer = ResolveModuleStressWriteBuffer();
-                if (writeBuffer != null)
+                if (writeBuffer != null &&
+                    EnsureModuleStressHandles(safeModuleCount) &&
+                    TryAcquireHabitatVaultWriteBuffer(
+                        HabitatModuleStressScalarsBufferId,
+                        safeModuleCount,
+                        in _moduleStressScalarsHandle,
+                        out NativeArray<float> moduleStressScalars,
+                        out IDataVault vault))
                 {
-                    GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, _moduleStressScalars, safeModuleCount);
-                    _activeModuleStressBuffer = writeBuffer;
-                    _moduleStressBufferWriteIndex ^= 1;
-                    Shader.SetGlobalBuffer(HabitatModuleStressBufferId, _activeModuleStressBuffer);
+                    try
+                    {
+                        GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, moduleStressScalars, safeModuleCount);
+                        _activeModuleStressBuffer = writeBuffer;
+                        _moduleStressBufferWriteIndex ^= 1;
+                        Shader.SetGlobalBuffer(HabitatModuleStressBufferId, _activeModuleStressBuffer);
+                    }
+                    finally
+                    {
+                        vault.ReleaseWriteLock(in _moduleStressScalarsHandle, SystemID.Construction);
+                    }
+                }
+                else
+                {
+                    ReleaseModuleStressBuffer(false);
+                    safeModuleCount = 0;
+                    safePeakStress01 = 0f;
+                    tier = HectonQualityTier.Unknown;
+                    _lastUploadedModuleStressCount = -1;
                 }
             }
 
@@ -1789,6 +1977,11 @@ namespace Hecton8.Construction
             if (_moduleBuffer == null || _moduleBuffer.Count <= 0)
                 return false;
 
+            TryReadHabitatVaultBuffer(
+                HabitatRoomWaterLevelsBufferId,
+                1,
+                in _roomWaterLevelsHandle,
+                out NativeArray<float>.ReadOnly roomWaterLevels);
             int moduleCount = math.min(math.max(0, _nodeCount), _moduleBuffer.Count);
             for (int nodeIndex = 0; nodeIndex < moduleCount; nodeIndex++)
             {
@@ -1799,8 +1992,8 @@ namespace Hecton8.Construction
 
                 float jointStress01 = math.saturate(baseModule.JointShearStress01);
                 float compressionStress01 = math.saturate(baseModule.PressureCompressionAlpha01);
-                float floodStress01 = _roomWaterLevels.IsCreated && nodeIndex < _roomWaterLevels.Length
-                    ? math.saturate(_roomWaterLevels[nodeIndex])
+                float floodStress01 = roomWaterLevels.IsCreated && nodeIndex < roomWaterLevels.Length
+                    ? math.saturate(roomWaterLevels[nodeIndex])
                     : 0f;
                 float candidateStress01 = math.max(jointStress01, math.max(compressionStress01, floodStress01));
                 if (!math.isfinite(candidateStress01) || candidateStress01 <= stress01)
@@ -1839,7 +2032,7 @@ namespace Hecton8.Construction
             if (_audioService != null)
                 return _audioService;
 
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             return _audioService;
         }
 
@@ -1959,11 +2152,7 @@ namespace Hecton8.Construction
         {
             if (deltaTime <= 0f ||
                 _nodeCount <= 0 ||
-                !_edgeOffsets.IsCreated ||
-                !_edgeDestinations.IsCreated ||
-                !_edgeResistance.IsCreated ||
-                !_traversalVisited.IsCreated ||
-                !_anchorTraversalQueue.IsCreated)
+                !EnsureGraphHandles(_nodeCount, math.max(1, _edgeCount)))
             {
                 return;
             }
@@ -2030,39 +2219,76 @@ namespace Hecton8.Construction
 
             if (moduleCount <= 0 ||
                 deltaTime <= 0f ||
-                !_roomWaterLevels.IsCreated ||
-                !_roomVolumes.IsCreated ||
-                !_roomFlags.IsCreated ||
-                !_roomFloodDeltaLevels.IsCreated ||
-                !_edgeFlags.IsCreated ||
-                !_roomConnections.IsCreated ||
-                !_floodPropagationSummary.IsCreated)
+                !EnsureFloodRoomHandles(moduleCount) ||
+                !EnsureGraphHandles(moduleCount, math.max(1, _edgeCount)) ||
+                !EnsureFloodPropagationSummaryHandle())
             {
                 return false;
             }
 
-            _floodPropagationSummary[0] = default;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatFloodPropagationSummaryBufferId,
+                    1,
+                    in _floodPropagationSummaryHandle,
+                    out NativeArray<HabitatFloodPropagationSummary> floodPropagationSummary,
+                    out IDataVault floodPropagationSummaryVault))
+            {
+                return false;
+            }
+
+            if (!TryAcquireFloodRoomWriteBuffers(
+                    moduleCount,
+                    out NativeArray<float> roomWaterLevels,
+                    out NativeArray<float> roomVolumes,
+                    out NativeArray<float> roomFloodDeltaLevels,
+                    out NativeArray<byte> roomFlags,
+                    out IDataVault floodRoomVault))
+            {
+                floodPropagationSummaryVault.ReleaseWriteLock(in _floodPropagationSummaryHandle, SystemID.Construction);
+                return false;
+            }
+
+            if (!TryAcquireFloodGraphJobBuffers(
+                    moduleCount,
+                    math.max(1, _edgeCount),
+                    out HabitatFloodGraphJobViews graph,
+                    out IDataVault floodGraphVault))
+            {
+                floodPropagationSummaryVault.ReleaseWriteLock(in _floodPropagationSummaryHandle, SystemID.Construction);
+                ReleaseFloodRoomWriteLocks(floodRoomVault);
+                return false;
+            }
+
+            floodPropagationSummary[0] = default;
             HabitatFloodPropagationJob job = new HabitatFloodPropagationJob
             {
                 NodeCount = moduleCount,
-                EdgeCount = math.min(_edgeCount, _edgeFlags.Length),
+                EdgeCount = math.min(_edgeCount, graph.EdgeFlags.Length),
                 StartNodeIndex = startNodeIndex,
                 ProcessNodeCount = processNodeCount,
                 DeltaTime = deltaTime,
                 FlowRate01PerSecond = GraphFloodTransferRateM3PerSecond,
                 MaxTransferPerEdgeM3 = GraphFloodMaxTransferPerEdgeM3,
                 WaterEpsilon01 = GraphFloodWaterEpsilonM3,
-                RoomWaterLevels = _roomWaterLevels,
-                RoomVolumes = _roomVolumes,
-                RoomFlags = _roomFlags,
-                EdgeFlags = _edgeFlags,
-                Connections = _roomConnections,
-                RoomDeltaLevels = _roomFloodDeltaLevels,
-                Result = _floodPropagationSummary
+                EdgeOffsets = graph.EdgeOffsets,
+                EdgeDestinations = graph.EdgeDestinations,
+                EdgeResistance = graph.EdgeResistance,
+                RoomWaterLevels = roomWaterLevels,
+                RoomVolumes = roomVolumes,
+                RoomFlags = roomFlags,
+                EdgeFlags = graph.EdgeFlags,
+                RoomDeltaLevels = roomFloodDeltaLevels,
+                Result = floodPropagationSummary
             };
 
             _floodPropagationHandle = job.Schedule();
             _floodPropagationPending = true;
+            _floodPropagationSummaryWriteLockHeld = true;
+            _floodPropagationSummaryWriteLockVault = floodPropagationSummaryVault;
+            _floodPropagationRoomWriteLockHeld = true;
+            _floodPropagationRoomWriteLockVault = floodRoomVault;
+            _floodPropagationGraphWriteLockHeld = true;
+            _floodPropagationGraphWriteLockVault = floodGraphVault;
             _pendingFloodPropagationModuleCount = moduleCount;
             H8Memory.RegisterActiveJob(SystemID.Construction, _floodPropagationHandle);
             return finalizedChanged;
@@ -2097,7 +2323,40 @@ namespace Hecton8.Construction
         {
             _floodPropagationPending = false;
 
-            HabitatFloodPropagationSummary summary = _floodPropagationSummary[0];
+            if (!TryOpenHabitatVaultBuffer(
+                    _floodPropagationSummaryWriteLockVault,
+                    in _floodPropagationSummaryHandle,
+                    HabitatFloodPropagationSummaryBufferId,
+                    1,
+                    out NativeArray<HabitatFloodPropagationSummary> floodPropagationSummary))
+            {
+                ReleaseFloodPropagationSummaryWriteLock();
+                ReleaseFloodPropagationRoomWriteLocks();
+                ReleaseFloodPropagationGraphWriteLocks();
+                return false;
+            }
+
+            if (!TryOpenHabitatVaultBuffer(
+                    _floodPropagationRoomWriteLockVault,
+                    in _roomVolumesHandle,
+                    HabitatRoomVolumesBufferId,
+                    _pendingFloodPropagationModuleCount,
+                    out NativeArray<float> roomVolumes) ||
+                !TryOpenHabitatVaultBuffer(
+                    _floodPropagationRoomWriteLockVault,
+                    in _roomFloodDeltaLevelsHandle,
+                    HabitatRoomFloodDeltaLevelsBufferId,
+                    _pendingFloodPropagationModuleCount,
+                    out NativeArray<float> roomFloodDeltaLevels))
+            {
+                ReleaseFloodPropagationSummaryWriteLock();
+                ReleaseFloodPropagationRoomWriteLocks();
+                ReleaseFloodPropagationGraphWriteLocks();
+                return false;
+            }
+
+            HabitatFloodPropagationSummary summary = floodPropagationSummary[0];
+            ReleaseFloodPropagationSummaryWriteLock();
             if (summary.NonFiniteCount > 0)
             {
                 WriteFloodBlackBoxSample(FloodBlackBoxNonFiniteFlag);
@@ -2108,20 +2367,33 @@ namespace Hecton8.Construction
                 WriteFloodBlackBoxSample(FloodBlackBoxTopologyInvalidFlag);
             }
 
-            bool changed = ApplyFloodPropagationDeltas(_pendingFloodPropagationModuleCount);
+            bool changed;
+            try
+            {
+                changed = ApplyFloodPropagationDeltas(_pendingFloodPropagationModuleCount, roomVolumes, roomFloodDeltaLevels);
+            }
+            finally
+            {
+                ReleaseFloodPropagationRoomWriteLocks();
+                ReleaseFloodPropagationGraphWriteLocks();
+            }
+
             return changed || summary.FlowedEdgeCount > 0;
         }
 
-        private bool ApplyFloodPropagationDeltas(int moduleCount)
+        private bool ApplyFloodPropagationDeltas(
+            int moduleCount,
+            NativeArray<float> roomVolumes,
+            NativeArray<float> roomFloodDeltaLevels)
         {
             int safeCount = math.min(
                 math.min(moduleCount, _moduleBuffer.Count),
-                math.min(_roomFloodDeltaLevels.Length, _roomVolumes.Length));
+                math.min(roomFloodDeltaLevels.Length, roomVolumes.Length));
             bool changed = false;
 
             for (int nodeIndex = 0; nodeIndex < safeCount; nodeIndex++)
             {
-                float deltaLevel01 = _roomFloodDeltaLevels[nodeIndex];
+                float deltaLevel01 = roomFloodDeltaLevels[nodeIndex];
                 if (!math.isfinite(deltaLevel01) || deltaLevel01 == 0f)
                     continue;
 
@@ -2129,7 +2401,7 @@ namespace Hecton8.Construction
                 if (baseModule == null || !baseModule.isActiveAndEnabled)
                     continue;
 
-                float roomVolumeM3 = math.max(0.001f, _roomVolumes[nodeIndex]);
+                float roomVolumeM3 = math.max(0.001f, roomVolumes[nodeIndex]);
                 float deltaVolumeM3 = deltaLevel01 * roomVolumeM3;
                 if (!math.isfinite(deltaVolumeM3) || math.abs(deltaVolumeM3) <= GraphFloodWaterEpsilonM3)
                     continue;
@@ -2149,10 +2421,14 @@ namespace Hecton8.Construction
 
         private bool IsFloodEdgeSealed(int csrEdgeIndex)
         {
-            return _edgeFlags.IsCreated &&
+            return TryReadHabitatVaultBuffer(
+                       HabitatGraphEdgeFlagsBufferId,
+                       math.max(1, csrEdgeIndex + 1),
+                       in _edgeFlagsHandle,
+                       out NativeArray<byte>.ReadOnly edgeFlags) &&
                    csrEdgeIndex >= 0 &&
-                   csrEdgeIndex < _edgeFlags.Length &&
-                   (_edgeFlags[csrEdgeIndex] & (byte)HabitatEdgeFloodFlags.Sealed) != 0;
+                   csrEdgeIndex < edgeFlags.Length &&
+                   (edgeFlags[csrEdgeIndex] & (byte)HabitatEdgeFloodFlags.Sealed) != 0;
         }
 
         private bool IsFloodAutoSealActive(int nodeIndex, BaseModule baseModule)
@@ -2164,11 +2440,36 @@ namespace Hecton8.Construction
 
         private float ResolveAuthoritativeRoomWaterLevel01(int nodeIndex, BaseModule baseModule)
         {
-            if (_roomWaterLevels.IsCreated &&
-                nodeIndex >= 0 &&
-                nodeIndex < _roomWaterLevels.Length)
+            if (TryReadHabitatVaultBuffer(
+                    HabitatRoomWaterLevelsBufferId,
+                    math.max(1, nodeIndex + 1),
+                    in _roomWaterLevelsHandle,
+                    out NativeArray<float>.ReadOnly roomWaterLevels))
             {
-                float roomLevel01 = _roomWaterLevels[nodeIndex];
+                return ResolveAuthoritativeRoomWaterLevel01(nodeIndex, baseModule, roomWaterLevels);
+            }
+
+            if (baseModule == null)
+                return 0f;
+
+            float roomCapacityM3 = math.max(0.001f, baseModule.ResolveFloodCapacityM3());
+            float waterVolumeM3 = baseModule.WaterVolumeM3;
+            if (!math.isfinite(roomCapacityM3) || !math.isfinite(waterVolumeM3))
+                return 0f;
+
+            return math.saturate(waterVolumeM3 * math.rcp(roomCapacityM3));
+        }
+
+        private static float ResolveAuthoritativeRoomWaterLevel01(
+            int nodeIndex,
+            BaseModule baseModule,
+            NativeArray<float>.ReadOnly roomWaterLevels)
+        {
+            if (roomWaterLevels.IsCreated &&
+                nodeIndex >= 0 &&
+                nodeIndex < roomWaterLevels.Length)
+            {
+                float roomLevel01 = roomWaterLevels[nodeIndex];
                 return math.isfinite(roomLevel01) ? math.saturate(roomLevel01) : 0f;
             }
 
@@ -2185,141 +2486,216 @@ namespace Hecton8.Construction
 
         private void SetFloodEdgeFlag(int csrEdgeIndex, HabitatEdgeFloodFlags flag)
         {
-            if (!_edgeFlags.IsCreated ||
+            if (!TryAcquireFloodGraphJobBuffers(
+                    math.max(1, _nodeCount),
+                    math.max(1, _edgeCount),
+                    out HabitatFloodGraphJobViews graph,
+                    out IDataVault vault))
+                return;
+
+            try
+            {
+                SetFloodEdgeFlag(ref graph, csrEdgeIndex, flag);
+            }
+            finally
+            {
+                ReleaseFloodGraphWriteLocks(vault, 4);
+            }
+        }
+
+        private static void SetFloodEdgeFlag(ref HabitatGraphWriteViews graph, int csrEdgeIndex, HabitatEdgeFloodFlags flag)
+        {
+            if (!graph.EdgeFlags.IsCreated ||
                 csrEdgeIndex < 0 ||
-                csrEdgeIndex >= _edgeFlags.Length)
+                csrEdgeIndex >= graph.EdgeFlags.Length)
             {
                 return;
             }
 
-            _edgeFlags[csrEdgeIndex] = (byte)(_edgeFlags[csrEdgeIndex] | (byte)flag);
+            graph.EdgeFlags[csrEdgeIndex] = (byte)(graph.EdgeFlags[csrEdgeIndex] | (byte)flag);
+        }
+
+        private static void SetFloodEdgeFlag(ref HabitatFloodGraphJobViews graph, int csrEdgeIndex, HabitatEdgeFloodFlags flag)
+        {
+            if (!graph.EdgeFlags.IsCreated ||
+                csrEdgeIndex < 0 ||
+                csrEdgeIndex >= graph.EdgeFlags.Length)
+            {
+                return;
+            }
+
+            graph.EdgeFlags[csrEdgeIndex] = (byte)(graph.EdgeFlags[csrEdgeIndex] | (byte)flag);
         }
 
         private void ClearActiveFloodEdgeFlags()
         {
-            if (!_edgeFlags.IsCreated)
+            if (!TryAcquireFloodGraphJobBuffers(
+                    math.max(1, _nodeCount),
+                    math.max(1, _edgeCount),
+                    out HabitatFloodGraphJobViews graph,
+                    out IDataVault vault))
                 return;
 
-            int edgeCount = math.min(math.max(0, _edgeCount), _edgeFlags.Length);
+            try
+            {
+                ClearActiveFloodEdgeFlags(ref graph);
+            }
+            finally
+            {
+                ReleaseFloodGraphWriteLocks(vault, 4);
+            }
+        }
+
+        private void ClearActiveFloodEdgeFlags(ref HabitatGraphWriteViews graph)
+        {
+            if (!graph.EdgeFlags.IsCreated)
+                return;
+
+            int edgeCount = math.min(math.max(0, _edgeCount), graph.EdgeFlags.Length);
             for (int edgeIndex = 0; edgeIndex < edgeCount; edgeIndex++)
-                _edgeFlags[edgeIndex] = 0;
+                graph.EdgeFlags[edgeIndex] = 0;
+        }
+
+        private void ClearActiveFloodEdgeFlags(ref HabitatFloodGraphJobViews graph)
+        {
+            if (!graph.EdgeFlags.IsCreated)
+                return;
+
+            int edgeCount = math.min(math.max(0, _edgeCount), graph.EdgeFlags.Length);
+            for (int edgeIndex = 0; edgeIndex < edgeCount; edgeIndex++)
+                graph.EdgeFlags[edgeIndex] = 0;
         }
 
         private void SyncFloodRoomStateSnapshot()
         {
-            if (!_roomWaterLevels.IsCreated ||
-                !_roomVolumes.IsCreated ||
-                !_roomFlags.IsCreated)
+            if (!TryAcquireFloodRoomWriteBuffers(
+                    math.max(1, _nodeCount),
+                    out NativeArray<float> roomWaterLevels,
+                    out NativeArray<float> roomVolumes,
+                    out NativeArray<float> roomFloodDeltaLevels,
+                    out NativeArray<byte> roomFlagsBuffer,
+                    out IDataVault vault))
             {
                 return;
             }
 
-            int moduleCount = math.min(
-                math.min(_nodeCount, _moduleBuffer.Count),
-                math.min(_roomWaterLevels.Length, math.min(_roomVolumes.Length, _roomFlags.Length)));
-            int floodedRoomCount = 0;
-            float totalWaterVolumeM3 = 0f;
-            float maxWaterLevel01 = 0f;
-            float floodPressureStress = 0f;
-            uint blackBoxFlags = 0u;
-            uint stateHash = 2166136261u;
-
-            for (int nodeIndex = 0; nodeIndex < moduleCount; nodeIndex++)
+            try
             {
-                ModuleRecord module = _moduleBuffer[nodeIndex];
-                BaseModule baseModule = module.BaseModule;
-                float roomWaterLevel01 = 0f;
-                float roomVolumeM3 = 0f;
-                float roomWaterVolumeM3 = 0f;
-                HabitatRoomFloodFlags roomFlags = HabitatRoomFloodFlags.None;
+                int moduleCount = math.min(
+                    math.min(_nodeCount, _moduleBuffer.Count),
+                    math.min(roomWaterLevels.Length, math.min(roomVolumes.Length, roomFlagsBuffer.Length)));
+                int floodedRoomCount = 0;
+                float totalWaterVolumeM3 = 0f;
+                float maxWaterLevel01 = 0f;
+                float floodPressureStress = 0f;
+                uint blackBoxFlags = 0u;
+                uint stateHash = 2166136261u;
 
-                if (baseModule != null && baseModule.isActiveAndEnabled)
+                for (int nodeIndex = 0; nodeIndex < moduleCount; nodeIndex++)
                 {
-                    roomVolumeM3 = math.max(0.001f, baseModule.ResolveFloodCapacityM3());
-                    roomWaterVolumeM3 = baseModule.WaterVolumeM3;
-                    if (!math.isfinite(roomVolumeM3) || !math.isfinite(roomWaterVolumeM3))
+                    ModuleRecord module = _moduleBuffer[nodeIndex];
+                    BaseModule baseModule = module.BaseModule;
+                    float roomWaterLevel01 = 0f;
+                    float roomVolumeM3 = 0f;
+                    float roomWaterVolumeM3 = 0f;
+                    HabitatRoomFloodFlags roomFlags = HabitatRoomFloodFlags.None;
+
+                    if (baseModule != null && baseModule.isActiveAndEnabled)
                     {
-                        roomVolumeM3 = 0.001f;
-                        roomWaterVolumeM3 = 0f;
-                        blackBoxFlags |= FloodBlackBoxNonFiniteFlag;
-                    }
-                    else if (roomWaterVolumeM3 > roomVolumeM3 + GraphFloodWaterEpsilonM3)
-                    {
-                        roomWaterVolumeM3 = roomVolumeM3;
-                        roomFlags |= HabitatRoomFloodFlags.OverflowClamped;
-                        blackBoxFlags |= FloodBlackBoxOverflowClampedFlag;
+                        roomVolumeM3 = math.max(0.001f, baseModule.ResolveFloodCapacityM3());
+                        roomWaterVolumeM3 = baseModule.WaterVolumeM3;
+                        if (!math.isfinite(roomVolumeM3) || !math.isfinite(roomWaterVolumeM3))
+                        {
+                            roomVolumeM3 = 0.001f;
+                            roomWaterVolumeM3 = 0f;
+                            blackBoxFlags |= FloodBlackBoxNonFiniteFlag;
+                        }
+                        else if (roomWaterVolumeM3 > roomVolumeM3 + GraphFloodWaterEpsilonM3)
+                        {
+                            roomWaterVolumeM3 = roomVolumeM3;
+                            roomFlags |= HabitatRoomFloodFlags.OverflowClamped;
+                            blackBoxFlags |= FloodBlackBoxOverflowClampedFlag;
+                        }
+
+                        float volumeLevel01 = roomVolumeM3 > GraphFloodWaterEpsilonM3
+                            ? math.saturate(roomWaterVolumeM3 * math.rcp(roomVolumeM3))
+                            : 0f;
+                        roomWaterLevel01 = volumeLevel01;
+                        if (baseModule.IsGraphBreachIngressSource)
+                            roomFlags |= HabitatRoomFloodFlags.Breached;
+                        if (baseModule.HasPower)
+                            roomFlags |= HabitatRoomFloodFlags.Powered;
+                        if (roomWaterLevel01 >= GraphFloodOxygenDisabledThreshold01)
+                        {
+                            roomFlags |= HabitatRoomFloodFlags.Flooded | HabitatRoomFloodFlags.OxygenDisabled;
+                            floodedRoomCount++;
+                        }
+
+                        float depthMeters = ResolveAnalyticalModuleDepthMeters(module, baseModule);
+                        float pressureKPa = math.max(0f, depthMeters * HydrostaticPressureKPaPerMeter);
+                        floodPressureStress += roomWaterLevel01 * roomVolumeM3 * pressureKPa;
+                        totalWaterVolumeM3 += roomWaterVolumeM3;
+                        maxWaterLevel01 = math.max(maxWaterLevel01, roomWaterLevel01);
                     }
 
-                    float volumeLevel01 = roomVolumeM3 > GraphFloodWaterEpsilonM3
-                        ? math.saturate(roomWaterVolumeM3 * math.rcp(roomVolumeM3))
-                        : 0f;
-                    roomWaterLevel01 = volumeLevel01;
-                    if (baseModule.IsGraphBreachIngressSource)
-                        roomFlags |= HabitatRoomFloodFlags.Breached;
-                    if (baseModule.HasPower)
-                        roomFlags |= HabitatRoomFloodFlags.Powered;
-                    if (roomWaterLevel01 >= GraphFloodOxygenDisabledThreshold01)
-                    {
-                        roomFlags |= HabitatRoomFloodFlags.Flooded | HabitatRoomFloodFlags.OxygenDisabled;
-                        floodedRoomCount++;
-                    }
+                    roomWaterLevels[nodeIndex] = roomWaterLevel01;
+                    roomVolumes[nodeIndex] = roomVolumeM3;
+                    roomFlagsBuffer[nodeIndex] = (byte)roomFlags;
 
-                    float depthMeters = ResolveAnalyticalModuleDepthMeters(module, baseModule);
-                    float pressureKPa = math.max(0f, depthMeters * HydrostaticPressureKPaPerMeter);
-                    floodPressureStress += roomWaterLevel01 * roomVolumeM3 * pressureKPa;
-                    totalWaterVolumeM3 += roomWaterVolumeM3;
-                    maxWaterLevel01 = math.max(maxWaterLevel01, roomWaterLevel01);
+                    stateHash = HashFloodBlackBox(stateHash, module.NodeId);
+                    stateHash = HashFloodBlackBox(stateHash, (uint)roomFlagsBuffer[nodeIndex]);
+                    stateHash = HashFloodBlackBox(stateHash, QuantizeFloodBlackBoxFloat(roomWaterLevel01));
+                    stateHash = HashFloodBlackBox(stateHash, QuantizeFloodBlackBoxFloat(roomVolumeM3));
                 }
 
-                _roomWaterLevels[nodeIndex] = roomWaterLevel01;
-                _roomVolumes[nodeIndex] = roomVolumeM3;
-                _roomFlags[nodeIndex] = (byte)roomFlags;
+                _floodedRoomCount = floodedRoomCount;
+                _totalRoomWaterVolumeM3 = math.isfinite(totalWaterVolumeM3) ? math.max(0f, totalWaterVolumeM3) : 0f;
+                _maxRoomWaterLevel01 = math.isfinite(maxWaterLevel01) ? math.saturate(maxWaterLevel01) : 0f;
 
-                stateHash = HashFloodBlackBox(stateHash, module.NodeId);
-                stateHash = HashFloodBlackBox(stateHash, (uint)_roomFlags[nodeIndex]);
-                stateHash = HashFloodBlackBox(stateHash, QuantizeFloodBlackBoxFloat(roomWaterLevel01));
-                stateHash = HashFloodBlackBox(stateHash, QuantizeFloodBlackBoxFloat(roomVolumeM3));
+                float analyticalStress = math.isfinite(_analyticalStress) ? math.max(0f, _analyticalStress) : 0f;
+                if (!math.isfinite(floodPressureStress))
+                {
+                    floodPressureStress = 0f;
+                    blackBoxFlags |= FloodBlackBoxNonFiniteFlag;
+                }
+
+                _baseTotalStress = analyticalStress + math.max(0f, floodPressureStress);
+                if (!math.isfinite(_baseTotalStress))
+                {
+                    _baseTotalStress = analyticalStress;
+                    blackBoxFlags |= FloodBlackBoxNonFiniteFlag;
+                }
+
+                if (TryReadHabitatVaultBuffer(
+                        HabitatGraphEdgeFlagsBufferId,
+                        math.max(1, _edgeCount),
+                        in _edgeFlagsHandle,
+                        out NativeArray<byte>.ReadOnly edgeFlags))
+                {
+                    int edgeFlagCount = math.min(math.max(0, _edgeCount), edgeFlags.Length);
+                    stateHash = HashFloodBlackBox(stateHash, (uint)edgeFlagCount);
+                    for (int edgeIndex = 0; edgeIndex < edgeFlagCount; edgeIndex++)
+                        stateHash = HashFloodBlackBox(stateHash, edgeFlags[edgeIndex]);
+                }
+                else
+                {
+                    stateHash = HashFloodBlackBox(stateHash, 0u);
+                }
+
+                stateHash = HashFloodBlackBox(stateHash, (uint)floodedRoomCount);
+                stateHash = HashFloodBlackBox(stateHash, QuantizeFloodBlackBoxFloat(_baseTotalStress));
+                stateHash = HashFloodBlackBox(stateHash, QuantizeFloodBlackBoxFloat(_totalRoomWaterVolumeM3));
+                _floodBlackBoxStateHash = stateHash;
+
+                if ((blackBoxFlags & FloodBlackBoxNonFiniteFlag) != 0u)
+                {
+                    WriteFloodBlackBoxSample(blackBoxFlags);
+                    DumpFloodBlackBoxOnce(blackBoxFlags);
+                }
             }
-
-            _floodedRoomCount = floodedRoomCount;
-            _totalRoomWaterVolumeM3 = math.isfinite(totalWaterVolumeM3) ? math.max(0f, totalWaterVolumeM3) : 0f;
-            _maxRoomWaterLevel01 = math.isfinite(maxWaterLevel01) ? math.saturate(maxWaterLevel01) : 0f;
-
-            float analyticalStress = math.isfinite(_analyticalStress) ? math.max(0f, _analyticalStress) : 0f;
-            if (!math.isfinite(floodPressureStress))
+            finally
             {
-                floodPressureStress = 0f;
-                blackBoxFlags |= FloodBlackBoxNonFiniteFlag;
-            }
-
-            _baseTotalStress = analyticalStress + math.max(0f, floodPressureStress);
-            if (!math.isfinite(_baseTotalStress))
-            {
-                _baseTotalStress = analyticalStress;
-                blackBoxFlags |= FloodBlackBoxNonFiniteFlag;
-            }
-
-            if (_edgeFlags.IsCreated)
-            {
-                int edgeFlagCount = math.min(math.max(0, _edgeCount), _edgeFlags.Length);
-                stateHash = HashFloodBlackBox(stateHash, (uint)edgeFlagCount);
-                for (int edgeIndex = 0; edgeIndex < edgeFlagCount; edgeIndex++)
-                    stateHash = HashFloodBlackBox(stateHash, _edgeFlags[edgeIndex]);
-            }
-            else
-            {
-                stateHash = HashFloodBlackBox(stateHash, 0u);
-            }
-
-            stateHash = HashFloodBlackBox(stateHash, (uint)floodedRoomCount);
-            stateHash = HashFloodBlackBox(stateHash, QuantizeFloodBlackBoxFloat(_baseTotalStress));
-            stateHash = HashFloodBlackBox(stateHash, QuantizeFloodBlackBoxFloat(_totalRoomWaterVolumeM3));
-            _floodBlackBoxStateHash = stateHash;
-
-            if ((blackBoxFlags & FloodBlackBoxNonFiniteFlag) != 0u)
-            {
-                WriteFloodBlackBoxSample(blackBoxFlags);
-                DumpFloodBlackBoxOnce(blackBoxFlags);
+                ReleaseFloodRoomWriteLocks(vault);
             }
         }
 
@@ -2331,21 +2707,31 @@ namespace Hecton8.Construction
             _totalRoomWaterVolumeM3 = 0f;
             _floodBlackBoxStateHash = 0u;
 
-            if (_roomWaterLevels.IsCreated && _roomVolumes.IsCreated && _roomFlags.IsCreated)
+            if (TryAcquireFloodRoomWriteBuffers(
+                    1,
+                    out NativeArray<float> roomWaterLevels,
+                    out NativeArray<float> roomVolumes,
+                    out NativeArray<float> roomFloodDeltaLevels,
+                    out NativeArray<byte> roomFlags,
+                    out IDataVault vault))
             {
-                int clearCount = math.min(_roomWaterLevels.Length, math.min(_roomVolumes.Length, _roomFlags.Length));
-                for (int nodeIndex = 0; nodeIndex < clearCount; nodeIndex++)
+                try
                 {
-                    _roomWaterLevels[nodeIndex] = 0f;
-                    _roomVolumes[nodeIndex] = 0f;
-                    _roomFlags[nodeIndex] = 0;
-                    if (_roomFloodDeltaLevels.IsCreated && nodeIndex < _roomFloodDeltaLevels.Length)
-                        _roomFloodDeltaLevels[nodeIndex] = 0f;
+                    int clearCount = math.min(roomWaterLevels.Length, math.min(roomVolumes.Length, roomFlags.Length));
+                    for (int nodeIndex = 0; nodeIndex < clearCount; nodeIndex++)
+                    {
+                        roomWaterLevels[nodeIndex] = 0f;
+                        roomVolumes[nodeIndex] = 0f;
+                        roomFlags[nodeIndex] = 0;
+                        if (nodeIndex < roomFloodDeltaLevels.Length)
+                            roomFloodDeltaLevels[nodeIndex] = 0f;
+                    }
+                }
+                finally
+                {
+                    ReleaseFloodRoomWriteLocks(vault);
                 }
             }
-
-            if (_roomConnections.IsCreated)
-                _roomConnections.Clear();
         }
 
         private void RecordNonFinitePressureIngress()
@@ -2355,46 +2741,71 @@ namespace Hecton8.Construction
 
         private void WriteFloodBlackBoxSample(uint reasonFlags)
         {
-            if (!_floodBlackBox.IsCreated || _floodBlackBox.Length <= 0)
-                return;
-
-            uint flags = reasonFlags;
-            if (!math.isfinite(_baseTotalStress) ||
-                !math.isfinite(_maxRoomWaterLevel01) ||
-                !math.isfinite(_totalRoomWaterVolumeM3))
+            if (!EnsureFloodBlackBoxHandle() ||
+                !TryAcquireHabitatVaultWriteBuffer(
+                    HabitatFloodBlackBoxBufferId,
+                    FloodBlackBoxCapacity,
+                    in _floodBlackBoxHandle,
+                    out NativeArray<HabitatFloodBlackBoxEntry> floodBlackBox,
+                    out IDataVault vault))
             {
-                flags |= FloodBlackBoxNonFiniteFlag;
+                return;
             }
 
-            int cursor = _floodBlackBoxCursor;
-            if ((uint)cursor >= (uint)_floodBlackBox.Length)
-                cursor = 0;
-
-            _floodBlackBox[cursor] = new HabitatFloodBlackBoxEntry
+            uint flags = reasonFlags;
+            bool shouldDump = false;
+            try
             {
-                Frame = Time.frameCount,
-                NodeCount = (ushort)math.min(ushort.MaxValue, math.max(0, _nodeCount)),
-                EdgeCount = (ushort)math.min(ushort.MaxValue, math.max(0, _edgeCount)),
-                FloodedRoomCount = (ushort)math.min(ushort.MaxValue, math.max(0, _floodedRoomCount)),
-                Reserved0 = 0,
-                BaseTotalStress = _baseTotalStress,
-                MaxWaterLevel01 = _maxRoomWaterLevel01,
-                TotalWaterVolumeM3 = _totalRoomWaterVolumeM3,
-                PeakModuleStress = _peakModuleStress01,
-                Flags = flags,
-                StateHash = _floodBlackBoxStateHash,
-                DeformationSequence = _moduleStressSequence
-            };
+                if (!math.isfinite(_baseTotalStress) ||
+                    !math.isfinite(_maxRoomWaterLevel01) ||
+                    !math.isfinite(_totalRoomWaterVolumeM3))
+                {
+                    flags |= FloodBlackBoxNonFiniteFlag;
+                }
 
-            _floodBlackBoxCursor = (cursor + 1) % _floodBlackBox.Length;
-            if ((flags & FloodBlackBoxNonFiniteFlag) != 0u)
+                int cursor = _floodBlackBoxCursor;
+                if ((uint)cursor >= (uint)floodBlackBox.Length)
+                    cursor = 0;
+
+                HabitatFloodBlackBoxEntry entry = default;
+                entry.Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId);
+                entry.NodeCount = (ushort)math.min(ushort.MaxValue, math.max(0, _nodeCount));
+                entry.EdgeCount = (ushort)math.min(ushort.MaxValue, math.max(0, _edgeCount));
+                entry.FloodedRoomCount = (ushort)math.min(ushort.MaxValue, math.max(0, _floodedRoomCount));
+                entry.Reserved0 = 0;
+                entry.BaseTotalStress = _baseTotalStress;
+                entry.MaxWaterLevel01 = _maxRoomWaterLevel01;
+                entry.TotalWaterVolumeM3 = _totalRoomWaterVolumeM3;
+                entry.PeakModuleStress = _peakModuleStress01;
+                entry.Flags = flags;
+                entry.StateHash = _floodBlackBoxStateHash;
+                entry.DeformationSequence = _moduleStressSequence;
+                floodBlackBox[cursor] = entry;
+
+                _floodBlackBoxCursor = (cursor + 1) % floodBlackBox.Length;
+                shouldDump = (flags & FloodBlackBoxNonFiniteFlag) != 0u;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _floodBlackBoxHandle, SystemID.Construction);
+            }
+
+            if (shouldDump)
                 DumpFloodBlackBoxOnce(flags);
         }
 
         private void DumpFloodBlackBoxOnce(uint reasonFlags)
         {
-            if (_floodBlackBoxDumped || !_floodBlackBox.IsCreated)
+            if (_floodBlackBoxDumped ||
+                !EnsureFloodBlackBoxHandle() ||
+                !TryReadHabitatVaultBuffer(
+                    HabitatFloodBlackBoxBufferId,
+                    FloodBlackBoxCapacity,
+                    in _floodBlackBoxHandle,
+                    out NativeArray<HabitatFloodBlackBoxEntry>.ReadOnly _))
+            {
                 return;
+            }
 
             _floodBlackBoxDumped = true;
             DumpFloodBlackBox(reasonFlags);
@@ -2402,8 +2813,16 @@ namespace Hecton8.Construction
 
         private void DumpModuleStressBlackBoxOnce(uint reasonFlags)
         {
-            if (_moduleStressBlackBoxDumped || !_floodBlackBox.IsCreated)
+            if (_moduleStressBlackBoxDumped ||
+                !EnsureFloodBlackBoxHandle() ||
+                !TryReadHabitatVaultBuffer(
+                    HabitatFloodBlackBoxBufferId,
+                    FloodBlackBoxCapacity,
+                    in _floodBlackBoxHandle,
+                    out NativeArray<HabitatFloodBlackBoxEntry>.ReadOnly _))
+            {
                 return;
+            }
 
             _moduleStressBlackBoxDumped = true;
             DumpFloodBlackBox(reasonFlags, ModuleStressBlackBoxDumpRelativePath);
@@ -2416,8 +2835,15 @@ namespace Hecton8.Construction
 
         private void DumpFloodBlackBox(uint reasonFlags, string relativePath)
         {
-            if (!_floodBlackBox.IsCreated)
+            if (!EnsureFloodBlackBoxHandle() ||
+                !TryReadHabitatVaultBuffer(
+                    HabitatFloodBlackBoxBufferId,
+                    FloodBlackBoxCapacity,
+                    in _floodBlackBoxHandle,
+                    out NativeArray<HabitatFloodBlackBoxEntry>.ReadOnly floodBlackBox))
+            {
                 return;
+            }
 
             try
             {
@@ -2433,17 +2859,17 @@ namespace Hecton8.Construction
                     writer.Write((uint)FloodBlackBoxCapacity);
                     writer.Write((uint)_floodBlackBoxCursor);
                     writer.Write(reasonFlags);
-                    for (int offset = 0; offset < _floodBlackBox.Length; offset++)
+                    for (int offset = 0; offset < floodBlackBox.Length; offset++)
                     {
-                        int index = (_floodBlackBoxCursor + offset) % _floodBlackBox.Length;
-                        WriteFloodBlackBoxEntry(writer, _floodBlackBox[index]);
+                        int index = (_floodBlackBoxCursor + offset) % floodBlackBox.Length;
+                        WriteFloodBlackBoxEntry(writer, floodBlackBox[index]);
                     }
                 }
             }
             catch (Exception exception)
             {
                 _ = exception;
-                Debug.LogWarning("Habitat flood blackbox dump failed.");
+                Hecton8.Core.H8Debug.LogWarning("Habitat flood blackbox dump failed.");
             }
         }
 
@@ -2502,13 +2928,7 @@ namespace Hecton8.Construction
 
         private static int ResolveGraphFloodNodeBudget(HectonQualityTier scalabilityTier)
         {
-            if (scalabilityTier == HectonQualityTier.High || scalabilityTier == HectonQualityTier.Ultra)
-                return GraphFloodMaxTraversalNodesPerTick;
-
-            if (scalabilityTier == HectonQualityTier.Mid)
-                return GraphFloodMidTraversalNodesPerTick;
-
-            return GraphFloodLowTraversalNodesPerTick;
+            return GraphFloodMaxTraversalNodesPerTick;
         }
 
         private static float ResolvePressureRootLut(float pressureDeltaKPa, HectonQualityTier scalabilityTier)
@@ -2520,17 +2940,6 @@ namespace Hecton8.Construction
             float scaledIndex = clampedDeltaKPa * PressureRootLutStepKPaInv;
             int lowerIndex = math.clamp((int)scaledIndex, 0, PressureRootLutSize - 1);
             bool exceedsLut = pressureDeltaKPa > PressureRootLutMaxKPa;
-
-            if (!IsAnalyticalHighScalabilityTier(scalabilityTier))
-            {
-                int sampleIndex = scaledIndex >= PressureRootLutSize ? PressureRootLutSize : lowerIndex;
-                float nearestRoot = s_pressureRootLut[sampleIndex];
-                if (!exceedsLut)
-                    return nearestRoot;
-
-                float lowTierExcessKPa = pressureDeltaKPa - PressureRootLutMaxKPa;
-                return nearestRoot + (lowTierExcessKPa * PressureRootExcessLinearScale * s_pressureRootInvLut[sampleIndex]);
-            }
 
             float t = math.min(1f, scaledIndex - lowerIndex);
             float root = math.lerp(s_pressureRootLut[lowerIndex], s_pressureRootLut[lowerIndex + 1], t);
@@ -2659,42 +3068,59 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            if (HasDependentWindowCollapse(removedNodeIndex))
-            {
-                rejectReason = 2;
-                return false;
-            }
-
-            if (!dfsStack.IsCreated || !dfsVisited.IsCreated || !dfsResult.IsCreated || dfsResult.Length < 3)
+            if (!TryAcquireFloodGraphJobBuffers(
+                    math.max(1, _nodeCount),
+                    math.max(1, _edgeCount),
+                    out HabitatFloodGraphJobViews graph,
+                    out IDataVault vault))
             {
                 rejectReason = 3;
                 return false;
             }
 
-            int nodeCount = math.min(_nodeCount, math.min(_moduleBuffer.Count, _edgeOffsets.IsCreated ? _edgeOffsets.Length - 1 : 0));
-            if (nodeCount <= 2)
+            try
+            {
+                if (HasDependentWindowCollapse(removedNodeIndex, ref graph))
+                {
+                    rejectReason = 2;
+                    return false;
+                }
+
+                if (!dfsStack.IsCreated || !dfsVisited.IsCreated || !dfsResult.IsCreated || dfsResult.Length < 3)
+                {
+                    rejectReason = 3;
+                    return false;
+                }
+
+                int nodeCount = math.min(_nodeCount, math.min(_moduleBuffer.Count, graph.EdgeOffsets.Length - 1));
+                if (nodeCount <= 2)
+                    return true;
+
+                DeconstructionDfsValidationJob job = new DeconstructionDfsValidationJob
+                {
+                    EdgeOffsets = graph.EdgeOffsets,
+                    EdgeDestinations = graph.EdgeDestinations,
+                    Stack = dfsStack,
+                    Visited = dfsVisited,
+                    Result = dfsResult,
+                    NodeCount = nodeCount,
+                    RemovedNodeIndex = removedNodeIndex,
+                    EdgeCount = _edgeCount
+                };
+
+                job.Execute(); // COLD SYNC JOB: player-triggered deconstruction validation, not a per-frame path.
+                if (dfsResult[0] != 1)
+                {
+                    rejectReason = 4;
+                    return false;
+                }
+
                 return true;
-
-            DeconstructionDfsValidationJob job = new DeconstructionDfsValidationJob
-            {
-                EdgeOffsets = _edgeOffsets,
-                EdgeDestinations = _edgeDestinations,
-                Stack = dfsStack,
-                Visited = dfsVisited,
-                Result = dfsResult,
-                NodeCount = nodeCount,
-                RemovedNodeIndex = removedNodeIndex,
-                EdgeCount = _edgeCount
-            };
-
-            job.Execute(); // COLD SYNC JOB: player-triggered deconstruction validation, not a per-frame path.
-            if (dfsResult[0] != 1)
-            {
-                rejectReason = 4;
-                return false;
             }
-
-            return true;
+            finally
+            {
+                ReleaseFloodGraphWriteLocks(vault, 4);
+            }
         }
 
         internal bool TryGetDeconstructionCsrLanes(
@@ -2707,29 +3133,45 @@ namespace Hecton8.Construction
             out int nodeCount,
             out int edgeCount)
         {
-            edgeOffsets = _edgeOffsets;
-            edgeDestinations = _edgeDestinations;
-            edgeStrength = _edgeResistance;
-            edgeFlags = _edgeFlags;
+            edgeOffsets = default;
+            edgeDestinations = default;
+            edgeStrength = default;
+            edgeFlags = default;
             targetNodeIndex = -1;
             nodeCount = 0;
             edgeCount = 0;
 
             if (targetModule == null ||
                 !TryResolveModuleNodeIndex(targetModule, out targetNodeIndex) ||
-                !_edgeOffsets.IsCreated ||
-                !_edgeDestinations.IsCreated ||
-                !_edgeResistance.IsCreated)
+                !TryAcquireFloodGraphJobBuffers(
+                    math.max(1, _nodeCount),
+                    math.max(1, _edgeCount),
+                    out HabitatFloodGraphJobViews graph,
+                    out IDataVault vault))
             {
                 return false;
             }
 
-            nodeCount = math.min(_nodeCount, math.min(_moduleBuffer.Count, _edgeOffsets.Length - 1));
-            edgeCount = math.min(_edgeCount, math.min(_edgeDestinations.Length, _edgeResistance.Length));
-            return targetNodeIndex >= 0 &&
+            edgeOffsets = graph.EdgeOffsets;
+            edgeDestinations = graph.EdgeDestinations;
+            edgeStrength = graph.EdgeResistance;
+            edgeFlags = graph.EdgeFlags;
+            nodeCount = math.min(_nodeCount, math.min(_moduleBuffer.Count, graph.EdgeOffsets.Length - 1));
+            edgeCount = math.min(_edgeCount, math.min(graph.EdgeDestinations.Length, graph.EdgeResistance.Length));
+            bool valid = targetNodeIndex >= 0 &&
                    targetNodeIndex < nodeCount &&
                    nodeCount > 0 &&
                    edgeCount >= 0;
+            if (!valid)
+            {
+                ReleaseFloodGraphWriteLocks(vault, 4);
+                return false;
+            }
+
+            ReleaseDeconstructionCsrLanes();
+            _deconstructionGraphWriteLockHeld = true;
+            _deconstructionGraphWriteLockVault = vault;
+            return true;
         }
 
         internal int MarkDeconstructionEdgesSevered(int targetNodeIndex)
@@ -2737,71 +3179,133 @@ namespace Hecton8.Construction
             if (targetNodeIndex < 0 || targetNodeIndex >= _nodeCount)
                 return 0;
 
-            int severedCount = 0;
-            for (int edgeIndex = 0; edgeIndex < _edgeBuffer.Count; edgeIndex++)
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, _edgeCount),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
+                return 0;
+
+            try
             {
-                EdgeRecord edge = _edgeBuffer[edgeIndex];
-                if (edge.SourceIndex != targetNodeIndex && edge.DestinationIndex != targetNodeIndex)
-                    continue;
-
-                if (edge.Severed == 0)
+                int severedCount = 0;
+                for (int edgeIndex = 0; edgeIndex < _edgeBuffer.Count; edgeIndex++)
                 {
-                    MarkEdgeRuptured(ref edge);
-                    severedCount++;
-                }
-                else
-                {
-                    InvalidateRuntimeCsrEdge(edge.ForwardCsrIndex);
-                    if (edge.DirectedOnly == 0)
-                        InvalidateRuntimeCsrEdge(edge.ReverseCsrIndex);
+                    EdgeRecord edge = _edgeBuffer[edgeIndex];
+                    if (edge.SourceIndex != targetNodeIndex && edge.DestinationIndex != targetNodeIndex)
+                        continue;
+
+                    if (edge.Severed == 0)
+                    {
+                        MarkEdgeRuptured(ref edge, ref graph);
+                        severedCount++;
+                    }
+                    else
+                    {
+                        InvalidateRuntimeCsrEdge(edge.ForwardCsrIndex, ref graph);
+                        if (edge.DirectedOnly == 0)
+                            InvalidateRuntimeCsrEdge(edge.ReverseCsrIndex, ref graph);
+                    }
+
+                    _edgeBuffer[edgeIndex] = edge;
                 }
 
-                _edgeBuffer[edgeIndex] = edge;
+                MarkNodeRuptured(targetNodeIndex, ref graph);
+                return severedCount;
             }
-
-            MarkNodeRuptured(targetNodeIndex);
-            return severedCount;
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
         }
 
         private bool HasDependentWindowCollapse(int removedNodeIndex)
         {
-            if (!_roomConnections.IsCreated || removedNodeIndex < 0)
+            if (!TryAcquireFloodGraphJobBuffers(
+                    math.max(1, _nodeCount),
+                    math.max(1, _edgeCount),
+                    out HabitatFloodGraphJobViews graph,
+                    out IDataVault vault))
                 return false;
 
-            NativeParallelMultiHashMapIterator<int> iterator;
-            if (!_roomConnections.TryGetFirstValue(removedNodeIndex, out HabitatFloodConnection connection, out iterator))
-                return false;
-
-            do
+            try
             {
-                int destinationIndex = connection.DestinationIndex;
+                return HasDependentWindowCollapse(removedNodeIndex, ref graph);
+            }
+            finally
+            {
+                ReleaseFloodGraphWriteLocks(vault, 4);
+            }
+        }
+
+        private bool HasDependentWindowCollapse(int removedNodeIndex, ref HabitatFloodGraphJobViews graph)
+        {
+            if (removedNodeIndex < 0 ||
+                !graph.EdgeOffsets.IsCreated ||
+                !graph.EdgeDestinations.IsCreated ||
+                removedNodeIndex + 1 >= graph.EdgeOffsets.Length)
+                return false;
+
+            int edgeLimit = math.min(math.max(0, _edgeCount), graph.EdgeDestinations.Length);
+            int edgeStart = math.clamp(graph.EdgeOffsets[removedNodeIndex], 0, edgeLimit);
+            int edgeEnd = math.clamp(graph.EdgeOffsets[removedNodeIndex + 1], edgeStart, edgeLimit);
+            for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+            {
+                int destinationIndex = graph.EdgeDestinations[edgeIndex];
                 if (!IsValidDeconstructionNode(destinationIndex) || !IsWindowModule(destinationIndex))
                     continue;
 
-                if (CountLiveRoomConnectionsExcluding(destinationIndex, removedNodeIndex) <= 0)
+                if (CountLiveRoomConnectionsExcluding(destinationIndex, removedNodeIndex, ref graph) <= 0)
                     return true;
             }
-            while (_roomConnections.TryGetNextValue(out connection, ref iterator));
 
             return false;
         }
 
         private int CountLiveRoomConnectionsExcluding(int nodeIndex, int removedNodeIndex)
         {
-            NativeParallelMultiHashMapIterator<int> iterator;
-            if (!_roomConnections.TryGetFirstValue(nodeIndex, out HabitatFloodConnection connection, out iterator))
+            if (!TryAcquireFloodGraphJobBuffers(
+                    math.max(1, _nodeCount),
+                    math.max(1, _edgeCount),
+                    out HabitatFloodGraphJobViews graph,
+                    out IDataVault vault))
                 return 0;
 
-            int count = 0;
-            do
+            try
             {
-                int destinationIndex = connection.DestinationIndex;
+                return CountLiveRoomConnectionsExcluding(nodeIndex, removedNodeIndex, ref graph);
+            }
+            finally
+            {
+                ReleaseFloodGraphWriteLocks(vault, 4);
+            }
+        }
+
+        private int CountLiveRoomConnectionsExcluding(
+            int nodeIndex,
+            int removedNodeIndex,
+            ref HabitatFloodGraphJobViews graph)
+        {
+            if (!graph.EdgeOffsets.IsCreated ||
+                !graph.EdgeDestinations.IsCreated ||
+                nodeIndex < 0 ||
+                nodeIndex + 1 >= graph.EdgeOffsets.Length)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            int edgeLimit = math.min(math.max(0, _edgeCount), graph.EdgeDestinations.Length);
+            int edgeStart = math.clamp(graph.EdgeOffsets[nodeIndex], 0, edgeLimit);
+            int edgeEnd = math.clamp(graph.EdgeOffsets[nodeIndex + 1], edgeStart, edgeLimit);
+            for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+            {
+                int destinationIndex = graph.EdgeDestinations[edgeIndex];
                 if (destinationIndex == removedNodeIndex || !IsValidDeconstructionNode(destinationIndex))
                     continue;
 
                 count++;
             }
-            while (_roomConnections.TryGetNextValue(out connection, ref iterator));
 
             return count;
         }
@@ -2989,24 +3493,41 @@ namespace Hecton8.Construction
 
         private void ApplyRuptureCascadeStressFromRupturedNodes()
         {
-            if (_nodeCount <= 0 ||
-                !_nodes.IsCreated ||
-                !_edgeOffsets.IsCreated ||
-                !_edgeDestinations.IsCreated)
-            {
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, _edgeCount),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
                 return;
+
+            try
+            {
+                ApplyRuptureCascadeStressFromRupturedNodes(ref graph);
             }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
+        }
+
+        private void ApplyRuptureCascadeStressFromRupturedNodes(ref HabitatGraphWriteViews graph)
+        {
+            if (_nodeCount <= 0 ||
+                !graph.Nodes.IsCreated ||
+                !graph.EdgeOffsets.IsCreated ||
+                !graph.EdgeDestinations.IsCreated)
+                return;
 
             int maxNodeCount = math.min(
                 math.min(_nodeCount, _moduleBuffer.Count),
-                math.min(_nodes.Length, _edgeOffsets.Length - 1));
-            int edgeLimit = math.min(_edgeCount, _edgeDestinations.Length);
+                math.min(graph.Nodes.Length, graph.EdgeOffsets.Length - 1));
+            int edgeLimit = math.min(_edgeCount, graph.EdgeDestinations.Length);
             if (maxNodeCount <= 0 || edgeLimit <= 0)
                 return;
 
             for (int nodeIndex = 0; nodeIndex < maxNodeCount; nodeIndex++)
             {
-                LogisticsNodeFlags sourceFlags = _nodes[nodeIndex].Flags;
+                LogisticsNodeFlags sourceFlags = graph.Nodes[nodeIndex].Flags;
                 BaseModule sourceModule = _moduleBuffer[nodeIndex].BaseModule;
                 bool sourceRuptured = (sourceFlags & LogisticsNodeFlags.Ruptured) != 0 ||
                                       (sourceModule != null && sourceModule.IntegrityState == BaseModuleIntegrityState.Ruptured);
@@ -3020,16 +3541,16 @@ namespace Hecton8.Construction
                 if (sourceNodeId != 0u)
                     MarkRuptureCascadeApplied(sourceNodeId);
 
-                int sourceIslandId = ResolveNodeIslandId(nodeIndex);
-                int edgeStart = math.clamp(_edgeOffsets[nodeIndex], 0, edgeLimit);
-                int edgeEnd = math.clamp(_edgeOffsets[nodeIndex + 1], edgeStart, edgeLimit);
+                int sourceIslandId = ResolveNodeIslandId(nodeIndex, ref graph);
+                int edgeStart = math.clamp(graph.EdgeOffsets[nodeIndex], 0, edgeLimit);
+                int edgeEnd = math.clamp(graph.EdgeOffsets[nodeIndex + 1], edgeStart, edgeLimit);
                 for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
                 {
-                    int neighborNodeIndex = _edgeDestinations[edgeIndex];
+                    int neighborNodeIndex = graph.EdgeDestinations[edgeIndex];
                     if (neighborNodeIndex < 0 || neighborNodeIndex >= maxNodeCount)
                         continue;
 
-                    LogisticsNodeFlags neighborFlags = _nodes[neighborNodeIndex].Flags;
+                    LogisticsNodeFlags neighborFlags = graph.Nodes[neighborNodeIndex].Flags;
                     if ((neighborFlags & LogisticsNodeFlags.Ruptured) != 0)
                         continue;
 
@@ -3054,7 +3575,22 @@ namespace Hecton8.Construction
             if (nodeIndex < 0 || nodeIndex >= _nodeCount)
                 return 0;
 
-            return _nodes[nodeIndex].NetworkId;
+            if (!TryReadHabitatVaultBuffer(
+                    HabitatGraphNodesBufferId,
+                    math.max(1, nodeIndex + 1),
+                    in _nodesHandle,
+                    out NativeArray<LogisticsNetworkGraph.LogisticsNode>.ReadOnly nodes))
+                return 0;
+
+            return nodeIndex < nodes.Length ? nodes[nodeIndex].NetworkId : 0;
+        }
+
+        private static int ResolveNodeIslandId(int nodeIndex, ref HabitatGraphWriteViews graph)
+        {
+            if (nodeIndex < 0 || !graph.Nodes.IsCreated || nodeIndex >= graph.Nodes.Length)
+                return 0;
+
+            return graph.Nodes[nodeIndex].NetworkId;
         }
 
         private void EnsureRuptureCascadeStateCapacity(int requiredCapacity)
@@ -3088,10 +3624,29 @@ namespace Hecton8.Construction
 
         private void PruneRuptureCascadeState()
         {
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, _edgeCount),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
+                return;
+
+            try
+            {
+                PruneRuptureCascadeState(ref graph);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
+        }
+
+        private void PruneRuptureCascadeState(ref HabitatGraphWriteViews graph)
+        {
             for (int i = _ruptureCascadeAppliedNodeIds.Count - 1; i >= 0; i--)
             {
                 uint nodeId = _ruptureCascadeAppliedNodeIds[i];
-                if (nodeId != 0u && IsRuptureCascadeSourceStillRuptured(nodeId))
+                if (nodeId != 0u && IsRuptureCascadeSourceStillRuptured(nodeId, ref graph))
                     continue;
 
                 int lastIndex = _ruptureCascadeAppliedNodeIds.Count - 1;
@@ -3102,6 +3657,25 @@ namespace Hecton8.Construction
 
         private bool IsRuptureCascadeSourceStillRuptured(uint nodeId)
         {
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, _edgeCount),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
+                return false;
+
+            try
+            {
+                return IsRuptureCascadeSourceStillRuptured(nodeId, ref graph);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
+        }
+
+        private bool IsRuptureCascadeSourceStillRuptured(uint nodeId, ref HabitatGraphWriteViews graph)
+        {
             int moduleCount = math.min(_nodeCount, _moduleBuffer.Count);
             for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++)
             {
@@ -3109,7 +3683,7 @@ namespace Hecton8.Construction
                 if (module.NodeId != nodeId)
                     continue;
 
-                LogisticsNodeFlags nodeFlags = moduleIndex < _nodes.Length ? _nodes[moduleIndex].Flags : LogisticsNodeFlags.None;
+                LogisticsNodeFlags nodeFlags = moduleIndex < graph.Nodes.Length ? graph.Nodes[moduleIndex].Flags : LogisticsNodeFlags.None;
                 BaseModule baseModule = module.BaseModule;
                 return (nodeFlags & LogisticsNodeFlags.Ruptured) != 0 ||
                        (baseModule != null && baseModule.IntegrityState == BaseModuleIntegrityState.Ruptured);
@@ -3120,6 +3694,25 @@ namespace Hecton8.Construction
 
         private void RuptureConnectedEdges(int nodeIndex)
         {
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, _edgeCount),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
+                return;
+
+            try
+            {
+                RuptureConnectedEdges(nodeIndex, ref graph);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
+        }
+
+        private void RuptureConnectedEdges(int nodeIndex, ref HabitatGraphWriteViews graph)
+        {
             for (int edgeIndex = 0; edgeIndex < _edgeBuffer.Count; edgeIndex++)
             {
                 EdgeRecord edge = _edgeBuffer[edgeIndex];
@@ -3129,7 +3722,7 @@ namespace Hecton8.Construction
                 if (edge.SourceIndex != nodeIndex && edge.DestinationIndex != nodeIndex)
                     continue;
 
-                MarkEdgeRuptured(ref edge);
+                MarkEdgeRuptured(ref edge, ref graph);
                 _edgeBuffer[edgeIndex] = edge;
             }
         }
@@ -3148,101 +3741,119 @@ namespace Hecton8.Construction
             targetModule = null;
             targetPotential = 0f;
             if (sourceModule == null ||
-                _nodeCount <= 0 ||
-                !_nodes.IsCreated ||
-                !_edgeOffsets.IsCreated ||
-                !_edgeDestinations.IsCreated ||
-                !_traversalVisited.IsCreated ||
-                !_anchorTraversalQueue.IsCreated)
+                _nodeCount <= 0)
             {
                 return false;
             }
 
-            uint sourceNodeId = unchecked((uint)EntityId.ToULong(sourceModule.GetEntityId()));
-            if (sourceNodeId == 0u ||
-                !_moduleIndexByNodeId.TryGetValue(sourceNodeId, out int startNodeIndex) ||
-                startNodeIndex < 0 ||
-                startNodeIndex >= _nodeCount)
-            {
-                return false;
-            }
-
-            int safeNodeCount = math.min(
-                math.min(_nodeCount, _moduleBuffer.Count),
-                math.min(math.min(_nodes.Length, _traversalVisited.Length), _anchorTraversalQueue.Length));
-            if (startNodeIndex >= safeNodeCount || safeNodeCount <= 0)
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, _edgeCount),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
                 return false;
 
-            for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
-                _traversalVisited[nodeIndex] = 0;
-
-            bool traversalOverflowed = false;
-            int queueHead = 0;
-            int queueTail = 0;
-            _traversalVisited[startNodeIndex] = 1;
-            _anchorTraversalQueue[queueTail++] = startNodeIndex;
-
-            float bestScore = 0f;
-            float bestPotential = 0f;
-            BaseModule bestModule = null;
-            while (queueHead < queueTail)
+            try
             {
-                int currentNodeIndex = _anchorTraversalQueue[queueHead++];
-                byte currentDepth = _traversalVisited[currentNodeIndex];
-                ModuleRecord currentRecord = _moduleBuffer[currentNodeIndex];
-                if (currentNodeIndex != startNodeIndex)
+                if (!graph.Nodes.IsCreated ||
+                    !graph.EdgeOffsets.IsCreated ||
+                    !graph.EdgeDestinations.IsCreated ||
+                    !graph.TraversalVisited.IsCreated ||
+                    !graph.AnchorTraversalQueue.IsCreated)
                 {
-                    BaseModule currentModule = currentRecord.BaseModule;
-                    if (currentModule != null && currentModule.isActiveAndEnabled)
+                    return false;
+                }
+
+                uint sourceNodeId = unchecked((uint)EntityId.ToULong(sourceModule.GetEntityId()));
+                if (sourceNodeId == 0u ||
+                    !_moduleIndexByNodeId.TryGetValue(sourceNodeId, out int startNodeIndex) ||
+                    startNodeIndex < 0 ||
+                    startNodeIndex >= _nodeCount)
+                {
+                    return false;
+                }
+
+                int safeNodeCount = math.min(
+                    math.min(_nodeCount, _moduleBuffer.Count),
+                    math.min(math.min(graph.Nodes.Length, graph.TraversalVisited.Length), graph.AnchorTraversalQueue.Length));
+                if (startNodeIndex >= safeNodeCount || safeNodeCount <= 0)
+                    return false;
+
+                for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
+                    graph.TraversalVisited[nodeIndex] = 0;
+
+                bool traversalOverflowed = false;
+                int queueHead = 0;
+                int queueTail = 0;
+                graph.TraversalVisited[startNodeIndex] = 1;
+                graph.AnchorTraversalQueue[queueTail++] = startNodeIndex;
+
+                float bestScore = 0f;
+                float bestPotential = 0f;
+                BaseModule bestModule = null;
+                while (queueHead < queueTail)
+                {
+                    int currentNodeIndex = graph.AnchorTraversalQueue[queueHead++];
+                    byte currentDepth = graph.TraversalVisited[currentNodeIndex];
+                    ModuleRecord currentRecord = _moduleBuffer[currentNodeIndex];
+                    if (currentNodeIndex != startNodeIndex)
                     {
-                        float rawPotential = ResolveFungalMindPotentialScore(currentRecord, _nodes[currentNodeIndex]);
-                        float depthPenalty = 1f + (math.max(0, currentDepth - 1) * 0.08f);
-                        float score = rawPotential * math.rcp(depthPenalty);
-                        if (score > bestScore && math.isfinite(score))
+                        BaseModule currentModule = currentRecord.BaseModule;
+                        if (currentModule != null && currentModule.isActiveAndEnabled)
                         {
-                            bestScore = score;
-                            bestPotential = rawPotential;
-                            bestModule = currentModule;
+                            float rawPotential = ResolveFungalMindPotentialScore(currentRecord, graph.Nodes[currentNodeIndex]);
+                            float depthPenalty = 1f + (math.max(0, currentDepth - 1) * 0.08f);
+                            float score = rawPotential * math.rcp(depthPenalty);
+                            if (score > bestScore && math.isfinite(score))
+                            {
+                                bestScore = score;
+                                bestPotential = rawPotential;
+                                bestModule = currentModule;
+                            }
                         }
                     }
-                }
 
-                if (currentNodeIndex + 1 >= _edgeOffsets.Length)
-                    continue;
-
-                int edgeLimit = math.min(_edgeCount, _edgeDestinations.Length);
-                int edgeStart = math.clamp(_edgeOffsets[currentNodeIndex], 0, edgeLimit);
-                int edgeEnd = math.clamp(_edgeOffsets[currentNodeIndex + 1], edgeStart, edgeLimit);
-                for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
-                {
-                    int neighborNodeIndex = _edgeDestinations[edgeIndex];
-                    if (neighborNodeIndex < 0 ||
-                        neighborNodeIndex >= safeNodeCount ||
-                        _traversalVisited[neighborNodeIndex] != 0)
-                    {
+                    if (currentNodeIndex + 1 >= graph.EdgeOffsets.Length)
                         continue;
-                    }
 
-                    if (queueTail >= safeNodeCount)
+                    int edgeLimit = math.min(_edgeCount, graph.EdgeDestinations.Length);
+                    int edgeStart = math.clamp(graph.EdgeOffsets[currentNodeIndex], 0, edgeLimit);
+                    int edgeEnd = math.clamp(graph.EdgeOffsets[currentNodeIndex + 1], edgeStart, edgeLimit);
+                    for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
                     {
-                        traversalOverflowed = true;
-                        break;
+                        int neighborNodeIndex = graph.EdgeDestinations[edgeIndex];
+                        if (neighborNodeIndex < 0 ||
+                            neighborNodeIndex >= safeNodeCount ||
+                            graph.TraversalVisited[neighborNodeIndex] != 0)
+                        {
+                            continue;
+                        }
+
+                        if (queueTail >= safeNodeCount)
+                        {
+                            traversalOverflowed = true;
+                            break;
+                        }
+
+                        graph.TraversalVisited[neighborNodeIndex] = (byte)math.min(255, currentDepth + 1);
+                        graph.AnchorTraversalQueue[queueTail++] = neighborNodeIndex;
                     }
-
-                    _traversalVisited[neighborNodeIndex] = (byte)math.min(255, currentDepth + 1);
-                    _anchorTraversalQueue[queueTail++] = neighborNodeIndex;
                 }
+
+                if (traversalOverflowed)
+                    WriteFloodBlackBoxSample(FloodBlackBoxTraversalOverflowFlag);
+
+                if (bestModule == null || bestScore <= 0f)
+                    return false;
+
+                targetModule = bestModule;
+                targetPotential = bestPotential;
+                return true;
             }
-
-            if (traversalOverflowed)
-                WriteFloodBlackBoxSample(FloodBlackBoxTraversalOverflowFlag);
-
-            if (bestModule == null || bestScore <= 0f)
-                return false;
-
-            targetModule = bestModule;
-            targetPotential = bestPotential;
-            return true;
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
         }
 
         private void PopulateModuleBuffer(IReadOnlyList<GameObject> modules)
@@ -3386,9 +3997,20 @@ namespace Hecton8.Construction
 
         private bool TryInjectTemporaryBypassIntoLiveCsr(uint sourceNodeId, uint destinationNodeId, Vector3 sourcePosition, Vector3 destinationPosition)
         {
+            TryReadHabitatVaultBuffer(
+                HabitatGraphEdgeOffsetsBufferId,
+                math.max(1, _nodeCount + 1),
+                in _edgeOffsetsHandle,
+                out NativeArray<int>.ReadOnly edgeOffsets);
+            TryReadHabitatVaultBuffer(
+                HabitatGraphEdgeWriteCursorBufferId,
+                math.max(1, _nodeCount),
+                in _edgeWriteCursorHandle,
+                out NativeArray<int>.ReadOnly edgeWriteCursor);
+
             if (_nodeCount <= 0 ||
-                !_edgeOffsets.IsCreated ||
-                !_edgeWriteCursor.IsCreated ||
+                !edgeOffsets.IsCreated ||
+                !edgeWriteCursor.IsCreated ||
                 !_moduleIndexByNodeId.TryGetValue(sourceNodeId, out int sourceIndex) ||
                 !_moduleIndexByNodeId.TryGetValue(destinationNodeId, out int destinationIndex) ||
                 sourceIndex == destinationIndex ||
@@ -3396,9 +4018,9 @@ namespace Hecton8.Construction
                 destinationIndex < 0 ||
                 sourceIndex >= _nodeCount ||
                 destinationIndex >= _nodeCount ||
-                sourceIndex >= _edgeOffsets.Length - 1 ||
-                destinationIndex >= _edgeOffsets.Length - 1 ||
-                _nodeCount > _edgeWriteCursor.Length ||
+                sourceIndex >= edgeOffsets.Length - 1 ||
+                destinationIndex >= edgeOffsets.Length - 1 ||
+                _nodeCount > edgeWriteCursor.Length ||
                 _edgeBuffer.Count >= _edgeBuffer.Capacity)
             {
                 return false;
@@ -3602,14 +4224,34 @@ namespace Hecton8.Construction
 
         private void BuildNodeRecords()
         {
-            if (!_nodes.IsCreated)
+            int directedEdgeCapacity = math.max(1, _edgeBuffer.Count * 2);
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    directedEdgeCapacity,
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
                 return;
 
-            int maxNodeCount = math.min(math.max(0, _nodeCount), math.min(_moduleBuffer.Count, _nodes.Length));
+            try
+            {
+                BuildNodeRecords(ref graph);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
+        }
+
+        private void BuildNodeRecords(ref HabitatGraphWriteViews graph)
+        {
+            if (!graph.Nodes.IsCreated)
+                return;
+
+            int maxNodeCount = math.min(math.max(0, _nodeCount), math.min(_moduleBuffer.Count, graph.Nodes.Length));
             for (int nodeIndex = 0; nodeIndex < maxNodeCount; nodeIndex++)
             {
                 ModuleRecord module = _moduleBuffer[nodeIndex];
-                _nodes[nodeIndex] = new LogisticsNetworkGraph.LogisticsNode
+                graph.Nodes[nodeIndex] = new LogisticsNetworkGraph.LogisticsNode
                 {
                     Id = module.NodeId,
                     Capacity = ResolveNodeCapacity(module.Marker, module.BaseModule),
@@ -3627,33 +4269,54 @@ namespace Hecton8.Construction
         private void BuildEdgeRecords()
         {
             int reservedDirectedEdgeCapacity = math.max(1, _edgeBuffer.Count * 2);
-            EnsureEdgeCapacity(reservedDirectedEdgeCapacity);
-            ResetFloodConnectionState(reservedDirectedEdgeCapacity);
-            if (!_edgeOffsets.IsCreated ||
-                !_edgeWriteCursor.IsCreated ||
-                _edgeOffsets.Length <= 0 ||
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    reservedDirectedEdgeCapacity,
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
+            {
+                _edgeCount = 0;
+                return;
+            }
+
+            try
+            {
+                BuildEdgeRecords(ref graph, reservedDirectedEdgeCapacity);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
+        }
+
+        private void BuildEdgeRecords(ref HabitatGraphWriteViews graph, int reservedDirectedEdgeCapacity)
+        {
+            ResetFloodConnectionState(ref graph, reservedDirectedEdgeCapacity);
+            if (!graph.EdgeOffsets.IsCreated ||
+                !graph.EdgeWriteCursor.IsCreated ||
+                graph.EdgeOffsets.Length <= 0 ||
                 _nodeCount <= 0)
             {
                 _edgeCount = 0;
                 return;
             }
 
-            int safeOffsetNodeCount = math.max(0, math.min(_nodeCount, _edgeOffsets.Length - 1));
-            int safeWriteNodeCount = math.min(safeOffsetNodeCount, _edgeWriteCursor.Length);
+            int safeOffsetNodeCount = math.max(0, math.min(_nodeCount, graph.EdgeOffsets.Length - 1));
+            int safeWriteNodeCount = math.min(safeOffsetNodeCount, graph.EdgeWriteCursor.Length);
             int logicalDirectedEdgeCount = 0;
             float unsupportedSpanMeters = LogisticsPipeBuilder.UnsupportedSpanMeters;
             float unsupportedSpanSq = unsupportedSpanMeters * unsupportedSpanMeters;
 
             for (int nodeIndex = 0; nodeIndex <= safeOffsetNodeCount; nodeIndex++)
-                _edgeOffsets[nodeIndex] = 0;
+                graph.EdgeOffsets[nodeIndex] = 0;
 
             for (int edgeIndex = 0; edgeIndex < _edgeBuffer.Count; edgeIndex++)
             {
                 EdgeRecord edge = _edgeBuffer[edgeIndex];
                 edge.ForwardCsrIndex = -1;
                 edge.ReverseCsrIndex = -1;
-                if (!IsValidEdgeEndpoint(edge.SourceIndex) ||
-                    !IsValidEdgeEndpoint(edge.DestinationIndex))
+                if (!IsValidEdgeEndpoint(ref graph, edge.SourceIndex) ||
+                    !IsValidEdgeEndpoint(ref graph, edge.DestinationIndex))
                 {
                     edge.Severed = 1;
                     _edgeBuffer[edgeIndex] = edge;
@@ -3666,10 +4329,10 @@ namespace Hecton8.Construction
                                    !HasIntermediateSupport(edge.SourceIndex, edge.DestinationIndex, edge.StartSocketPosition, edge.EndSocketPosition);
 
                 if (unsupported || HasImplodedEndpoint(edge))
-                    MarkEdgeRuptured(ref edge);
+                    MarkEdgeRuptured(ref edge, ref graph);
 
                 if (edge.Severed == 0 && TryApplyHydroShearRupture(ref edge))
-                    MarkEdgeRuptured(ref edge);
+                    MarkEdgeRuptured(ref edge, ref graph);
 
                 edge.Resistance = edge.Severed != 0
                     ? 0f
@@ -3679,31 +4342,31 @@ namespace Hecton8.Construction
                 if (edge.Severed != 0)
                     continue;
 
-                _edgeOffsets[edge.SourceIndex + 1] = _edgeOffsets[edge.SourceIndex + 1] + 1;
+                graph.EdgeOffsets[edge.SourceIndex + 1] = graph.EdgeOffsets[edge.SourceIndex + 1] + 1;
                 if (edge.DirectedOnly != 0)
                 {
                     logicalDirectedEdgeCount++;
                 }
                 else
                 {
-                    _edgeOffsets[edge.DestinationIndex + 1] = _edgeOffsets[edge.DestinationIndex + 1] + 1;
+                    graph.EdgeOffsets[edge.DestinationIndex + 1] = graph.EdgeOffsets[edge.DestinationIndex + 1] + 1;
                     logicalDirectedEdgeCount += 2;
                 }
             }
 
             for (int nodeIndex = 1; nodeIndex <= safeOffsetNodeCount; nodeIndex++)
-                _edgeOffsets[nodeIndex] = _edgeOffsets[nodeIndex] + _edgeOffsets[nodeIndex - 1];
+                graph.EdgeOffsets[nodeIndex] = graph.EdgeOffsets[nodeIndex] + graph.EdgeOffsets[nodeIndex - 1];
 
             for (int nodeIndex = 0; nodeIndex < safeWriteNodeCount; nodeIndex++)
-                _edgeWriteCursor[nodeIndex] = _edgeOffsets[nodeIndex];
+                graph.EdgeWriteCursor[nodeIndex] = graph.EdgeOffsets[nodeIndex];
 
             int writtenDirectedEdgeCount = 0;
             for (int edgeIndex = 0; edgeIndex < _edgeBuffer.Count; edgeIndex++)
             {
                 EdgeRecord edge = _edgeBuffer[edgeIndex];
                 if (edge.Severed != 0 ||
-                    !IsValidEdgeEndpoint(edge.SourceIndex) ||
-                    !IsValidEdgeEndpoint(edge.DestinationIndex))
+                    !IsValidEdgeEndpoint(ref graph, edge.SourceIndex) ||
+                    !IsValidEdgeEndpoint(ref graph, edge.DestinationIndex))
                 {
                     edge.ForwardCsrIndex = -1;
                     edge.ReverseCsrIndex = -1;
@@ -3711,8 +4374,8 @@ namespace Hecton8.Construction
                     continue;
                 }
 
-                int forwardWriteIndex = _edgeWriteCursor[edge.SourceIndex];
-                if (!IsValidCsrWriteIndex(forwardWriteIndex))
+                int forwardWriteIndex = graph.EdgeWriteCursor[edge.SourceIndex];
+                if (!IsValidCsrWriteIndex(ref graph, forwardWriteIndex))
                 {
                     edge.ForwardCsrIndex = -1;
                     edge.ReverseCsrIndex = -1;
@@ -3720,11 +4383,10 @@ namespace Hecton8.Construction
                     continue;
                 }
 
-                _edgeWriteCursor[edge.SourceIndex] = forwardWriteIndex + 1;
-                _edgeDestinations[forwardWriteIndex] = edge.DestinationIndex;
-                _edgeResistance[forwardWriteIndex] = edge.Resistance;
+                graph.EdgeWriteCursor[edge.SourceIndex] = forwardWriteIndex + 1;
+                graph.EdgeDestinations[forwardWriteIndex] = edge.DestinationIndex;
+                graph.EdgeResistance[forwardWriteIndex] = edge.Resistance;
                 edge.ForwardCsrIndex = forwardWriteIndex;
-                AddFloodConnection(edge.SourceIndex, edge.DestinationIndex, forwardWriteIndex, edge.Resistance);
                 writtenDirectedEdgeCount = math.max(writtenDirectedEdgeCount, forwardWriteIndex + 1);
 
                 if (edge.DirectedOnly != 0)
@@ -3733,19 +4395,18 @@ namespace Hecton8.Construction
                     continue;
                 }
 
-                int reverseWriteIndex = _edgeWriteCursor[edge.DestinationIndex];
-                if (!IsValidCsrWriteIndex(reverseWriteIndex))
+                int reverseWriteIndex = graph.EdgeWriteCursor[edge.DestinationIndex];
+                if (!IsValidCsrWriteIndex(ref graph, reverseWriteIndex))
                 {
                     edge.ReverseCsrIndex = -1;
                     _edgeBuffer[edgeIndex] = edge;
                     continue;
                 }
 
-                _edgeWriteCursor[edge.DestinationIndex] = reverseWriteIndex + 1;
-                _edgeDestinations[reverseWriteIndex] = edge.SourceIndex;
-                _edgeResistance[reverseWriteIndex] = edge.Resistance;
+                graph.EdgeWriteCursor[edge.DestinationIndex] = reverseWriteIndex + 1;
+                graph.EdgeDestinations[reverseWriteIndex] = edge.SourceIndex;
+                graph.EdgeResistance[reverseWriteIndex] = edge.Resistance;
                 edge.ReverseCsrIndex = reverseWriteIndex;
-                AddFloodConnection(edge.DestinationIndex, edge.SourceIndex, reverseWriteIndex, edge.Resistance);
                 writtenDirectedEdgeCount = math.max(writtenDirectedEdgeCount, reverseWriteIndex + 1);
                 _edgeBuffer[edgeIndex] = edge;
             }
@@ -3755,54 +4416,90 @@ namespace Hecton8.Construction
 
         private bool IsValidEdgeEndpoint(int nodeIndex)
         {
-            return _edgeOffsets.IsCreated &&
-                   _edgeWriteCursor.IsCreated &&
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, _edgeCount),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
+                return false;
+
+            try
+            {
+                return IsValidEdgeEndpoint(ref graph, nodeIndex);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
+        }
+
+        private bool IsValidEdgeEndpoint(ref HabitatGraphWriteViews graph, int nodeIndex)
+        {
+            return graph.EdgeOffsets.IsCreated &&
+                   graph.EdgeWriteCursor.IsCreated &&
                    nodeIndex >= 0 &&
                    nodeIndex < _nodeCount &&
                    nodeIndex < _moduleBuffer.Count &&
-                   nodeIndex + 1 < _edgeOffsets.Length &&
-                   nodeIndex < _edgeWriteCursor.Length;
+                   nodeIndex + 1 < graph.EdgeOffsets.Length &&
+                   nodeIndex < graph.EdgeWriteCursor.Length;
         }
 
         private bool IsValidCsrWriteIndex(int edgeIndex)
         {
-            return _edgeDestinations.IsCreated &&
-                   _edgeResistance.IsCreated &&
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, _edgeCount),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
+                return false;
+
+            try
+            {
+                return IsValidCsrWriteIndex(ref graph, edgeIndex);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
+        }
+
+        private static bool IsValidCsrWriteIndex(ref HabitatGraphWriteViews graph, int edgeIndex)
+        {
+            return graph.EdgeDestinations.IsCreated &&
+                   graph.EdgeResistance.IsCreated &&
                    edgeIndex >= 0 &&
-                   edgeIndex < _edgeDestinations.Length &&
-                   edgeIndex < _edgeResistance.Length;
+                   edgeIndex < graph.EdgeDestinations.Length &&
+                   edgeIndex < graph.EdgeResistance.Length;
         }
 
         private void ResetFloodConnectionState(int directedEdgeCapacity)
         {
-            if (_edgeFlags.IsCreated)
-            {
-                int clearCount = math.min(math.max(0, directedEdgeCapacity), _edgeFlags.Length);
-                for (int edgeIndex = 0; edgeIndex < clearCount; edgeIndex++)
-                    _edgeFlags[edgeIndex] = 0;
-            }
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, directedEdgeCapacity),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
+                return;
 
-            if (_roomConnections.IsCreated)
-                _roomConnections.Clear();
+            try
+            {
+                ResetFloodConnectionState(ref graph, directedEdgeCapacity);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
         }
 
-        private void AddFloodConnection(int sourceIndex, int destinationIndex, int csrEdgeIndex, float resistance)
+        private static void ResetFloodConnectionState(ref HabitatGraphWriteViews graph, int directedEdgeCapacity)
         {
-            if (!_roomConnections.IsCreated ||
-                sourceIndex < 0 ||
-                destinationIndex < 0 ||
-                csrEdgeIndex < 0)
+            if (graph.EdgeFlags.IsCreated)
             {
-                return;
+                int clearCount = math.min(math.max(0, directedEdgeCapacity), graph.EdgeFlags.Length);
+                for (int edgeIndex = 0; edgeIndex < clearCount; edgeIndex++)
+                    graph.EdgeFlags[edgeIndex] = 0;
             }
 
-            _roomConnections.Add(sourceIndex, new HabitatFloodConnection
-            {
-                DestinationIndex = destinationIndex,
-                CsrEdgeIndex = csrEdgeIndex,
-                FlowResistance = math.max(MinimumEdgeResistance, resistance),
-                Reserved0 = 0u
-            });
         }
 
         private bool TryApplyHydroShearRupture(ref EdgeRecord edge)
@@ -3844,9 +4541,28 @@ namespace Hecton8.Construction
 
         private void MarkEdgeRuptured(ref EdgeRecord edge)
         {
-            InvalidateRuntimeCsrEdge(edge.ForwardCsrIndex);
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, _edgeCount),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
+                return;
+
+            try
+            {
+                MarkEdgeRuptured(ref edge, ref graph);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
+        }
+
+        private void MarkEdgeRuptured(ref EdgeRecord edge, ref HabitatGraphWriteViews graph)
+        {
+            InvalidateRuntimeCsrEdge(edge.ForwardCsrIndex, ref graph);
             if (edge.DirectedOnly == 0)
-                InvalidateRuntimeCsrEdge(edge.ReverseCsrIndex);
+                InvalidateRuntimeCsrEdge(edge.ReverseCsrIndex, ref graph);
 
             edge.Flags |= PipeRenderFlags.MaskRuptured;
             edge.Severed = 1;
@@ -3857,22 +4573,60 @@ namespace Hecton8.Construction
 
         private void InvalidateRuntimeCsrEdge(int csrIndex)
         {
-            if (csrIndex < 0 || !_edgeDestinations.IsCreated || csrIndex >= _edgeDestinations.Length)
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, _edgeCount),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
                 return;
 
-            _edgeDestinations[csrIndex] = -1;
-            if (_edgeResistance.IsCreated && csrIndex < _edgeResistance.Length)
-                _edgeResistance[csrIndex] = 0f;
+            try
+            {
+                InvalidateRuntimeCsrEdge(csrIndex, ref graph);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
+        }
+
+        private static void InvalidateRuntimeCsrEdge(int csrIndex, ref HabitatGraphWriteViews graph)
+        {
+            if (csrIndex < 0 || !graph.EdgeDestinations.IsCreated || csrIndex >= graph.EdgeDestinations.Length)
+                return;
+
+            graph.EdgeDestinations[csrIndex] = -1;
+            if (graph.EdgeResistance.IsCreated && csrIndex < graph.EdgeResistance.Length)
+                graph.EdgeResistance[csrIndex] = 0f;
         }
 
         private void MarkNodeRuptured(int nodeIndex)
         {
-            if (nodeIndex < 0 || nodeIndex >= _nodeCount)
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, _edgeCount),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
                 return;
 
-            LogisticsNetworkGraph.LogisticsNode node = _nodes[nodeIndex];
+            try
+            {
+                MarkNodeRuptured(nodeIndex, ref graph);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
+        }
+
+        private void MarkNodeRuptured(int nodeIndex, ref HabitatGraphWriteViews graph)
+        {
+            if (nodeIndex < 0 || nodeIndex >= _nodeCount || nodeIndex >= graph.Nodes.Length)
+                return;
+
+            LogisticsNetworkGraph.LogisticsNode node = graph.Nodes[nodeIndex];
             node.Flags |= LogisticsNodeFlags.Ruptured;
-            _nodes[nodeIndex] = node;
+            graph.Nodes[nodeIndex] = node;
 
             if (nodeIndex < _moduleBuffer.Count)
                 ConnectionSplineBatchRenderer.SetPipeNodeRuptured(_moduleBuffer[nodeIndex].NodeId, true);
@@ -3892,7 +4646,7 @@ namespace Hecton8.Construction
             if (_emittedRuptureEdgeVfxLookup.Contains(linkId))
                 return;
 
-            AbyssalFluidDecalManager fluidDecals = ResolveFluidDecalManager();
+            IFluidDecalPresentationSink fluidDecals = ResolveFluidDecalManager();
             if (fluidDecals == null || _emittedRuptureEdgeVfxKeys.Count >= _emittedRuptureEdgeVfxKeys.Capacity)
                 return;
 
@@ -3908,37 +4662,56 @@ namespace Hecton8.Construction
             _emittedRuptureEdgeVfxLookup.Add(linkId);
         }
 
-        private AbyssalFluidDecalManager ResolveFluidDecalManager()
+        private IFluidDecalPresentationSink ResolveFluidDecalManager()
         {
             if (_fluidDecals != null)
                 return _fluidDecals;
 
-            _fluidDecals = Hecton8.Core.GlobalRegistry.AbyssalFluidDecals;
+            _fluidDecals = Hecton8.Core.GlobalRegistry.FluidDecalPresentation;
             return _fluidDecals;
         }
 
         private void EvaluateAnchorReachability()
         {
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, _edgeCount),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
+                return;
+
+            try
+            {
+                EvaluateAnchorReachability(ref graph);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
+        }
+
+        private void EvaluateAnchorReachability(ref HabitatGraphWriteViews graph)
+        {
             if (_nodeCount <= 0 ||
-                !_nodes.IsCreated ||
-                !_edgeOffsets.IsCreated ||
-                !_edgeDestinations.IsCreated ||
-                !_anchorReachability.IsCreated ||
-                !_anchorTraversalQueue.IsCreated)
+                !graph.Nodes.IsCreated ||
+                !graph.EdgeOffsets.IsCreated ||
+                !graph.EdgeDestinations.IsCreated ||
+                !graph.AnchorReachability.IsCreated ||
+                !graph.AnchorTraversalQueue.IsCreated)
                 return;
 
             int safeNodeCount = math.min(
                 math.min(_nodeCount, _moduleBuffer.Count),
-                math.min(math.min(_nodes.Length, _anchorReachability.Length), _anchorTraversalQueue.Length));
+                math.min(math.min(graph.Nodes.Length, graph.AnchorReachability.Length), graph.AnchorTraversalQueue.Length));
             if (safeNodeCount <= 0)
                 return;
 
             for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
             {
-                _anchorReachability[nodeIndex] = 0;
-                LogisticsNetworkGraph.LogisticsNode node = _nodes[nodeIndex];
+                graph.AnchorReachability[nodeIndex] = 0;
+                LogisticsNetworkGraph.LogisticsNode node = graph.Nodes[nodeIndex];
                 node.Flags &= ~LogisticsNodeFlags.Isolated;
-                _nodes[nodeIndex] = node;
+                graph.Nodes[nodeIndex] = node;
             }
 
             int queueHead = 0;
@@ -3955,26 +4728,26 @@ namespace Hecton8.Construction
                     break;
                 }
 
-                _anchorReachability[nodeIndex] = 1;
-                _anchorTraversalQueue[queueTail++] = nodeIndex;
+                graph.AnchorReachability[nodeIndex] = 1;
+                graph.AnchorTraversalQueue[queueTail++] = nodeIndex;
             }
 
             while (queueHead < queueTail)
             {
-                int currentNodeIndex = _anchorTraversalQueue[queueHead++];
-                if (currentNodeIndex + 1 >= _edgeOffsets.Length)
+                int currentNodeIndex = graph.AnchorTraversalQueue[queueHead++];
+                if (currentNodeIndex + 1 >= graph.EdgeOffsets.Length)
                     continue;
 
-                int edgeLimit = math.min(_edgeCount, _edgeDestinations.Length);
-                int edgeStart = math.clamp(_edgeOffsets[currentNodeIndex], 0, edgeLimit);
-                int edgeEnd = math.clamp(_edgeOffsets[currentNodeIndex + 1], edgeStart, edgeLimit);
+                int edgeLimit = math.min(_edgeCount, graph.EdgeDestinations.Length);
+                int edgeStart = math.clamp(graph.EdgeOffsets[currentNodeIndex], 0, edgeLimit);
+                int edgeEnd = math.clamp(graph.EdgeOffsets[currentNodeIndex + 1], edgeStart, edgeLimit);
                 for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
                 {
-                    int neighborNodeIndex = _edgeDestinations[edgeIndex];
+                    int neighborNodeIndex = graph.EdgeDestinations[edgeIndex];
                     if (neighborNodeIndex < 0 || neighborNodeIndex >= safeNodeCount)
                         continue;
 
-                    if (_anchorReachability[neighborNodeIndex] != 0)
+                    if (graph.AnchorReachability[neighborNodeIndex] != 0)
                         continue;
 
                     if (queueTail >= safeNodeCount)
@@ -3983,8 +4756,8 @@ namespace Hecton8.Construction
                         break;
                     }
 
-                    _anchorReachability[neighborNodeIndex] = 1;
-                    _anchorTraversalQueue[queueTail++] = neighborNodeIndex;
+                    graph.AnchorReachability[neighborNodeIndex] = 1;
+                    graph.AnchorTraversalQueue[queueTail++] = neighborNodeIndex;
                 }
             }
 
@@ -3993,8 +4766,8 @@ namespace Hecton8.Construction
 
             for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
             {
-                bool anchored = _anchorReachability[nodeIndex] != 0;
-                LogisticsNetworkGraph.LogisticsNode node = _nodes[nodeIndex];
+                bool anchored = graph.AnchorReachability[nodeIndex] != 0;
+                LogisticsNetworkGraph.LogisticsNode node = graph.Nodes[nodeIndex];
                 if (!anchored)
                     node.Flags |= LogisticsNodeFlags.Isolated;
 
@@ -4003,79 +4776,117 @@ namespace Hecton8.Construction
                     _moduleBuffer[nodeIndex].IsAnchorNode,
                     anchored,
                     false);
-                _nodes[nodeIndex] = node;
+                graph.Nodes[nodeIndex] = node;
             }
         }
 
         private void PublishAnchorState()
         {
-            int safeNodeCount = _anchorReachability.IsCreated
-                ? math.min(_nodeCount, math.min(_moduleBuffer.Count, _anchorReachability.Length))
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, _edgeCount),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
+                return;
+
+            try
+            {
+                PublishAnchorState(ref graph);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
+        }
+
+        private void PublishAnchorState(ref HabitatGraphWriteViews graph)
+        {
+            int safeNodeCount = graph.AnchorReachability.IsCreated
+                ? math.min(_nodeCount, math.min(_moduleBuffer.Count, graph.AnchorReachability.Length))
                 : 0;
             for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
             {
                 BaseModule baseModule = _moduleBuffer[nodeIndex].BaseModule;
                 if (baseModule != null)
-                    baseModule.SetAnchoredState(_anchorReachability[nodeIndex] != 0);
+                    baseModule.SetAnchoredState(graph.AnchorReachability[nodeIndex] != 0);
             }
         }
 
         private void PublishComponentPowerState()
         {
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, _edgeCount),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
+                return;
+
+            try
+            {
+                PublishComponentPowerState(ref graph);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
+        }
+
+        private void PublishComponentPowerState(ref HabitatGraphWriteViews graph)
+        {
             if (_nodeCount <= 0 ||
-                !_nodes.IsCreated ||
-                !_edgeOffsets.IsCreated ||
-                !_edgeDestinations.IsCreated ||
-                !_traversalVisited.IsCreated ||
-                !_anchorTraversalQueue.IsCreated)
+                !graph.Nodes.IsCreated ||
+                !graph.EdgeOffsets.IsCreated ||
+                !graph.EdgeDestinations.IsCreated ||
+                !graph.TraversalVisited.IsCreated ||
+                !graph.AnchorTraversalQueue.IsCreated)
                 return;
 
             int safeNodeCount = math.min(
                 math.min(_nodeCount, _moduleBuffer.Count),
-                math.min(math.min(_nodes.Length, _traversalVisited.Length), _anchorTraversalQueue.Length));
+                math.min(math.min(graph.Nodes.Length, graph.TraversalVisited.Length), graph.AnchorTraversalQueue.Length));
             if (safeNodeCount <= 0)
                 return;
 
             for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
-                _traversalVisited[nodeIndex] = 0;
+                graph.TraversalVisited[nodeIndex] = 0;
 
             int componentIslandOrdinal = 0;
             bool traversalOverflowed = false;
             for (int startNodeIndex = 0; startNodeIndex < safeNodeCount; startNodeIndex++)
             {
-                if (_traversalVisited[startNodeIndex] != 0)
+                if (graph.TraversalVisited[startNodeIndex] != 0)
                     continue;
 
                 int queueHead = 0;
                 int queueTail = 0;
-                _traversalVisited[startNodeIndex] = 1;
-                _anchorTraversalQueue[queueTail++] = startNodeIndex;
+                graph.TraversalVisited[startNodeIndex] = 1;
+                graph.AnchorTraversalQueue[queueTail++] = startNodeIndex;
 
                 float componentSupply = 0f;
                 float componentDraw = 0f;
 
                 while (queueHead < queueTail)
                 {
-                    int currentNodeIndex = _anchorTraversalQueue[queueHead++];
+                    int currentNodeIndex = graph.AnchorTraversalQueue[queueHead++];
                     float powerRating = ResolveModulePowerRating(_moduleBuffer[currentNodeIndex]);
                     if (powerRating >= 0f)
                         componentSupply += powerRating;
                     else
                         componentDraw -= powerRating;
 
-                    if (currentNodeIndex + 1 >= _edgeOffsets.Length)
+                    if (currentNodeIndex + 1 >= graph.EdgeOffsets.Length)
                         continue;
 
-                    int edgeLimit = math.min(_edgeCount, _edgeDestinations.Length);
-                    int edgeStart = math.clamp(_edgeOffsets[currentNodeIndex], 0, edgeLimit);
-                    int edgeEnd = math.clamp(_edgeOffsets[currentNodeIndex + 1], edgeStart, edgeLimit);
+                    int edgeLimit = math.min(_edgeCount, graph.EdgeDestinations.Length);
+                    int edgeStart = math.clamp(graph.EdgeOffsets[currentNodeIndex], 0, edgeLimit);
+                    int edgeEnd = math.clamp(graph.EdgeOffsets[currentNodeIndex + 1], edgeStart, edgeLimit);
                     for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
                     {
-                        int neighborNodeIndex = _edgeDestinations[edgeIndex];
+                        int neighborNodeIndex = graph.EdgeDestinations[edgeIndex];
                         if (neighborNodeIndex < 0 || neighborNodeIndex >= safeNodeCount)
                             continue;
 
-                        if (_traversalVisited[neighborNodeIndex] != 0)
+                        if (graph.TraversalVisited[neighborNodeIndex] != 0)
                             continue;
 
                         if (queueTail >= safeNodeCount)
@@ -4084,8 +4895,8 @@ namespace Hecton8.Construction
                             break;
                         }
 
-                        _traversalVisited[neighborNodeIndex] = 1;
-                        _anchorTraversalQueue[queueTail++] = neighborNodeIndex;
+                        graph.TraversalVisited[neighborNodeIndex] = 1;
+                        graph.AnchorTraversalQueue[queueTail++] = neighborNodeIndex;
                     }
                 }
 
@@ -4094,15 +4905,15 @@ namespace Hecton8.Construction
                 byte componentIslandId = (byte)math.min(componentIslandOrdinal, byte.MaxValue);
                 for (int queueIndex = 0; queueIndex < queueTail; queueIndex++)
                 {
-                    int componentNodeIndex = _anchorTraversalQueue[queueIndex];
-                    LogisticsNetworkGraph.LogisticsNode node = _nodes[componentNodeIndex];
+                    int componentNodeIndex = graph.AnchorTraversalQueue[queueIndex];
+                    LogisticsNetworkGraph.LogisticsNode node = graph.Nodes[componentNodeIndex];
                     node.NetworkId = componentIslandId;
                     if (componentLowPower)
                         node.Flags |= LogisticsNodeFlags.Brownout;
                     else
                         node.Flags &= ~LogisticsNodeFlags.Brownout;
 
-                    _nodes[componentNodeIndex] = node;
+                    graph.Nodes[componentNodeIndex] = node;
 
                     BaseModule baseModule = _moduleBuffer[componentNodeIndex].BaseModule;
                     if (baseModule != null)
@@ -4118,13 +4929,32 @@ namespace Hecton8.Construction
 
         private void PublishEmergencyLockdownState()
         {
-            if (_nodeCount <= 0 || !_nodes.IsCreated)
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, _edgeCount),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
+                return;
+
+            try
+            {
+                PublishEmergencyLockdownState(ref graph);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
+        }
+
+        private void PublishEmergencyLockdownState(ref HabitatGraphWriteViews graph)
+        {
+            if (_nodeCount <= 0 || !graph.Nodes.IsCreated)
                 return;
 
             int maxNodeCount = math.min(_nodeCount, _moduleBuffer.Count);
-            maxNodeCount = math.min(maxNodeCount, _nodes.Length);
-            if (_edgeOffsets.IsCreated)
-                maxNodeCount = math.min(maxNodeCount, _edgeOffsets.Length - 1);
+            maxNodeCount = math.min(maxNodeCount, graph.Nodes.Length);
+            if (graph.EdgeOffsets.IsCreated)
+                maxNodeCount = math.min(maxNodeCount, graph.EdgeOffsets.Length - 1);
 
             if (maxNodeCount <= 0)
                 return;
@@ -4141,23 +4971,23 @@ namespace Hecton8.Construction
                 bool hasAdjacent = false;
                 bool adjacentFloodedForHatch = false;
                 bool adjacentRupturedForHatch = false;
-                int edgeLimit = math.min(_edgeCount, _edgeDestinations.IsCreated ? _edgeDestinations.Length : 0);
+                int edgeLimit = math.min(_edgeCount, graph.EdgeDestinations.IsCreated ? graph.EdgeDestinations.Length : 0);
                 int edgeStart = 0;
                 int edgeEnd = 0;
-                if (_edgeOffsets.IsCreated && nodeIndex + 1 < _edgeOffsets.Length)
+                if (graph.EdgeOffsets.IsCreated && nodeIndex + 1 < graph.EdgeOffsets.Length)
                 {
-                    edgeStart = math.clamp(_edgeOffsets[nodeIndex], 0, edgeLimit);
-                    edgeEnd = math.clamp(_edgeOffsets[nodeIndex + 1], edgeStart, edgeLimit);
+                    edgeStart = math.clamp(graph.EdgeOffsets[nodeIndex], 0, edgeLimit);
+                    edgeEnd = math.clamp(graph.EdgeOffsets[nodeIndex + 1], edgeStart, edgeLimit);
                 }
 
                 for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
                 {
-                    int adjacentNodeIndex = _edgeDestinations[edgeIndex];
+                    int adjacentNodeIndex = graph.EdgeDestinations[edgeIndex];
                     if (adjacentNodeIndex < 0 || adjacentNodeIndex >= maxNodeCount)
                         continue;
 
                     hasAdjacent = true;
-                    LogisticsNodeFlags adjacentFlags = _nodes[adjacentNodeIndex].Flags;
+                    LogisticsNodeFlags adjacentFlags = graph.Nodes[adjacentNodeIndex].Flags;
                     BaseModule adjacentModule = _moduleBuffer[adjacentNodeIndex].BaseModule;
                     bool adjacentRuptured = (adjacentFlags & LogisticsNodeFlags.Ruptured) != 0 ||
                                             (adjacentModule != null && adjacentModule.IntegrityState == BaseModuleIntegrityState.Ruptured);
@@ -4186,28 +5016,47 @@ namespace Hecton8.Construction
                         shouldLock));
                 }
 
-                LogisticsNetworkGraph.LogisticsNode node = _nodes[nodeIndex];
-                bool anchorReachable = _anchorReachability.IsCreated &&
-                                       nodeIndex < _anchorReachability.Length &&
-                                       _anchorReachability[nodeIndex] != 0;
+                LogisticsNetworkGraph.LogisticsNode node = graph.Nodes[nodeIndex];
+                bool anchorReachable = graph.AnchorReachability.IsCreated &&
+                                       nodeIndex < graph.AnchorReachability.Length &&
+                                       graph.AnchorReachability[nodeIndex] != 0;
                 node.Reserved = (byte)ResolveReservedState(
                     baseModule,
                     module.IsAnchorNode,
                     anchorReachable,
                     shouldLock);
-                _nodes[nodeIndex] = node;
+                graph.Nodes[nodeIndex] = node;
             }
 
-            PublishFloodEdgeFlags();
+            PublishFloodEdgeFlags(ref graph);
         }
 
         private void PublishFloodEdgeFlags()
         {
-            ClearActiveFloodEdgeFlags();
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, _edgeCount),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
+                return;
 
-            if (!_edgeOffsets.IsCreated ||
-                !_edgeDestinations.IsCreated ||
-                !_nodes.IsCreated ||
+            try
+            {
+                PublishFloodEdgeFlags(ref graph);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
+        }
+
+        private void PublishFloodEdgeFlags(ref HabitatGraphWriteViews graph)
+        {
+            ClearActiveFloodEdgeFlags(ref graph);
+
+            if (!graph.EdgeOffsets.IsCreated ||
+                !graph.EdgeDestinations.IsCreated ||
+                !graph.Nodes.IsCreated ||
                 _nodeCount <= 0)
             {
                 return;
@@ -4219,20 +5068,20 @@ namespace Hecton8.Construction
                 BaseModule baseModule = _moduleBuffer[nodeIndex].BaseModule;
                 bool moduleAutoSealActive = IsFloodAutoSealActive(nodeIndex, baseModule);
                 bool moduleLocked = baseModule != null && baseModule.IsEmergencyBulkheadLockedDown;
-                if (nodeIndex + 1 >= _edgeOffsets.Length)
+                if (nodeIndex + 1 >= graph.EdgeOffsets.Length)
                     break;
 
-                int edgeLimit = math.min(_edgeCount, _edgeDestinations.Length);
-                int edgeStart = math.clamp(_edgeOffsets[nodeIndex], 0, edgeLimit);
-                int edgeEnd = math.clamp(_edgeOffsets[nodeIndex + 1], edgeStart, edgeLimit);
+                int edgeLimit = math.min(_edgeCount, graph.EdgeDestinations.Length);
+                int edgeStart = math.clamp(graph.EdgeOffsets[nodeIndex], 0, edgeLimit);
+                int edgeEnd = math.clamp(graph.EdgeOffsets[nodeIndex + 1], edgeStart, edgeLimit);
                 for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
                 {
-                    int adjacentNodeIndex = _edgeDestinations[edgeIndex];
+                    int adjacentNodeIndex = graph.EdgeDestinations[edgeIndex];
                     if (adjacentNodeIndex < 0 || adjacentNodeIndex >= maxNodeCount)
                         continue;
 
                     BaseModule adjacentModule = _moduleBuffer[adjacentNodeIndex].BaseModule;
-                    LogisticsNodeFlags adjacentFlags = _nodes[adjacentNodeIndex].Flags;
+                    LogisticsNodeFlags adjacentFlags = graph.Nodes[adjacentNodeIndex].Flags;
                     bool adjacentRuptured = (adjacentFlags & LogisticsNodeFlags.Ruptured) != 0 ||
                                             (adjacentModule != null && adjacentModule.IntegrityState == BaseModuleIntegrityState.Ruptured);
 
@@ -4241,21 +5090,40 @@ namespace Hecton8.Construction
                         moduleLocked ||
                         (adjacentModule != null && adjacentModule.IsEmergencyBulkheadLockedDown))
                     {
-                        SetFloodEdgeFlag(edgeIndex, HabitatEdgeFloodFlags.Sealed);
+                        SetFloodEdgeFlag(ref graph, edgeIndex, HabitatEdgeFloodFlags.Sealed);
                     }
 
                     if (adjacentRuptured)
-                        SetFloodEdgeFlag(edgeIndex, HabitatEdgeFloodFlags.Ruptured);
+                        SetFloodEdgeFlag(ref graph, edgeIndex, HabitatEdgeFloodFlags.Ruptured);
                 }
             }
         }
 
         private void PublishDegradationState()
         {
-            if (!_nodes.IsCreated)
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, _edgeCount),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
                 return;
 
-            int maxNodeCount = math.min(math.max(0, _nodeCount), math.min(_moduleBuffer.Count, _nodes.Length));
+            try
+            {
+                PublishDegradationState(ref graph);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
+        }
+
+        private void PublishDegradationState(ref HabitatGraphWriteViews graph)
+        {
+            if (!graph.Nodes.IsCreated)
+                return;
+
+            int maxNodeCount = math.min(math.max(0, _nodeCount), math.min(_moduleBuffer.Count, graph.Nodes.Length));
             for (int nodeIndex = 0; nodeIndex < maxNodeCount; nodeIndex++)
             {
                 ModuleRecord module = _moduleBuffer[nodeIndex];
@@ -4265,65 +5133,125 @@ namespace Hecton8.Construction
                 BaseDegradationSystem.SynchronizeNode(
                     module.ModuleObject,
                     module.NodeId,
-                    _nodes[nodeIndex].Flags,
+                    graph.Nodes[nodeIndex].Flags,
                     ResolveNodeRuptureWorldPoint(nodeIndex));
             }
         }
 
         private void PublishSiegeTargetSnapshot()
         {
-            if (!_siegeTargets.IsCreated)
-                return;
-
-            int writeCount = 0;
-            int maxNodeCount = math.min(_nodeCount, _moduleBuffer.Count);
-            for (int nodeIndex = 0; nodeIndex < maxNodeCount && writeCount < MaxSiegeTargetCount; nodeIndex++)
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, _edgeCount),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault graphVault))
             {
-                ModuleRecord module = _moduleBuffer[nodeIndex];
-                BaseModule baseModule = module.BaseModule;
-                if (baseModule == null || !baseModule.isActiveAndEnabled)
-                    continue;
-
-                LogisticsNodeFlags nodeFlags = _nodes.IsCreated && nodeIndex < _nodes.Length
-                    ? _nodes[nodeIndex].Flags
-                    : LogisticsNodeFlags.None;
-                float integrity01 = math.saturate(baseModule.IntegrityStateNormalized);
-                HabitatSiegeTargetFlags siegeFlags = ResolveSiegeTargetFlags(module, baseModule, nodeFlags, integrity01);
-                if ((siegeFlags & HabitatSiegeTargetFlags.Vulnerable) == 0)
-                    continue;
-
-                _siegeTargets[writeCount++] = new HabitatSiegeTargetSnapshot
+                _siegeTargetCount = 0;
+                if (ReferenceEquals(s_latestSiegeTargetOwner, this))
                 {
-                    ModuleCenter = module.Position,
-                    WeakPoint = ResolveNodeRuptureWorldPoint(nodeIndex),
-                    Integrity01 = integrity01,
-                    Vulnerability01 = ResolveSiegeVulnerability01(baseModule, nodeFlags, integrity01),
-                    NodeId = module.NodeId,
-                    Flags = (byte)siegeFlags
-                };
+                    s_latestSiegeTargetOwner = null;
+                    s_latestSiegeTargetCount = 0;
+                }
+
+                return;
             }
 
-            for (int i = writeCount; i < _siegeTargetCount; i++)
-                _siegeTargets[i] = default;
+            try
+            {
+                PublishSiegeTargetSnapshot(ref graph);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(graphVault);
+            }
+        }
 
-            _siegeTargetCount = writeCount;
-            s_latestSiegeTargets = _siegeTargets;
-            s_latestSiegeTargetOwner = this;
-            s_latestSiegeTargetCount = writeCount;
+        private void PublishSiegeTargetSnapshot(ref HabitatGraphWriteViews graph)
+        {
+            if (!EnsureSiegeTargetsHandle() ||
+                !TryAcquireHabitatVaultWriteBuffer(
+                    HabitatSiegeTargetsBufferId,
+                    MaxSiegeTargetCount,
+                    in _siegeTargetsHandle,
+                    out NativeArray<HabitatSiegeTargetSnapshot> siegeTargets,
+                    out IDataVault vault))
+            {
+                _siegeTargetCount = 0;
+                if (ReferenceEquals(s_latestSiegeTargetOwner, this))
+                {
+                    s_latestSiegeTargetOwner = null;
+                    s_latestSiegeTargetCount = 0;
+                }
+
+                return;
+            }
+
+            try
+            {
+                int writeCount = 0;
+                int maxNodeCount = math.min(_nodeCount, _moduleBuffer.Count);
+                for (int nodeIndex = 0; nodeIndex < maxNodeCount && writeCount < MaxSiegeTargetCount; nodeIndex++)
+                {
+                    ModuleRecord module = _moduleBuffer[nodeIndex];
+                    BaseModule baseModule = module.BaseModule;
+                    if (baseModule == null || !baseModule.isActiveAndEnabled)
+                        continue;
+
+                    LogisticsNodeFlags nodeFlags = graph.Nodes.IsCreated && nodeIndex < graph.Nodes.Length
+                        ? graph.Nodes[nodeIndex].Flags
+                        : LogisticsNodeFlags.None;
+                    float integrity01 = math.saturate(baseModule.IntegrityStateNormalized);
+                    HabitatSiegeTargetFlags siegeFlags = ResolveSiegeTargetFlags(module, baseModule, nodeFlags, integrity01);
+                    if ((siegeFlags & HabitatSiegeTargetFlags.Vulnerable) == 0)
+                        continue;
+
+                    HabitatSiegeTargetSnapshot snapshot = default;
+                    snapshot.ModuleCenter = module.Position;
+                    snapshot.WeakPoint = ResolveNodeRuptureWorldPoint(nodeIndex);
+                    snapshot.Integrity01 = integrity01;
+                    snapshot.Vulnerability01 = ResolveSiegeVulnerability01(baseModule, nodeFlags, integrity01);
+                    snapshot.NodeId = module.NodeId;
+                    snapshot.Flags = (byte)siegeFlags;
+                    siegeTargets[writeCount++] = snapshot;
+                }
+
+                for (int i = writeCount; i < _siegeTargetCount && i < siegeTargets.Length; i++)
+                    siegeTargets[i] = default;
+
+                _siegeTargetCount = writeCount;
+                s_latestSiegeTargetOwner = this;
+                s_latestSiegeTargetCount = writeCount;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _siegeTargetsHandle, SystemID.Construction);
+            }
         }
 
         private void ClearSiegeTargetSnapshot()
         {
-            if (_siegeTargets.IsCreated)
+            if (TryAcquireHabitatVaultWriteBuffer(
+                    HabitatSiegeTargetsBufferId,
+                    MaxSiegeTargetCount,
+                    in _siegeTargetsHandle,
+                    out NativeArray<HabitatSiegeTargetSnapshot> siegeTargets,
+                    out IDataVault vault))
             {
-                for (int i = 0; i < _siegeTargetCount; i++)
-                    _siegeTargets[i] = default;
+                try
+                {
+                    int clearCount = math.min(_siegeTargetCount, siegeTargets.Length);
+                    for (int i = 0; i < clearCount; i++)
+                        siegeTargets[i] = default;
+                }
+                finally
+                {
+                    vault.ReleaseWriteLock(in _siegeTargetsHandle, SystemID.Construction);
+                }
             }
 
             _siegeTargetCount = 0;
             if (ReferenceEquals(s_latestSiegeTargetOwner, this))
             {
-                s_latestSiegeTargets = default;
                 s_latestSiegeTargetOwner = null;
                 s_latestSiegeTargetCount = 0;
             }
@@ -4331,14 +5259,36 @@ namespace Hecton8.Construction
 
         private void PublishGraphKernel()
         {
-            int maxNodeCount = _nodes.IsCreated
-                ? math.min(math.max(0, _nodeCount), math.min(_moduleBuffer.Count, _nodes.Length))
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    math.max(1, _edgeCount),
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
+            {
+                _graph.BeginBuild(LogisticsNetworkType.OxygenPressure, 1, 1, 0);
+                return;
+            }
+
+            try
+            {
+                PublishGraphKernel(ref graph);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
+        }
+
+        private void PublishGraphKernel(ref HabitatGraphWriteViews graph)
+        {
+            int maxNodeCount = graph.Nodes.IsCreated
+                ? math.min(math.max(0, _nodeCount), math.min(_moduleBuffer.Count, graph.Nodes.Length))
                 : 0;
             _graph.BeginBuild(LogisticsNetworkType.OxygenPressure, maxNodeCount, math.max(1, _edgeCount), 0);
 
             for (int nodeIndex = 0; nodeIndex < maxNodeCount; nodeIndex++)
             {
-                LogisticsNetworkGraph.LogisticsNode node = _nodes[nodeIndex];
+                LogisticsNetworkGraph.LogisticsNode node = graph.Nodes[nodeIndex];
                 _graph.AddNode(node.Id, node.Capacity, node.Resistance, node.Priority, node.Flags, node.Reserved);
             }
 
@@ -4364,14 +5314,30 @@ namespace Hecton8.Construction
 
         private void PublishRuntimeRuptureTopologyState()
         {
-            BuildEdgeRecords();
-            EvaluateAnchorReachability();
-            PublishAnchorState();
-            PublishComponentPowerState();
-            PublishEmergencyLockdownState();
-            PublishDegradationState();
-            PublishSiegeTargetSnapshot();
-            PublishGraphKernel();
+            int directedEdgeCapacity = math.max(1, _edgeBuffer.Count * 2);
+            if (!TryAcquireGraphWriteBuffers(
+                    _nodeCount,
+                    directedEdgeCapacity,
+                    out HabitatGraphWriteViews graph,
+                    out IDataVault vault))
+                return;
+
+            try
+            {
+                BuildEdgeRecords(ref graph, directedEdgeCapacity);
+                EvaluateAnchorReachability(ref graph);
+                PublishAnchorState(ref graph);
+                PublishComponentPowerState(ref graph);
+                PublishEmergencyLockdownState(ref graph);
+                PublishDegradationState(ref graph);
+                PublishSiegeTargetSnapshot(ref graph);
+                PublishGraphKernel(ref graph);
+            }
+            finally
+            {
+                ReleaseGraphWriteLocks(vault);
+            }
+
             ClearVisualLinks();
             PublishVisualLinks();
         }
@@ -4782,47 +5748,32 @@ namespace Hecton8.Construction
         private void AllocateNativeBuffers(int nodeCapacity, int edgeCapacity)
         {
             // COLD ALLOC: NativeArray<LogisticsNode>[64] — habitat node snapshot buffer — owner: HabitatGraphManager
-            _nodes = new NativeArray<LogisticsNetworkGraph.LogisticsNode>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            EnsureGraphHandles(nodeCapacity, edgeCapacity);
             // COLD ALLOC: NativeArray<Int32>[65] — habitat CSR edge-offset buffer — owner: HabitatGraphManager
-            _edgeOffsets = new NativeArray<int>(nodeCapacity + 1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<Int32>[128] — habitat CSR destination buffer — owner: HabitatGraphManager
-            _edgeDestinations = new NativeArray<int>(edgeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<Single>[128] — habitat CSR edge-resistance buffer — owner: HabitatGraphManager
-            _edgeResistance = new NativeArray<float>(edgeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<Int32>[64] — CSR write-cursor scratch buffer — owner: HabitatGraphManager
-            _edgeWriteCursor = new NativeArray<int>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<Byte>[64] — authoritative anchor reachability state for habitat graph consumers — owner: HabitatGraphManager
-            _anchorReachability = new NativeArray<byte>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<Byte>[64] — graph traversal visited scratch, separate from anchor-state truth — owner: HabitatGraphManager
-            _traversalVisited = new NativeArray<byte>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<Int32>[64] — reusable BFS traversal queue for graph component walks — owner: HabitatGraphManager
-            _anchorTraversalQueue = new NativeArray<int>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<HabitatSiegeTargetSnapshot>[64] — capped habitat weak-point snapshot for headless predator siege jobs — owner: HabitatGraphManager
-            _siegeTargets = new NativeArray<HabitatSiegeTargetSnapshot>(MaxSiegeTargetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<Single>[64] - habitat room water level SoA lane - owner: HabitatGraphManager
-            _roomWaterLevels = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<Single>[64] - habitat room volume SoA lane - owner: HabitatGraphManager
-            _roomVolumes = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<Single>[64] - Burst flood propagation delta lane - owner: HabitatGraphManager
-            _roomFloodDeltaLevels = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<Single>[64] - per-module shader pressure stress lane - owner: HabitatGraphManager
-            _moduleStressScalars = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<Single>[64] - stress delta lane for structural acoustics sync - owner: HabitatGraphManager
-            _previousModuleStressScalars = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<Single>[64] - one-second impact spike lane for deformation solver - owner: HabitatGraphManager
-            _moduleImpactStressSpikes = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<Byte>[64] - compromised-event hysteresis lane - owner: HabitatGraphManager
-            _moduleCompromisedFlags = new NativeArray<byte>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<Byte>[64] - habitat room flood flags SoA lane - owner: HabitatGraphManager
-            _roomFlags = new NativeArray<byte>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<Byte>[128] - habitat directed edge flood flags - owner: HabitatGraphManager
-            _edgeFlags = new NativeArray<byte>(edgeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeParallelMultiHashMap<Int32,HabitatFloodConnection>[128] - room connection index for flood jobs - owner: HabitatGraphManager
-            _roomConnections = new NativeParallelMultiHashMap<int, HabitatFloodConnection>(edgeCapacity, Allocator.Persistent);
-            // COLD ALLOC: NativeArray<HabitatFloodBlackBoxEntry>[300] - fixed habitat flood telemetry ring - owner: HabitatGraphManager
-            _floodBlackBox = new NativeArray<HabitatFloodBlackBoxEntry>(FloodBlackBoxCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<HabitatFloodPropagationSummary>[1] - Burst flood job result slot - owner: HabitatGraphManager
-            _floodPropagationSummary = new NativeArray<HabitatFloodPropagationSummary>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            EnsureHabitatVaultBuffer(
+                HabitatFloodBlackBoxBufferId,
+                FloodBlackBoxCapacity,
+                NativeArrayOptions.ClearMemory,
+                ref _floodBlackBoxHandle);
+            EnsureHabitatVaultBuffer(
+                HabitatFloodPropagationSummaryBufferId,
+                1,
+                NativeArrayOptions.ClearMemory,
+                ref _floodPropagationSummaryHandle);
+            EnsureHabitatVaultBuffer(
+                HabitatSiegeTargetsBufferId,
+                MaxSiegeTargetCount,
+                NativeArrayOptions.ClearMemory,
+                ref _siegeTargetsHandle);
+            EnsureModuleStressHandles(nodeCapacity);
+            EnsureFloodRoomHandles(nodeCapacity);
             _floodBlackBoxCursor = 0;
             _floodBlackBoxDumped = false;
             _moduleStressBlackBoxDumped = false;
@@ -4831,145 +5782,797 @@ namespace Hecton8.Construction
             _lastUploadedModuleStressLowTier = false;
             _moduleStressOrderHash = 0u;
             _peakModuleStress01 = 0f;
-            RegisterNativeMemorySentinel();
         }
 
         private void EnsureNodeCapacity(int requiredLength)
         {
             int safeLength = math.max(1, requiredLength);
-            if (_nodes.IsCreated &&
-                _nodes.Length >= safeLength &&
-                _edgeOffsets.Length >= safeLength + 1 &&
-                _edgeWriteCursor.Length >= safeLength &&
-                _anchorReachability.Length >= safeLength &&
-                _traversalVisited.IsCreated &&
-                _traversalVisited.Length >= safeLength &&
-                _anchorTraversalQueue.Length >= safeLength &&
-                _siegeTargets.IsCreated &&
-                _siegeTargets.Length >= MaxSiegeTargetCount &&
-                _roomWaterLevels.IsCreated &&
-                _roomWaterLevels.Length >= safeLength &&
-                _roomVolumes.IsCreated &&
-                _roomVolumes.Length >= safeLength &&
-                _roomFloodDeltaLevels.IsCreated &&
-                _roomFloodDeltaLevels.Length >= safeLength &&
-                _moduleStressScalars.IsCreated &&
-                _moduleStressScalars.Length >= safeLength &&
-                _previousModuleStressScalars.IsCreated &&
-                _previousModuleStressScalars.Length >= safeLength &&
-                _moduleImpactStressSpikes.IsCreated &&
-                _moduleImpactStressSpikes.Length >= safeLength &&
-                _moduleCompromisedFlags.IsCreated &&
-                _moduleCompromisedFlags.Length >= safeLength &&
-                _roomFlags.IsCreated &&
-                _roomFlags.Length >= safeLength &&
-                _floodBlackBox.IsCreated &&
-                _floodBlackBox.Length >= FloodBlackBoxCapacity &&
-                _floodPropagationSummary.IsCreated &&
-                _floodPropagationSummary.Length >= 1)
+            int edgeCapacity = NextPowerOfTwo(math.max(safeLength * 4, InitialEdgeCapacity));
+            if (EnsureGraphHandles(safeLength, edgeCapacity) &&
+                EnsureSiegeTargetsHandle() &&
+                EnsureFloodRoomHandles(safeLength) &&
+                EnsureModuleStressHandles(safeLength) &&
+                EnsureFloodBlackBoxHandle() &&
+                EnsureFloodPropagationSummaryHandle())
                 return;
 
             DisposeNativeBuffers();
             int nodeCapacity = NextPowerOfTwo(math.max(safeLength, InitialNodeCapacity));
-            int edgeCapacity = NextPowerOfTwo(math.max(nodeCapacity * 4, InitialEdgeCapacity));
             AllocateNativeBuffers(nodeCapacity, edgeCapacity);
         }
 
         private void EnsureEdgeCapacity(int requiredLength)
         {
             int safeLength = math.max(1, requiredLength);
-            if (_edgeDestinations.IsCreated &&
-                _edgeDestinations.Length >= safeLength &&
-                _edgeResistance.Length >= safeLength &&
-                _edgeFlags.IsCreated &&
-                _edgeFlags.Length >= safeLength &&
-                _roomConnections.IsCreated &&
-                _roomConnections.Capacity >= safeLength)
-            {
-                return;
-            }
-
-            DisposeNativeArray(ref _edgeDestinations);
-            DisposeNativeArray(ref _edgeResistance);
-            DisposeNativeArray(ref _edgeFlags);
-            DisposeNativeParallelMultiHashMap(ref _roomConnections, nameof(_roomConnections));
-
             int edgeCapacity = NextPowerOfTwo(math.max(safeLength, InitialEdgeCapacity));
-            // COLD ALLOC: NativeArray<Int32>[edgeCapacity] - expanded habitat CSR destination buffer - owner: HabitatGraphManager
-            _edgeDestinations = new NativeArray<int>(edgeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<Single>[edgeCapacity] - expanded habitat CSR edge-resistance buffer - owner: HabitatGraphManager
-            _edgeResistance = new NativeArray<float>(edgeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<Byte>[edgeCapacity] - expanded habitat directed edge flood flags - owner: HabitatGraphManager
-            _edgeFlags = new NativeArray<byte>(edgeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeParallelMultiHashMap<Int32,HabitatFloodConnection>[edgeCapacity] - expanded room connection index - owner: HabitatGraphManager
-            _roomConnections = new NativeParallelMultiHashMap<int, HabitatFloodConnection>(edgeCapacity, Allocator.Persistent);
-            NativeMemorySentinel.RegisterNativeArray(_edgeDestinations, NativeMemoryOwner, nameof(_edgeDestinations), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_edgeResistance, NativeMemoryOwner, nameof(_edgeResistance), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_edgeFlags, NativeMemoryOwner, nameof(_edgeFlags), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_roomConnections, NativeMemoryOwner, nameof(_roomConnections), NativeMemoryLifetime);
+            EnsureGraphHandles(math.max(1, _nodeCount), edgeCapacity);
         }
 
         private void DisposeNativeBuffers()
         {
             ClearSiegeTargetSnapshot();
 
-            DisposeNativeArray(ref _nodes);
-            DisposeNativeArray(ref _edgeOffsets);
-            DisposeNativeArray(ref _edgeDestinations);
-            DisposeNativeArray(ref _edgeResistance);
-            DisposeNativeArray(ref _edgeWriteCursor);
-            DisposeNativeArray(ref _anchorReachability);
-            DisposeNativeArray(ref _traversalVisited);
-            DisposeNativeArray(ref _anchorTraversalQueue);
-            DisposeNativeArray(ref _siegeTargets);
-            DisposeNativeArray(ref _roomWaterLevels);
-            DisposeNativeArray(ref _roomVolumes);
-            DisposeNativeArray(ref _roomFloodDeltaLevels);
-            DisposeNativeArray(ref _moduleStressScalars);
-            DisposeNativeArray(ref _previousModuleStressScalars);
-            DisposeNativeArray(ref _moduleImpactStressSpikes);
-            DisposeNativeArray(ref _moduleCompromisedFlags);
-            DisposeNativeArray(ref _roomFlags);
-            DisposeNativeArray(ref _edgeFlags);
-            DisposeNativeArray(ref _floodBlackBox);
-            DisposeNativeArray(ref _floodPropagationSummary);
-            DisposeNativeParallelMultiHashMap(ref _roomConnections, nameof(_roomConnections));
+            ReleaseFloodPropagationGraphWriteLocks();
+            ReleaseDeconstructionCsrLanes();
+            ReleaseHabitatVaultHandle(ref _nodesHandle);
+            ReleaseHabitatVaultHandle(ref _edgeOffsetsHandle);
+            ReleaseHabitatVaultHandle(ref _edgeDestinationsHandle);
+            ReleaseHabitatVaultHandle(ref _edgeResistanceHandle);
+            ReleaseHabitatVaultHandle(ref _edgeWriteCursorHandle);
+            ReleaseHabitatVaultHandle(ref _anchorReachabilityHandle);
+            ReleaseHabitatVaultHandle(ref _traversalVisitedHandle);
+            ReleaseHabitatVaultHandle(ref _anchorTraversalQueueHandle);
+            ReleaseHabitatVaultHandle(ref _edgeFlagsHandle);
+            ReleaseHabitatVaultHandle(ref _floodBlackBoxHandle);
+            ReleaseFloodPropagationSummaryWriteLock();
+            ReleaseFloodPropagationRoomWriteLocks();
+            ReleaseHabitatVaultHandle(ref _floodPropagationSummaryHandle);
+            ReleaseHabitatVaultHandle(ref _siegeTargetsHandle);
+            ReleaseHabitatVaultHandle(ref _moduleStressScalarsHandle);
+            ReleaseHabitatVaultHandle(ref _previousModuleStressScalarsHandle);
+            ReleaseHabitatVaultHandle(ref _moduleImpactStressSpikesHandle);
+            ReleaseHabitatVaultHandle(ref _moduleCompromisedFlagsHandle);
+            ReleaseHabitatVaultHandle(ref _roomWaterLevelsHandle);
+            ReleaseHabitatVaultHandle(ref _roomVolumesHandle);
+            ReleaseHabitatVaultHandle(ref _roomFloodDeltaLevelsHandle);
+            ReleaseHabitatVaultHandle(ref _roomFlagsHandle);
             ReleaseModuleStressBuffer();
         }
 
-        private void RegisterNativeMemorySentinel()
+        private bool EnsureHabitatVaultBuffer<T>(
+            BufferID bufferId,
+            int length,
+            NativeArrayOptions allocationNativeArrayOptions,
+            ref VaultGenerationHandle<T> handle)
+            where T : struct
         {
-            NativeMemorySentinel.RegisterNativeArray(_nodes, NativeMemoryOwner, nameof(_nodes), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_edgeOffsets, NativeMemoryOwner, nameof(_edgeOffsets), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_edgeDestinations, NativeMemoryOwner, nameof(_edgeDestinations), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_edgeResistance, NativeMemoryOwner, nameof(_edgeResistance), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_edgeWriteCursor, NativeMemoryOwner, nameof(_edgeWriteCursor), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_anchorReachability, NativeMemoryOwner, nameof(_anchorReachability), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_traversalVisited, NativeMemoryOwner, nameof(_traversalVisited), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_anchorTraversalQueue, NativeMemoryOwner, nameof(_anchorTraversalQueue), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_siegeTargets, NativeMemoryOwner, nameof(_siegeTargets), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_roomWaterLevels, NativeMemoryOwner, nameof(_roomWaterLevels), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_roomVolumes, NativeMemoryOwner, nameof(_roomVolumes), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_roomFloodDeltaLevels, NativeMemoryOwner, nameof(_roomFloodDeltaLevels), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_moduleStressScalars, NativeMemoryOwner, nameof(_moduleStressScalars), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_previousModuleStressScalars, NativeMemoryOwner, nameof(_previousModuleStressScalars), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_moduleImpactStressSpikes, NativeMemoryOwner, nameof(_moduleImpactStressSpikes), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_moduleCompromisedFlags, NativeMemoryOwner, nameof(_moduleCompromisedFlags), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_roomFlags, NativeMemoryOwner, nameof(_roomFlags), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_edgeFlags, NativeMemoryOwner, nameof(_edgeFlags), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_floodBlackBox, NativeMemoryOwner, nameof(_floodBlackBox), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_floodPropagationSummary, NativeMemoryOwner, nameof(_floodPropagationSummary), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_roomConnections, NativeMemoryOwner, nameof(_roomConnections), NativeMemoryLifetime);
+            IDataVault vault = ResolveHabitatDataVaultForColdPath();
+            if (vault != null)
+            {
+                if (TryOpenHabitatVaultBuffer(vault, in handle, bufferId, length, out NativeArray<T> buffer))
+                    return true;
+
+                if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existingHandle))
+                {
+                    handle = existingHandle;
+                    if (TryOpenHabitatVaultBuffer(vault, in handle, bufferId, length, out buffer))
+                        return true;
+                }
+
+                handle = vault.EnsureGenerationHandle<T>(
+                    bufferId,
+                    length,
+                    SystemID.Construction,
+                    allocationNativeArrayOptions);
+                if (TryOpenHabitatVaultBuffer(vault, in handle, bufferId, length, out buffer))
+                    return true;
+            }
+
+            handle = default;
+            return false;
         }
 
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
+        private bool EnsureFloodBlackBoxHandle()
         {
-            if (!array.IsCreated)
+            if (IsHabitatHandleCreated(in _floodBlackBoxHandle))
+                return true;
+
+            return EnsureHabitatVaultBuffer(
+                HabitatFloodBlackBoxBufferId,
+                FloodBlackBoxCapacity,
+                NativeArrayOptions.ClearMemory,
+                ref _floodBlackBoxHandle);
+        }
+
+        private bool EnsureFloodPropagationSummaryHandle()
+        {
+            if (IsHabitatHandleCreated(in _floodPropagationSummaryHandle))
+                return true;
+
+            return EnsureHabitatVaultBuffer(
+                HabitatFloodPropagationSummaryBufferId,
+                1,
+                NativeArrayOptions.ClearMemory,
+                ref _floodPropagationSummaryHandle);
+        }
+
+        private bool EnsureSiegeTargetsHandle()
+        {
+            IDataVault vault = ResolveHabitatDataVaultForColdPath();
+            if (IsHabitatHandleCreated(in _siegeTargetsHandle) &&
+                TryOpenHabitatVaultBuffer(
+                    vault,
+                    in _siegeTargetsHandle,
+                    HabitatSiegeTargetsBufferId,
+                    MaxSiegeTargetCount,
+                    out NativeArray<HabitatSiegeTargetSnapshot> _))
+            {
+                return true;
+            }
+
+            return EnsureHabitatVaultBuffer(
+                HabitatSiegeTargetsBufferId,
+                MaxSiegeTargetCount,
+                NativeArrayOptions.ClearMemory,
+                ref _siegeTargetsHandle);
+        }
+
+        private bool EnsureGraphHandles(int requiredNodeLength, int requiredEdgeLength)
+        {
+            int safeNodeLength = math.max(1, requiredNodeLength);
+            int safeEdgeLength = math.max(1, requiredEdgeLength);
+            return EnsureHabitatVaultBuffer(
+                       HabitatGraphNodesBufferId,
+                       safeNodeLength,
+                       NativeArrayOptions.ClearMemory,
+                       ref _nodesHandle) &&
+                   EnsureHabitatVaultBuffer(
+                       HabitatGraphEdgeOffsetsBufferId,
+                       safeNodeLength + 1,
+                       NativeArrayOptions.ClearMemory,
+                       ref _edgeOffsetsHandle) &&
+                   EnsureHabitatVaultBuffer(
+                       HabitatGraphEdgeDestinationsBufferId,
+                       safeEdgeLength,
+                       NativeArrayOptions.ClearMemory,
+                       ref _edgeDestinationsHandle) &&
+                   EnsureHabitatVaultBuffer(
+                       HabitatGraphEdgeResistanceBufferId,
+                       safeEdgeLength,
+                       NativeArrayOptions.ClearMemory,
+                       ref _edgeResistanceHandle) &&
+                   EnsureHabitatVaultBuffer(
+                       HabitatGraphEdgeWriteCursorBufferId,
+                       safeNodeLength,
+                       NativeArrayOptions.ClearMemory,
+                       ref _edgeWriteCursorHandle) &&
+                   EnsureHabitatVaultBuffer(
+                       HabitatGraphAnchorReachabilityBufferId,
+                       safeNodeLength,
+                       NativeArrayOptions.ClearMemory,
+                       ref _anchorReachabilityHandle) &&
+                   EnsureHabitatVaultBuffer(
+                       HabitatGraphTraversalVisitedBufferId,
+                       safeNodeLength,
+                       NativeArrayOptions.ClearMemory,
+                       ref _traversalVisitedHandle) &&
+                   EnsureHabitatVaultBuffer(
+                       HabitatGraphAnchorTraversalQueueBufferId,
+                       safeNodeLength,
+                       NativeArrayOptions.ClearMemory,
+                       ref _anchorTraversalQueueHandle) &&
+                   EnsureHabitatVaultBuffer(
+                       HabitatGraphEdgeFlagsBufferId,
+                       safeEdgeLength,
+                       NativeArrayOptions.ClearMemory,
+                       ref _edgeFlagsHandle);
+        }
+
+        private bool TryAcquireGraphWriteBuffers(
+            int requiredNodeLength,
+            int requiredEdgeLength,
+            out HabitatGraphWriteViews graph,
+            out IDataVault vault)
+        {
+            graph = default;
+            vault = null;
+            int safeNodeLength = math.max(1, requiredNodeLength);
+            int safeEdgeLength = math.max(1, requiredEdgeLength);
+            if (!EnsureGraphHandles(safeNodeLength, safeEdgeLength))
+                return false;
+
+            int acquiredCount = 0;
+            IDataVault ignoredVault;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatGraphNodesBufferId,
+                    safeNodeLength,
+                    in _nodesHandle,
+                    out graph.Nodes,
+                    out vault))
+                return false;
+
+            acquiredCount++;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatGraphEdgeOffsetsBufferId,
+                    safeNodeLength + 1,
+                    in _edgeOffsetsHandle,
+                    out graph.EdgeOffsets,
+                    out ignoredVault))
+            {
+                ReleaseGraphWriteLocks(vault, acquiredCount);
+                return false;
+            }
+
+            acquiredCount++;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatGraphEdgeDestinationsBufferId,
+                    safeEdgeLength,
+                    in _edgeDestinationsHandle,
+                    out graph.EdgeDestinations,
+                    out ignoredVault))
+            {
+                ReleaseGraphWriteLocks(vault, acquiredCount);
+                return false;
+            }
+
+            acquiredCount++;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatGraphEdgeResistanceBufferId,
+                    safeEdgeLength,
+                    in _edgeResistanceHandle,
+                    out graph.EdgeResistance,
+                    out ignoredVault))
+            {
+                ReleaseGraphWriteLocks(vault, acquiredCount);
+                return false;
+            }
+
+            acquiredCount++;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatGraphEdgeWriteCursorBufferId,
+                    safeNodeLength,
+                    in _edgeWriteCursorHandle,
+                    out graph.EdgeWriteCursor,
+                    out ignoredVault))
+            {
+                ReleaseGraphWriteLocks(vault, acquiredCount);
+                return false;
+            }
+
+            acquiredCount++;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatGraphAnchorReachabilityBufferId,
+                    safeNodeLength,
+                    in _anchorReachabilityHandle,
+                    out graph.AnchorReachability,
+                    out ignoredVault))
+            {
+                ReleaseGraphWriteLocks(vault, acquiredCount);
+                return false;
+            }
+
+            acquiredCount++;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatGraphTraversalVisitedBufferId,
+                    safeNodeLength,
+                    in _traversalVisitedHandle,
+                    out graph.TraversalVisited,
+                    out ignoredVault))
+            {
+                ReleaseGraphWriteLocks(vault, acquiredCount);
+                return false;
+            }
+
+            acquiredCount++;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatGraphAnchorTraversalQueueBufferId,
+                    safeNodeLength,
+                    in _anchorTraversalQueueHandle,
+                    out graph.AnchorTraversalQueue,
+                    out ignoredVault))
+            {
+                ReleaseGraphWriteLocks(vault, acquiredCount);
+                return false;
+            }
+
+            acquiredCount++;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatGraphEdgeFlagsBufferId,
+                    safeEdgeLength,
+                    in _edgeFlagsHandle,
+                    out graph.EdgeFlags,
+                    out ignoredVault))
+            {
+                ReleaseGraphWriteLocks(vault, acquiredCount);
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryAcquireFloodGraphJobBuffers(
+            int requiredNodeLength,
+            int requiredEdgeLength,
+            out HabitatFloodGraphJobViews graph,
+            out IDataVault vault)
+        {
+            graph = default;
+            vault = null;
+            int safeNodeLength = math.max(1, requiredNodeLength);
+            int safeEdgeLength = math.max(1, requiredEdgeLength);
+            if (!EnsureGraphHandles(safeNodeLength, safeEdgeLength))
+                return false;
+
+            int acquiredCount = 0;
+            IDataVault ignoredVault;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatGraphEdgeOffsetsBufferId,
+                    safeNodeLength + 1,
+                    in _edgeOffsetsHandle,
+                    out graph.EdgeOffsets,
+                    out vault))
+                return false;
+
+            acquiredCount++;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatGraphEdgeDestinationsBufferId,
+                    safeEdgeLength,
+                    in _edgeDestinationsHandle,
+                    out graph.EdgeDestinations,
+                    out ignoredVault))
+            {
+                ReleaseFloodGraphWriteLocks(vault, acquiredCount);
+                return false;
+            }
+
+            acquiredCount++;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatGraphEdgeResistanceBufferId,
+                    safeEdgeLength,
+                    in _edgeResistanceHandle,
+                    out graph.EdgeResistance,
+                    out ignoredVault))
+            {
+                ReleaseFloodGraphWriteLocks(vault, acquiredCount);
+                return false;
+            }
+
+            acquiredCount++;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatGraphEdgeFlagsBufferId,
+                    safeEdgeLength,
+                    in _edgeFlagsHandle,
+                    out graph.EdgeFlags,
+                    out ignoredVault))
+            {
+                ReleaseFloodGraphWriteLocks(vault, acquiredCount);
+                return false;
+            }
+
+            return true;
+        }
+
+        private void ReleaseGraphWriteLocks(IDataVault vault)
+        {
+            ReleaseGraphWriteLocks(vault, 9);
+        }
+
+        private void ReleaseGraphWriteLocks(IDataVault vault, int acquiredCount)
+        {
+            if (vault == null || acquiredCount <= 0)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            if (acquiredCount >= 9)
+                vault.ReleaseWriteLock(in _edgeFlagsHandle, SystemID.Construction);
+            if (acquiredCount >= 8)
+                vault.ReleaseWriteLock(in _anchorTraversalQueueHandle, SystemID.Construction);
+            if (acquiredCount >= 7)
+                vault.ReleaseWriteLock(in _traversalVisitedHandle, SystemID.Construction);
+            if (acquiredCount >= 6)
+                vault.ReleaseWriteLock(in _anchorReachabilityHandle, SystemID.Construction);
+            if (acquiredCount >= 5)
+                vault.ReleaseWriteLock(in _edgeWriteCursorHandle, SystemID.Construction);
+            if (acquiredCount >= 4)
+                vault.ReleaseWriteLock(in _edgeResistanceHandle, SystemID.Construction);
+            if (acquiredCount >= 3)
+                vault.ReleaseWriteLock(in _edgeDestinationsHandle, SystemID.Construction);
+            if (acquiredCount >= 2)
+                vault.ReleaseWriteLock(in _edgeOffsetsHandle, SystemID.Construction);
+            if (acquiredCount >= 1)
+                vault.ReleaseWriteLock(in _nodesHandle, SystemID.Construction);
+        }
+
+        private void ReleaseFloodGraphWriteLocks(IDataVault vault, int acquiredCount)
+        {
+            if (vault == null || acquiredCount <= 0)
+                return;
+
+            if (acquiredCount >= 4)
+                vault.ReleaseWriteLock(in _edgeFlagsHandle, SystemID.Construction);
+            if (acquiredCount >= 3)
+                vault.ReleaseWriteLock(in _edgeResistanceHandle, SystemID.Construction);
+            if (acquiredCount >= 2)
+                vault.ReleaseWriteLock(in _edgeDestinationsHandle, SystemID.Construction);
+            if (acquiredCount >= 1)
+                vault.ReleaseWriteLock(in _edgeOffsetsHandle, SystemID.Construction);
+        }
+
+        private void ReleaseFloodPropagationGraphWriteLocks()
+        {
+            if (!_floodPropagationGraphWriteLockHeld)
+                return;
+
+            ReleaseFloodGraphWriteLocks(_floodPropagationGraphWriteLockVault, 4);
+            _floodPropagationGraphWriteLockHeld = false;
+            _floodPropagationGraphWriteLockVault = null;
+        }
+
+        internal void ReleaseDeconstructionCsrLanes()
+        {
+            if (!_deconstructionGraphWriteLockHeld)
+                return;
+
+            ReleaseFloodGraphWriteLocks(_deconstructionGraphWriteLockVault, 4);
+            _deconstructionGraphWriteLockHeld = false;
+            _deconstructionGraphWriteLockVault = null;
+        }
+
+        private bool EnsureFloodRoomHandles(int requiredLength)
+        {
+            int safeLength = math.max(1, requiredLength);
+            return EnsureHabitatVaultBuffer(
+                       HabitatRoomWaterLevelsBufferId,
+                       safeLength,
+                       NativeArrayOptions.ClearMemory,
+                       ref _roomWaterLevelsHandle) &&
+                   EnsureHabitatVaultBuffer(
+                       HabitatRoomVolumesBufferId,
+                       safeLength,
+                       NativeArrayOptions.ClearMemory,
+                       ref _roomVolumesHandle) &&
+                   EnsureHabitatVaultBuffer(
+                       HabitatRoomFloodDeltaLevelsBufferId,
+                       safeLength,
+                       NativeArrayOptions.ClearMemory,
+                       ref _roomFloodDeltaLevelsHandle) &&
+                   EnsureHabitatVaultBuffer(
+                       HabitatRoomFlagsBufferId,
+                       safeLength,
+                       NativeArrayOptions.ClearMemory,
+                       ref _roomFlagsHandle);
+        }
+
+        private bool TryAcquireFloodRoomWriteBuffers(
+            int requiredLength,
+            out NativeArray<float> roomWaterLevels,
+            out NativeArray<float> roomVolumes,
+            out NativeArray<float> roomFloodDeltaLevels,
+            out NativeArray<byte> roomFlags,
+            out IDataVault vault)
+        {
+            roomWaterLevels = default;
+            roomVolumes = default;
+            roomFloodDeltaLevels = default;
+            roomFlags = default;
+            vault = null;
+
+            int safeLength = math.max(1, requiredLength);
+            if (!EnsureFloodRoomHandles(safeLength))
+                return false;
+
+            bool waterLocked = false;
+            bool volumeLocked = false;
+            bool deltaLocked = false;
+            bool flagsLocked = false;
+            IDataVault ignoredVault;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatRoomWaterLevelsBufferId,
+                    safeLength,
+                    in _roomWaterLevelsHandle,
+                    out roomWaterLevels,
+                    out vault))
+            {
+                return false;
+            }
+
+            waterLocked = true;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatRoomVolumesBufferId,
+                    safeLength,
+                    in _roomVolumesHandle,
+                    out roomVolumes,
+                    out ignoredVault))
+            {
+                ReleaseFloodRoomWriteLocks(vault, waterLocked, volumeLocked, deltaLocked, flagsLocked);
+                return false;
+            }
+
+            volumeLocked = true;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatRoomFloodDeltaLevelsBufferId,
+                    safeLength,
+                    in _roomFloodDeltaLevelsHandle,
+                    out roomFloodDeltaLevels,
+                    out ignoredVault))
+            {
+                ReleaseFloodRoomWriteLocks(vault, waterLocked, volumeLocked, deltaLocked, flagsLocked);
+                return false;
+            }
+
+            deltaLocked = true;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatRoomFlagsBufferId,
+                    safeLength,
+                    in _roomFlagsHandle,
+                    out roomFlags,
+                    out ignoredVault))
+            {
+                ReleaseFloodRoomWriteLocks(vault, waterLocked, volumeLocked, deltaLocked, flagsLocked);
+                return false;
+            }
+
+            flagsLocked = true;
+            return true;
+        }
+
+        private void ReleaseFloodRoomWriteLocks(IDataVault vault)
+        {
+            ReleaseFloodRoomWriteLocks(vault, true, true, true, true);
+        }
+
+        private void ReleaseFloodRoomWriteLocks(
+            IDataVault vault,
+            bool waterLocked,
+            bool volumeLocked,
+            bool deltaLocked,
+            bool flagsLocked)
+        {
+            if (vault == null)
+                return;
+
+            if (flagsLocked)
+                vault.ReleaseWriteLock(in _roomFlagsHandle, SystemID.Construction);
+            if (deltaLocked)
+                vault.ReleaseWriteLock(in _roomFloodDeltaLevelsHandle, SystemID.Construction);
+            if (volumeLocked)
+                vault.ReleaseWriteLock(in _roomVolumesHandle, SystemID.Construction);
+            if (waterLocked)
+                vault.ReleaseWriteLock(in _roomWaterLevelsHandle, SystemID.Construction);
+        }
+
+        private void ReleaseFloodPropagationRoomWriteLocks()
+        {
+            if (!_floodPropagationRoomWriteLockHeld)
+                return;
+
+            ReleaseFloodRoomWriteLocks(_floodPropagationRoomWriteLockVault);
+            _floodPropagationRoomWriteLockHeld = false;
+            _floodPropagationRoomWriteLockVault = null;
+        }
+
+        private bool EnsureModuleStressHandles(int requiredLength)
+        {
+            int safeLength = math.max(1, requiredLength);
+            return EnsureHabitatVaultBuffer(
+                       HabitatModuleStressScalarsBufferId,
+                       safeLength,
+                       NativeArrayOptions.ClearMemory,
+                       ref _moduleStressScalarsHandle) &&
+                   EnsureHabitatVaultBuffer(
+                       HabitatPreviousModuleStressScalarsBufferId,
+                       safeLength,
+                       NativeArrayOptions.ClearMemory,
+                       ref _previousModuleStressScalarsHandle) &&
+                   EnsureHabitatVaultBuffer(
+                       HabitatModuleImpactStressSpikesBufferId,
+                       safeLength,
+                       NativeArrayOptions.ClearMemory,
+                       ref _moduleImpactStressSpikesHandle) &&
+                   EnsureHabitatVaultBuffer(
+                       HabitatModuleCompromisedFlagsBufferId,
+                       safeLength,
+                       NativeArrayOptions.ClearMemory,
+                       ref _moduleCompromisedFlagsHandle);
+        }
+
+        private bool TryAcquireModuleStressWriteBuffers(
+            int requiredLength,
+            out NativeArray<float> moduleStressScalars,
+            out NativeArray<float> previousModuleStressScalars,
+            out NativeArray<float> moduleImpactStressSpikes,
+            out NativeArray<byte> moduleCompromisedFlags,
+            out IDataVault vault)
+        {
+            moduleStressScalars = default;
+            previousModuleStressScalars = default;
+            moduleImpactStressSpikes = default;
+            moduleCompromisedFlags = default;
+            vault = null;
+
+            int safeLength = math.max(1, requiredLength);
+            if (!EnsureModuleStressHandles(safeLength))
+                return false;
+
+            bool moduleStressLocked = false;
+            bool previousStressLocked = false;
+            bool impactStressLocked = false;
+            bool compromisedFlagsLocked = false;
+            IDataVault ignoredVault;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatModuleStressScalarsBufferId,
+                    safeLength,
+                    in _moduleStressScalarsHandle,
+                    out moduleStressScalars,
+                    out vault))
+            {
+                return false;
+            }
+
+            moduleStressLocked = true;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatPreviousModuleStressScalarsBufferId,
+                    safeLength,
+                    in _previousModuleStressScalarsHandle,
+                    out previousModuleStressScalars,
+                    out ignoredVault))
+            {
+                ReleaseModuleStressWriteLocks(vault, moduleStressLocked, previousStressLocked, impactStressLocked, compromisedFlagsLocked);
+                return false;
+            }
+
+            previousStressLocked = true;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatModuleImpactStressSpikesBufferId,
+                    safeLength,
+                    in _moduleImpactStressSpikesHandle,
+                    out moduleImpactStressSpikes,
+                    out ignoredVault))
+            {
+                ReleaseModuleStressWriteLocks(vault, moduleStressLocked, previousStressLocked, impactStressLocked, compromisedFlagsLocked);
+                return false;
+            }
+
+            impactStressLocked = true;
+            if (!TryAcquireHabitatVaultWriteBuffer(
+                    HabitatModuleCompromisedFlagsBufferId,
+                    safeLength,
+                    in _moduleCompromisedFlagsHandle,
+                    out moduleCompromisedFlags,
+                    out ignoredVault))
+            {
+                ReleaseModuleStressWriteLocks(vault, moduleStressLocked, previousStressLocked, impactStressLocked, compromisedFlagsLocked);
+                return false;
+            }
+
+            compromisedFlagsLocked = true;
+            return true;
+        }
+
+        private void ReleaseModuleStressWriteLocks(IDataVault vault)
+        {
+            ReleaseModuleStressWriteLocks(vault, true, true, true, true);
+        }
+
+        private void ReleaseModuleStressWriteLocks(
+            IDataVault vault,
+            bool moduleStressLocked,
+            bool previousStressLocked,
+            bool impactStressLocked,
+            bool compromisedFlagsLocked)
+        {
+            if (vault == null)
+                return;
+
+            if (compromisedFlagsLocked)
+                vault.ReleaseWriteLock(in _moduleCompromisedFlagsHandle, SystemID.Construction);
+            if (impactStressLocked)
+                vault.ReleaseWriteLock(in _moduleImpactStressSpikesHandle, SystemID.Construction);
+            if (previousStressLocked)
+                vault.ReleaseWriteLock(in _previousModuleStressScalarsHandle, SystemID.Construction);
+            if (moduleStressLocked)
+                vault.ReleaseWriteLock(in _moduleStressScalarsHandle, SystemID.Construction);
+        }
+
+        private void ReleaseFloodPropagationSummaryWriteLock()
+        {
+            if (!_floodPropagationSummaryWriteLockHeld)
+                return;
+
+            IDataVault vault = _floodPropagationSummaryWriteLockVault;
+            if (vault != null)
+                vault.ReleaseWriteLock(in _floodPropagationSummaryHandle, SystemID.Construction);
+
+            _floodPropagationSummaryWriteLockHeld = false;
+            _floodPropagationSummaryWriteLockVault = null;
+        }
+
+        private IDataVault ResolveHabitatDataVaultForColdPath()
+        {
+            if (_dataVault != null)
+                return _dataVault;
+
+            _dataVault = GlobalRegistry.DataVault;
+            return _dataVault;
+        }
+
+        private bool TryReadHabitatVaultBuffer<T>(
+            BufferID bufferId,
+            int requiredLength,
+            in VaultGenerationHandle<T> handle,
+            out NativeArray<T>.ReadOnly buffer)
+            where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null)
+                return false;
+
+            return handle.BufferID == unchecked((uint)(int)bufferId) &&
+                   handle.Generation != 0u &&
+                   requiredLength > 0 &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private bool TryAcquireHabitatVaultWriteBuffer<T>(
+            BufferID bufferId,
+            int requiredLength,
+            in VaultGenerationHandle<T> handle,
+            out NativeArray<T> buffer,
+            out IDataVault vault)
+            where T : struct
+        {
+            buffer = default;
+            vault = _dataVault;
+            if (!TryOpenHabitatVaultBuffer(vault, in handle, bufferId, requiredLength, out NativeArray<T> _))
+                return false;
+
+            bool locked = vault.TryAcquireWriteLock(in handle, SystemID.Construction, out buffer);
+            if (!locked ||
+                !buffer.IsCreated ||
+                buffer.Length < requiredLength)
+            {
+                if (locked)
+                    vault.ReleaseWriteLock(in handle, SystemID.Construction);
+                buffer = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryOpenHabitatVaultBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer)
+            where T : struct
+        {
+            buffer = default;
+            if (vault == null ||
+                handle.BufferID != unchecked((uint)(int)bufferId) ||
+                handle.Generation == 0u ||
+                requiredLength <= 0)
+            {
+                return false;
+            }
+
+            return vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool IsHabitatHandleCreated<T>(in VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            return handle.Generation != 0u && handle.BufferID != 0u;
+        }
+
+        private static void ReleaseHabitatVaultHandle<T>(ref VaultGenerationHandle<T> handle)
+            where T : struct
+        {
+            handle = default;
         }
 
         private void ReleaseModuleStressBuffer()
@@ -4996,20 +6599,6 @@ namespace Hecton8.Construction
             _lastUploadedModuleStressCount = -1;
             if (clearShaderParams)
                 Shader.SetGlobalVector(HabitatModuleStressParamsId, Vector4.zero);
-        }
-
-        private static void DisposeNativeParallelMultiHashMap<TKey, TValue>(
-            ref NativeParallelMultiHashMap<TKey, TValue> map,
-            string label)
-            where TKey : unmanaged, IEquatable<TKey>
-            where TValue : unmanaged
-        {
-            if (!map.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(NativeMemoryOwner, label);
-            map.Dispose();
-            map = default;
         }
 
         private static int NextPowerOfTwo(int value)

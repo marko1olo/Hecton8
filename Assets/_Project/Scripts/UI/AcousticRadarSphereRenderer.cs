@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Mathematics;
@@ -160,7 +161,10 @@ namespace Hecton8.UI
                     continue;
 
                 AbsoluteUniversePosition sampleAup = sample.PositionAup;
-                float3 deltaAup = AbsoluteUniversePosition.ToCameraRelativeFloat3(in sampleAup, in listenerAup);
+                float3 deltaAup = AupPrecisionMath.LocalDeltaFloat3(
+                    sampleAup.ToAbsoluteDouble3(),
+                    listenerAup.ToAbsoluteDouble3(),
+                    float3.zero);
                 if (!math.all(math.isfinite(deltaAup)) || math.dot(submarineForward, deltaAup) <= 0f)
                     continue;
 
@@ -241,7 +245,7 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             RefreshQualityPolicy();
-            _cachedAudioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance as ISpatialAudioImpactEmitterReadModel;
+            _cachedAudioManager = GlobalRegistry.Audio as ISpatialAudioImpactEmitterReadModel;
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             if (!ReferenceEquals(_cachedPlayerContext, playerContext))
             {
@@ -262,24 +266,14 @@ namespace Hecton8.UI
 
         private bool TryResolveListenerAup(Vector3 listenerPosition, out AbsoluteUniversePosition listenerAup)
         {
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
-            {
-                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
-                {
-                    listenerAup = OffsetAupLocal(
-                        in movementState.PredictedAup,
-                        (Vector3)((float3)listenerPosition - movementState.PredictedWorldPosition));
-                    return true;
-                }
-            }
-
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null &&
                 playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState cachedMovementState) &&
                 (cachedMovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
             {
-                listenerAup = cachedMovementState.PredictedAup;
+                listenerAup = OffsetAupLocal(
+                    in cachedMovementState.PredictedAup,
+                    (Vector3)((float3)listenerPosition - cachedMovementState.PredictedWorldPosition));
                 return true;
             }
 

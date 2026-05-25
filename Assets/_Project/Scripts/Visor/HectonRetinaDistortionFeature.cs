@@ -244,8 +244,14 @@ namespace Hecton8.Visor
                     return false;
 
                 NativeArray<RetinaGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<RetinaGlobalsDTO>(0, 1);
-                mapped[0] = globals;
-                writeBuffer.UnlockBufferAfterWrite<RetinaGlobalsDTO>(1);
+                try
+                {
+                    mapped[0] = globals;
+                }
+                finally
+                {
+                    writeBuffer.UnlockBufferAfterWrite<RetinaGlobalsDTO>(1);
+                }
                 _retinaGlobalsBuffer = writeBuffer;
                 _retinaGlobalsWriteIndex ^= 1;
                 _lastRetinaGlobals = globals;
@@ -332,7 +338,7 @@ namespace Hecton8.Visor
 
             RecreateMaterial(ref _material, shader);
             TryRegisterHotSwapListener();
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
         }
 
         /// <inheritdoc />

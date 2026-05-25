@@ -11,7 +11,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-88)]
-    public sealed class HectonOctahedralImpostorRenderer : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IStreamingHlodMatrixRenderer, IGlobalRegistryHotSwapListener
+    public sealed class HectonOctahedralImpostorRenderer : MonoBehaviour, ILateFrameTickable, IOriginShiftListener, IStreamingHlodMatrixRenderer, IGlobalRegistryHotSwapListener
     {
         private const int TelemetryIntervalFrames = 60;
         private const uint TelemetryHash = 0x4F435449u; // "OCTI"
@@ -124,13 +124,9 @@ namespace Hecton8.World
             ReleaseResources();
         }
 
-        public void Tick(float deltaTime)
-        {
-        }
-
         public void LateFrameTick()
         {
-            float deltaTime = Time.deltaTime;
+            float deltaTime = SystemDispatcher.CurrentFrameDeltaTime;
             _telemetryTickCounter++;
             if (deltaTime > 0f && math.isfinite(deltaTime))
                 _impostorTimeSeconds += math.min(deltaTime, 0.25f);

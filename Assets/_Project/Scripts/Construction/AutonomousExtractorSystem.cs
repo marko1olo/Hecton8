@@ -128,15 +128,19 @@ namespace Hecton8.Construction
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
+        private IPersistentDroppedItemRegistry _persistentDroppedItems;
         private int _scheduledModuleCount;
         private int _moduleCount;
+        private static AutonomousExtractorSystem s_activeRuntime;
 
         /// <summary>Returns the current runtime owner when one exists.</summary>
-        public static AutonomousExtractorSystem Instance => GlobalRegistry.AutonomousExtractors;
+        public static AutonomousExtractorSystem Instance => s_activeRuntime;
+
+        internal IPersistentDroppedItemRegistry PersistentDroppedItems => _persistentDroppedItems;
 
         internal static bool TryGetActiveRuntime(out AutonomousExtractorSystem runtime)
         {
-            runtime = GlobalRegistry.AutonomousExtractors;
+            runtime = s_activeRuntime;
             return runtime != null;
         }
 
@@ -201,6 +205,11 @@ namespace Hecton8.Construction
 
             GlobalRegistry.RegisterAutonomousExtractorRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.AutonomousExtractors, this);
+            if (_serviceRegistered)
+            {
+                s_activeRuntime = this;
+                _persistentDroppedItems = GlobalRegistry.PersistentDroppedItems;
+            }
         }
 
         private void TryUnregisterFromGlobalRegistry()
@@ -210,6 +219,9 @@ namespace Hecton8.Construction
 
             GlobalRegistry.UnregisterAutonomousExtractorRuntime(this);
             _serviceRegistered = false;
+            _persistentDroppedItems = null;
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -225,6 +237,12 @@ namespace Hecton8.Construction
                 _dataVault = currentService as IDataVault;
                 if (isActiveAndEnabled)
                     EnsureVaultCapacity(MaxModuleCapacity);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.PersistentWorldRegistry)
+            {
+                _persistentDroppedItems = currentService as IPersistentDroppedItemRegistry;
                 return;
             }
 
@@ -1162,7 +1180,10 @@ namespace Hecton8.Construction
             if (item == null || quantity <= 0)
                 return false;
 
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            if (!AutonomousExtractorSystem.TryGetActiveRuntime(out AutonomousExtractorSystem runtime))
+                return false;
+
+            IPersistentDroppedItemRegistry registry = runtime.PersistentDroppedItems;
             if (registry == null)
                 return false;
 
@@ -1206,9 +1227,7 @@ namespace Hecton8.Construction
             if (!_registered)
                 return;
 
-            AutonomousExtractorSystem runtime = GlobalRegistry.AutonomousExtractors;
-            if (runtime == null)
-                AutonomousExtractorSystem.TryGetActiveRuntime(out runtime);
+            AutonomousExtractorSystem.TryGetActiveRuntime(out AutonomousExtractorSystem runtime);
             if (runtime != null)
                 runtime.UnregisterModule(this);
 

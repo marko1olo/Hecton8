@@ -837,7 +837,7 @@ namespace Hecton8.Audio
             }
             catch (Exception)
             {
-                Debug.LogWarning("[SHINOBU_46] Legacy audio binary scan failed; emergency mock profiles are active.");
+                Hecton8.Core.H8Debug.LogWarning("[SHINOBU_46] Legacy audio binary scan failed; emergency mock profiles are active.");
                 return false;
             }
         }
@@ -1274,7 +1274,7 @@ namespace Hecton8.Audio
             }
             catch (Exception)
             {
-                Debug.LogWarning("[SHINOBU_46] Failed to dump adaptive stem telemetry.");
+                Hecton8.Core.H8Debug.LogWarning("[SHINOBU_46] Failed to dump adaptive stem telemetry.");
             }
         }
 
@@ -1318,7 +1318,7 @@ namespace Hecton8.Audio
             }
             catch (Exception)
             {
-                Debug.LogWarning("[SHINOBU_46] audio_stem_rules.csv parse failed.");
+                Hecton8.Core.H8Debug.LogWarning("[SHINOBU_46] audio_stem_rules.csv parse failed.");
             }
         }
 

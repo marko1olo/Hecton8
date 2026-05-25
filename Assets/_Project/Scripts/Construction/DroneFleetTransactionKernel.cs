@@ -19,7 +19,10 @@ namespace Hecton8.Construction
         [FieldOffset(16)] public uint Flags;
         [FieldOffset(20)] public int CommandIndex;
         [FieldOffset(24)] public int Slot;
-        [FieldOffset(28)] private int _pad0;
+        [FieldOffset(28)] private byte _pad0;
+        [FieldOffset(29)] private byte _pad1;
+        [FieldOffset(30)] private byte _pad2;
+        [FieldOffset(31)] private byte _pad3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -49,7 +52,10 @@ namespace Hecton8.Construction
         [FieldOffset(48)] public uint Flags;
         [FieldOffset(52)] public uint ActiveInventorySlots;
         [FieldOffset(56)] public uint AtomicConflicts;
-        [FieldOffset(60)] private uint _pad0;
+        [FieldOffset(60)] private byte _pad0;
+        [FieldOffset(61)] private byte _pad1;
+        [FieldOffset(62)] private byte _pad2;
+        [FieldOffset(63)] private byte _pad3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -70,7 +76,10 @@ namespace Hecton8.Construction
         [FieldOffset(48)] public int ActiveInventorySlots;
         [FieldOffset(52)] public int CommandCount;
         [FieldOffset(56)] public uint LayoutHash;
-        [FieldOffset(60)] private uint _pad0;
+        [FieldOffset(60)] private byte _pad0;
+        [FieldOffset(61)] private byte _pad1;
+        [FieldOffset(62)] private byte _pad2;
+        [FieldOffset(63)] private byte _pad3;
     }
 
     internal enum DroneTransactionCounterSlot : int
@@ -101,7 +110,10 @@ namespace Hecton8.Construction
         [FieldOffset(32)] public float3 Position;
         [FieldOffset(44)] public float3 TargetPosition;
         [FieldOffset(56)] public uint StateHash;
-        [FieldOffset(60)] private uint _pad0;
+        [FieldOffset(60)] private byte _pad0;
+        [FieldOffset(61)] private byte _pad1;
+        [FieldOffset(62)] private byte _pad2;
+        [FieldOffset(63)] private byte _pad3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -114,21 +126,76 @@ namespace Hecton8.Construction
         [FieldOffset(48)] public float Radius;
         [FieldOffset(52)] public uint Flags;
         [FieldOffset(56)] public uint TargetEntityHash;
-        [FieldOffset(60)] private uint _pad0;
+        [FieldOffset(60)] private byte _pad0;
+        [FieldOffset(61)] private byte _pad1;
+        [FieldOffset(62)] private byte _pad2;
+        [FieldOffset(63)] private byte _pad3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     internal struct DroneTransactionCounterDTO
     {
         [FieldOffset(0)] public int Value;
-        [FieldOffset(4)] private int _pad0;
-        [FieldOffset(8)] private ulong _pad1;
-        [FieldOffset(16)] private ulong _pad2;
-        [FieldOffset(24)] private ulong _pad3;
-        [FieldOffset(32)] private ulong _pad4;
-        [FieldOffset(40)] private ulong _pad5;
-        [FieldOffset(48)] private ulong _pad6;
-        [FieldOffset(56)] private ulong _pad7;
+        [FieldOffset(4)] private byte _pad0;
+        [FieldOffset(5)] private byte _pad1;
+        [FieldOffset(6)] private byte _pad2;
+        [FieldOffset(7)] private byte _pad3;
+        [FieldOffset(8)] private byte _pad4;
+        [FieldOffset(9)] private byte _pad5;
+        [FieldOffset(10)] private byte _pad6;
+        [FieldOffset(11)] private byte _pad7;
+        [FieldOffset(12)] private byte _pad8;
+        [FieldOffset(13)] private byte _pad9;
+        [FieldOffset(14)] private byte _pad10;
+        [FieldOffset(15)] private byte _pad11;
+        [FieldOffset(16)] private byte _pad12;
+        [FieldOffset(17)] private byte _pad13;
+        [FieldOffset(18)] private byte _pad14;
+        [FieldOffset(19)] private byte _pad15;
+        [FieldOffset(20)] private byte _pad16;
+        [FieldOffset(21)] private byte _pad17;
+        [FieldOffset(22)] private byte _pad18;
+        [FieldOffset(23)] private byte _pad19;
+        [FieldOffset(24)] private byte _pad20;
+        [FieldOffset(25)] private byte _pad21;
+        [FieldOffset(26)] private byte _pad22;
+        [FieldOffset(27)] private byte _pad23;
+        [FieldOffset(28)] private byte _pad24;
+        [FieldOffset(29)] private byte _pad25;
+        [FieldOffset(30)] private byte _pad26;
+        [FieldOffset(31)] private byte _pad27;
+        [FieldOffset(32)] private byte _pad28;
+        [FieldOffset(33)] private byte _pad29;
+        [FieldOffset(34)] private byte _pad30;
+        [FieldOffset(35)] private byte _pad31;
+        [FieldOffset(36)] private byte _pad32;
+        [FieldOffset(37)] private byte _pad33;
+        [FieldOffset(38)] private byte _pad34;
+        [FieldOffset(39)] private byte _pad35;
+        [FieldOffset(40)] private byte _pad36;
+        [FieldOffset(41)] private byte _pad37;
+        [FieldOffset(42)] private byte _pad38;
+        [FieldOffset(43)] private byte _pad39;
+        [FieldOffset(44)] private byte _pad40;
+        [FieldOffset(45)] private byte _pad41;
+        [FieldOffset(46)] private byte _pad42;
+        [FieldOffset(47)] private byte _pad43;
+        [FieldOffset(48)] private byte _pad44;
+        [FieldOffset(49)] private byte _pad45;
+        [FieldOffset(50)] private byte _pad46;
+        [FieldOffset(51)] private byte _pad47;
+        [FieldOffset(52)] private byte _pad48;
+        [FieldOffset(53)] private byte _pad49;
+        [FieldOffset(54)] private byte _pad50;
+        [FieldOffset(55)] private byte _pad51;
+        [FieldOffset(56)] private byte _pad52;
+        [FieldOffset(57)] private byte _pad53;
+        [FieldOffset(58)] private byte _pad54;
+        [FieldOffset(59)] private byte _pad55;
+        [FieldOffset(60)] private byte _pad56;
+        [FieldOffset(61)] private byte _pad57;
+        [FieldOffset(62)] private byte _pad58;
+        [FieldOffset(63)] private byte _pad59;
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -149,27 +216,25 @@ namespace Hecton8.Construction
 
             bool repair = (index & 1) == 0;
             float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 0f);
-            Tasks[index] = new DroneTaskDTO
-            {
-                TargetEntityHash = HashIndex(index),
-                TaskTypeHash = repair ? RepairTaskHash : MiningTaskHash,
-                TaskProgress01 = repair ? 0f : math.saturate((index & 3) * 0.2f),
-                TaskEfficiencyScalar = repair ? math.lerp(0.002f, 0.012f, quality) : math.lerp(0.25f, 1f, quality),
-                InventoryPayloadHash = repair ? 0u : InventoryPayloadHash
-            };
+            DroneTaskDTO task = default;
+            task.TargetEntityHash = HashIndex(index);
+            task.TaskTypeHash = repair ? RepairTaskHash : MiningTaskHash;
+            task.TaskProgress01 = repair ? 0f : math.saturate((index & 3) * 0.2f);
+            task.TaskEfficiencyScalar = repair ? math.lerp(0.002f, 0.012f, quality) : math.lerp(0.25f, 1f, quality);
+            task.InventoryPayloadHash = repair ? 0u : InventoryPayloadHash;
+            Tasks[index] = task;
 
             if (Integrity.IsCreated && (uint)index < (uint)Integrity.Length)
             {
-                Integrity[index] = new DroneTransactionIntegrityDTO
-                {
-                    TargetEntityHash = HashIndex(index),
-                    CurrentIntegrityMilli = repair ? 550 : 1000,
-                    MaxRecoverableIntegrityMilli = 1000,
-                    RepairBudgetMilli = repair ? math.max(1, (int)math.round(math.lerp(2f, 12f, quality))) : 0,
-                    Flags = 1u,
-                    CommandIndex = index,
-                    Slot = index
-                };
+                DroneTransactionIntegrityDTO integrity = default;
+                integrity.TargetEntityHash = task.TargetEntityHash;
+                integrity.CurrentIntegrityMilli = repair ? 550 : 1000;
+                integrity.MaxRecoverableIntegrityMilli = 1000;
+                integrity.RepairBudgetMilli = repair ? math.max(1, (int)math.round(math.lerp(2f, 12f, quality))) : 0;
+                integrity.Flags = 1u;
+                integrity.CommandIndex = index;
+                integrity.Slot = index;
+                Integrity[index] = integrity;
             }
         }
 
@@ -408,7 +473,7 @@ namespace Hecton8.Construction
             if (!math.all(math.isfinite(delta)))
                 return false;
 
-            float3 localDelta = new float3((float)delta.x, (float)delta.y, (float)delta.z);
+            float3 localDelta = math.float3((float)delta.x, (float)delta.y, (float)delta.z);
             float radius = math.max(0.1f, snapshot.Radius);
             return math.lengthsq(localDelta) <= radius * radius;
         }

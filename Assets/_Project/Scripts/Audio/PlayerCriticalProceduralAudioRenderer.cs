@@ -11,7 +11,6 @@ using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
-using Hecton8.Physics;
 using Hecton8.Visor;
 using Hecton8.World;
 using Unity.Burst;
@@ -77,6 +76,9 @@ namespace Hecton8.Audio
         private const int AudioServiceLookupRetryFrames = 30;
         private const int TransportCoordinatorLookupRetryFrames = 30;
         private const int SonarTriggerFlagKineticImpactEcho = 1 << 0;
+        private const uint AcousticImpulseFlagCritical = 1u << 0;
+        private const uint AcousticImpulseFlagLeviathan = 1u << 1;
+        private const uint AcousticImpulseFlagLarge = 1u << 3;
         private const float KineticImpactMinimumEnergyJoules = 12f;
         private const float KineticImpactReferenceEnergyJoules = 42000f;
         private const float KineticImpactExtremeEnergyJoules = 65000f;
@@ -1055,13 +1057,14 @@ namespace Hecton8.Audio
         private GameObject _boundPlayerObject;
         private Transform _boundPlayerTransform;
         private int _boundPlayerRootEntityId;
-        private Rigidbody _playerRigidbody;
         private HectonSurvivalSystem _playerSurvivalSystem;
         private HectonPlayerHealth _playerHealth;
         private ISubmarineHullBreachReadModel _structuralHullReadModel;
         private IPlayerTransportLifecycleOwner _activeTransportLifecycleOwner;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IEcosystemDirectorService _ecosystemDirectorService;
+        private IPhysicsStateEventService _physicsStateEvents;
+        private bool _physicsImpactRegistered;
         private MapMagicBridge _mapMagicBridge;
         private int _cachedBiomeId;
         private AudioReverbFilter _listenerReverbFilter;
@@ -1214,7 +1217,6 @@ namespace Hecton8.Audio
         private int _audioProducerUnderrunWindowActive;
         private int _lastActiveDspVoiceCount;
         private int _lastSdfSampleTimeMicroseconds;
-        private ulong _playerBodyEntityId;
         private int _dspProducerOverBudgetPending;
         private long _dspProducerLastOverBudgetTicks;
         private int _dspProducerTelemetryCooldownFrames;
@@ -2322,7 +2324,7 @@ namespace Hecton8.Audio
             RefreshAudioQualityPolicyCold();
             RefreshAudioRuntimeServicesCold();
             TryRegisterHotSwapListener();
-            PhysicsEvents.Register(this);
+            TryRegisterPhysicsImpactListener();
             SpectrumEvents.RegisterSonarPingListener(this);
             SpectrumEvents.RegisterAcousticEchoListener(this);
             TryRegister();
@@ -2335,7 +2337,7 @@ namespace Hecton8.Audio
             TryUnregisterHotSwapListener();
             SpectrumEvents.UnregisterAcousticEchoListener(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
-            PhysicsEvents.Unregister(this);
+            TryUnregisterPhysicsImpactListener();
             AudioSettings.OnAudioConfigurationChanged -= HandleAudioConfigurationChanged;
             UnsubscribeTransportCoordinator();
             TryUnregister();
@@ -2345,6 +2347,7 @@ namespace Hecton8.Audio
             _audioServiceLookupFrame = -4096;
             _playerRuntimeContext = null;
             _ecosystemDirectorService = null;
+            _physicsStateEvents = null;
             _mapMagicBridge = null;
             bool producerStopped = StopAudioProducerThread();
             RestoreListenerReverbDefaults();
@@ -2368,6 +2371,7 @@ namespace Hecton8.Audio
             TryUnregisterHotSwapListener();
             SpectrumEvents.UnregisterAcousticEchoListener(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
+            TryUnregisterPhysicsImpactListener();
             bool producerStopped = StopAudioProducerThread();
             _audioProducerWakeSignal.Set();
             Thread producerThread = _audioProducerThread;
@@ -2389,6 +2393,7 @@ namespace Hecton8.Audio
             _audioServiceLookupFrame = -4096;
             _playerRuntimeContext = null;
             _ecosystemDirectorService = null;
+            _physicsStateEvents = null;
             _mapMagicBridge = null;
         }
 
@@ -2399,6 +2404,12 @@ namespace Hecton8.Audio
             if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
             {
                 RebindDataVault(currentService as IDataVault);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.PhysicsStateManager)
+            {
+                RebindPhysicsStateEventService(currentService as IPhysicsStateEventService);
                 return;
             }
 
@@ -2417,6 +2428,12 @@ namespace Hecton8.Audio
             {
                 if (!ReferenceEquals(previousService, currentService))
                     RebindDataVault(currentService as IDataVault);
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.PhysicsStateManager)
+            {
+                RebindPhysicsStateEventService(currentService as IPhysicsStateEventService);
                 return;
             }
 
@@ -2439,7 +2456,6 @@ namespace Hecton8.Audio
             _structuralHullLookupFrame = -4096;
             _transportCoordinatorLookupFrame = -4096;
             _boundPlayerRootEntityId = 0;
-            _playerBodyEntityId = 0ul;
             if (playerObject == null)
             {
                 UnsubscribeTransportCoordinator();
@@ -2464,17 +2480,11 @@ namespace Hecton8.Audio
             if (playerTransportCoordinator == null || !ReferenceEquals(playerTransportCoordinator.gameObject, playerObject))
                 playerObject.TryGetComponent(out playerTransportCoordinator);
 
-            if (_playerRigidbody == null || !ReferenceEquals(_playerRigidbody.gameObject, playerObject))
-                playerObject.TryGetComponent(out _playerRigidbody);
-
             if (_playerSurvivalSystem == null || !ReferenceEquals(_playerSurvivalSystem.gameObject, playerObject))
                 playerObject.TryGetComponent(out _playerSurvivalSystem);
 
             if (_playerHealth == null || !ReferenceEquals(_playerHealth.gameObject, playerObject))
                 playerObject.TryGetComponent(out _playerHealth);
-
-            if (_playerRigidbody != null)
-                _playerBodyEntityId = EntityId.ToULong(_playerRigidbody.GetEntityId());
 
             if (!ReferenceEquals(previousCoordinator, playerTransportCoordinator))
             {
@@ -2612,7 +2622,7 @@ namespace Hecton8.Audio
             ConsumeLaserCutterEventSignals();
             ConsumeProceduralAudioSignals();
 
-            if (playerMovement == null || _playerRigidbody == null)
+            if (playerMovement == null)
             {
                 _targetHullStressValue = 0f;
                 _targetStructuralHullStressValue = 0f;
@@ -2825,7 +2835,7 @@ namespace Hecton8.Audio
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[PlayerCriticalProceduralAudioRenderer] Audio producer thread failed to stop within watchdog budget. Native audio buffers remain owned until the worker exits.");
+            Hecton8.Core.H8Debug.LogWarning("[PlayerCriticalProceduralAudioRenderer] Audio producer thread failed to stop within watchdog budget. Native audio buffers remain owned until the worker exits.");
 #endif
             return false;
         }
@@ -3305,6 +3315,7 @@ namespace Hecton8.Audio
 
         private void ReportDspProducerSolveTicks(long elapsedTicks)
         {
+            _sampleRingBuffer?.RecordDspExecutionTicks(elapsedTicks);
             if (elapsedTicks <= DspProducerSolveBudgetTicks)
                 return;
 
@@ -3412,13 +3423,11 @@ namespace Hecton8.Audio
             float diveAttack = isSwimMode ? ResolveDiveAttack01() : 0f;
             float depth = math.max(0f, playerMovement.CurrentDepth);
 
-            Vector3 velocity = PhysicsDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityAudioMaxAgeFrames, out Vector3 kccVelocity)
+            Vector3 velocity = CoreDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityAudioMaxAgeFrames, out Vector3 kccVelocity)
                 ? kccVelocity
                 : Vector3.zero;
             float speed = ApproximateMagnitudeNoSqrt((float3)velocity);
             float vehicleMotorSpeed = speed;
-            if (VehicleMotor.TryResolveForBody(_playerRigidbody, out VehicleMotor vehicleMotor))
-                vehicleMotorSpeed = math.max(vehicleMotorSpeed, ApproximateMagnitudeNoSqrt((float3)vehicleMotor.LinearVelocity));
 
             float velocityDelta = math.abs(speed - _lastSpeed) * math.rcp(math.max(deltaTime, 0.0001f));
             _lastSpeed = speed;
@@ -3726,7 +3735,7 @@ namespace Hecton8.Audio
                 if (!_warnedMissingListenerReverbFilter)
                 {
                     _warnedMissingListenerReverbFilter = true;
-                    Debug.LogWarning("[PlayerCriticalProceduralAudioRenderer] Missing authored AudioReverbFilter. RequireComponent should install it before runtime; reverb fallback is disabled.", this);
+                    Hecton8.Core.H8Debug.LogWarning("[PlayerCriticalProceduralAudioRenderer] Missing authored AudioReverbFilter. RequireComponent should install it before runtime; reverb fallback is disabled.", this);
                 }
 #endif
                 return;
@@ -3773,7 +3782,7 @@ namespace Hecton8.Audio
                 if (!_warnedMissingReverbMixerParameters)
                 {
                     _warnedMissingReverbMixerParameters = true;
-                    Debug.LogWarning("[PlayerCriticalProceduralAudioRenderer] Reverb control mixer is missing one or more exposed parameters. Falling back to AudioReverbFilter.", this);
+                    Hecton8.Core.H8Debug.LogWarning("[PlayerCriticalProceduralAudioRenderer] Reverb control mixer is missing one or more exposed parameters. Falling back to AudioReverbFilter.", this);
                 }
 #endif
 
@@ -3794,7 +3803,7 @@ namespace Hecton8.Audio
             if (!_warnedMissingReverbWetMixerParameter)
             {
                 _warnedMissingReverbWetMixerParameter = true;
-                Debug.LogWarning("[PlayerCriticalProceduralAudioRenderer] Reverb wet-mix parameter missing on AudioMixer. Decay/room parameters stay mixer-driven, wet mix falls back to the default mixer state.", this);
+                Hecton8.Core.H8Debug.LogWarning("[PlayerCriticalProceduralAudioRenderer] Reverb wet-mix parameter missing on AudioMixer. Decay/room parameters stay mixer-driven, wet mix falls back to the default mixer state.", this);
             }
 #endif
         }
@@ -4225,6 +4234,45 @@ namespace Hecton8.Audio
             _hotSwapRegistered = false;
         }
 
+        private void TryRegisterPhysicsImpactListener()
+        {
+            if (_physicsImpactRegistered)
+                return;
+
+            RebindPhysicsStateEventService(GlobalRegistry.PhysicsStateEvents);
+        }
+
+        private void TryUnregisterPhysicsImpactListener()
+        {
+            if (!_physicsImpactRegistered)
+            {
+                _physicsStateEvents = null;
+                return;
+            }
+
+            _physicsStateEvents?.UnregisterImpactListener(this);
+            _physicsStateEvents = null;
+            _physicsImpactRegistered = false;
+        }
+
+        private void RebindPhysicsStateEventService(IPhysicsStateEventService physicsStateEvents)
+        {
+            if (ReferenceEquals(_physicsStateEvents, physicsStateEvents) && _physicsImpactRegistered)
+                return;
+
+            if (_physicsImpactRegistered)
+                _physicsStateEvents?.UnregisterImpactListener(this);
+
+            _physicsStateEvents = physicsStateEvents;
+            _physicsImpactRegistered = false;
+
+            if (_physicsStateEvents == null || !isActiveAndEnabled)
+                return;
+
+            _physicsStateEvents.RegisterImpactListener(this);
+            _physicsImpactRegistered = true;
+        }
+
         private ISpatialAudioListenerCaveReadModel ResolveSpatialAudioListenerCaveReadModel()
         {
             ISpatialAudioListenerCaveReadModel readModel = _spatialAudioListenerCaveReadModel;
@@ -4247,7 +4295,7 @@ namespace Hecton8.Audio
 
         private void RefreshAudioRuntimeServicesCold()
         {
-            CacheAudioRuntimeService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance, Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
+            CacheAudioRuntimeService(GlobalRegistry.Audio, Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
         }
 
         private void RefreshAudioRuntimeServicesIfStale()
@@ -4259,7 +4307,7 @@ namespace Hecton8.Audio
                 return;
             }
 
-            CacheAudioRuntimeService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance, frame);
+            CacheAudioRuntimeService(GlobalRegistry.Audio, frame);
         }
 
         private void CacheAudioRuntimeService(IAudioService audioService, int frame)
@@ -5226,14 +5274,9 @@ namespace Hecton8.Audio
 
         private float ResolveSdfSonarEchoDopplerRatio(Vector3 echoDirection)
         {
-            if (_playerRigidbody == null)
-                return 1f;
-
-            Vector3 velocity = PhysicsDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityAudioMaxAgeFrames, out Vector3 kccVelocity)
+            Vector3 velocity = CoreDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityAudioMaxAgeFrames, out Vector3 kccVelocity)
                 ? kccVelocity
                 : Vector3.zero;
-            if (VehicleMotor.TryResolveForBody(_playerRigidbody, out VehicleMotor vehicleMotor))
-                velocity = vehicleMotor.LinearVelocity;
 
             float radialVelocity = Vector3.Dot(velocity, echoDirection);
             float clampedRadialVelocity = math.clamp(
@@ -5315,7 +5358,7 @@ namespace Hecton8.Audio
             int sourceBodyInstanceId = hit.Rigidbody != null
                 ? unchecked((int)EntityId.ToULong(hit.Rigidbody.GetEntityId()))
                 : hit.Transform != null ? unchecked((int)EntityId.ToULong(hit.Transform.GetEntityId())) : 0;
-            AcousticImpulseEvent impulseEvent = new AcousticImpulseEvent(
+            PublishAcousticImpulseSignal(
                 hit.Position,
                 direction,
                 math.max(1f, radius * range01 * math.saturate(intensity) * 120f),
@@ -5324,8 +5367,7 @@ namespace Hecton8.Audio
                 math.max(12f, radius * 0.45f),
                 sourceBodyInstanceId,
                 SonarAudioMaterialIdBiological,
-                AcousticImpulseFlags.Leviathan | AcousticImpulseFlags.Large);
-            PublishAcousticImpulseSignal(in impulseEvent);
+                AcousticImpulseFlagLeviathan | AcousticImpulseFlagLarge);
         }
 
         private void TryAppendPredatorFleshEchoTapToBuffer(
@@ -5569,10 +5611,7 @@ namespace Hecton8.Audio
             if (_boundPlayerTransform == null)
                 return;
 
-            bool isPlayerOwnedImpact =
-                _playerBodyEntityId != 0ul &&
-                (impactSignal.PrimaryBodyId == _playerBodyEntityId ||
-                 impactSignal.SecondaryBodyId == _playerBodyEntityId);
+            bool isPlayerOwnedImpact = IsBoundPlayerImpact(in impactSignal);
             float maxDistance = PhysicsImpactStressRadiusMeters;
             float distance = 0f;
             if (!isPlayerOwnedImpact)
@@ -5654,6 +5693,12 @@ namespace Hecton8.Audio
             _impactStressImpulseTickValue = math.max(_impactStressImpulseTickValue, impactStress);
         }
 
+        private static bool IsBoundPlayerImpact(in PhysicsImpactSignal impactSignal)
+        {
+            _ = impactSignal;
+            return false;
+        }
+
         private void ConsumeAcousticImpulseSignals()
         {
             int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
@@ -5668,42 +5713,62 @@ namespace Hecton8.Audio
                 if (payload.EventType != (ushort)PhysicsEventType.AcousticImpulse)
                     continue;
 
-                AcousticImpulseEvent impulseEvent = new AcousticImpulseEvent(
-                    payload.RuntimePosition,
-                    payload.Direction,
-                    payload.Scalar0,
-                    payload.Scalar1,
-                    payload.Scalar2,
-                    payload.RadiusMeters,
-                    payload.PrimaryId,
-                    unchecked((byte)payload.DataHash),
-                    (AcousticImpulseFlags)payload.StatusBits);
-                HandleAcousticImpulse(in impulseEvent);
+                HandleAcousticImpulse(in payload);
             }
         }
 
-        private static void PublishAcousticImpulseSignal(in AcousticImpulseEvent impulseEvent)
+        private static void PublishAcousticImpulseSignal(
+            Vector3 runtimePosition,
+            Vector3 direction,
+            float kineticEnergyJoules,
+            float volume01,
+            float pitchScale,
+            float radiusMeters,
+            int sourceBodyInstanceId,
+            byte audioMaterialId,
+            uint statusBits)
         {
             PhysicsEventPayload payload = new PhysicsEventPayload
             {
-                RuntimePosition = impulseEvent.RuntimePosition,
-                Direction = impulseEvent.Direction,
+                RuntimePosition = runtimePosition,
+                Direction = ResolveAcousticImpulseDirection(direction),
                 ForceVector = default,
                 ImpulseVector = default,
-                RadiusMeters = impulseEvent.RadiusMeters,
-                Scalar0 = impulseEvent.KineticEnergyJoules,
-                Scalar1 = impulseEvent.Volume01,
-                Scalar2 = impulseEvent.PitchScale,
-                PrimaryId = impulseEvent.SourceBodyInstanceId,
-                DataHash = impulseEvent.AudioMaterialId,
-                StatusBits = unchecked((uint)impulseEvent.Flags),
+                RadiusMeters = math.max(0f, radiusMeters),
+                Scalar0 = math.max(0f, kineticEnergyJoules),
+                Scalar1 = math.saturate(volume01),
+                Scalar2 = math.clamp(pitchScale, 0.05f, 4f),
+                PrimaryId = sourceBodyInstanceId,
+                DataHash = audioMaterialId,
+                StatusBits = statusBits,
                 EventType = (ushort)PhysicsEventType.AcousticImpulse,
                 Reserved = 0
             };
             SignalBus<PhysicsEventPayload>.TryPushTracked(in payload, ref s_x001PlayerCriticalProceduralAudioRendererSignalPushDropCount);
         }
 
-        private void HandleAcousticImpulse(in global::Hecton8.Physics.AcousticImpulseEvent impulseEvent)
+        private static Vector3 ResolveAcousticImpulseDirection(Vector3 value)
+        {
+            float3 vector = math.float3(value.x, value.y, value.z);
+            if (!math.all(math.isfinite(vector)))
+                return Vector3.forward;
+
+            float ax = math.abs(vector.x);
+            float ay = math.abs(vector.y);
+            float az = math.abs(vector.z);
+            if ((ax + ay + az) <= 0.000001f)
+                return Vector3.forward;
+
+            if (ax >= ay && ax >= az)
+                return vector.x < 0f ? Vector3.left : Vector3.right;
+
+            if (ay >= az)
+                return vector.y < 0f ? Vector3.down : Vector3.up;
+
+            return vector.z < 0f ? Vector3.back : Vector3.forward;
+        }
+
+        private void HandleAcousticImpulse(in PhysicsEventPayload impulseEvent)
         {
             if (_boundPlayerTransform == null)
                 return;
@@ -5713,27 +5778,28 @@ namespace Hecton8.Audio
                 return;
 
             float proximity = 1f - math.saturate(distance * math.rcp(math.max(maxDistance, 0.001f)));
-            float audible01 = math.saturate(impulseEvent.Volume01 * math.max(0.12f, proximity));
+            float audible01 = math.saturate(impulseEvent.Scalar1 * math.max(0.12f, proximity));
             if (audible01 <= 0.001f)
                 return;
 
-            bool isCritical = (impulseEvent.Flags & AcousticImpulseFlags.Critical) != 0;
-            bool isLeviathan = (impulseEvent.Flags & AcousticImpulseFlags.Leviathan) != 0;
+            byte audioMaterialId = unchecked((byte)impulseEvent.DataHash);
+            bool isCritical = (impulseEvent.StatusBits & AcousticImpulseFlagCritical) != 0u;
+            bool isLeviathan = (impulseEvent.StatusBits & AcousticImpulseFlagLeviathan) != 0u;
             float threatScale = isCritical ? 1.25f : 1f;
             if (isLeviathan)
                 threatScale = math.max(threatScale, 1.45f);
 
-            float materialDecayMultiplier = ResolveSonarMaterialDecayMultiplier(impulseEvent.AudioMaterialId);
-            float materialPitchScale = ResolveSonarMaterialPitchScale(impulseEvent.AudioMaterialId);
+            float materialDecayMultiplier = ResolveSonarMaterialDecayMultiplier(audioMaterialId);
+            float materialPitchScale = ResolveSonarMaterialPitchScale(audioMaterialId);
             float stress = math.saturate(audible01 * 0.45f * threatScale);
-            float metallic = impulseEvent.AudioMaterialId == SonarAudioMaterialIdMetal
+            float metallic = audioMaterialId == SonarAudioMaterialIdMetal
                 ? math.saturate(audible01 * math.lerp(0.45f, 0.9f, proximity))
                 : 0f;
             float clangExcitation = math.saturate(audible01 * materialPitchScale * threatScale);
             float echoExcitation = math.saturate(audible01 * materialDecayMultiplier * 0.72f);
             float echoDelaySeconds = math.clamp(distance * SoundSpeedWaterMetersPerSecondInv, 0f, SonarEchoMaximumDelaySeconds);
             float echoLowPassCutoffHz = ResolveSonarMaterialLowPassCutoffHz(
-                impulseEvent.AudioMaterialId,
+                audioMaterialId,
                 math.lerp(720f, AcousticOcclusionUtility.OpenLowPassCutoffHertz, proximity));
 
             TryEnqueueImpactAudioEvent(
@@ -5744,7 +5810,7 @@ namespace Hecton8.Audio
                 echoDelaySeconds,
                 proximity,
                 echoLowPassCutoffHz,
-                math.clamp(impulseEvent.PitchScale * materialPitchScale, 0.05f, 4f));
+                math.clamp(impulseEvent.Scalar2 * materialPitchScale, 0.05f, 4f));
             _impactStressImpulseTickValue = math.max(_impactStressImpulseTickValue, stress);
         }
 
@@ -5916,7 +5982,7 @@ namespace Hecton8.Audio
             _targetLeviathanRoarAggroValue = math.max(_targetLeviathanRoarAggroValue, aggroLevel);
             _impactStressImpulseTickValue = math.max(_impactStressImpulseTickValue, aggroLevel * 0.22f);
             Vector3 directionToPredator = new Vector3(predatorDeltaAup.x, predatorDeltaAup.y, predatorDeltaAup.z);
-            AcousticImpulseEvent impulseEvent = new AcousticImpulseEvent(
+            PublishAcousticImpulseSignal(
                 info.WorldPosition,
                 directionToPredator,
                 0f,
@@ -5925,8 +5991,7 @@ namespace Hecton8.Audio
                 PredatorKillAudioRadiusMeters * 2.5f,
                 0,
                 SonarAudioMaterialIdDefault,
-                AcousticImpulseFlags.Leviathan);
-            PublishAcousticImpulseSignal(in impulseEvent);
+                AcousticImpulseFlagLeviathan);
         }
 
         private void UpdateLeviathanDopplerCache()
@@ -5943,7 +6008,7 @@ namespace Hecton8.Audio
             if (currentDistance <= 0.001f || !math.isfinite(currentDistance))
                 return 1f;
 
-            float now = Time.unscaledTime;
+            float now = ResolvePresentationClockSeconds();
             if (!_hasLeviathanRoarDopplerSample)
             {
                 _hasLeviathanRoarDopplerSample = true;
@@ -6392,6 +6457,7 @@ namespace Hecton8.Audio
                 return;
 
             EnsureBuffers(previousFrameCapacity);
+            RefreshNativeOutputBridge();
             if (shouldRestartWorker && _buffersInitialized)
                 StartAudioProducerThread();
         }
@@ -6420,7 +6486,7 @@ namespace Hecton8.Audio
 
             EnsureBuffers(requestedCapacity);
             _nativeOutputBridgeFailureLogged = false;
-            ClearNativeOutputBridge();
+            RefreshNativeOutputBridge();
 
             if (shouldRestartWorker && isActiveAndEnabled)
                 StartAudioProducerThread();
@@ -7174,7 +7240,7 @@ namespace Hecton8.Audio
                 if (!_nativeOutputBridgeFailureLogged)
                 {
                     _nativeOutputBridgeFailureLogged = true;
-                    Debug.LogError(
+                    Hecton8.Core.H8Debug.LogError(
                         "[PlayerCriticalProceduralAudioRenderer] Native HectonAudioKernel descriptor rejected before registration.",
                         this);
                 }
@@ -7182,7 +7248,7 @@ namespace Hecton8.Audio
                 return;
             }
 
-            bool registered = HectonSensoryKernelNativeBridge.TryRegister(ref descriptor, out NativeAudioKernelBridgeStatus bridgeStatus);
+            bool registered = HectonSensoryKernelNativeBridge.TryRegisterWithRetryGate(ref descriptor, out NativeAudioKernelBridgeStatus bridgeStatus);
             _nativeOutputRegistered = registered;
             if (registered)
             {
@@ -7194,11 +7260,12 @@ namespace Hecton8.Audio
             if (!_nativeOutputBridgeFailureLogged)
             {
                 _nativeOutputBridgeFailureLogged = true;
-                Debug.LogError(
+                Hecton8.Core.H8Debug.LogError(
                     "[PlayerCriticalProceduralAudioRenderer] Native HectonAudioKernel bridge unavailable. Procedural master-bus output is not registered.",
                     this);
             }
 #endif
+            _sampleRingBuffer.RecordBridgeFailure(bridgeStatus);
         }
 
         private void ClearNativeOutputBridge()
@@ -7381,7 +7448,7 @@ namespace Hecton8.Audio
             {
                 Valid = 1,
                 Excitation = echoExcitation,
-                ExpireAt = Time.unscaledTime + ImpactEchoMaximumLifetimeSeconds
+                ExpireAt = ResolvePresentationClockSeconds() + ImpactEchoMaximumLifetimeSeconds
             };
         }
 
@@ -7390,7 +7457,7 @@ namespace Hecton8.Audio
             if (_pendingImpactEchoProbe.Valid == 0)
                 return;
 
-            if (Time.unscaledTime > _pendingImpactEchoProbe.ExpireAt)
+            if (ResolvePresentationClockSeconds() > _pendingImpactEchoProbe.ExpireAt)
             {
                 _pendingImpactEchoProbe = default;
                 return;
@@ -7456,6 +7523,11 @@ namespace Hecton8.Audio
                 0.92f);
             echoLowPassCutoffHz = forwardEcho.LowPassCutoffHz;
             return echoAttenuation > 0.0001f;
+        }
+
+        private static float ResolvePresentationClockSeconds()
+        {
+            return (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
         }
 
         private void UpdateAcousticThreatPulse()
@@ -8759,7 +8831,7 @@ namespace Hecton8.Audio
             }
 
             _playerContextLookupFrame = frame;
-            playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            playerContext = GlobalRegistry.Player;
             _playerRuntimeContext = playerContext != null && playerContext.IsInitialized ? playerContext : null;
             return _playerRuntimeContext;
         }
@@ -9005,7 +9077,7 @@ namespace Hecton8.Audio
 
         private float ResolveDiveAttack01()
         {
-            Vector3 velocity = PhysicsDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityAudioMaxAgeFrames, out Vector3 kccVelocity)
+            Vector3 velocity = CoreDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityAudioMaxAgeFrames, out Vector3 kccVelocity)
                 ? kccVelocity
                 : Vector3.zero;
             float downwardSpeed = math.max(0f, -velocity.y);

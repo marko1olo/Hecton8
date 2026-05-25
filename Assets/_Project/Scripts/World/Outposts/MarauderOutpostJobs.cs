@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Hecton8.Logistics.Grid.Contracts;
 using Hecton8.World;
 using Unity.Burst;
@@ -153,7 +154,7 @@ namespace Hecton8.World.Outposts
         [NoAlias] public NativeArray<byte> WfcGrid;
         public int3 Dimensions;
         public uint Seed;
-        public byte LowTier;
+        public float GlobalQualityWeight;
 
         public void Execute()
         {
@@ -199,7 +200,8 @@ namespace Hecton8.World.Outposts
                 if (spine)
                     return MarauderOutpostConstants.Corridor;
 
-                if ((hash & 0x0Fu) < (LowTier != 0 ? 5u : 8u))
+                uint groundDensityThreshold = ResolveGroundRoomDensityThreshold();
+                if ((hash & 0x0Fu) < groundDensityThreshold)
                     return (hash & 0x30u) == 0x10u ? MarauderOutpostConstants.Datapad : MarauderOutpostConstants.Room;
 
                 return MarauderOutpostConstants.Empty;
@@ -212,11 +214,24 @@ namespace Hecton8.World.Outposts
             if (spine && y == 1 && (hash & 0x07u) < 5u)
                 return MarauderOutpostConstants.Hatch;
 
-            uint threshold = LowTier != 0 ? 1u : (uint)math.max(1, 5 - y);
+            uint threshold = ResolveUpperRoomDensityThreshold(y);
             if ((hash & 0x0Fu) < threshold)
                 return (hash & 0x20u) != 0 ? MarauderOutpostConstants.Window : MarauderOutpostConstants.Room;
 
             return MarauderOutpostConstants.Empty;
+        }
+
+        private uint ResolveGroundRoomDensityThreshold()
+        {
+            float q = MathLodApproximation.SmoothStep01(MathLodApproximation.SaturateFinite(GlobalQualityWeight, 1f));
+            return (uint)math.clamp((int)math.round(math.lerp(5f, 8f, q)), 5, 8);
+        }
+
+        private uint ResolveUpperRoomDensityThreshold(int y)
+        {
+            float q = MathLodApproximation.SmoothStep01(MathLodApproximation.SaturateFinite(GlobalQualityWeight, 1f));
+            float highQualityThreshold = math.max(1f, 5f - y);
+            return (uint)math.clamp((int)math.round(math.lerp(1f, highQualityThreshold, q)), 1, 5);
         }
 
         private void EnforceFloorSupport()
@@ -303,7 +318,7 @@ namespace Hecton8.World.Outposts
         public float StiltClearanceMeters;
         public float OutpostAge01;
         public uint Seed;
-        public byte LowTier;
+        public float GlobalQualityWeight;
 
         public void Execute()
         {
@@ -390,7 +405,8 @@ namespace Hecton8.World.Outposts
             if (index >= ShellMatrices.Length)
                 return;
 
-            float clampedHeight = math.min(supportHeight, LowTier != 0 ? 10f : 20f);
+            float supportHeightCap = ResolveSupportHeightCap();
+            float clampedHeight = math.min(supportHeight, supportHeightCap);
             float3 position = new float3(cellPosition.x, terrainHeight + clampedHeight * 0.5f, cellPosition.z);
             float width = math.max(0.18f, CellSizeMeters * 0.16f);
             ShellMatrices[index] = float4x4.TRS(position, quaternion.identity, new float3(width, clampedHeight, width));
@@ -398,6 +414,12 @@ namespace Hecton8.World.Outposts
                                ((uint)math.round(math.saturate(OutpostAge01) * 255f) << 24);
             Counters[0] = index + 1;
             Counters[3] = Counters[3] + 1;
+        }
+
+        private float ResolveSupportHeightCap()
+        {
+            float q = MathLodApproximation.SmoothStep01(MathLodApproximation.SaturateFinite(GlobalQualityWeight, 1f));
+            return math.lerp(10f, 20f, q);
         }
 
         private void AppendInteractable(float3 position, int x, int z, int cellIndex, byte kind, byte packed, byte mutable)

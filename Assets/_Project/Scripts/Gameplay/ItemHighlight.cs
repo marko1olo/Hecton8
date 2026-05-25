@@ -36,7 +36,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Renderer))]
-    public sealed class ItemHighlight : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class ItemHighlight : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
@@ -173,7 +173,7 @@ namespace Hecton8.Gameplay
         //  ITickable
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        public void Tick(float deltaTime)
+        private void AdvanceHighlight(float deltaTime)
         {
             if (targetRenderer == null) return;
 
@@ -232,6 +232,7 @@ namespace Hecton8.Gameplay
 
         public void LateFrameTick()
         {
+            AdvanceHighlight(SystemDispatcher.CurrentFrameDeltaTime);
             FlushHighlightProperties();
         }
 
@@ -268,7 +269,6 @@ namespace Hecton8.Gameplay
             if (_tickRegistered) return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
-            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             if (!_lateFrameRegistered)
                 _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
@@ -281,15 +281,12 @@ namespace Hecton8.Gameplay
                 _lateFrameRegistered = false;
             }
 
-            if (!_tickRegistered) return;
-
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = false;
         }
 
         private void CachePlayerContextCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedPlayerMovement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
         }
 

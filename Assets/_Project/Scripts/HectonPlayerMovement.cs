@@ -28,7 +28,6 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Audio;
 using Hecton8.Environment;
 using Hecton8.Interaction;
-using Hecton8.Physics;
 using Hecton8.UI;
 using Hecton8.Meta;
 using Hecton8.Tools;
@@ -47,7 +46,9 @@ using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Serialization;
 using BrineLayerSample = Hecton8.Core.Contracts.BrineLayerSample;
-using PhysicsOceanKinematics = Hecton8.Physics.IHectonOceanKinematics;
+using BuoyancyObject = Hecton8.Physics.BuoyancyObject;
+using HectonPhysicsContract = Hecton8.Core.Contracts.HectonPhysicsContract;
+using PhysicsOceanKinematics = Hecton8.Core.Contracts.IHectonOceanKinematics;
 
 namespace Hecton8.Gameplay
 {
@@ -294,7 +295,7 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 80f)] private float surfaceBreachGravitySpikeAcceleration = 32f;
         [Tooltip("How long the heavy breach gravity spike remains active after the delay expires.")]
         [SerializeField, Range(0.05f, 1f)] private float surfaceBreachGravitySpikeDuration = 0.8f;
-        [Tooltip("Kinetic-energy multiplier sent to FluidFeedbackEvents for high-speed upward breaches.")]
+        [Tooltip("Kinetic-energy multiplier sent to the splash feedback signal lane for high-speed upward breaches.")]
         [SerializeField, Range(1f, 12f)] private float surfaceBreachSplashEnergyScale = 4f;
         [Tooltip("Extra damping applied against downward velocity while breaking through the surface.")]
         [SerializeField, Range(0f, 20f)] private float surfaceDiveResistanceDamping = 4.5f;
@@ -1136,6 +1137,7 @@ namespace Hecton8.Gameplay
 
         private Rigidbody _rb;
         private BuoyancyObject _buoyancy;
+        private IBuoyancyAirStateReadModel _buoyancyAirState;
         private CapsuleCollider _capsuleCollider;
         private Transform _cachedTransform;
         private Camera _cameraComponent;
@@ -1157,6 +1159,9 @@ namespace Hecton8.Gameplay
         private IGasDynamicsSolver _gasDynamicsRuntime;
         private IFluidSurfaceCurrentReadModel _fluidSurfaceRuntime;
         private IAbyssalFlowGpuReadModel _abyssalFlowGpuRuntime;
+        private IAmbientCurrentReadModel _ambientCurrentReadModel;
+        private IPhysicsService _physicsService;
+        private IPhysicsStateEventService _physicsStateEvents;
         private IInputService _inputServiceRuntime;
         private IPlayerInventoryService _playerInventoryService;
         private HectonVoxelEngine _voxelEngineRuntime;
@@ -1681,7 +1686,7 @@ namespace Hecton8.Gameplay
             if (newSuit == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[HectonPlayerMovement] null suit.", this);
+                Hecton8.Core.H8Debug.LogWarning("[HectonPlayerMovement] null suit.", this);
 #endif
                 return;
             }
@@ -1920,7 +1925,7 @@ namespace Hecton8.Gameplay
         private Vector3 ResolveAuthoritativeLinearVelocity(Vector3 fallback)
         {
             if (HydrodynamicKccOwnsCollisionAuthority &&
-                PhysicsDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityMovementMaxAgeFrames, out Vector3 kccVelocity))
+                CoreDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityMovementMaxAgeFrames, out Vector3 kccVelocity))
             {
                 return HectonPlayerMotor.SafeVelocity(kccVelocity, fallback);
             }
@@ -2658,7 +2663,16 @@ namespace Hecton8.Gameplay
             if (safeVelocityChange.sqrMagnitude < SpeculativeCcdImpulseThresholdMetersPerSecondSq)
                 return;
 
-            GlobalPhysicsStateManager.ArmSpeculativeCcdForImpulse(_rb);
+            IPhysicsStateEventService physicsStateEvents = _physicsStateEvents ?? GlobalRegistry.PhysicsStateEvents;
+            physicsStateEvents?.ArmSpeculativeCcdForImpulse(_rb);
+        }
+
+        private float ResolveSpeculativeHoverHeightMeters(float baseHeightMeters, float timeSeconds)
+        {
+            IPhysicsStateEventService physicsStateEvents = _physicsStateEvents ?? GlobalRegistry.PhysicsStateEvents;
+            return physicsStateEvents != null
+                ? physicsStateEvents.ResolveSpeculativeHoverHeightMeters(baseHeightMeters, timeSeconds)
+                : math.max(0f, baseHeightMeters);
         }
 
         private void MoveMotorPosition(Vector3 position)
@@ -3914,7 +3928,7 @@ namespace Hecton8.Gameplay
         public void OnDependencyInject()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _settingsRuntime = GlobalRegistry.Settings;
             _localizationRuntime = GlobalRegistry.LocalizationStressPresentation;
             _localizationStressHudRefreshSink = GlobalRegistry.LocalizationStressHudRefreshSink;
@@ -3923,6 +3937,9 @@ namespace Hecton8.Gameplay
             _gasDynamicsRuntime = GlobalRegistry.GasDynamics;
             _fluidSurfaceRuntime = GlobalRegistry.FluidSurfaceCurrent;
             _abyssalFlowGpuRuntime = GlobalRegistry.AbyssalFlowGpu;
+            _ambientCurrentReadModel = GlobalRegistry.AmbientCurrent;
+            _physicsService = GlobalRegistry.Physics;
+            _physicsStateEvents = GlobalRegistry.PhysicsStateEvents;
             _inputServiceRuntime = GlobalRegistry.Input;
             _playerInventoryService = GlobalRegistry.PlayerInventory;
             _voxelEngineRuntime = GlobalRegistry.VoxelEngine;
@@ -3987,6 +4004,13 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.FluidRuntime:
                     _fluidSurfaceRuntime = currentService as IFluidSurfaceCurrentReadModel;
                     _abyssalFlowGpuRuntime = currentService as IAbyssalFlowGpuReadModel;
+                    _ambientCurrentReadModel = currentService as IAmbientCurrentReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.Physics:
+                    _physicsService = currentService as IPhysicsService;
+                    break;
+                case GlobalRegistryServiceSlot.PhysicsStateManager:
+                    _physicsStateEvents = currentService as IPhysicsStateEventService;
                     break;
                 case GlobalRegistryServiceSlot.Input:
                     _inputServiceRuntime = currentService as IInputService;
@@ -4115,6 +4139,7 @@ namespace Hecton8.Gameplay
             _playerColliderInstanceId = _capsuleCollider != null ? unchecked((int)EntityId.ToULong(_capsuleCollider.GetEntityId())) : 0;
             _instanceId = ResolveStableEntitySeed32(gameObject);
             TryGetComponent(out _buoyancy);
+            _buoyancyAirState = _buoyancy as IBuoyancyAirStateReadModel;
             TryGetComponent(out _swimPresentationController);
             TryGetComponent(out _physicalInteractionHandler);
             if (!TryGetComponent(out _heavyTowWinch))
@@ -4802,9 +4827,12 @@ namespace Hecton8.Gameplay
             _ladderSplineSnapActive = false;
             _ladderSplineSnapAxisWorld = Vector3.zero;
             _aupSpeculativeHoverTicks = SpeculativeHoverFixedTicksAfterAupShift;
-            _aupSpeculativeHoverHeightMeters = GlobalPhysicsStateManager.ResolveSpeculativeHoverHeightMeters(
-                SpeculativeHoverBaseHeightMeters,
-                _currentTimer);
+            IPhysicsStateEventService physicsStateEvents = _physicsStateEvents ?? GlobalRegistry.PhysicsStateEvents;
+            _aupSpeculativeHoverHeightMeters = physicsStateEvents != null
+                ? physicsStateEvents.ResolveSpeculativeHoverHeightMeters(
+                    SpeculativeHoverBaseHeightMeters,
+                    _currentTimer)
+                : SpeculativeHoverBaseHeightMeters;
 
             _lastTransportPlatformPosition -= shiftOffset;
             _currentTransportPlatformPosition -= shiftOffset;
@@ -6870,6 +6898,15 @@ namespace Hecton8.Gameplay
             return _oceanKinematics;
         }
 
+        private Vector3 SampleAuthoredAmbientCurrent(Vector3 samplePosition)
+        {
+            IAmbientCurrentReadModel ambientCurrent = _ambientCurrentReadModel;
+            if (ambientCurrent != null && ambientCurrent.TrySampleAuthoredCurrent(samplePosition, out Vector3 current))
+                return current;
+
+            return Vector3.zero;
+        }
+
         private PlayerTransportOccupancyMode ResolveActiveTransportOccupancyMode()
         {
             ResolvePlayerTransportCoordinator();
@@ -7435,8 +7472,9 @@ namespace Hecton8.Gameplay
             if (_playerMotor != null)
                 _playerMotor.SetLinearVelocity(Vector3.zero);
 
-            if (_rb != null)
-                Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(_rb, Vector3.zero, wake: false);
+            IPhysicsService physicsService = _physicsService;
+            if (_rb != null && physicsService != null)
+                physicsService.QueueAngularVelocitySet(_rb, Vector3.zero, wake: false);
 
             ResetRenderInterpolationHistoryForTeleport();
         }
@@ -8453,7 +8491,7 @@ namespace Hecton8.Gameplay
             catch (System.Exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[CinematicFocus] Failed to dump blackbox.");
+                Hecton8.Core.H8Debug.LogError("[CinematicFocus] Failed to dump blackbox.");
 #endif
             }
         }
@@ -9076,7 +9114,7 @@ namespace Hecton8.Gameplay
             PushMovementStaminaBurnInput();
             ApplyVoxelNoClipFailsafe(exosuitKinematicAuthority);
             CaptureFixedInterpolationState();
-            UIStateStore.WriteValue(UIValueSlotId.MovementSpeed, ApproximateVectorMagnitude(safeVelocity), Time.unscaledTime);
+            UIStateStore.WriteValue(UIValueSlotId.MovementSpeed, ApproximateVectorMagnitude(safeVelocity), (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds);
             UpdateGroundDiagnostics();
             _useFixedFrameSpatialCache = false;
             }
@@ -9213,7 +9251,7 @@ namespace Hecton8.Gameplay
 
         private bool IsInDryInterior()
         {
-            return _buoyancy != null && _buoyancy.IsInDryZone;
+            return _buoyancyAirState != null && _buoyancyAirState.IsInDryZone;
         }
 
         private bool ResolveSurfaceSwimState(float physicsImmersion, PlayerTransportPreset transportPreset)
@@ -9771,7 +9809,7 @@ namespace Hecton8.Gameplay
                 float transportInfluence = ResolveTransportAmbientCurrentInfluenceScale(transportPreset);
                 if (transportInfluence > 0.0001f)
                 {
-                    Vector3 sampledCurrent = Hecton8.Physics.CurrentVolume.SampleAt(ResolvePlayerAupRuntimePosition());
+                    Vector3 sampledCurrent = SampleAuthoredAmbientCurrent(ResolvePlayerAupRuntimePosition());
                     if (sampledCurrent.y > thermalUpdraftSpeedThreshold)
                     {
                         float currentIntensity = math.saturate(
@@ -10104,7 +10142,7 @@ namespace Hecton8.Gameplay
         private Vector3 ResolveAbyssalAmbientFlowWithNoise()
         {
             Vector3 worldPosition = ResolvePlayerAupRuntimePosition();
-            Vector3 horizontalBias = Hecton8.Physics.CurrentVolume.SampleAt(worldPosition) + EffectiveWaterFlowVelocity;
+            Vector3 horizontalBias = SampleAuthoredAmbientCurrent(worldPosition) + EffectiveWaterFlowVelocity;
             Unity.Mathematics.float3 phantomCurrent = CurrentManager.SampleCurrent(
                 worldPosition,
                 _currentTimer + _instanceId * 0.0131f,
@@ -10633,7 +10671,7 @@ namespace Hecton8.Gameplay
                         SampleIndex = -1
                     };
 
-                    FluidFeedbackEvents.TryPublishSplashQueued(in splashEvent);
+                    SignalBus<SplashEvent>.TryPushTracked(in splashEvent, ref _signalPushDropCount);
                 }
             }
 
@@ -11138,7 +11176,7 @@ namespace Hecton8.Gameplay
             float speculativeHoverHeight = speculativeHoverAllowed
                 ? math.max(
                     GroundCheckSkin,
-                    GlobalPhysicsStateManager.ResolveSpeculativeHoverHeightMeters(
+                    ResolveSpeculativeHoverHeightMeters(
                         math.max(_aupSpeculativeHoverHeightMeters, SpeculativeHoverBaseHeightMeters),
                         _currentTimer))
                 : 0f;
@@ -11560,7 +11598,9 @@ namespace Hecton8.Gameplay
             _playerMotor.SetLinearVelocity(new Vector3(deltaVelocity.x, deltaVelocity.y, deltaVelocity.z));
 
             Vector3 outwardVelocityChange = wallNormal * (wallKickVelocityChange + inwardNormalSpeed);
-            PhysicsForceRouter.QueueForce(_rb, outwardVelocityChange, ForceMode.VelocityChange);
+            IPhysicsService physicsService = _physicsService;
+            if (physicsService != null)
+                physicsService.QueueForce(_rb, outwardVelocityChange, ForceMode.VelocityChange);
             DrainWallKickResources();
             _isGrounded = false;
             _isAirborne = true;
@@ -11679,7 +11719,8 @@ namespace Hecton8.Gameplay
             }
 
             float busSpeed = blockedSpeed * math.max(0f, suitScrapeImpactBusSpeedScale) * math.max(0.15f, scrapeT);
-            GlobalPhysicsStateManager.QueueKinematicImpact(
+            IPhysicsStateEventService physicsStateEvents = _physicsStateEvents ?? GlobalRegistry.PhysicsStateEvents;
+            physicsStateEvents?.QueueKinematicImpact(
                 _rb,
                 hitPoint,
                 wallNormal,
@@ -12009,13 +12050,13 @@ namespace Hecton8.Gameplay
             if (collider == null)
                 return false;
 
-            if (collider.TryGetComponent(out IPhysicsImpactMaterialProvider directProvider))
+            if (collider.TryGetComponent(out Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider directProvider))
             {
                 materialId = directProvider.ImpactAudioMaterialId;
                 return true;
             }
 
-            IPhysicsImpactMaterialProvider parentProvider = collider.GetComponentInParent<IPhysicsImpactMaterialProvider>();
+            Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider parentProvider = collider.GetComponentInParent<Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider>();
             if (parentProvider == null)
                 return false;
 
@@ -12888,7 +12929,7 @@ namespace Hecton8.Gameplay
                     0.12f,
                     strength,
                     0.2f);
-                Vector3 localVolumeCurrent = Hecton8.Physics.CurrentVolume.SampleAt(currentPosition) * ambientAdvectionScale;
+                Vector3 localVolumeCurrent = SampleAuthoredAmbientCurrent(currentPosition) * ambientAdvectionScale;
                 ambientCurrentX = phantom.x + localVolumeCurrent.x;
                 ambientCurrentY = phantom.y + localVolumeCurrent.y;
                 ambientCurrentZ = phantom.z + localVolumeCurrent.z;

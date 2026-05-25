@@ -408,7 +408,7 @@ namespace Hecton8.Animation.Locomotion
         {
             RebindDataVault(GlobalRegistry.DataVault, ensureBuffers: false);
             _cachedMovementForceSink = GlobalRegistry.PlayerMovementContracts as IPlayerMovementForceSink;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
         }
 
         private bool CacheVaultDependency()
@@ -755,7 +755,7 @@ namespace Hecton8.Animation.Locomotion
                 LowerArmMeters = LadderClimbIkConstants.DefaultLowerArmMeters,
                 Stamina01 = _stamina01,
                 LadderIndex = 0,
-                Frame = Time.frameCount,
+                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                 Flags = flags
             };
 
@@ -1042,7 +1042,7 @@ namespace Hecton8.Animation.Locomotion
                 ? math.saturate(_climbProgressMeters * math.rcp(_climbHeightMeters))
                 : 0f;
             byte state = climbing || terminalSlip ? PlayerStateSignal.StateClimbing : PlayerStateSignal.StateNone;
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             int progressMillimeters = QuantizeProgressMillimeters();
             if (_hasPublishedClimbState &&
                 _lastPublishedClimbFrame == frame &&

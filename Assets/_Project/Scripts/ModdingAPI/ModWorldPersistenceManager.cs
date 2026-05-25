@@ -185,7 +185,7 @@ namespace Hecton8.Modding
             if (prefab == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[ModWorldPersistenceManager] Prefab '{assetName}' for mod '{modId}' could not be resolved.");
+                Hecton8.Core.H8Debug.LogWarning($"[ModWorldPersistenceManager] Prefab '{assetName}' for mod '{modId}' could not be resolved.");
 #endif
                 return null;
             }
@@ -194,7 +194,7 @@ namespace Hecton8.Modding
             if (pool == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[ModWorldPersistenceManager] GlobalRegistry.ObjectPoolService is unavailable. Persistent mod spawn was rejected.");
+                Hecton8.Core.H8Debug.LogWarning("[ModWorldPersistenceManager] GlobalRegistry.ObjectPoolService is unavailable. Persistent mod spawn was rejected.");
 #endif
                 return null;
             }
@@ -298,7 +298,7 @@ namespace Hecton8.Modding
             catch (Exception exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[ModWorldPersistenceManager] Failed to parse mod world payload: {exception.Message}");
+                Hecton8.Core.H8Debug.LogWarning($"[ModWorldPersistenceManager] Failed to parse mod world payload: {exception.Message}");
 #endif
                 _restorePending = false;
                 return;
@@ -376,7 +376,7 @@ namespace Hecton8.Modding
                 if (prefab == null)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         $"[ModWorldPersistenceManager] Restore skipped '{record.SpawnId}': prefab '{record.AssetName}' for mod '{record.ModId}' was not found.");
 #endif
                     continue;
@@ -564,7 +564,7 @@ namespace Hecton8.Modding
 
         private void RefreshColdRegistryDependencies()
         {
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
         }
 
         private void TryRegisterHotSwapListener()

@@ -1,13 +1,15 @@
 using System;
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Interaction;
-using Hecton8.Physics;
 using Hecton8.Tools;
 using Hecton8.UI;
 using Hecton8.World;
 using System.Collections.Generic;
+using HectonFluidEngine = global::Hecton8.Physics.HectonFluidEngine;
+using SubmarineStructuralGrid = global::Hecton8.Physics.SubmarineStructuralGrid;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -62,6 +64,7 @@ namespace Hecton8.Gameplay
         private const float DegreesToRadians = 0.01745329252f;
         private const int MaxDamageReceivers = 4;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
+        private const uint KccVelocityTransportRiderMaxAgeFrames = 12u;
 
         [Header("-- Preset ---------------------------")]
         [Tooltip("Shared transport preset driving locomotion, prompts, and feel.")]
@@ -186,6 +189,8 @@ namespace Hecton8.Gameplay
         private VehicleMotor _vehicleMotor;
         private IInputService _cachedInputService;
         private IAudioService _cachedAudioService;
+        private IPhysicsService _cachedPhysicsService;
+        private IPhysicsStateEventService _cachedPhysicsStateEvents;
         private SubmarineAutoLevelBallastController _submarineAutoLevelController;
         private PlayerTransportFeelContract _transportFeelContract;
         private VehicleUpgradeModule _vehicleUpgradeModule;
@@ -206,7 +211,6 @@ namespace Hecton8.Gameplay
         private Quaternion _riderAnchorLocalRotation = Quaternion.identity;
 
         private Transform _riderTransform;
-        private Rigidbody _riderBody;
         private HectonPlayerMotor _riderMotor;
         private HectonPlayerMovement _riderMovement;
         private HectonSurvivalSystem _riderSurvival;
@@ -540,7 +544,7 @@ namespace Hecton8.Gameplay
                 _bailoutDriftTimer = 0f;
 
             ApplyBailoutDriftDamping(fixedDeltaTime);
-            PhysicsForceRouter.QueueForce(
+            _cachedPhysicsService?.QueueForce(
                 _transportBody,
                 Vector3.down * bailoutSinkAcceleration * fixedDeltaTime,
                 ForceMode.VelocityChange);
@@ -846,7 +850,6 @@ namespace Hecton8.Gameplay
             ClearRiderReferences();
 
             _riderTransform = interactor;
-            _riderTransform.TryGetComponent(out _riderBody);
             _riderTransform.TryGetComponent(out _riderMotor);
             _riderTransform.TryGetComponent(out _riderMovement);
             _riderTransform.TryGetComponent(out _riderSurvival);
@@ -862,7 +865,6 @@ namespace Hecton8.Gameplay
         private void ClearRiderReferences()
         {
             _riderTransform = null;
-            _riderBody = null;
             _riderMotor = null;
             _riderMovement = null;
             _riderSurvival = null;
@@ -1431,12 +1433,6 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (_riderBody != null)
-            {
-                PhysicsForceRouter.QueuePoseSet(_riderBody, targetPosition, targetRotation);
-                return;
-            }
-
             QueueTransformPose(_riderTransform, targetPosition, targetRotation);
         }
 
@@ -1463,22 +1459,22 @@ namespace Hecton8.Gameplay
 
         private void SyncMountedRiderVelocity()
         {
-            if (_riderBody == null)
+            if (_riderMotor == null || _riderTransform == null)
                 return;
 
-            Vector3 riderPosition = _riderTransform != null ? _riderTransform.position : _riderBody.position;
+            Vector3 riderPosition = _riderTransform.position;
             Vector3 platformVelocity = GetPlatformPointVelocity(riderPosition);
-            ApplyRiderMotorVelocity(_riderBody, platformVelocity);
-            PhysicsForceRouter.QueueAngularVelocitySet(_riderBody, HectonPlayerMotor.SafeVelocity(Vector3.zero), wake: false);
+            ApplyRiderMotorVelocity(platformVelocity);
+            _riderMotor.SetAngularVelocity(HectonPlayerMotor.SafeVelocity(Vector3.zero), wake: false);
         }
 
-        private static void ApplyRiderMotorVelocity(Rigidbody body, Vector3 velocity)
+        private void ApplyRiderMotorVelocity(Vector3 velocity)
         {
-            if (body != null && body.TryGetComponent(out HectonPlayerMotor playerMotor))
-                playerMotor.SetLinearVelocity(HectonPlayerMotor.SafeVelocity(velocity));
+            if (_riderMotor != null)
+                _riderMotor.SetLinearVelocity(HectonPlayerMotor.SafeVelocity(velocity));
         }
 
-        private static void QueueBodyVelocityTarget(Rigidbody body, Vector3 targetVelocity)
+        private void QueueBodyVelocityTarget(Rigidbody body, Vector3 targetVelocity)
         {
             if (body == null || body.isKinematic)
                 return;
@@ -1486,7 +1482,7 @@ namespace Hecton8.Gameplay
             Vector3 currentVelocity = HectonPlayerMotor.SafeVelocity(body.linearVelocity);
             Vector3 safeTargetVelocity = HectonPlayerMotor.SafeVelocity(targetVelocity, currentVelocity);
             if ((safeTargetVelocity - currentVelocity).sqrMagnitude > 0.0000001f)
-                PhysicsForceRouter.QueueLinearVelocitySet(body, safeTargetVelocity);
+                _cachedPhysicsService?.QueueLinearVelocitySet(body, safeTargetVelocity);
         }
 
         private void ResolveAnchorCache()
@@ -1745,7 +1741,7 @@ namespace Hecton8.Gameplay
             _mountedImpactFeedbackCooldownSeconds = 0.12f;
             Vector3 impactPoint = _vehicleMotor.LastBlockingImpactPoint;
             Vector3 impactNormal = _vehicleMotor.LastBlockingImpactNormal;
-            GlobalPhysicsStateManager.QueueKinematicImpact(_transportBody, impactPoint, impactNormal, impactSpeed);
+            _cachedPhysicsStateEvents?.QueueKinematicImpactEvent(_transportBody, null, impactPoint, impactNormal, impactSpeed);
             QueueSubmarineImpactVisualFeedback(impactSpeed, impactPoint, impactNormal);
             ApplyTransportCollisionImpact(impactSpeed, impactPoint, impactNormal);
         }
@@ -1812,7 +1808,7 @@ namespace Hecton8.Gameplay
             }
 
             _transportBody.isKinematic = true;
-            PhysicsForceRouter.QueueAngularVelocitySet(_transportBody, Vector3.zero, wake: false);
+            _cachedPhysicsService?.QueueAngularVelocitySet(_transportBody, Vector3.zero, wake: false);
             if (_vehicleMotor != null)
                 _vehicleMotor.ResetRuntimeState();
         }
@@ -1951,9 +1947,7 @@ namespace Hecton8.Gameplay
 
             ClearMacroFloraEntanglement();
 
-            Vector3 exitPosition = _riderBody != null
-                ? _riderBody.position
-                : (_riderTransform != null ? _riderTransform.position : _cachedTransform.position);
+            Vector3 exitPosition = _riderTransform != null ? _riderTransform.position : _cachedTransform.position;
             Quaternion exitRotation = _riderTransform != null ? _riderTransform.rotation : _cachedTransform.rotation;
             if (placeRiderAtExit)
                 ResolveDismountPose(out exitPosition, out exitRotation);
@@ -1986,12 +1980,17 @@ namespace Hecton8.Gameplay
         private bool TryResolveRiderExitVelocity(Vector3 exitPosition, out Vector3 exitVelocity)
         {
             exitVelocity = Vector3.zero;
-            if (_riderBody == null)
+            if (_riderTransform == null)
                 return false;
 
-            Vector3 riderPosition = _riderTransform != null ? _riderTransform.position : _riderBody.position;
+            Vector3 riderPosition = _riderTransform.position;
             Vector3 platformVelocityAtRider = GetPlatformPointVelocity(riderPosition);
-            Vector3 riderRelativeVelocity = _riderBody.linearVelocity - platformVelocityAtRider;
+            Vector3 riderVelocity = CoreDeterminismSignals.TryGetLatestKccVelocityVector(
+                KccVelocityTransportRiderMaxAgeFrames,
+                out Vector3 kccVelocity)
+                ? kccVelocity
+                : platformVelocityAtRider;
+            Vector3 riderRelativeVelocity = HectonPlayerMotor.SafeVelocity(riderVelocity - platformVelocityAtRider);
             Vector3 platformVelocityAtExit = GetPlatformPointVelocity(exitPosition);
             Vector3 candidateVelocity = platformVelocityAtExit + riderRelativeVelocity;
             if (!IsFiniteVector(candidateVelocity))
@@ -2003,10 +2002,10 @@ namespace Hecton8.Gameplay
 
         private void ApplyRiderExitVelocity(Vector3 exitVelocity)
         {
-            if (_riderBody == null || !IsFiniteVector(exitVelocity))
+            if (_riderMotor == null || !IsFiniteVector(exitVelocity))
                 return;
 
-            ApplyRiderMotorVelocity(_riderBody, exitVelocity);
+            ApplyRiderMotorVelocity(exitVelocity);
         }
 
         private void BeginEmergencyBailoutDrift(Vector3 inheritedVelocity, float severity)
@@ -2027,7 +2026,7 @@ namespace Hecton8.Gameplay
             QueueBodyVelocityTarget(
                 _transportBody,
                 inheritedVelocity * math.lerp(0.88f, 1.04f, math.saturate(severity)));
-            PhysicsForceRouter.QueueAngularVelocitySet(
+            _cachedPhysicsService?.QueueAngularVelocitySet(
                 _transportBody,
                 HectonPlayerMotor.SafeVelocity(
                     new Vector3(0f, math.lerp(0.6f, 2.2f, math.saturate(severity)), 0f),
@@ -2148,7 +2147,7 @@ namespace Hecton8.Gameplay
             Vector3 dampedLinearVelocity = _transportBody.linearVelocity / linearDenominator;
             Vector3 dampedAngularVelocity = _transportBody.angularVelocity / angularDenominator;
             QueueBodyVelocityTarget(_transportBody, dampedLinearVelocity);
-            PhysicsForceRouter.QueueAngularVelocitySet(
+            _cachedPhysicsService?.QueueAngularVelocitySet(
                 _transportBody,
                 HectonPlayerMotor.SafeVelocity(dampedAngularVelocity, _transportBody.angularVelocity));
         }
@@ -2200,7 +2199,9 @@ namespace Hecton8.Gameplay
             object currentService)
         {
             if (serviceSlot != GlobalRegistryServiceSlot.Input &&
-                serviceSlot != GlobalRegistryServiceSlot.Audio)
+                serviceSlot != GlobalRegistryServiceSlot.Audio &&
+                serviceSlot != GlobalRegistryServiceSlot.Physics &&
+                serviceSlot != GlobalRegistryServiceSlot.PhysicsStateManager)
             {
                 return;
             }
@@ -2211,7 +2212,9 @@ namespace Hecton8.Gameplay
         private void RefreshCachedRegistryServices()
         {
             _cachedInputService = GlobalRegistry.Input;
-            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _cachedAudioService = GlobalRegistry.Audio;
+            _cachedPhysicsService = GlobalRegistry.Physics;
+            _cachedPhysicsStateEvents = GlobalRegistry.PhysicsStateEvents;
         }
 
         private void TryRegisterHotSwapListener()

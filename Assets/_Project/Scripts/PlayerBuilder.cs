@@ -42,7 +42,6 @@ using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Construction;
-using Hecton8.Physics;
 using Hecton8.UI;
 using Hecton8.World;
 using Unity.Collections;
@@ -345,7 +344,7 @@ namespace Hecton8.Building
             if (activeBuildable == null || activeBuildable.finalPrefab == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: no active buildable/final prefab.");
+                Hecton8.Core.H8Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: no active buildable/final prefab.");
 #endif
                 return false;
             }
@@ -353,7 +352,7 @@ namespace Hecton8.Building
             if (!IsBuildableBlueprintViewable(activeBuildable))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: blueprint locked.");
+                Hecton8.Core.H8Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: blueprint locked.");
 #endif
                 return false;
             }
@@ -361,7 +360,7 @@ namespace Hecton8.Building
             if (consumeCost && !HasResources(activeBuildable))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: missing resources for active buildable.");
+                Hecton8.Core.H8Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: missing resources for active buildable.");
 #endif
                 return false;
             }
@@ -369,7 +368,7 @@ namespace Hecton8.Building
             if (!TryGetObjectPool(out IObjectPoolService pool))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: ObjectPoolManager unavailable.");
+                Hecton8.Core.H8Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: ObjectPoolManager unavailable.");
 #endif
                 return false;
             }
@@ -378,7 +377,7 @@ namespace Hecton8.Building
             if (spawned == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: failed to spawn active buildable.");
+                Hecton8.Core.H8Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: failed to spawn active buildable.");
 #endif
                 return false;
             }
@@ -400,7 +399,7 @@ namespace Hecton8.Building
                         pool.Despawn(spawned);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: resource transaction failed.");
+                    Hecton8.Core.H8Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: resource transaction failed.");
 #endif
                     return false;
                 }
@@ -995,7 +994,7 @@ namespace Hecton8.Building
             if (activeBuildable == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[PlayerBuilder] No buildable module assigned!");
+                Hecton8.Core.H8Debug.LogWarning("[PlayerBuilder] No buildable module assigned!");
 #endif
                 return;
             }
@@ -1329,7 +1328,7 @@ namespace Hecton8.Building
                 NotifyMissingResources(activeBuildable);
                 PlaySound(errorSound);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[PlayerBuilder] Missing resources.");
+                Hecton8.Core.H8Debug.LogWarning("[PlayerBuilder] Missing resources.");
 #endif
                 return;
             }
@@ -1477,7 +1476,7 @@ namespace Hecton8.Building
             if (_cachedAutonomousExtractorSystem == null)
                 _cachedAutonomousExtractorSystem = GlobalRegistry.AutonomousExtractors;
             if (_cachedAudioService == null)
-                _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+                _cachedAudioService = GlobalRegistry.Audio;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (builderDebugLogging)
                 LogBuilderDebug($"BindRuntimeReferences catalogCount={(_buildCatalog != null ? _buildCatalog.Count : -1)}");
@@ -1906,8 +1905,9 @@ namespace Hecton8.Building
 
             if (placedModule.TryGetComponent(out Rigidbody body))
             {
-                PhysicsForceRouter.ApplyKinematicWeldSnap(body, placePos, placeRot);
-                return;
+                IPhysicsService physicsService = GlobalRegistry.Physics;
+                if (physicsService != null && physicsService.ApplyKinematicWeldSnap(body, placePos, placeRot))
+                    return;
             }
 
             placedModule.transform.SetPositionAndRotation(placePos, placeRot);
@@ -1935,7 +1935,7 @@ namespace Hecton8.Building
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning(_builderHudBuffer.ToString());
+            Hecton8.Core.H8Debug.LogWarning(_builderHudBuffer.ToString());
 #endif
         }
 
@@ -4277,7 +4277,7 @@ namespace Hecton8.Building
 
         private static IPlayerRuntimeContext ResolvePlayerRuntimeContext()
         {
-            return Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            return GlobalRegistry.Player;
         }
 
         private static IEnvironmentRuntimeContext ResolveEnvironmentRuntimeContext()

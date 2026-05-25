@@ -1,0 +1,56 @@
+{
+  "schema": "HECTON8_DATA_MONOLITH_ANDROID_PAL_REJECTION_V1",
+  "agent": "1313",
+  "date": "2026-05-25",
+  "evidenceClass": "STATIC_SOURCE_NO_DOTNET_NO_UNITY",
+  "dotnetOrUnityBuildLaunched": false,
+  "verdict": "REJECTED",
+  "reason": "Android/Quest release has no zero-GC native StreamingAssets PAL for static_data.h8bin. Current non-Windows release branch fails closed.",
+  "runtimeHydrator": {
+    "windowsReleaseEntryLine": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs:1609",
+    "windowsNativeReadLine": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs:1778",
+    "windowsNativeDumpLine": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs:2248",
+    "nonWindowsFailClosedLines": [
+      "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs:137-141",
+      "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs:272-276",
+      "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs:301-305"
+    ],
+    "editorDevelopmentManagedStagingLines": [
+      "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs:205",
+      "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs:1481",
+      "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs:2220",
+      "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs:2221"
+    ]
+  },
+  "scanEvidence": {
+    "aAssetManagerHits": 0,
+    "dataMonolithNativePluginHits": 0,
+    "androidPluginFiles": [
+      "Assets/Plugins/Android/AndroidManifest.xml",
+      "Assets/Plugins/Android/mainTemplate.gradle"
+    ],
+    "projectNativePluginFiles": [
+      "Assets/_Project/Plugins/Windows/x86_64/liblz4.dll"
+    ],
+    "nativePluginMatrixAndroidLines": "Assets/_Project/Scripts/Editor/Build/NativePluginMatrixValidator.cs:85-90",
+    "audioBridgeStandaloneGuardLines": "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:147-159",
+    "audioNativeExportLines": [
+      "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:389",
+      "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:416",
+      "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:427",
+      "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:432",
+      "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:453"
+    ]
+  },
+  "rejectedRoutes": [
+    "AndroidJavaObject/AndroidJavaClass would allocate managed JNI wrappers.",
+    "UnityWebRequest would reintroduce managed URI staging in production.",
+    "HectonSensoryKernel is audio-owned, standalone-guarded, and has no Data Monolith asset read export."
+  ],
+  "requiredBridge": [
+    "Android AAssetManager/AAsset or equivalent native asset read function for APK StreamingAssets.",
+    "UNITY_ANDROID && !UNITY_EDITOR && !DEVELOPMENT_BUILD P/Invoke surface.",
+    "Direct read into GlobalDataVault arena pointer.",
+    "Android arm64 native binary enforced in NativePluginMatrixValidator."
+  ]
+}

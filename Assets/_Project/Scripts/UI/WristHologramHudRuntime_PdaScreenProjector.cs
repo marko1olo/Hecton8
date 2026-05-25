@@ -25,7 +25,9 @@ namespace Hecton8.UI
         public const int TelemetryCursor = 348733;
         public const int Tuning = 348734;
         public const int InterfaceProfiles = 348735;
+#if UNITY_EDITOR
         public const int CsvScratch = 348736;
+#endif
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 80)]
@@ -118,9 +120,12 @@ namespace Hecton8.UI
         [FieldOffset(28)] public int PayloadBytes;
         [FieldOffset(32)] public int TelemetryValidCount;
         [FieldOffset(36)] public int TelemetryStartIndex;
-        [FieldOffset(40)] private ulong _pad0;
-        [FieldOffset(48)] private ulong _pad1;
-        [FieldOffset(56)] private ulong _pad2;
+        [FieldOffset(40)] private uint _pad0;
+        [FieldOffset(44)] private uint _pad1;
+        [FieldOffset(48)] private uint _pad2;
+        [FieldOffset(52)] private uint _pad3;
+        [FieldOffset(56)] private uint _pad4;
+        [FieldOffset(60)] private uint _pad5;
     }
 
     public sealed unsafe partial class WristHologramHudRuntime : IPDAEventListener, IPDAIntrusionEventListener
@@ -129,7 +134,9 @@ namespace Hecton8.UI
         private const int PdaProjectionInputCapacity = 1;
         private const int PdaProjectionTelemetryCapacity = 300;
         private const int PdaProjectionInterfaceProfileCapacity = 64;
+#if UNITY_EDITOR
         private const int PdaProjectionCsvScratchBytes = 16384;
+#endif
         private const int PdaProjectionGlobalsStrideBytes = 64;
         private const int PdaProjectionMinimumShaderLevel = 45;
         private const float PdaProjectionBudgetMicroseconds = 100f;
@@ -143,7 +150,9 @@ namespace Hecton8.UI
         private const uint PdaProjectionFlagOverBudget = 1u << 3;
         private const uint PdaProjectionFlagIntrusion = 1u << 4;
         private const uint PdaProjectionFlagQualityOverride = 1u << 5;
+#if UNITY_EDITOR
         private const string PdaProjectionProfilesCsvFileName = "pda_interface_profiles.csv";
+#endif
 
         private static readonly BufferID PdaProjectionStateBufferId = (BufferID)PdaProjectionVaultIds.State;
         private static readonly BufferID PdaProjectionInputBufferId = (BufferID)PdaProjectionVaultIds.Input;
@@ -151,7 +160,9 @@ namespace Hecton8.UI
         private static readonly BufferID PdaProjectionTelemetryCursorBufferId = (BufferID)PdaProjectionVaultIds.TelemetryCursor;
         private static readonly BufferID PdaProjectionTuningBufferId = (BufferID)PdaProjectionVaultIds.Tuning;
         private static readonly BufferID PdaProjectionProfilesBufferId = (BufferID)PdaProjectionVaultIds.InterfaceProfiles;
+#if UNITY_EDITOR
         private static readonly BufferID PdaProjectionCsvScratchBufferId = (BufferID)PdaProjectionVaultIds.CsvScratch;
+#endif
         private static WristHologramHudRuntime s_activePdaProjectorRuntime;
 
         [Header("Screen-Space PDA Projector")]
@@ -175,7 +186,9 @@ namespace Hecton8.UI
         private VaultGenerationHandle<int> _pdaProjectionTelemetryCursorHandle;
         private VaultGenerationHandle<PdaProjectionTuningDTO> _pdaProjectionTuningHandle;
         private VaultGenerationHandle<PdaInterfaceProfileDTO> _pdaProjectionProfileHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _pdaProjectionCsvScratchHandle;
+#endif
         private GraphicsBuffer _pdaProjectionStateBufferA;
         private GraphicsBuffer _pdaProjectionStateBufferB;
         private GraphicsBuffer _pdaProjectionActiveStateBuffer;
@@ -320,8 +333,11 @@ namespace Hecton8.UI
                 IsExactVaultHandle(in _pdaProjectionTelemetryHandle, PdaProjectionTelemetryBufferId) &&
                 IsExactVaultHandle(in _pdaProjectionTelemetryCursorHandle, PdaProjectionTelemetryCursorBufferId) &&
                 IsExactVaultHandle(in _pdaProjectionTuningHandle, PdaProjectionTuningBufferId) &&
-                IsExactVaultHandle(in _pdaProjectionProfileHandle, PdaProjectionProfilesBufferId) &&
-                IsExactVaultHandle(in _pdaProjectionCsvScratchHandle, PdaProjectionCsvScratchBufferId);
+                IsExactVaultHandle(in _pdaProjectionProfileHandle, PdaProjectionProfilesBufferId)
+#if UNITY_EDITOR
+                && IsExactVaultHandle(in _pdaProjectionCsvScratchHandle, PdaProjectionCsvScratchBufferId)
+#endif
+                ;
 
             if (!valid)
             {
@@ -331,7 +347,9 @@ namespace Hecton8.UI
                 _pdaProjectionTelemetryCursorHandle = vault.EnsureGenerationHandle<int>(PdaProjectionTelemetryCursorBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
                 _pdaProjectionTuningHandle = vault.EnsureGenerationHandle<PdaProjectionTuningDTO>(PdaProjectionTuningBufferId, 1, SystemID.UI, NativeArrayOptions.UninitializedMemory);
                 _pdaProjectionProfileHandle = vault.EnsureGenerationHandle<PdaInterfaceProfileDTO>(PdaProjectionProfilesBufferId, PdaProjectionInterfaceProfileCapacity, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+#if UNITY_EDITOR
                 _pdaProjectionCsvScratchHandle = vault.EnsureGenerationHandle<byte>(PdaProjectionCsvScratchBufferId, PdaProjectionCsvScratchBytes, SystemID.UI, NativeArrayOptions.UninitializedMemory);
+#endif
                 _pdaProjectionTuningSeeded = false;
                 _pdaProjectionDefaultProfilesSeeded = false;
                 _pdaProjectionProfilesLoaded = false;
@@ -374,7 +392,9 @@ namespace Hecton8.UI
             _pdaProjectionTelemetryCursorHandle = default;
             _pdaProjectionTuningHandle = default;
             _pdaProjectionProfileHandle = default;
+#if UNITY_EDITOR
             _pdaProjectionCsvScratchHandle = default;
+#endif
             _pdaProjectionTuningSeeded = false;
             _pdaProjectionDefaultProfilesSeeded = false;
             _pdaProjectionProfilesLoaded = false;
@@ -409,7 +429,7 @@ namespace Hecton8.UI
             in VaultGenerationHandle<T> handle,
             BufferID expectedBufferId,
             int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
             return _vault != null &&
@@ -423,7 +443,7 @@ namespace Hecton8.UI
             in VaultGenerationHandle<T> handle,
             BufferID expectedBufferId,
             int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
             return _vault != null &&
@@ -437,7 +457,7 @@ namespace Hecton8.UI
             in VaultGenerationHandle<T> handle,
             BufferID expectedBufferId,
             int requiredLength,
-            out NativeArray<T>.ReadOnly buffer) where T : struct
+            out NativeArray<T>.ReadOnly buffer) where T : unmanaged
         {
             buffer = default;
             return _vault != null &&
@@ -452,14 +472,14 @@ namespace Hecton8.UI
             ref PdaProjectionTuningDTO row = ref ResolvePdaProjectionElementRef(tuning, 0);
             float width = math.max(0.01f, pdaProjectionWidthMeters);
             float height = math.max(0.01f, pdaProjectionHeightMeters);
-            row.Params0 = new float4(width, height, math.rcp(width), math.rcp(height));
-            row.Params1 = new float4(
+            row.Params0 = MakeFloat4(width, height, math.rcp(width), math.rcp(height));
+            row.Params1 = MakeFloat4(
                 pdaProjectionQualityOverride01,
                 math.clamp(pdaProjectionGlassRefractionIndex, 1f, 1.8f),
                 math.saturate(pdaProjectionScreenCurvatureScalar),
                 0f);
-            row.AtlasFallbackRect = new float4(0f, 0f, 1f, 1f);
-            row.VisualParams = new float4(baseIntensity, 0f, 0f, 0f);
+            row.AtlasFallbackRect = MakeFloat4(0f, 0f, 1f, 1f);
+            row.VisualParams = MakeFloat4(baseIntensity, 0f, 0f, 0f);
         }
 
         private void SeedDefaultPdaInterfaceProfiles(NativeArray<PdaInterfaceProfileDTO> profiles)
@@ -471,7 +491,7 @@ namespace Hecton8.UI
                 profiles[i] = default;
 
             ref PdaInterfaceProfileDTO profile = ref ResolvePdaProjectionElementRef(profiles, 0);
-            profile.UvRect = new float4(0f, 0f, 1f, 1f);
+            profile.UvRect = MakeFloat4(0f, 0f, 1f, 1f);
             profile.TabHashID = 0u;
             profile.Flags = 1u;
         }
@@ -566,13 +586,13 @@ namespace Hecton8.UI
                 {
                     Inputs = inputs,
                     CameraAup = cameraAup,
-                    TimeSeconds = Time.unscaledTime,
+                    TimeSeconds = (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
                     FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                     ActiveTabHashID = _pdaProjectionActiveTabHash,
                     BootSequenceProgress01 = _pdaProjectionBoot01,
                     ScreenWidthMeters = math.max(0.01f, tuningRow.Params0.x),
                     ScreenHeightMeters = math.max(0.01f, tuningRow.Params0.y),
-                    LocalScreenOffset = new float3(pdaProjectionLocalXOffsetMeters, pdaProjectionLocalYOffsetMeters, pdaProjectionLocalZOffsetMeters),
+                    LocalScreenOffset = MakeFloat3(pdaProjectionLocalXOffsetMeters, pdaProjectionLocalYOffsetMeters, pdaProjectionLocalZOffsetMeters),
                     GlassRefractionIndex = tuningRow.Params1.y,
                     ScreenCurvatureScalar = tuningRow.Params1.z,
                     GlobalQualityWeight01 = quality,
@@ -589,7 +609,7 @@ namespace Hecton8.UI
             input.BootSequenceProgress01 = _pdaProjectionBoot01;
             input.ScreenWidthMeters = math.max(0.01f, tuningRow.Params0.x);
             input.ScreenHeightMeters = math.max(0.01f, tuningRow.Params0.y);
-            input.LocalScreenOffset = new float3(pdaProjectionLocalXOffsetMeters, pdaProjectionLocalYOffsetMeters, pdaProjectionLocalZOffsetMeters);
+            input.LocalScreenOffset = MakeFloat3(pdaProjectionLocalXOffsetMeters, pdaProjectionLocalYOffsetMeters, pdaProjectionLocalZOffsetMeters);
             input.GlassRefractionIndex = tuningRow.Params1.y;
             input.ScreenCurvatureScalar = tuningRow.Params1.z;
             input.GlobalQualityWeight01 = quality;
@@ -618,7 +638,7 @@ namespace Hecton8.UI
             Quaternion rotation = wrist.rotation;
             input.CameraAup = cameraAup.ToAbsoluteDouble3();
             input.WristAup = wristAup.ToAbsoluteDouble3();
-            input.WristRotation = new float4(rotation.x, rotation.y, rotation.z, rotation.w);
+            input.WristRotation = MakeFloat4(rotation.x, rotation.y, rotation.z, rotation.w);
             return true;
         }
 
@@ -680,19 +700,31 @@ namespace Hecton8.UI
             }
 
             NativeArray<PdaStateDTO> mappedState = stateWrite.LockBufferForWrite<PdaStateDTO>(0, 1);
-            UnsafeUtility.MemCpy(
-                NativeArrayUnsafeUtility.GetUnsafePtr(mappedState),
-                NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(states),
-                UnsafeUtility.SizeOf<PdaStateDTO>());
-            stateWrite.UnlockBufferAfterWrite<PdaStateDTO>(1);
+            try
+            {
+                UnsafeUtility.MemCpy(
+                    NativeArrayUnsafeUtility.GetUnsafePtr(mappedState),
+                    NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(states),
+                    UnsafeUtility.SizeOf<PdaStateDTO>());
+            }
+            finally
+            {
+                stateWrite.UnlockBufferAfterWrite<PdaStateDTO>(1);
+            }
 
             PdaProjectionGlobalsDTO globals = BuildPdaProjectionGlobals(tuning, profiles, in state);
             NativeArray<PdaProjectionGlobalsDTO> mappedGlobals = globalsWrite.LockBufferForWrite<PdaProjectionGlobalsDTO>(0, 1);
-            UnsafeUtility.MemCpy(
-                NativeArrayUnsafeUtility.GetUnsafePtr(mappedGlobals),
-                UnsafeUtility.AddressOf(ref globals),
-                UnsafeUtility.SizeOf<PdaProjectionGlobalsDTO>());
-            globalsWrite.UnlockBufferAfterWrite<PdaProjectionGlobalsDTO>(1);
+            try
+            {
+                UnsafeUtility.MemCpy(
+                    NativeArrayUnsafeUtility.GetUnsafePtr(mappedGlobals),
+                    UnsafeUtility.AddressOf(ref globals),
+                    UnsafeUtility.SizeOf<PdaProjectionGlobalsDTO>());
+            }
+            finally
+            {
+                globalsWrite.UnlockBufferAfterWrite<PdaProjectionGlobalsDTO>(1);
+            }
 
             _pdaProjectionActiveStateBuffer = stateWrite;
             _pdaProjectionActiveGlobalsBuffer = globalsWrite;
@@ -711,13 +743,50 @@ namespace Hecton8.UI
             float height = math.max(0.01f, tuningRow.Params0.y);
             float quality = ResolvePdaProjectionQuality01(in tuningRow);
             float4 atlasRect = ResolvePdaProfileRect(profiles, state.ActiveTabHashID, tuningRow.AtlasFallbackRect);
-            return new PdaProjectionGlobalsDTO
-            {
-                ScreenParams = new float4(width, height, math.rcp(width), math.rcp(height)),
-                RefractionParams = new float4(quality, math.max(1f, tuningRow.Params1.y), math.saturate(tuningRow.Params1.z), state.BootSequenceProgress01),
-                AtlasRect = atlasRect,
-                VisualParams = new float4(math.max(0f, tuningRow.VisualParams.x), Time.unscaledTime, _pdaProjectionCorruption01, 0f)
-            };
+            PdaProjectionGlobalsDTO globals = default;
+            globals.ScreenParams = MakeFloat4(width, height, math.rcp(width), math.rcp(height));
+            globals.RefractionParams = MakeFloat4(quality, math.max(1f, tuningRow.Params1.y), math.saturate(tuningRow.Params1.z), state.BootSequenceProgress01);
+            globals.AtlasRect = atlasRect;
+            globals.VisualParams = MakeFloat4(math.max(0f, tuningRow.VisualParams.x), (float)SystemDispatcher.CurrentUnscaledTimeSeconds, _pdaProjectionCorruption01, 0f);
+            return globals;
+        }
+
+        private static float4 MakeFloat4(float x, float y, float z, float w)
+        {
+            float4 value = default;
+            value.x = x;
+            value.y = y;
+            value.z = z;
+            value.w = w;
+            return value;
+        }
+
+        private static float4 MakeFloat4(float3 xyz, float w)
+        {
+            float4 value = default;
+            value.x = xyz.x;
+            value.y = xyz.y;
+            value.z = xyz.z;
+            value.w = w;
+            return value;
+        }
+
+        private static float3 MakeFloat3(float x, float y, float z)
+        {
+            float3 value = default;
+            value.x = x;
+            value.y = y;
+            value.z = z;
+            return value;
+        }
+
+        private static double3 MakeDouble3(double x, double y, double z)
+        {
+            double3 value = default;
+            value.x = x;
+            value.y = y;
+            value.z = z;
+            return value;
         }
 
         private static float4 ResolvePdaProfileRect(NativeArray<PdaInterfaceProfileDTO> profiles, uint tabHash, float4 fallback)
@@ -790,7 +859,7 @@ namespace Hecton8.UI
             if (byteCount <= 0)
                 return false;
 
-            ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(scratchPtr, byteCount);
+            ReadOnlySpan<byte> span = MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(scratchPtr), byteCount);
             int cursor = 0;
             int written = 0;
             while (cursor < span.Length && written < profiles.Length)
@@ -816,20 +885,10 @@ namespace Hecton8.UI
 
         private string ResolvePdaProfileCsvPath()
         {
-            string streamingRoot = Application.streamingAssetsPath;
-            if (!string.IsNullOrEmpty(streamingRoot) &&
-                streamingRoot.IndexOf("://", StringComparison.Ordinal) < 0)
-            {
-                string streamingPath = Path.Combine(streamingRoot, "Hecton8", "PDA", PdaProjectionProfilesCsvFileName);
-                if (File.Exists(streamingPath))
-                    return streamingPath;
-            }
-
-#if UNITY_EDITOR
-            string projectPath = Path.Combine(GetProjectRoot(), PdaProjectionProfilesCsvFileName);
+            string projectPath = Path.Combine(GetProjectRoot(), "Assets", "_Project", "Data", "UI", PdaProjectionProfilesCsvFileName);
             if (File.Exists(projectPath))
                 return projectPath;
-#endif
+
             return string.Empty;
         }
 
@@ -848,7 +907,7 @@ namespace Hecton8.UI
 
                     long boundedBytes = streamBytes < capacity ? streamBytes : capacity;
                     int targetBytes = (int)boundedBytes;
-                    Span<byte> target = new Span<byte>(destination, targetBytes);
+                    Span<byte> target = MemoryMarshal.CreateSpan(ref UnsafeUtility.AsRef<byte>(destination), targetBytes);
                     int total = 0;
                     while (total < targetBytes)
                     {
@@ -885,7 +944,7 @@ namespace Hecton8.UI
             }
 
             profile.TabHashID = ResolvePdaProfileTabHash(name);
-            profile.UvRect = new float4(math.saturate(u), math.saturate(v), math.saturate(w), math.saturate(h));
+            profile.UvRect = MakeFloat4(math.saturate(u), math.saturate(v), math.saturate(w), math.saturate(h));
             profile.Flags = 1u;
             return true;
         }
@@ -1043,19 +1102,17 @@ namespace Hecton8.UI
             int validCount = CountValidPdaProjectionTelemetryRows(telemetry);
             int startIndex = ResolvePdaProjectionTelemetryStartIndex(cursor[0], telemetry.Length, validCount);
             int payloadBytes = validCount * entrySize;
-            PdaProjectionBlackBoxDumpHeader header = new PdaProjectionBlackBoxDumpHeader
-            {
-                Magic = PdaProjectionBlackBoxMagic,
-                Version = PdaProjectionBlackBoxVersion,
-                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
-                Flags = flags,
-                TelemetryCapacity = telemetry.Length,
-                TelemetryCursor = cursor[0],
-                TelemetryEntrySizeBytes = entrySize,
-                PayloadBytes = payloadBytes,
-                TelemetryValidCount = validCount,
-                TelemetryStartIndex = startIndex
-            };
+            PdaProjectionBlackBoxDumpHeader header = default;
+            header.Magic = PdaProjectionBlackBoxMagic;
+            header.Version = PdaProjectionBlackBoxVersion;
+            header.FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+            header.Flags = flags;
+            header.TelemetryCapacity = telemetry.Length;
+            header.TelemetryCursor = cursor[0];
+            header.TelemetryEntrySizeBytes = entrySize;
+            header.PayloadBytes = payloadBytes;
+            header.TelemetryValidCount = validCount;
+            header.TelemetryStartIndex = startIndex;
 
             _pdaProjectionBlackBoxDumped = true;
             try
@@ -1065,16 +1122,16 @@ namespace Hecton8.UI
                     return;
 
                 Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, "Dump_SHINOBU_348.bin");
+                string path = Path.Combine(directory, "Dump_1309_UIPresentation_PdaProjection.bin");
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
-                    stream.Write(new ReadOnlySpan<byte>(&header, UnsafeUtility.SizeOf<PdaProjectionBlackBoxDumpHeader>()));
+                    stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(&header), UnsafeUtility.SizeOf<PdaProjectionBlackBoxDumpHeader>()));
                     WritePdaProjectionTelemetryDump(stream, telemetry, startIndex, validCount, entrySize);
                 }
             }
             catch (Exception)
             {
-                Debug.LogError("SHINOBU_348 projection dump failed.");
+                Hecton8.Core.H8Debug.LogError("SHINOBU_348 projection dump failed.");
             }
         }
 
@@ -1131,11 +1188,11 @@ namespace Hecton8.UI
             int available = capacity - startIndex;
             int firstCount = validCount < available ? validCount : available;
             if (firstCount > 0)
-                stream.Write(new ReadOnlySpan<byte>(basePtr + startIndex * entrySize, firstCount * entrySize));
+                stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(basePtr + startIndex * entrySize), firstCount * entrySize));
 
             int remaining = validCount - firstCount;
             if (remaining > 0)
-                stream.Write(new ReadOnlySpan<byte>(basePtr, remaining * entrySize));
+                stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(basePtr), remaining * entrySize));
         }
 
         void IPDAEventListener.OnPDAEvent(in PDAEventPayload payload)
@@ -1257,7 +1314,7 @@ namespace Hecton8.UI
             return true;
         }
 
-        private static ref T ResolvePdaProjectionElementRef<T>(NativeArray<T> buffer, int index) where T : struct
+        private static ref T ResolvePdaProjectionElementRef<T>(NativeArray<T> buffer, int index) where T : unmanaged
         {
             void* basePtr = NativeArrayUnsafeUtility.GetUnsafePtr(buffer);
             return ref UnsafeUtility.AsRef<T>((byte*)basePtr + index * UnsafeUtility.SizeOf<T>());
@@ -1324,7 +1381,7 @@ namespace Hecton8.UI
             {
                 float t = TimeSeconds + index * 0.17320508f;
                 float orbit = TriangleWaveSigned(t * 0.1162f) * 0.035f;
-                float3 local = new float3(
+                float3 local = MakeFloat3(
                     orbit,
                     -0.08f + TriangleWaveSigned(t * 0.1862f + 0.19f) * 0.018f,
                     0.54f + TriangleWaveSigned(t * 0.1448f + 0.25f) * 0.025f);
@@ -1332,21 +1389,20 @@ namespace Hecton8.UI
                     math.radians(-18f + TriangleWaveSigned(t * 0.1003f) * 8f),
                     math.radians(4f + TriangleWaveSigned(t * 0.0653f + 0.31f) * 12f),
                     math.radians(TriangleWaveSigned(t * 0.1385f + 0.07f) * 7f));
-                Inputs[index] = new PdaProjectionInputDTO
-                {
-                    WristAup = CameraAup + new double3(local.x, local.y, local.z),
-                    CameraAup = CameraAup,
-                    WristRotation = rotation.value,
-                    LocalScreenOffset = LocalScreenOffset,
-                    ScreenWidthMeters = ScreenWidthMeters,
-                    ScreenHeightMeters = ScreenHeightMeters,
-                    BootSequenceProgress01 = BootSequenceProgress01,
-                    ActiveTabHashID = ActiveTabHashID,
-                    PdaFlags = Flags,
-                    GlassRefractionIndex = GlassRefractionIndex,
-                    ScreenCurvatureScalar = ScreenCurvatureScalar,
-                    GlobalQualityWeight01 = GlobalQualityWeight01
-                };
+                PdaProjectionInputDTO input = default;
+                input.WristAup = CameraAup + MakeDouble3(local.x, local.y, local.z);
+                input.CameraAup = CameraAup;
+                input.WristRotation = rotation.value;
+                input.LocalScreenOffset = LocalScreenOffset;
+                input.ScreenWidthMeters = ScreenWidthMeters;
+                input.ScreenHeightMeters = ScreenHeightMeters;
+                input.BootSequenceProgress01 = BootSequenceProgress01;
+                input.ActiveTabHashID = ActiveTabHashID;
+                input.PdaFlags = Flags;
+                input.GlassRefractionIndex = GlassRefractionIndex;
+                input.ScreenCurvatureScalar = ScreenCurvatureScalar;
+                input.GlobalQualityWeight01 = GlobalQualityWeight01;
+                Inputs[index] = input;
             }
 
             private static float TriangleWaveSigned(float phase)
@@ -1377,28 +1433,31 @@ namespace Hecton8.UI
                 float3 localDelta = AupPrecisionMath.LocalDeltaFloat3(
                     input.WristAup,
                     input.CameraAup,
-                    new float3(0f, -0.08f, 0.54f));
+                    MakeFloat3(0f, -0.08f, 0.54f));
                 if (!math.all(math.isfinite(localDelta)))
                 {
-                    localDelta = new float3(0f, -0.08f, 0.54f);
+                    localDelta = MakeFloat3(0f, -0.08f, 0.54f);
                     flags |= PdaProjectionFlagNonFinite;
                 }
 
-                float3 right = AupPrecisionMath.SafeNormalize(math.mul(rotation, new float3(1f, 0f, 0f)), new float3(1f, 0f, 0f));
-                float3 up = AupPrecisionMath.SafeNormalize(math.mul(rotation, new float3(0f, 1f, 0f)), new float3(0f, 1f, 0f));
-                float3 forward = AupPrecisionMath.SafeNormalize(math.mul(rotation, new float3(0f, 0f, 1f)), new float3(0f, 0f, 1f));
+                float3 rightFallback = MakeFloat3(1f, 0f, 0f);
+                float3 upFallback = MakeFloat3(0f, 1f, 0f);
+                float3 forwardFallback = MakeFloat3(0f, 0f, 1f);
+                float3 right = AupPrecisionMath.SafeNormalize(math.mul(rotation, rightFallback), rightFallback);
+                float3 up = AupPrecisionMath.SafeNormalize(math.mul(rotation, upFallback), upFallback);
+                float3 forward = AupPrecisionMath.SafeNormalize(math.mul(rotation, forwardFallback), forwardFallback);
                 float3 center = localDelta + right * input.LocalScreenOffset.x + up * input.LocalScreenOffset.y + forward * input.LocalScreenOffset.z;
                 if (!math.all(math.isfinite(center)))
                 {
-                    center = new float3(0f, -0.08f, 0.54f);
+                    center = MakeFloat3(0f, -0.08f, 0.54f);
                     flags |= PdaProjectionFlagNonFinite;
                 }
 
-                float4x4 matrix = new float4x4(
-                    new float4(right, 0f),
-                    new float4(up, 0f),
-                    new float4(forward, 0f),
-                    new float4(center, 1f));
+                float4x4 matrix = default;
+                matrix.c0 = MakeFloat4(right, 0f);
+                matrix.c1 = MakeFloat4(up, 0f);
+                matrix.c2 = MakeFloat4(forward, 0f);
+                matrix.c3 = MakeFloat4(center, 1f);
 
                 ref PdaStateDTO state = ref ElementRef(States, 0);
                 state.LocalToWorld = matrix;
@@ -1444,7 +1503,9 @@ namespace Hecton8.UI
                     return quaternion.identity;
                 }
 
-                return new quaternion(value * math.rsqrt(lengthSq));
+                quaternion normalized = default;
+                normalized.value = value * math.rsqrt(lengthSq);
+                return normalized;
             }
 
             private static uint HashMatrix(float4x4 matrix)
@@ -1472,13 +1533,13 @@ namespace Hecton8.UI
                 return hash * 16777619u;
             }
 
-            private static ref readonly T ReadOnlyElementRef<T>(NativeArray<T> buffer, int index) where T : struct
+            private static ref readonly T ReadOnlyElementRef<T>(NativeArray<T> buffer, int index) where T : unmanaged
             {
                 void* basePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffer);
                 return ref UnsafeUtility.AsRef<T>((byte*)basePtr + index * UnsafeUtility.SizeOf<T>());
             }
 
-            private static ref T ElementRef<T>(NativeArray<T> buffer, int index) where T : struct
+            private static ref T ElementRef<T>(NativeArray<T> buffer, int index) where T : unmanaged
             {
                 void* basePtr = NativeArrayUnsafeUtility.GetUnsafePtr(buffer);
                 return ref UnsafeUtility.AsRef<T>((byte*)basePtr + index * UnsafeUtility.SizeOf<T>());

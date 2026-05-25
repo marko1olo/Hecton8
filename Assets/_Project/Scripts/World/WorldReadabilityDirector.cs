@@ -80,7 +80,7 @@ namespace Hecton8.World
         private bool _hasPendingMessage;
         private bool _hotSwapRegistered;
         private IFirstHourReadModel _firstHourDirector;
-        private DepthZoneDirector _cachedDepthZoneDirector;
+        private IDepthZoneReadModel _cachedDepthZoneReadModel;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
         private float _nextNotificationTime;
 
@@ -172,9 +172,7 @@ namespace Hecton8.World
                     _firstHourDirector = currentService as IFirstHourReadModel;
                     break;
                 case GlobalRegistryServiceSlot.DepthZoneRuntime:
-                    _cachedDepthZoneDirector = currentService as DepthZoneDirector;
-                    if (depthZoneDirector == null)
-                        depthZoneDirector = _cachedDepthZoneDirector;
+                    _cachedDepthZoneReadModel = currentService as IDepthZoneReadModel;
                     break;
             }
         }
@@ -182,7 +180,7 @@ namespace Hecton8.World
         private void CacheRegistryServicesCold()
         {
             _firstHourDirector = GlobalRegistry.FirstHourReadModel;
-            _cachedDepthZoneDirector = GlobalRegistry.DepthZone;
+            _cachedDepthZoneReadModel = GlobalRegistry.DepthZoneReadModel;
         }
 
         private void TryRegisterHotSwapListener()
@@ -225,7 +223,8 @@ namespace Hecton8.World
 
             HectonBiomeMatrixProfile currentBiome = biomeMatrixDirector != null ? biomeMatrixDirector.CurrentProfile : null;
             WorldZoneAnchor currentZone = worldZoneDirector != null ? worldZoneDirector.CurrentZone : null;
-            DepthZoneProfile currentDepthZone = depthZoneDirector != null ? depthZoneDirector.CurrentZone : null;
+            IDepthZoneReadModel depthZoneReadModel = _cachedDepthZoneReadModel ?? depthZoneDirector;
+            DepthZoneProfile currentDepthZone = depthZoneReadModel != null ? depthZoneReadModel.CurrentZone : null;
             int currentDepthTier = biomeMatrixDirector != null ? biomeMatrixDirector.CurrentDepthTier : 1;
             float currentDepthMeters = biomeMatrixDirector != null ? biomeMatrixDirector.CurrentDepthMeters : 0f;
 
@@ -264,7 +263,6 @@ namespace Hecton8.World
             TryQueueRouteStateGuidance(currentBiome, currentZone, currentDepthZone, currentDepthTier);
 
             _hasObservedContext = true;
-            TryPublishPending();
             UpdateDiagnostics();
         }
 
@@ -284,10 +282,10 @@ namespace Hecton8.World
 
         private void ResolveReferences(bool force = false)
         {
-            if (!force && biomeMatrixDirector != null && worldZoneDirector != null && depthZoneDirector != null)
+            if (!force && biomeMatrixDirector != null && worldZoneDirector != null && (depthZoneDirector != null || _cachedDepthZoneReadModel != null))
                 return;
 
-            float now = Time.realtimeSinceStartup;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (!force && now < _nextAutoResolveAttemptTime)
                 return;
 
@@ -295,8 +293,8 @@ namespace Hecton8.World
 
             WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
             WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref worldZoneDirector);
-            if (depthZoneDirector == null)
-                depthZoneDirector = _cachedDepthZoneDirector;
+            if (_cachedDepthZoneReadModel == null)
+                _cachedDepthZoneReadModel = depthZoneDirector != null ? depthZoneDirector : GlobalRegistry.DepthZoneReadModel;
         }
 
         private void ResetObservedState()
@@ -417,7 +415,7 @@ namespace Hecton8.World
             if (!_hasPendingMessage)
                 return;
 
-            if (Time.unscaledTime < _nextNotificationTime)
+            if ((float)SystemDispatcher.CurrentUnscaledTimeSeconds < _nextNotificationTime)
                 return;
 
             PublishNotification(_pendingMessage, _pendingSeverity);
@@ -445,7 +443,7 @@ namespace Hecton8.World
 
             _debugLastPublishedMessage = message;
             _debugLastPublishedSeverity = severity;
-            _nextNotificationTime = Time.unscaledTime + Mathf.Max(0f, notificationCooldown);
+            _nextNotificationTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds + Mathf.Max(0f, notificationCooldown);
             _debugNextNotificationTime = _nextNotificationTime;
         }
 

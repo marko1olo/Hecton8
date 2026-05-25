@@ -82,7 +82,7 @@ namespace Hecton8.UI.Editor
             return ok;
         }
 
-        private static bool ValidateSize<T>(int expected) where T : struct
+        private static bool ValidateSize<T>(int expected) where T : unmanaged
         {
             int observed = UnsafeUtility.SizeOf<T>();
             if (observed == expected)
@@ -92,7 +92,7 @@ namespace Hecton8.UI.Editor
             return false;
         }
 
-        private static bool ValidateOffset<T>(string fieldName, int expected) where T : struct
+        private static bool ValidateOffset<T>(string fieldName, int expected) where T : unmanaged
         {
             FieldInfo field = typeof(T).GetField(fieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
             int observed = field == null ? -1 : UnsafeUtility.GetFieldOffset(field);

@@ -1,5 +1,7 @@
 using System;
+#if UNITY_EDITOR
 using System.IO;
+#endif
 using Stopwatch = System.Diagnostics.Stopwatch;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
@@ -25,13 +27,13 @@ namespace Hecton8.Physics.Exosuit
         private static int s_x001DirectSignalPushDropCount_ExosuitKinematicsRuntime;
 
         private const int TelemetryCapacity = 300;
+#if UNITY_EDITOR
         private const int CsvScratchCapacity = 4096;
-        private const int TelemetryDumpHeaderSizeBytes = 24;
-        private const int TelemetryEntrySizeBytes = 64;
+#endif
         private const float DefaultCsvPollIntervalSeconds = 0.25f;
-        private const ulong TelemetryDumpMagic = 0x00384E4F54434548UL; // HECTON8\0 in little-endian byte order
-        private const uint TelemetryDumpVersion = 2u;
         private const uint ExoSourceHash = 0x53484E34u; // SHN4
+        private const uint ExosuitFaultEventHash = 0x45584654u; // EXFT
+        private const uint ExosuitFaultDumpHash = 0x45584450u; // EXDP
         private const int MechHapticExpectedSignals = 8;
         private const int MechHapticMaxFrameSignals = 16;
         private const int MechHapticMinimumQualityFrameSignals = 4;
@@ -151,7 +153,9 @@ namespace Hecton8.Physics.Exosuit
         private VaultGenerationHandle<MechHapticSignalDTO> _hapticHandle;
         private VaultGenerationHandle<SiltExplosionSignal> _siltHandle;
         private VaultGenerationHandle<ExosuitAcousticEchoTap> _acousticHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
 
         private JobHandle _jobHandle;
         private long _jobStartTimestamp;
@@ -166,12 +170,15 @@ namespace Hecton8.Physics.Exosuit
         private bool _pendingDisableTeardown;
         private int _droppedSignalCount;
         private bool _buffersInitialized;
-        private bool _coldCsvApplied;
         private bool _signalLanesReady;
+        private bool _coreBlackboxWarmed;
+#if UNITY_EDITOR
+        private bool _coldCsvApplied;
         private string _projectRoot;
         private string _csvPath;
         private long _lastCsvWriteTicks;
         private float _csvPollCountdown;
+#endif
         private uint _scheduledFrame;
         private uint _lastDumpFrame = uint.MaxValue;
         private uint _pendingMockProceduralWeightMilli = 1000u;
@@ -184,8 +191,10 @@ namespace Hecton8.Physics.Exosuit
         private void Awake()
         {
             _cachedTransform = transform;
+#if UNITY_EDITOR
             _projectRoot = ResolveProjectRoot();
             _csvPath = Path.Combine(_projectRoot, "Data", "Physics", "exosuit_performance_profiles.csv");
+#endif
             EnsureSignalLanesReady();
         }
 
@@ -200,6 +209,7 @@ namespace Hecton8.Physics.Exosuit
 #if UNITY_EDITOR
                 TryApplyColdCsvOverrides();
 #endif
+                WarmCoreBlackboxRoute();
                 s_activeRuntime = this;
             }
 
@@ -229,6 +239,7 @@ namespace Hecton8.Physics.Exosuit
             if (ReferenceEquals(s_activeRuntime, this))
                 s_activeRuntime = null;
             ReleaseVaultBuffers();
+            _coreBlackboxWarmed = false;
             _pendingDisableTeardown = false;
         }
 
@@ -468,9 +479,13 @@ namespace Hecton8.Physics.Exosuit
             ReleaseVaultBuffer(vault, ref _hapticHandle);
             ReleaseVaultBuffer(vault, ref _siltHandle);
             ReleaseVaultBuffer(vault, ref _acousticHandle);
+#if UNITY_EDITOR
             ReleaseVaultBuffer(vault, ref _csvScratchHandle);
+#endif
             _buffersInitialized = false;
+#if UNITY_EDITOR
             _coldCsvApplied = false;
+#endif
         }
 
         private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
@@ -517,7 +532,9 @@ namespace Hecton8.Physics.Exosuit
             _hapticHandle = vault.EnsureGenerationHandle<MechHapticSignalDTO>(BufferID.ShinobuExosuitHapticSignals, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
             _siltHandle = vault.EnsureGenerationHandle<SiltExplosionSignal>(BufferID.ShinobuExosuitSiltSignals, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
             _acousticHandle = vault.EnsureGenerationHandle<ExosuitAcousticEchoTap>(BufferID.ShinobuExosuitAcousticTaps, 1, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
+#if UNITY_EDITOR
             _csvScratchHandle = vault.EnsureGenerationHandle<byte>(BufferID.ShinobuExosuitCsvScratch, CsvScratchCapacity, SystemID.Physics, NativeArrayOptions.UninitializedMemory);
+#endif
             ExosuitKinematicAuthority.Bind(vault, in _inputHandle);
         }
 
@@ -1646,62 +1663,30 @@ namespace Hecton8.Physics.Exosuit
 
             _lastDumpFrame = frame;
 
-            string directory = Path.Combine(_projectRoot, "Docs", "AgentLogs");
-            Directory.CreateDirectory(directory);
-            WriteTelemetryDump(Path.Combine(directory, "Dump_EXO_KINEMATICS.bin"), telemetry, cursorBuffer);
-            WriteTelemetryDump(Path.Combine(directory, "Dump_SHINOBU_276.bin"), telemetry, cursorBuffer);
-        }
-
-        private static unsafe void WriteTelemetryDump(string path, NativeArray<ExosuitTelemetryEntry> telemetry, NativeArray<int> cursorBuffer)
-        {
             int cursor = cursorBuffer.IsCreated && cursorBuffer.Length > 0 ? cursorBuffer[0] : 0;
             if ((uint)cursor >= (uint)telemetry.Length)
                 cursor = 0;
 
-            int entrySize = UnsafeUtility.SizeOf<ExosuitTelemetryEntry>();
-            if (entrySize != TelemetryEntrySizeBytes)
+            if (!_coreBlackboxWarmed || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
                 return;
 
-            Span<byte> header = stackalloc byte[TelemetryDumpHeaderSizeBytes];
-            int offset = 0;
-            WriteUInt64LittleEndian(header, ref offset, TelemetryDumpMagic);
-            WriteUInt32LittleEndian(header, ref offset, TelemetryDumpVersion);
-            WriteUInt32LittleEndian(header, ref offset, (uint)telemetry.Length);
-            WriteUInt32LittleEndian(header, ref offset, (uint)entrySize);
-            WriteUInt32LittleEndian(header, ref offset, (uint)cursor);
+            int latestIndex = cursor - 1;
+            if (latestIndex < 0)
+                latestIndex = telemetry.Length - 1;
 
-            byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            {
-                stream.Write(header);
-                int firstCount = telemetry.Length - cursor;
-                if (firstCount > 0)
-                    stream.Write(new ReadOnlySpan<byte>(basePtr + cursor * entrySize, firstCount * entrySize));
-                if (cursor > 0)
-                    stream.Write(new ReadOnlySpan<byte>(basePtr, cursor * entrySize));
-            }
+            ExosuitTelemetryEntry latest = telemetry[latestIndex];
+            float scalar = math.isfinite(latest.SolverComputeTimeMs) ? latest.SolverComputeTimeMs : 0f;
+            GlobalTelemetryBus.PushEvent(ExosuitFaultEventHash, scalar, latest.StateHash);
+            _ = GlobalTelemetryBus.TryDumpBlackboxNow(ExosuitFaultDumpHash);
         }
 
-        private static void WriteUInt32LittleEndian(Span<byte> target, ref int offset, uint value)
+        private void WarmCoreBlackboxRoute()
         {
-            target[offset] = (byte)value;
-            target[offset + 1] = (byte)(value >> 8);
-            target[offset + 2] = (byte)(value >> 16);
-            target[offset + 3] = (byte)(value >> 24);
-            offset += 4;
-        }
+            if (_coreBlackboxWarmed || !Application.isPlaying)
+                return;
 
-        private static void WriteUInt64LittleEndian(Span<byte> target, ref int offset, ulong value)
-        {
-            target[offset] = (byte)value;
-            target[offset + 1] = (byte)(value >> 8);
-            target[offset + 2] = (byte)(value >> 16);
-            target[offset + 3] = (byte)(value >> 24);
-            target[offset + 4] = (byte)(value >> 32);
-            target[offset + 5] = (byte)(value >> 40);
-            target[offset + 6] = (byte)(value >> 48);
-            target[offset + 7] = (byte)(value >> 56);
-            offset += 8;
+            GlobalTelemetryBus.Initialize();
+            _coreBlackboxWarmed = GlobalTelemetryBus.BlackboxActiveFrameCount > 0;
         }
 
         private void EnsureSignalLanesReady()
@@ -1977,6 +1962,7 @@ namespace Hecton8.Physics.Exosuit
             _hotSwapRegistered = false;
         }
 
+#if UNITY_EDITOR
         private static string ResolveProjectRoot()
         {
             string dataPath = Application.dataPath;
@@ -1988,6 +1974,7 @@ namespace Hecton8.Physics.Exosuit
                 ? "."
                 : Path.GetFullPath(currentDirectory);
         }
+#endif
 
 #if UNITY_EDITOR
         private void OnDrawGizmos()

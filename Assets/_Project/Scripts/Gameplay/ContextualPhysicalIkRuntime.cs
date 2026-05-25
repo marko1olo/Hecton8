@@ -1,7 +1,6 @@
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Physics;
 using Hecton8.World;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -1797,7 +1796,7 @@ namespace Hecton8.Gameplay
 
         private void CachePlayerContextCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             Camera playerCamera = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerCamera : null;
             if (playerCamera != null)
                 _cameraTransform = playerCamera.transform;
@@ -2107,7 +2106,7 @@ namespace Hecton8.Gameplay
         private float3 ConsumeKccVelocitySignal(uint fallbackFrame)
         {
             uint currentFrame = SystemDispatcher.CurrentFrameId;
-            if (PhysicsDeterminismSignals.TryGetLatestKccVelocity(out Hecton8.Core.Contracts.Signals.KccVelocitySignal signal))
+            if (CoreDeterminismSignals.TryGetLatestKccVelocity(out Hecton8.Core.Contracts.Signals.KccVelocitySignal signal))
             {
                 uint fallbackSignalFrame = currentFrame != 0u ? currentFrame : fallbackFrame;
                 uint signalFrame = signal.Frame != 0u ? signal.Frame : fallbackSignalFrame;
@@ -2319,17 +2318,13 @@ namespace Hecton8.Gameplay
                 return false;
 
             float stepMeters = ResolveIkSdfStepMeters(range);
-            if (!readModel.TryRaymarchNearestSonarSdf(
+            if (!VoxelSonarSdfMath.TryResolveNearestSdfSurface(
+                    readModel,
                     origin,
                     direction,
                     range,
                     stepMeters,
-                    out VoxelSonarSdfRaycastHit sdfHit,
-                    out NativeArray<byte>.ReadOnly _,
-                    out int3 _,
-                    out float3 _,
-                    out float3 _,
-                    out float _) ||
+                    out VoxelSonarSdfRaycastHit sdfHit) ||
                 (sdfHit.Flags & VoxelSonarSdfRaycastHit.FlagHit) == 0u ||
                 !math.all(math.isfinite(sdfHit.Point)) ||
                 !math.all(math.isfinite(sdfHit.Normal)) ||

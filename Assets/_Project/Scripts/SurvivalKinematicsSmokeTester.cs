@@ -8,7 +8,6 @@ using Hecton8.Atmosphere;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
-using Hecton8.Physics;
 using Hecton8.Tools;
 using Hecton8.UI;
 using NASAPunk.Visor;
@@ -78,7 +77,7 @@ namespace Hecton8.Dev
                 if (_debugLastPass)
                     Hecton8.Core.H8Debug.Log("[SurvivalKinematicsSmoke] PASS", this);
                 else
-                    Debug.LogError("[SurvivalKinematicsSmoke] FAIL", this);
+                    Hecton8.Core.H8Debug.LogError("[SurvivalKinematicsSmoke] FAIL", this);
             }
 #endif
         }

@@ -571,7 +571,7 @@ namespace Hecton8.Core
 
         private static float ResolvePipeShaderClockSeconds()
         {
-            return Time.timeSinceLevelLoad;
+            return (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
         }
 
         private static bool PipeLinkContainsNode(long linkId, uint nodeId)

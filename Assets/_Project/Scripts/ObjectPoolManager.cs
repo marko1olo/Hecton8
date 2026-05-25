@@ -548,7 +548,7 @@ namespace Hecton8.Core
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             string instanceName = instance != null ? instance.name : "<null>";
-            Debug.LogWarning(
+            Hecton8.Core.H8Debug.LogWarning(
                 $"[ObjectPoolManager] Despawn: '{instanceName}' has no PoolItemMarker. Destroying instead.");
 #endif
         }
@@ -558,7 +558,7 @@ namespace Hecton8.Core
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             string instanceName = instance != null ? instance.name : "<null>";
-            Debug.LogWarning(
+            Hecton8.Core.H8Debug.LogWarning(
                 $"[ObjectPoolManager] Despawn: Pool for '{instanceName}' not found. Destroying.");
 #endif
         }
@@ -568,7 +568,7 @@ namespace Hecton8.Core
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             string instanceName = instance != null ? instance.name : "<null>";
-            Debug.LogWarning(
+            Hecton8.Core.H8Debug.LogWarning(
                 $"[ObjectPoolManager] Prefab '{instanceName}' is missing a DespawnTimer component. Despawning immediately.");
 #endif
         }
@@ -882,7 +882,7 @@ namespace Hecton8.Core
         private static void LogWarmupNullPrefab()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[ObjectPoolManager] Warmup: prefab is null!");
+            Hecton8.Core.H8Debug.LogError("[ObjectPoolManager] Warmup: prefab is null!");
 #endif
         }
 
@@ -890,7 +890,7 @@ namespace Hecton8.Core
         private static void LogSpawnNullPrefab()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[ObjectPoolManager] Spawn: prefab is null!");
+            Hecton8.Core.H8Debug.LogError("[ObjectPoolManager] Spawn: prefab is null!");
 #endif
         }
 
@@ -901,7 +901,7 @@ namespace Hecton8.Core
             string prefabName = prefab != null ? prefab.name : "NullPrefab";
             string report = $"[ObjectPoolManager] '{prefabName}': {reason} Consider increasing Warmup count.";
             RuntimeDiagnosticsTrace.WriteEvent("pool", report);
-            Debug.LogWarning(report);
+            Hecton8.Core.H8Debug.LogWarning(report);
 #endif
         }
 
@@ -964,7 +964,7 @@ namespace Hecton8.Core
                 {
                     ObjectPoolManager pool = ObjectPoolManager.Instance;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError(
+                    Hecton8.Core.H8Debug.LogError(
                         "[ObjectPoolManager] DespawnTimer requested before SystemDispatcher was ready. Falling back to immediate despawn.",
                         this);
 #endif

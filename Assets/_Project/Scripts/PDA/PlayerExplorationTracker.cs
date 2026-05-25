@@ -3,9 +3,9 @@ using System.IO;
 using Hecton8.Cartography;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Hecton8.Visor;
@@ -56,7 +56,7 @@ namespace Hecton8.PDA
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/PDA/Player Exploration Tracker")]
-    public sealed class PlayerExplorationTracker : MonoBehaviour, ITickable, ISlowTickable, ISaveable, IMapMagicBiomeEventListener, IAcousticPingEventListener, ISonarPingEventListener, IPlayerExplorationChunkReadModel, IPdaCartographyReadModel, IGlobalRegistryHotSwapListener
+    public sealed class PlayerExplorationTracker : MonoBehaviour, ITickable, ISlowTickable, ISaveable, IMapMagicBiomeEventListener, ISonarPingEventListener, IPlayerExplorationChunkReadModel, IPdaCartographyReadModel, IGlobalRegistryHotSwapListener
     {
         private const int ExplorationChunkSizeMeters = ExplorationMapDTO.DenseChunkSizeMeters;
         private const int MaskAxisBits = ExplorationMapDTO.MortonMaskAxisBits;
@@ -93,6 +93,7 @@ namespace Hecton8.PDA
         private bool _registeredToSave;
         private bool _registeredToAcousticEvents;
         private bool _registeredToSonarEvents;
+        private int _lastPhysicsEventSnapshotGeneration;
         private bool _serviceRegistered;
         private bool _registeredHotSwapListener;
         private bool _explorationMaskInitialized;
@@ -166,7 +167,7 @@ namespace Hecton8.PDA
         {
             InitializeExplorationMask();
             TryRegisterService();
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             TryRegisterHotSwapListener();
             TryRegisterWithTickManager();
             TryRegisterWithSlowTickManager();
@@ -220,6 +221,8 @@ namespace Hecton8.PDA
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
+            DrainPhysicsEventPayloads();
+
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition currentAup))
                 return;
 
@@ -2152,7 +2155,26 @@ namespace Hecton8.PDA
             };
         }
 
-        void IAcousticPingEventListener.OnAcousticPing(in AcousticPingEvent pingEvent)
+        private void DrainPhysicsEventPayloads()
+        {
+            if (!_registeredToAcousticEvents)
+                return;
+
+            int snapshotGeneration = SignalBus<PhysicsEventPayload>.SnapshotGeneration;
+            if (snapshotGeneration == _lastPhysicsEventSnapshotGeneration)
+                return;
+
+            _lastPhysicsEventSnapshotGeneration = snapshotGeneration;
+            ReadOnlySpan<PhysicsEventPayload> signals = SignalBus<PhysicsEventPayload>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PhysicsEventPayload payload = signals[i];
+                if (payload.EventType == (ushort)PhysicsEventType.AcousticPing)
+                    HandleAcousticPingPayload(in payload);
+            }
+        }
+
+        private void HandleAcousticPingPayload(in PhysicsEventPayload pingEvent)
         {
             if (!TryResolveAupFromRuntimePosition(pingEvent.RuntimePosition, out AbsoluteUniversePosition pingAup))
                 return;
@@ -2161,7 +2183,7 @@ namespace Hecton8.PDA
             {
                 Center = ToCartographyAup(in pingAup),
                 RadiusMeters = ClampRevealRadius(pingEvent.RadiusMeters),
-                SourceId = unchecked((uint)math.max(0, pingEvent.SourceSpeciesId)),
+                SourceId = unchecked((uint)math.max(0, pingEvent.PrimaryId)),
                 Flags = MapRevealSignalFlags.Acoustic
             };
             EnqueueMapReveal(in signal);
@@ -2300,7 +2322,6 @@ namespace Hecton8.PDA
 
             if (!_registeredToAcousticEvents)
             {
-                PhysicsEventBus.Register((IAcousticPingEventListener)this);
                 _registeredToAcousticEvents = true;
             }
 
@@ -2315,8 +2336,8 @@ namespace Hecton8.PDA
         {
             if (_registeredToAcousticEvents)
             {
-                PhysicsEventBus.Unregister((IAcousticPingEventListener)this);
                 _registeredToAcousticEvents = false;
+                _lastPhysicsEventSnapshotGeneration = 0;
             }
 
             if (_registeredToSonarEvents)
@@ -2332,7 +2353,7 @@ namespace Hecton8.PDA
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;

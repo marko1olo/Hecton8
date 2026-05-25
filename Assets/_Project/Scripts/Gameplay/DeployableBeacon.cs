@@ -18,7 +18,6 @@
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Interaction;
-using Hecton8.Physics;
 using Hecton8.World;
 using System;
 using Unity.Mathematics;
@@ -124,6 +123,7 @@ namespace Hecton8.Gameplay
         private int _emissionPropertyId;
         private IAudioService _audioService;
         private ILocalizationTextReadModel _localization;
+        private IPhysicsService _physicsService;
 
         // Cached references
         private Transform _cachedTransform;
@@ -364,11 +364,15 @@ namespace Hecton8.Gameplay
 
                 // Apply force
                 Vector3 force = Vector3.up * forceMagnitude;
-                PhysicsForceRouter.QueueForce(_rb, force, ForceMode.Force);
+                IPhysicsService physicsService = _physicsService;
+                if (physicsService == null)
+                    return;
+
+                physicsService.QueueForce(_rb, force, ForceMode.Force);
 
                 // Apply damping
                 Vector3 dampingForce = -_rb.linearVelocity * damping;
-                PhysicsForceRouter.QueueForce(_rb, dampingForce, ForceMode.Force);
+                physicsService.QueueForce(_rb, dampingForce, ForceMode.Force);
             }
         }
 
@@ -607,13 +611,17 @@ namespace Hecton8.Gameplay
                     if (!string.IsNullOrWhiteSpace(localizedLabelTableKey))
                         OnLabelChanged?.Invoke(DisplayLabel);
                     break;
+                case GlobalRegistryServiceSlot.Physics:
+                    _physicsService = currentService as IPhysicsService;
+                    break;
             }
         }
 
         private void CacheRegistryServicesCold()
         {
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _localization = GlobalRegistry.LocalizationText;
+            _physicsService = GlobalRegistry.Physics;
         }
 
         private void TryRegisterHotSwapListener()

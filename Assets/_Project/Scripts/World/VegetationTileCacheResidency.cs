@@ -23,13 +23,14 @@ namespace Hecton8.World
                 return readbackChanged;
             }
 
-            if (Time.unscaledTime < _nextCacheValidationTime)
+            float now = (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (now < _nextCacheValidationTime)
             {
                 EnforceTileCacheLruBudget();
                 return readbackChanged;
             }
 
-            _nextCacheValidationTime = Time.unscaledTime + CacheValidationInterval;
+            _nextCacheValidationTime = now + CacheValidationInterval;
             bool changed = false;
             int remainingBudget = CacheValidationTileBudget;
             long validatedTileA = long.MinValue;

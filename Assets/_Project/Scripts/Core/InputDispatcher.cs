@@ -29,7 +29,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9990)]
-    public sealed unsafe partial class InputDispatcher : MonoBehaviour, IInputService, IUpdatable, ITickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed unsafe partial class InputDispatcher : MonoBehaviour, IInputService, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private static int s_x001InputDispatcherSignalPushDropCount;
         private const int BufferedActionCapacity = 10;
@@ -195,9 +195,13 @@ namespace Hecton8.Core
         private VaultGenerationHandle<InputState> _inputReplaySnapshotHandle;
         private VaultGenerationHandle<HapticCommandDTO> _hapticCommandDtoHandle;
         private VaultGenerationHandle<XRInputState> _xrInputStatesHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _inputProfileCsvScratchHandle;
+#endif
         private FileStream _inputReplayStream;
+#if UNITY_EDITOR
         private FileSystemWatcher _inputProfileCsvWatcher;
+#endif
 #if HECTON8_MMF_AVAILABLE
         private MemoryMappedFile _inputReplayMappedFile;
         private MemoryMappedViewAccessor _inputReplayAccessor;
@@ -211,7 +215,6 @@ namespace Hecton8.Core
         private Vector3 _lastXRLookAtRayDirection;
         private XRRuntimeAup48 _lastXRLookAtHitPointAup;
         private int _lastXRLookAtProbeFrame = -1;
-        private bool _registeredUpdatable;
         private bool _registeredLateFrame;
         private bool _registeredInputService;
         private bool _registeredHotSwapListener;
@@ -228,11 +231,13 @@ namespace Hecton8.Core
         private int _inputReplayStopRequested;
         private int _inputReplayWritePending;
         private int _nextInputReplayRetryFrame;
+#if UNITY_EDITOR
         private int _inputProfileCsvDirty;
         private int _inputProfileCsvStageVersion;
         private int _inputProfileCsvAppliedVersion;
         private int _inputProfileCsvStageFault;
         private int _nextInputProfileCsvRetryFrame;
+#endif
         private Vector2 _pendingLookDelta;
         private Vector2 _visualLookDelta;
         private uint _latchedActionBits;
@@ -273,7 +278,9 @@ namespace Hecton8.Core
         private PlayerInputState _currentState;
         private InputState _currentInputState;
         private InputState _previousInputState;
+#if UNITY_EDITOR
         private InputProfileDTO _stagedInputProfileCsv;
+#endif
         private uint _standardInputFrame;
         private uint _inputStateSequence;
         private uint _playerInputSignalSequence;
@@ -281,7 +288,9 @@ namespace Hecton8.Core
         [SerializeField, Range(0, MaxInputDelayFrames)]
         private int _inputDelayFrames;
         private double _standardInputAccumulator;
+#if UNITY_EDITOR
         private string _inputProfileCsvPath;
+#endif
 
         internal static InputDispatcher ActiveRuntimeInstance;
 
@@ -295,8 +304,10 @@ namespace Hecton8.Core
         private readonly BufferedActionEntry[] _bufferedActions = new BufferedActionEntry[BufferedActionCapacity];
         // COLD ALLOC: object[1] - deterministic input replay writer gate - owner: InputDispatcher
         private readonly object _inputReplayGate = new object();
+#if UNITY_EDITOR
         // COLD ALLOC: object[1] - CSV profile stage gate; file I/O happens outside PRE_SIMULATION - owner: InputDispatcher
         private readonly object _inputProfileCsvStageGate = new object();
+#endif
         /// <summary>
         /// Returns true once the dispatcher is registered into <see cref="GlobalRegistry"/>.
         /// </summary>
@@ -527,18 +538,11 @@ namespace Hecton8.Core
             OnToolSlot4 = null;
         }
 
-        /// <summary>
-        /// Captures the frame-cached input snapshot once at the start of the update cadence.
-        /// </summary>
-        /// <param name="deltaTime">Game tick delta time.</param>
-        public void Tick(float deltaTime)
-        {
-            UpdateVisualLookInterpolation();
-            DrainToolHaptics(deltaTime);
-        }
-
         public void LateFrameTick()
         {
+            float deltaTime = SystemDispatcher.CurrentFrameDeltaTime;
+            UpdateVisualLookInterpolation();
+            DrainToolHaptics(deltaTime);
             FlushPendingHapticOutput();
         }
 
@@ -843,17 +847,17 @@ namespace Hecton8.Core
         {
 #if UNITY_EDITOR
             if (UnsafeUtility.SizeOf<InputState>() != InputStateSizeBytes)
-                Debug.LogError("[InputDispatcher] InputState ABI violation; expected 24 bytes with natural ARM64 alignment.");
+                Hecton8.Core.H8Debug.LogError("[InputDispatcher] InputState ABI violation; expected 24 bytes with natural ARM64 alignment.");
             if (UnsafeUtility.SizeOf<PlayerInputState>() != PlayerInputStateSizeBytes)
-                Debug.LogError("[InputDispatcher] PlayerInputState ABI violation; expected 64 bytes with natural ARM64 alignment.");
+                Hecton8.Core.H8Debug.LogError("[InputDispatcher] PlayerInputState ABI violation; expected 64 bytes with natural ARM64 alignment.");
             if (UnsafeUtility.SizeOf<InputStateDTO>() != InputStateDtoSizeBytes)
-                Debug.LogError("[InputDispatcher] InputStateDTO ABI violation; expected 24 bytes.");
+                Hecton8.Core.H8Debug.LogError("[InputDispatcher] InputStateDTO ABI violation; expected 24 bytes.");
             if (UnsafeUtility.SizeOf<HapticCommandDTO>() != HapticCommandDtoSizeBytes)
-                Debug.LogError("[InputDispatcher] HapticCommandDTO ABI violation; expected 16 bytes.");
+                Hecton8.Core.H8Debug.LogError("[InputDispatcher] HapticCommandDTO ABI violation; expected 16 bytes.");
             if (UnsafeUtility.SizeOf<XRInputState>() != XRInputStateSizeBytes)
-                Debug.LogError("[InputDispatcher] XRInputState ABI violation; expected 64 bytes with natural ARM64 alignment.");
+                Hecton8.Core.H8Debug.LogError("[InputDispatcher] XRInputState ABI violation; expected 64 bytes with natural ARM64 alignment.");
             if (UnsafeUtility.SizeOf<BufferedActionEntry>() != BufferedActionEntrySizeBytes)
-                Debug.LogError("[InputDispatcher] BufferedActionEntry ABI violation; expected 16 bytes with natural ARM64 alignment.");
+                Hecton8.Core.H8Debug.LogError("[InputDispatcher] BufferedActionEntry ABI violation; expected 16 bytes with natural ARM64 alignment.");
 #endif
             if (_deterministicVaultBuffersReady && ValidateDeterministicInputBuffers())
                 return;
@@ -928,13 +932,16 @@ namespace Hecton8.Core
                     BufferID.ShinobuInputHapticCommands,
                     HapticCommandDtoCapacity,
                     NativeArrayOptions.UninitializedMemory,
-                    out _) &&
+                    out _);
+#if UNITY_EDITOR
+            ready = ready &&
                 TryResolveOrAcquireInputBuffer(
                     ref _inputProfileCsvScratchHandle,
                     BufferID.ShinobuInputCsvScratch,
                     4096,
                     NativeArrayOptions.UninitializedMemory,
                     out _);
+#endif
 
             _deterministicVaultBuffersReady = ready;
 
@@ -953,7 +960,9 @@ namespace Hecton8.Core
             ClearVaultBuffer(ref _inputTelemetryHandle);
             ClearVaultBuffer(ref _inputReplaySnapshotHandle);
             ClearVaultBuffer(ref _hapticCommandDtoHandle);
+#if UNITY_EDITOR
             ClearVaultBuffer(ref _inputProfileCsvScratchHandle);
+#endif
             InitializeDefaultInputProfile();
             _deterministicVaultBuffersCleared = true;
         }
@@ -979,8 +988,11 @@ namespace Hecton8.Core
                    TryResolveInputBuffer(in _inputProfileHandle, 1, out _) &&
                    TryResolveInputBuffer(in _inputTelemetryHandle, InputBlackBoxCapacity, out _) &&
                    TryResolveInputBuffer(in _inputReplaySnapshotHandle, DeterministicInputRingCapacity, out _) &&
-                   TryResolveInputBuffer(in _hapticCommandDtoHandle, HapticCommandDtoCapacity, out _) &&
-                   TryResolveInputBuffer(in _inputProfileCsvScratchHandle, 4096, out _);
+                   TryResolveInputBuffer(in _hapticCommandDtoHandle, HapticCommandDtoCapacity, out _)
+#if UNITY_EDITOR
+                   && TryResolveInputBuffer(in _inputProfileCsvScratchHandle, 4096, out _)
+#endif
+                   ;
         }
 
         private bool TryResolveOrAcquireInputBuffer<T>(
@@ -1104,7 +1116,9 @@ namespace Hecton8.Core
             ReleaseVaultHandle(vault, ref _inputReplaySnapshotHandle);
             ReleaseVaultHandle(vault, ref _hapticCommandDtoHandle);
             ReleaseVaultHandle(vault, ref _xrInputStatesHandle);
+#if UNITY_EDITOR
             ReleaseVaultHandle(vault, ref _inputProfileCsvScratchHandle);
+#endif
             ReleaseHapticSynthesisVaultHandles(vault);
         }
 
@@ -1134,6 +1148,7 @@ namespace Hecton8.Core
             profile.Flags = 0u;
             profiles[0] = profile;
 
+#if UNITY_EDITOR
             lock (_inputProfileCsvStageGate)
             {
                 _stagedInputProfileCsv = profile;
@@ -1142,6 +1157,7 @@ namespace Hecton8.Core
             }
 
             Interlocked.Exchange(ref _inputProfileCsvStageFault, 0);
+#endif
         }
 
 #if UNITY_EDITOR
@@ -1200,7 +1216,7 @@ namespace Hecton8.Core
 
         private void ApplyPendingInputProfileCsv()
         {
-            int currentFrame = Time.frameCount;
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_nextInputProfileCsvRetryFrame > 0 && currentFrame < _nextInputProfileCsvRetryFrame)
                 return;
 
@@ -1539,7 +1555,7 @@ namespace Hecton8.Core
             if (!Application.isPlaying || _inputReplayThread != null)
                 return;
 
-            int currentFrame = Time.frameCount;
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_nextInputReplayRetryFrame > currentFrame)
                 return;
 
@@ -1751,7 +1767,7 @@ namespace Hecton8.Core
                 return;
 
             _bufferedActions[_bufferWriteIndex].Action = action;
-            _bufferedActions[_bufferWriteIndex].Frame = Time.frameCount;
+            _bufferedActions[_bufferWriteIndex].Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId);
             _bufferWriteIndex++;
             if (_bufferWriteIndex >= BufferedActionCapacity)
                 _bufferWriteIndex = 0;
@@ -1771,7 +1787,7 @@ namespace Hecton8.Core
             int validFrameWindow = maxAgeSeconds > 0f
                 ? math.clamp((int)math.ceil(maxAgeSeconds * (float)StandardInputTickRateHz), 1, BufferedActionCapacity)
                 : BufferedActionCapacity;
-            int currentFrame = Time.frameCount;
+            int currentFrame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId);
 
             for (int offset = 0; offset < BufferedActionCapacity; offset++)
             {
@@ -2094,7 +2110,7 @@ namespace Hecton8.Core
 
         private void RefreshCachedXRControllerBindings()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_cachedLeftXRController != null && _cachedLeftXRController.added &&
                 _cachedRightXRController != null && _cachedRightXRController.added &&
                 frame < _nextXRDeviceRescanFrame)
@@ -2241,8 +2257,6 @@ namespace Hecton8.Core
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_registeredUpdatable)
-                _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
             TryRegisterHapticSynthesisPostSimulation();
@@ -2257,12 +2271,6 @@ namespace Hecton8.Core
                 _registeredLateFrame = false;
                 _pendingHapticOutput = false;
             }
-
-            if (!_registeredUpdatable)
-                return;
-
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-            _registeredUpdatable = false;
         }
 
         private void TryRegisterInputService()
@@ -2378,7 +2386,7 @@ namespace Hecton8.Core
             if (_playerContext != null)
                 return;
 
-            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerContext = GlobalRegistry.Player;
         }
 
         private void CaptureState(float deltaTime = 0f)
@@ -2386,7 +2394,7 @@ namespace Hecton8.Core
             EnsureInputBinding();
             RefreshXRNativeBufferState();
 
-            int currentFrame = Time.frameCount;
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastCapturedFrame == currentFrame)
                 return;
 
@@ -2862,7 +2870,7 @@ namespace Hecton8.Core
             ButtonControl secondaryButton)
         {
             XRInputState state = default;
-            state.Frame = Time.frameCount;
+            state.Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId);
             state.ControllerIndex = controllerIndex;
             state.GripRotationWS = quaternion.identity;
 
@@ -3007,8 +3015,8 @@ namespace Hecton8.Core
                     out InteractableRegistry.SpatialHit spatialHit))
             {
                 _lastXRLookAtSpatialHit = spatialHit;
-                _lastXRLookAtHitFrame = Time.frameCount;
-                _lastXRLookAtProbeFrame = Time.frameCount;
+                _lastXRLookAtHitFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+                _lastXRLookAtProbeFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
                 _lastXRLookAtRayOriginAup = originAup;
                 _lastXRLookAtRayOriginRuntimePosition = probeOrigin;
                 _lastXRLookAtRayDirection = direction;
@@ -3021,8 +3029,8 @@ namespace Hecton8.Core
             }
 
             _lastXRLookAtSpatialHit = default;
-            _lastXRLookAtHitFrame = Time.frameCount;
-            _lastXRLookAtProbeFrame = Time.frameCount;
+            _lastXRLookAtHitFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            _lastXRLookAtProbeFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             _lastXRLookAtRayOriginAup = originAup;
             _lastXRLookAtRayOriginRuntimePosition = probeOrigin;
             _lastXRLookAtRayDirection = direction;
@@ -3073,7 +3081,7 @@ namespace Hecton8.Core
             if (_lastXRLookAtProbeFrame < 0)
                 return false;
 
-            if (Time.frameCount - _lastXRLookAtProbeFrame > XRLookAtReuseMaxFrames)
+            if (Hecton8.Core.SystemDispatcher.CurrentFrameIndex - _lastXRLookAtProbeFrame > XRLookAtReuseMaxFrames)
                 return false;
 
             if (!XRRuntimeAup48.TryToRelativeFloat3(in originAup, in _lastXRLookAtRayOriginAup, out float3 originDelta))
@@ -3091,7 +3099,7 @@ namespace Hecton8.Core
 
             if (!_lastXRLookAtSpatialHit.HasHit)
             {
-                _lastXRLookAtHitFrame = Time.frameCount;
+                _lastXRLookAtHitFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
                 return true;
             }
 
@@ -3110,7 +3118,7 @@ namespace Hecton8.Core
             if (lateralDriftSq > XRLookAtReuseLateralDriftSq)
                 return false;
 
-            _lastXRLookAtHitFrame = Time.frameCount;
+            _lastXRLookAtHitFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             return true;
         }
 
@@ -3710,7 +3718,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            float now = Time.unscaledTime;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             bool hasAppliedOutput = appliedAmplitude > HapticMotorWriteEpsilon;
             if (amplitude <= HapticMotorWriteEpsilon)
             {
@@ -3837,7 +3845,9 @@ namespace Hecton8.Core
                 ClearVaultBuffer(ref _inputTelemetryHandle);
                 ClearVaultBuffer(ref _inputReplaySnapshotHandle);
                 ClearVaultBuffer(ref _hapticCommandDtoHandle);
+#if UNITY_EDITOR
                 ClearVaultBuffer(ref _inputProfileCsvScratchHandle);
+#endif
             }
 
             ClearXRInputSnapshotIfActive(forceWrite: true);
@@ -3870,12 +3880,13 @@ namespace Hecton8.Core
         {
             double timestamp = UnityEngine.InputSystem.LowLevel.InputState.currentTime;
             if (timestamp <= 0d)
-                timestamp = Time.unscaledTimeAsDouble;
+                timestamp = SystemDispatcher.CurrentUnscaledTimeSeconds;
 
-            if (_pendingInputTimestamp <= 0d || Time.frameCount != _pendingInputFrame)
+            int frameIndex = SystemDispatcher.CurrentFrameIndex;
+            if (_pendingInputTimestamp <= 0d || frameIndex != _pendingInputFrame)
             {
                 _pendingInputTimestamp = timestamp;
-                _pendingInputFrame = Time.frameCount;
+                _pendingInputFrame = frameIndex;
             }
         }
 
@@ -3885,9 +3896,9 @@ namespace Hecton8.Core
             if (inputTimestamp <= 0d)
                 return;
 
-            double renderTimestamp = Time.unscaledTimeAsDouble;
+            double renderTimestamp = SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (renderTimestamp <= 0d)
-                renderTimestamp = Time.realtimeSinceStartupAsDouble;
+                renderTimestamp = SystemDispatcher.CurrentUnscaledTimeSeconds;
 
             double elapsedSeconds = renderTimestamp - inputTimestamp;
             if (elapsedSeconds <= 0d)
@@ -3911,7 +3922,7 @@ namespace Hecton8.Core
         public static float SampleInputSystemClockDeltaMs()
         {
             double inputTimestamp = UnityEngine.InputSystem.LowLevel.InputState.currentTime;
-            double renderTimestamp = Time.unscaledTimeAsDouble;
+            double renderTimestamp = SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (inputTimestamp <= 0d || renderTimestamp <= 0d)
                 return 0f;
 
@@ -3995,7 +4006,7 @@ namespace Hecton8.Core
             if (pendingContinuationCount <= LatencyCrimeThreshold)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (frame - _lastLatencyCrimeReportFrame < ReportCooldownFrames)
                 return;
 

@@ -1,0 +1,73 @@
+﻿{
+  "agent": "UNKNOWN",
+  "date": "2026-05-26",
+  "scope": "root_docs_build_evidence_refresh",
+  "freshBuild": {
+    "log": "Docs/Reports/BUILD_UNKNOWN_RECHECK_20260526_020504.log",
+    "command": "dotnet build .\\Hecton8.slnx -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false",
+    "guard": {
+      "cpuAverage": 5,
+      "compilerProcessCount": 0
+    },
+    "exitCode": 0,
+    "warnings": 0,
+    "errors": 0,
+    "evidenceClass": "CLI_COMPILE_ONLY"
+  },
+  "updatedDocs": [
+    "BUILD_PLAYTEST_ISSUES.md",
+    "MASTER_RELEASE_WORK_PLAN.md",
+    "Docs/ROOT_DOCS_REFERENCE.md",
+    "Docs/README.md",
+    "Docs/DOC_GOVERNANCE.md",
+    "Docs/QUALITY_GATES.md",
+    "Docs/SYSTEMS_CONTRACTS.md",
+    "Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md",
+    "Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md",
+    "Docs/ARCHITECTURE/README.md",
+    "Docs/ARCHITECTURE/HECTON8_DOCUMENTATION_ACTUALITY_LEDGER.md",
+    "Docs/Reports/BUILD_REPAIR_UNKNOWN_20260526.md",
+    "Docs/Reports/BUILD_REPAIR_UNKNOWN_20260526.json"
+  ],
+  "notProven": [
+    "Unity import",
+    "Unity Console",
+    "Play Mode",
+    "player build",
+    "profiler",
+    "GCMonitor",
+    "save/load route",
+    "scene wiring",
+    "visual quality",
+    "platform readiness"
+  ],
+  "documentationGateRecheck": {
+    "verifyDocStructure": {
+      "command": "python Tools/VerifyDocStructure.py",
+      "pass": true,
+      "activeDocCount": 704,
+      "rootTextDocCount": 3,
+      "duplicateHeaderFiles": 0,
+      "brokenLinkFiles": 0,
+      "fenceIssueFiles": 0,
+      "staleParameterFiles": 0,
+      "encodingWithoutUtf8Sig": 0,
+      "report": "Docs/Reports/DOC_STRUCTURE_VALIDATION_X_012.json"
+    },
+    "oopDocScanner": {
+      "command": "python Tools/OOP_Doc_Scanner.py",
+      "finalPass": true,
+      "sourceSyncPass": true,
+      "activeStaleParameterFiles": 0,
+      "wordReductionPercent": 35.86017095528346,
+      "report": "Docs/Reports/DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json"
+    },
+    "repairs": [
+      "added language tags to two code fences in Docs/Reports/DATA_MONOLITH_BLOB_V2_MIGRATION_1313.md",
+      "split over-threshold architecture lines in Docs/ARCHITECTURE/DRONE_FLEET_PROTOCOL.md",
+      "split over-threshold architecture lines in Docs/ARCHITECTURE/GLOBAL_AUTHORITY_MIGRATION_LEDGER.md",
+      "converted 92 active docs from validator report to UTF-8 BOM"
+    ]
+  },
+  "runtimeMicrosecondsSavedClaimed": 0
+}

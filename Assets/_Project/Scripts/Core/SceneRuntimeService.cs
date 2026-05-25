@@ -598,7 +598,7 @@ namespace Hecton8.Core
             BeginAudioSnapshotDiveCrossfade();
             BeginWorldDroneCrossfade();
             EnsureTransitionOverlay();
-            _terminalBootSeed = ComputeTerminalBootSeed(_pendingSceneName, Time.frameCount);
+            _terminalBootSeed = ComputeTerminalBootSeed(_pendingSceneName, SystemDispatcher.CurrentFrameIndex);
             _terminalBootLastFrame = -1;
             UpdateTerminalBootOverlay();
             if (_transitionOverlayGroup != null)
@@ -775,7 +775,7 @@ namespace Hecton8.Core
 
         private static void BeginWorldDroneCrossfade()
         {
-            if (Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is ISceneTransitionAudioBridge spatialAudio)
+            if (GlobalRegistry.Audio is ISceneTransitionAudioBridge spatialAudio)
             {
                 spatialAudio.BeginWorldDroneTransition(
                     WorldDroneLoadDb,
@@ -786,7 +786,7 @@ namespace Hecton8.Core
 
         private static void UpdateWorldDroneCrossfade(float normalized)
         {
-            if (Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance is ISceneTransitionAudioBridge spatialAudio)
+            if (GlobalRegistry.Audio is ISceneTransitionAudioBridge spatialAudio)
                 spatialAudio.SetWorldDroneTransitionProgress(normalized);
         }
 
@@ -858,7 +858,7 @@ namespace Hecton8.Core
             if (_terminalBootText == null)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_terminalBootLastFrame == frame)
                 return;
 
@@ -879,7 +879,7 @@ namespace Hecton8.Core
             AppendServiceHandle(buffer, ref cursor, _TerminalBootTickLabelBytes, GlobalRegistry.TickManager, 1u, _terminalBootSeed, (uint)frame);
             AppendServiceHandle(buffer, ref cursor, _TerminalBootSceneLabelBytes, GlobalRegistry.Scene, 2u, _terminalBootSeed, (uint)frame);
             AppendServiceHandle(buffer, ref cursor, _TerminalBootPhysicsLabelBytes, GlobalRegistry.Physics, 3u, _terminalBootSeed, (uint)frame);
-            AppendServiceHandle(buffer, ref cursor, _TerminalBootAudioLabelBytes, Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance, 4u, _terminalBootSeed, (uint)frame);
+            AppendServiceHandle(buffer, ref cursor, _TerminalBootAudioLabelBytes, GlobalRegistry.Audio, 4u, _terminalBootSeed, (uint)frame);
 
             _terminalBootText.SetCharArray(_terminalBootBuffer, 0, cursor);
         }
@@ -1036,11 +1036,11 @@ namespace Hecton8.Core
 
             if (_gpuResidencyReadyFrame < 0)
             {
-                _gpuResidencyReadyFrame = Time.frameCount + 1;
+                _gpuResidencyReadyFrame = SystemDispatcher.CurrentFrameIndex + 1;
                 return false;
             }
 
-            return Time.frameCount >= _gpuResidencyReadyFrame;
+            return SystemDispatcher.CurrentFrameIndex >= _gpuResidencyReadyFrame;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
@@ -1055,7 +1055,7 @@ namespace Hecton8.Core
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             string blockedBy = GetSceneActivationBlockedReason(loadReady, poolsReady, originStable, gpuResidencyReady);
-            Debug.LogError($"[SceneRuntimeService] Scene load '{sceneName}' still blocked after {waitFrames} frames. Reason: {blockedBy}. Progress: {progress:0.00}.");
+            Hecton8.Core.H8Debug.LogError($"[SceneRuntimeService] Scene load '{sceneName}' still blocked after {waitFrames} frames. Reason: {blockedBy}. Progress: {progress:0.00}.");
 #endif
         }
 
@@ -1063,7 +1063,7 @@ namespace Hecton8.Core
         private static void LogSceneLoadRejectedInFlight(string sceneName, string pendingSceneName)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning($"[SceneRuntimeService] Scene load '{sceneName}' rejected because '{pendingSceneName}' is already in flight.");
+            Hecton8.Core.H8Debug.LogWarning($"[SceneRuntimeService] Scene load '{sceneName}' rejected because '{pendingSceneName}' is already in flight.");
 #endif
         }
 
@@ -1071,7 +1071,7 @@ namespace Hecton8.Core
         private static void LogSceneLoadRejectedBootstrapIncomplete(string sceneName)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[SceneRuntimeService] Scene load '{sceneName}' rejected while bootstrap is incomplete.");
+            Hecton8.Core.H8Debug.LogError($"[SceneRuntimeService] Scene load '{sceneName}' rejected while bootstrap is incomplete.");
 #endif
         }
 
@@ -1079,7 +1079,7 @@ namespace Hecton8.Core
         private static void LogSceneLoadOperationMissing(string sceneName)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[SceneRuntimeService] Scene load '{sceneName}' failed to create an AsyncOperation.");
+            Hecton8.Core.H8Debug.LogError($"[SceneRuntimeService] Scene load '{sceneName}' failed to create an AsyncOperation.");
 #endif
         }
 

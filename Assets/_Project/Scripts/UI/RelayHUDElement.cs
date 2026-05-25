@@ -1,5 +1,6 @@
 using System;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using TMPro;
@@ -59,8 +60,8 @@ namespace Hecton8.UI
         private CanvasGroup _canvasGroup;
         private RectTransform _rectTransform;
         private HectonPlayerMovement _playerMovement;
-        private EmergencyServiceRelay _trackedRelay;
-        private EmergencyServiceRelayDirector _relayDirector;
+        private uint _trackedRelayHash;
+        private IEmergencyRelayRouteReadModel _relayDirector;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private bool _registered;
         private bool _hotSwapListenerRegistered;
@@ -88,6 +89,7 @@ namespace Hecton8.UI
         private const int LabelTextCapacity = 96;
         private const uint LabelHashSeed = 2166136261u;
         private const uint LabelHashPrime = 16777619u;
+        private const string DefaultRelayRouteTargetLabel = "SERVICE RELAY";
 
         private void Awake()
         {
@@ -114,7 +116,7 @@ namespace Hecton8.UI
                 _registered = false;
             }
 
-            _trackedRelay = null;
+            _trackedRelayHash = 0u;
             _lastDistanceMeters = int.MinValue;
             _lastLabelLength = 0;
             _lastLabelHash = LabelHashSeed;
@@ -179,22 +181,20 @@ namespace Hecton8.UI
                 return;
             }
 
-            EmergencyServiceRelayDirector relayDirector = _relayDirector;
-            EmergencyServiceRelay routeTarget = relayDirector != null
-                ? relayDirector.GetActiveRouteTarget()
-                : null;
-            if (routeTarget == null || !routeTarget.isActiveAndEnabled)
+            IEmergencyRelayRouteReadModel relayDirector = _relayDirector;
+            if (relayDirector == null ||
+                !relayDirector.TryReadActiveRouteTarget(out EmergencyRelayRouteTargetSnapshot routeTarget))
             {
-                _trackedRelay = null;
+                _trackedRelayHash = 0u;
                 _lastVisibilityState = RelayMarkerVisibilityState.Hidden_NoRouteTarget;
                 SetVisible(false);
                 return;
             }
 
-            if (!ReferenceEquals(_trackedRelay, routeTarget))
+            if (_trackedRelayHash != routeTarget.RelayHash)
                 _hasPositionState = false;
 
-            _trackedRelay = routeTarget;
+            _trackedRelayHash = routeTarget.RelayHash;
 
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
             {
@@ -214,8 +214,13 @@ namespace Hecton8.UI
                 return;
             }
 
-            float3 relayRuntime = relayAup.ToRuntimeFloat3();
-            Vector3 relayPosition = new Vector3(relayRuntime.x, relayRuntime.y, relayRuntime.z);
+            if (!TryResolveRuntimePosition(in relayAup, out Vector3 relayPosition))
+            {
+                _lastVisibilityState = RelayMarkerVisibilityState.Hidden_NoPlayerAup;
+                SetVisible(false);
+                return;
+            }
+
             Vector3 screenPosition = _mainCamera.WorldToScreenPoint(relayPosition);
             bool behindCamera = screenPosition.z < 0f;
             if (behindCamera && hideWhenBehindCamera)
@@ -250,7 +255,7 @@ namespace Hecton8.UI
             _lastObservedDistance = distance;
 
             ApplyScreenPosition(screenPosition);
-            UpdateLabel(routeTarget.ResolveRelayLabelSpan());
+            UpdateLabel(DefaultRelayRouteTargetLabel.AsSpan());
             UpdateDistance(distance);
             UpdateColor(clampedToEdge);
             _lastVisibilityState = clampedToEdge
@@ -307,6 +312,33 @@ namespace Hecton8.UI
 
             playerAup = default;
             return false;
+        }
+
+        private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition targetAup, out Vector3 runtimePosition)
+        {
+            runtimePosition = default;
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            double3 localDelta = AupPrecisionMath.LocalDeltaDouble(
+                targetAup.ToAbsoluteDouble3(),
+                originAup.ToAbsoluteDouble3());
+
+            if (!math.all(math.isfinite(localDelta)) ||
+                math.abs(localDelta.x) > AupPrecisionMath.DefaultMaxLocalCastMeters ||
+                math.abs(localDelta.y) > AupPrecisionMath.DefaultMaxLocalCastMeters ||
+                math.abs(localDelta.z) > AupPrecisionMath.DefaultMaxLocalCastMeters)
+            {
+                return false;
+            }
+
+            float3 local = default;
+            local.x = (float)localDelta.x;
+            local.y = (float)localDelta.y;
+            local.z = (float)localDelta.z;
+            if (!math.all(math.isfinite(local)))
+                return false;
+
+            runtimePosition = (Vector3)local;
+            return true;
         }
 
         private static float ApproximateDistanceMetersFromSq(double distanceSq)
@@ -372,7 +404,7 @@ namespace Hecton8.UI
                 return 0;
 
             int safeValue = math.max(0, value);
-            return safeValue.TryFormat(new System.Span<char>(buffer), out int length)
+            return safeValue.TryFormat(buffer.AsSpan(), out int length)
                 ? length
                 : 0;
         }
@@ -504,8 +536,8 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.EmergencyRelayRuntime)
             {
-                _relayDirector = currentService as EmergencyServiceRelayDirector;
-                _trackedRelay = null;
+                _relayDirector = currentService as IEmergencyRelayRouteReadModel;
+                _trackedRelayHash = 0u;
                 _hasPositionState = false;
                 return;
             }
@@ -538,8 +570,8 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _relayDirector = GlobalRegistry.EmergencyRelay;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _relayDirector = GlobalRegistry.EmergencyRelayReadModel;
+            _cachedPlayerContext = GlobalRegistry.Player;
             if (_cachedPlayerContext != null)
             {
                 _mainCamera = _cachedPlayerContext.PlayerCamera;

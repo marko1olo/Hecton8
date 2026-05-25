@@ -20,7 +20,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Pause Menu Controller")]
-    public sealed class PauseMenuController : MonoBehaviour, ITickable, IUnscaledFastTickable, IUpdatable, ILateFrameTickable, ISaveEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public sealed class PauseMenuController : MonoBehaviour, IUnscaledFastTickable, ILateFrameTickable, ISaveEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private const byte PauseMenuCommandPause = 1 << 0;
         private const byte PauseMenuCommandCancel = 1 << 1;
@@ -193,8 +193,8 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            _cachedSaveService = Hecton8.Core.GlobalRegistry.Save;
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationLanguageControl;
         }
 
@@ -338,7 +338,7 @@ namespace Hecton8.UI
             }
         }
 
-        public void Tick(float deltaTime)
+        private void AdvancePauseInputState(float deltaTime)
         {
             if (!Application.isPlaying)
                 return;
@@ -368,7 +368,7 @@ namespace Hecton8.UI
 
         public void UnscaledFastTick(float unscaledDeltaTime)
         {
-            Tick(unscaledDeltaTime);
+            AdvancePauseInputState(unscaledDeltaTime);
         }
 
         public void LateFrameTick()
@@ -989,7 +989,7 @@ namespace Hecton8.UI
         private static void LogSaveSlotFailed(string slotName, Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[PauseMenuController] Save failed.");
+            Hecton8.Core.H8Debug.LogError("[PauseMenuController] Save failed.");
 #endif
         }
 
@@ -1197,7 +1197,7 @@ namespace Hecton8.UI
                 ApplySaveStatusLiteral(message);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[PauseMenuController] Fatal pause-menu state.");
+            Hecton8.Core.H8Debug.LogError("[PauseMenuController] Fatal pause-menu state.");
 #endif
         }
 

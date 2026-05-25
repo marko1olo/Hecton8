@@ -290,7 +290,7 @@ namespace Hecton8.World
                 return;
 
             float searchRadius = ResolveSearchRadius();
-            float now = Application.isPlaying ? Time.unscaledTime : 0f;
+            float now = Application.isPlaying ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
             _debugSearchRadius = searchRadius;
 
             if (includeInactiveBindings && !Application.isPlaying)
@@ -367,7 +367,7 @@ namespace Hecton8.World
             if (planForcedRefreshInterval > 0f)
             {
                 float forcedInterval = Mathf.Max(0.5f, planForcedRefreshInterval);
-                if (Application.isPlaying && Time.unscaledTime - _lastPlanRefreshTime >= forcedInterval)
+                if (Application.isPlaying && (float)SystemDispatcher.CurrentUnscaledTimeSeconds - _lastPlanRefreshTime >= forcedInterval)
                     return false;
             }
 
@@ -389,7 +389,7 @@ namespace Hecton8.World
             _hasPlanRefreshAup = hasPlayerAup;
             _lastPlanRefreshPosition = playerRuntimePosition;
             _lastPlanRefreshAup = playerAup;
-            _lastPlanRefreshTime = Application.isPlaying ? Time.unscaledTime : 0f;
+            _lastPlanRefreshTime = Application.isPlaying ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
         }
 
         private void InvalidatePlanRefreshSample()
@@ -919,7 +919,7 @@ namespace Hecton8.World
             if (playerTransform != null && mapMagicBridge != null && voxelEngine != null)
                 return;
 
-            float now = Time.realtimeSinceStartup;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (now < _nextAutoResolveAttemptTime)
                 return;
 

@@ -62,7 +62,7 @@ namespace Hecton8.World
 
         private bool TryGetObserverAbsolutePosition(out Vector3 absolutePosition)
         {
-            int frame = Application.isPlaying ? Time.frameCount : -1;
+            int frame = Application.isPlaying ? Hecton8.Core.SystemDispatcher.CurrentFrameIndex : -1;
             if (frame >= 0 && _observerAbsolutePositionCacheFrame == frame)
             {
                 absolutePosition = _observerAbsolutePositionCache;

@@ -1,0 +1,81 @@
+{
+  "schema": "hecton8.presentation_decoupling_audit.v1",
+  "agent": "X_004",
+  "domain": "ECHELON 8: PRESENTATION & UX",
+  "role": "PRESENTATION_DECOUPLER_AND_VISUAL_SYNC_ENFORCER",
+  "sourceRoot": "Assets/_Project/Scripts/UI",
+  "outputPath": "Docs/Reports/PRESENTATION_DECOUPLING_LEDGER_1309_UI.json",
+  "scannerUsesRoslynAst": true,
+  "proofClass": "STATIC_ROSLYN_AST_ONLY_RUNTIME_PROFILER_PENDING",
+  "reportHashSha256": "23a095453d15b82028d8cbbafca24efd26d9debf6f8f788f6c130fc5a03c37c8",
+  "summary": {
+    "scannedFiles": 136,
+    "runtimeFiles": 119,
+    "editorFilesSkipped": 17,
+    "simulationFiles": 0,
+    "presentationFiles": 119,
+    "simulationHotMethods": 0,
+    "presentationVisualSyncMethods": 68,
+    "fatalHotPathFindings": 0,
+    "boundaryTypeLeaks": 0,
+    "namespaceLeaks": 0,
+    "presentationMutableTruthFindings": 0,
+    "uiStringGcRisks": 0,
+    "syntaxNodesVisited": 523876,
+    "parseFailures": 0
+  },
+  "scannedSimulationRoots": [
+    "Assets/_Project/Scripts/",
+    "Assets/_Project/Scripts/AI/",
+    "Assets/_Project/Scripts/Atmosphere/",
+    "Assets/_Project/Scripts/Construction/",
+    "Assets/_Project/Scripts/Environment/",
+    "Assets/_Project/Scripts/Fauna/",
+    "Assets/_Project/Scripts/Gameplay/",
+    "Assets/_Project/Scripts/Habitat/",
+    "Assets/_Project/Scripts/Logistics/",
+    "Assets/_Project/Scripts/Physics/",
+    "Assets/_Project/Scripts/Power/",
+    "Assets/_Project/Scripts/Thermodynamics/",
+    "Assets/_Project/Scripts/Vehicles/",
+    "Assets/_Project/Scripts/World/"
+  ],
+  "scannedPresentationRoots": [
+    "Assets/_Project/Scripts/Animation/",
+    "Assets/_Project/Scripts/Audio/",
+    "Assets/_Project/Scripts/Graphics/",
+    "Assets/_Project/Scripts/Lighting/",
+    "Assets/_Project/Scripts/Narrative/Camera/",
+    "Assets/_Project/Scripts/PDA/",
+    "Assets/_Project/Scripts/Prologue/VFX/",
+    "Assets/_Project/Scripts/Rendering/",
+    "Assets/_Project/Scripts/UI/",
+    "Assets/_Project/Scripts/Visor/",
+    "Assets/_Project/Scripts/VFX/",
+    "Assets/_Project/Scripts/Vehicles/VFX/"
+  ],
+  "dearLiePolicy": {
+    "simulationTruth": "unmanaged DTOs, typed signals, and DataVault snapshots only",
+    "presentationTruth": "VISUAL_SYNC/LateFrameTick read-only consumer applying GPU/audio/UI fakes",
+    "lowTier": "dirty-page scalar uploads, bounded UI cadence, DSP param snapshots, no spawned presentation objects",
+    "middleTier": "full snapshot cadence for nearby visible state with coalesced presentation lanes",
+    "highTier": "richer shader/VAT/particle detail in VISUAL_SYNC after simulation remains flat",
+    "ultraTier": "visual overkill through GPU shaders and DSP only; gameplay truth cost remains invariant"
+  },
+  "stressHarnessPlan": {
+    "status": "STATIC_PLAN_ONLY_RUNTIME_PENDING",
+    "method": "flood read-only presentation consumers with extreme DTO/signal values after simulation phase; verify SystemDispatcher SIMULATION timing stays flat and costs move to VISUAL_SYNC/GPU/DSP",
+    "failureGate": "any presentation write handle, job completion, scene search, spawned GameObject, AudioSource call, or TMP string assignment before VISUAL_SYNC is fatal"
+  },
+  "findings": [
+  ],
+  "parseFailures": [
+  ],
+  "verification": {
+    "staticRoslynAst": "PASS",
+    "runtimeProfiler": "PENDING_VERIFICATION",
+    "gcMonitor": "PENDING_VERIFICATION",
+    "unityImport": "PENDING_VERIFICATION",
+    "compile": "PENDING_VERIFICATION"
+  }
+}

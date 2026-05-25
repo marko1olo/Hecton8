@@ -43,7 +43,7 @@ namespace Hecton8.Construction.Editor
         private static void RunMenu()
         {
             string report = RunAndWriteReport();
-            Debug.Log("[SHINOBU_334] OOP drone nav scanner wrote " + report);
+            Hecton8.Core.H8Debug.Log("[SHINOBU_334] OOP drone nav scanner wrote " + report);
         }
 
         public static string RunAndWriteReport()

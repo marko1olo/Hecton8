@@ -21,7 +21,9 @@ namespace Hecton8.Physiology
     {
         private static int s_x001ShinobuRadiationMutationRuntimeSignalPushDropCount;
         private const SystemID OwnerSystem = SystemID.GameplayPlayer;
+#if UNITY_EDITOR
         private const string CsvRelativePath = "biological_mutation_profiles.csv";
+#endif
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_324.bin";
 
         [Header("Emergency Mock")]
@@ -35,7 +37,9 @@ namespace Hecton8.Physiology
         private VaultGenerationHandle<RadiationMutationTuningDTO> _tuningHandle;
         private VaultGenerationHandle<RadiationMutationTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<RadiationMutationProfileDTO> _profilesHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
         private VaultGenerationHandle<float> _mockDoseHandle;
         private VaultGenerationHandle<RadiationStateDTO> _radiationStateHandle;
         private VaultGenerationHandle<MetabolicStateDTO> _metabolicStateHandle;
@@ -44,9 +48,11 @@ namespace Hecton8.Physiology
         private IPlayerRuntimeContext _playerContext;
         private PreSimulationPhaseSystem _preSimulationPhase;
         private VisualSyncPhaseSystem _visualSyncPhase;
+#if UNITY_EDITOR
         private string _csvPath;
-        private string _dumpPath;
         private long _csvLastWriteTicks;
+#endif
+        private string _dumpPath;
         private uint _frameCounter;
         private int _telemetryCursor;
         private float _previousDoseRad;
@@ -61,7 +67,9 @@ namespace Hecton8.Physiology
 
         private void Awake()
         {
+#if UNITY_EDITOR
             _csvPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", CsvRelativePath));
+#endif
             _dumpPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DumpRelativePath));
         }
 
@@ -254,7 +262,7 @@ namespace Hecton8.Physiology
         private void RebindColdServices()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerContext = GlobalRegistry.Player;
         }
 
         private bool EnsureVaultState()
@@ -273,7 +281,9 @@ namespace Hecton8.Physiology
                 OpenOrAcquireOwnBuffer(ref _tuningHandle, ShinobuRadiationMutationConstants.MutationTuningBuffer, 1, NativeArrayOptions.UninitializedMemory, out _) &&
                 OpenOrAcquireOwnBuffer(ref _telemetryHandle, ShinobuRadiationMutationConstants.MutationTelemetryBuffer, ShinobuRadiationMutationConstants.TelemetryFrameCount, NativeArrayOptions.UninitializedMemory, out _) &&
                 OpenOrAcquireOwnBuffer(ref _profilesHandle, ShinobuRadiationMutationConstants.MutationProfileBuffer, ShinobuRadiationMutationConstants.ProfileCapacity, NativeArrayOptions.UninitializedMemory, out _) &&
+#if UNITY_EDITOR
                 OpenOrAcquireOwnBuffer(ref _csvScratchHandle, ShinobuRadiationMutationConstants.MutationCsvScratchBuffer, ShinobuRadiationMutationConstants.CsvMaxBytes, NativeArrayOptions.UninitializedMemory, out _) &&
+#endif
                 OpenOrAcquireOwnBuffer(ref _mockDoseHandle, ShinobuRadiationMutationConstants.MutationMockDoseBuffer, ShinobuRadiationMutationConstants.DefaultEntityCapacity, NativeArrayOptions.UninitializedMemory, out _);
             if (!created || !HandlesReady())
                 return false;
@@ -297,7 +307,9 @@ namespace Hecton8.Physiology
                    TryResolveOwnBuffer(ref _tuningHandle, ShinobuRadiationMutationConstants.MutationTuningBuffer, 1, out _) &&
                    TryResolveOwnBuffer(ref _telemetryHandle, ShinobuRadiationMutationConstants.MutationTelemetryBuffer, ShinobuRadiationMutationConstants.TelemetryFrameCount, out _) &&
                    TryResolveOwnBuffer(ref _profilesHandle, ShinobuRadiationMutationConstants.MutationProfileBuffer, ShinobuRadiationMutationConstants.ProfileCapacity, out _) &&
+#if UNITY_EDITOR
                    TryResolveOwnBuffer(ref _csvScratchHandle, ShinobuRadiationMutationConstants.MutationCsvScratchBuffer, ShinobuRadiationMutationConstants.CsvMaxBytes, out _) &&
+#endif
                    TryResolveOwnBuffer(ref _mockDoseHandle, ShinobuRadiationMutationConstants.MutationMockDoseBuffer, ShinobuRadiationMutationConstants.DefaultEntityCapacity, out _);
         }
 
@@ -337,7 +349,9 @@ namespace Hecton8.Physiology
             }
 
             _defaultsInitialized = true;
+#if UNITY_EDITOR
             TryLoadCsvProfilesCold(vault);
+#endif
         }
 
         private bool RunEvaluation(IDataVault vault, uint frame, float quality)
@@ -642,11 +656,9 @@ namespace Hecton8.Physiology
             }
         }
 
+#if UNITY_EDITOR
         private bool TryLoadCsvProfilesCold(IDataVault vault)
         {
-#if !UNITY_EDITOR
-            return false;
-#else
             if (string.IsNullOrEmpty(_csvPath) || !File.Exists(_csvPath))
                 return false;
 
@@ -721,8 +733,8 @@ namespace Hecton8.Physiology
             }
 
             return false;
-#endif
         }
+#endif
 
 #if UNITY_EDITOR
         private static bool ParseProfilesCsv(ReadOnlySpan<byte> bytes, NativeArray<RadiationMutationProfileDTO> profiles, NativeArray<RadiationMutationTuningDTO> tuningRows)
@@ -766,6 +778,7 @@ namespace Hecton8.Physiology
         }
 #endif
 
+#if UNITY_EDITOR
         private static bool TryParseProfileLine(ReadOnlySpan<byte> line, out RadiationMutationProfileDTO profile)
         {
             profile = default;
@@ -795,6 +808,7 @@ namespace Hecton8.Physiology
             profile.Flags = RadiationMutationFlags.CsvProfile;
             return true;
         }
+#endif
 
         private static RadiationMutationProfileDTO BuildDefaultProfile(uint hash)
         {
@@ -990,6 +1004,7 @@ namespace Hecton8.Physiology
             return math.isfinite(microseconds) ? (float)math.min(microseconds, float.MaxValue) : 0f;
         }
 
+#if UNITY_EDITOR
         private static ReadOnlySpan<byte> ReadCell(ReadOnlySpan<byte> line, ref int cursor)
         {
             if (cursor >= line.Length)
@@ -1092,6 +1107,7 @@ namespace Hecton8.Physiology
         {
             return value == (byte)' ' || value == (byte)'\t' || value == (byte)'\n' || value == (byte)'\r';
         }
+#endif
 
         private void TryRegisterRuntimeRoutes()
         {
@@ -1178,7 +1194,9 @@ namespace Hecton8.Physiology
             _tuningHandle = default;
             _telemetryHandle = default;
             _profilesHandle = default;
+#if UNITY_EDITOR
             _csvScratchHandle = default;
+#endif
             _mockDoseHandle = default;
             _radiationStateHandle = default;
             _metabolicStateHandle = default;

@@ -1,5 +1,7 @@
 using System;
+#if UNITY_EDITOR
 using System.IO;
+#endif
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Collections;
@@ -22,6 +24,8 @@ namespace Hecton8.Physics
         private const uint SystemHashSim = 0x53323653u;  // S26S
         private const uint SystemHashPost = 0x5332364Fu; // S26O
         private const uint SystemHashVisual = 0x53323656u; // S26V
+        private const uint AsyncReadbackFaultEventHash = 0x41524654u; // ARFT
+        private const uint AsyncReadbackFaultDumpHash = 0x41524450u; // ARDP
 
         private enum ReadbackDispatchStatus : byte
         {
@@ -82,12 +86,14 @@ namespace Hecton8.Physics
         [SerializeField]
         private float fallbackLargeVesselInsetMeters = 1.2f;
 
+#if UNITY_EDITOR
         [Header("Cold Data")]
         [SerializeField]
         private bool loadVehicleSamplingProfilesOnEnable = true;
 
         [SerializeField]
         private string vehicleSamplingProfilesCsvRelativePath = AsyncBuoyancyReadbackConstants.CsvRelativePath;
+#endif
 
         private IDataVault _dataVault;
         private VaultGenerationHandle<ReadbackRequestDTO> _requestsHandle;
@@ -100,7 +106,9 @@ namespace Hecton8.Physics
         private VaultGenerationHandle<ReadbackRequestDTO> _mockRingHandle;
         private VaultGenerationHandle<AsyncBuoyancyWaveParametersDTO> _fallbackWavesHandle;
         private VaultGenerationHandle<VehicleSamplingProfileDTO> _vehicleProfilesHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
         private VaultGenerationHandle<AsyncReadbackCounterDTO> _counterHandle;
 
         private GraphicsBuffer _requestBuffer0;
@@ -152,6 +160,7 @@ namespace Hecton8.Physics
         private bool _gpuUnavailableForNextSimulation;
         private bool _dumpRequested;
         private bool _dumpedFault;
+        private bool _coreBlackboxWarmed;
         private bool _kernelResolved;
         private bool _hotSwapRegistered;
         private bool _registeredOriginShiftListener;
@@ -305,6 +314,7 @@ namespace Hecton8.Physics
             if (EnsureRuntimeReady())
             {
                 EnsureGpuBuffers();
+                WarmCoreBlackboxRoute();
 #if UNITY_EDITOR
                 if (loadVehicleSamplingProfilesOnEnable)
                     LoadVehicleSamplingProfiles();
@@ -320,6 +330,7 @@ namespace Hecton8.Physics
             TryUnregisterDispatcherSystems();
             ReleaseSimulationWriteLocks();
             ReleaseGpuBuffers();
+            _coreBlackboxWarmed = false;
 #if UNITY_EDITOR
             if (ReferenceEquals(_activeRuntimeInstance, this))
                 _activeRuntimeInstance = null;
@@ -345,8 +356,12 @@ namespace Hecton8.Physics
 
             _dataVault = currentService as IDataVault;
             _coldBootCompleted = false;
+            _coreBlackboxWarmed = false;
             if (EnsureRuntimeReady())
+            {
                 EnsureGpuBuffers();
+                WarmCoreBlackboxRoute();
+            }
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -703,7 +718,9 @@ namespace Hecton8.Physics
                 !EnsureVaultDescriptor(vault, ref _mockRingHandle, AsyncBuoyancyReadbackBufferIds.MockRing, AsyncBuoyancyReadbackConstants.RequestCapacity * AsyncBuoyancyReadbackConstants.ReadbackRingSize, NativeArrayOptions.UninitializedMemory) ||
                 !EnsureVaultDescriptor(vault, ref _fallbackWavesHandle, AsyncBuoyancyReadbackBufferIds.FallbackWaves, AsyncBuoyancyReadbackConstants.WaveCapacity, NativeArrayOptions.UninitializedMemory) ||
                 !EnsureVaultDescriptor(vault, ref _vehicleProfilesHandle, AsyncBuoyancyReadbackBufferIds.VehicleSamplingProfiles, AsyncBuoyancyReadbackConstants.VehicleProfileCapacity, NativeArrayOptions.ClearMemory) ||
+#if UNITY_EDITOR
                 !EnsureVaultDescriptor(vault, ref _csvScratchHandle, AsyncBuoyancyReadbackBufferIds.CsvScratch, AsyncBuoyancyReadbackConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory) ||
+#endif
                 !EnsureVaultDescriptor(vault, ref _counterHandle, AsyncBuoyancyReadbackBufferIds.Counter, 1, NativeArrayOptions.ClearMemory))
             {
                 return false;
@@ -729,7 +746,9 @@ namespace Hecton8.Physics
                    HasHandle(in _mockRingHandle) &&
                    HasHandle(in _fallbackWavesHandle) &&
                    HasHandle(in _vehicleProfilesHandle) &&
+#if UNITY_EDITOR
                    HasHandle(in _csvScratchHandle) &&
+#endif
                    HasHandle(in _counterHandle);
         }
 
@@ -833,10 +852,16 @@ namespace Hecton8.Physics
                 return;
 
             NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
-            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
-            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)UnsafeUtility.SizeOf<T>() * safeCount);
-            destination.UnlockBufferAfterWrite<T>(safeCount);
+            try
+            {
+                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)UnsafeUtility.SizeOf<T>() * safeCount);
+            }
+            finally
+            {
+                destination.UnlockBufferAfterWrite<T>(safeCount);
+            }
         }
 
         private bool HasGpuBuffers()
@@ -1423,42 +1448,25 @@ namespace Hecton8.Physics
 
             NativeArray<ReadbackTelemetryEntry> telemetry = ReadVaultBuffer(_dataVault, in _telemetryRingHandle);
             NativeArray<int> cursor = ReadVaultBuffer(_dataVault, in _telemetryCursorHandle);
-            if (!telemetry.IsCreated || telemetry.Length <= 0)
+            if (!telemetry.IsCreated || telemetry.Length <= 0 || !_coreBlackboxWarmed || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
                 return;
 
-            string path = Path.Combine(Application.dataPath, "..", AsyncBuoyancyReadbackConstants.DumpRelativePath);
-            path = Path.GetFullPath(path);
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            {
-                Span<byte> header = stackalloc byte[16];
-                WriteUInt32LittleEndian(header.Slice(0, 4), 0x53323634u);
-                WriteUInt32LittleEndian(header.Slice(4, 4), (uint)AsyncBuoyancyReadbackConstants.TelemetryCapacity);
-                WriteUInt32LittleEndian(header.Slice(8, 4), (uint)UnsafeUtility.SizeOf<ReadbackTelemetryEntry>());
-                WriteUInt32LittleEndian(header.Slice(12, 4), (uint)(cursor.IsCreated && cursor.Length > 0 ? cursor[0] : 0));
-                stream.Write(header);
-
-                int rowBytes = UnsafeUtility.SizeOf<ReadbackTelemetryEntry>();
-                int rowCount = math.min(telemetry.Length, AsyncBuoyancyReadbackConstants.TelemetryCapacity);
-                byte* telemetryBytes = (byte*)telemetry.GetUnsafeReadOnlyPtr();
-                stream.Write(new ReadOnlySpan<byte>(telemetryBytes, rowBytes * rowCount));
-            }
-
+            int cursorValue = cursor.IsCreated && cursor.Length > 0 ? math.max(0, cursor[0]) : 0;
+            int latestIndex = cursorValue > 0 ? (cursorValue - 1) % telemetry.Length : 0;
+            ReadbackTelemetryEntry latest = telemetry[latestIndex];
+            float scalar = math.max(latest.ApplyMicros, latest.DispatchMicros);
+            GlobalTelemetryBus.PushEvent(AsyncReadbackFaultEventHash, scalar, latest.LastEntityHash);
+            _ = GlobalTelemetryBus.TryDumpBlackboxNow(AsyncReadbackFaultDumpHash);
             _dumpedFault = true;
         }
 
-        private static void WriteUInt32LittleEndian(Span<byte> destination, uint value)
+        private void WarmCoreBlackboxRoute()
         {
-            if (destination.Length < 4)
+            if (_coreBlackboxWarmed)
                 return;
 
-            destination[0] = (byte)value;
-            destination[1] = (byte)(value >> 8);
-            destination[2] = (byte)(value >> 16);
-            destination[3] = (byte)(value >> 24);
+            GlobalTelemetryBus.Initialize();
+            _coreBlackboxWarmed = GlobalTelemetryBus.BlackboxActiveFrameCount > 0;
         }
 
         private void TryRegisterHotSwapListener()

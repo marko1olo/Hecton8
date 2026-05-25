@@ -227,7 +227,7 @@ namespace Hecton8.Audio.Synthesis.Editor
         private static void ValidateAbi()
         {
             VocalStateLayoutValidator.ValidateOrThrow();
-            Debug.Log("[SHINOBU_260] Digital Voice Forge ABI validation passed.");
+            Hecton8.Core.H8Debug.Log("[1308] Digital Voice Forge ABI validation passed.");
         }
 
         private static void PushMockCue()

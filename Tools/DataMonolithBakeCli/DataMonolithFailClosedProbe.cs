@@ -13,7 +13,7 @@ namespace Hecton8.Tools.DataMonolithBakeCli
     {
         private const string ReportPath = "Docs/Reports/DATA_MONOLITH_FAIL_CLOSED_RUNTIME_SIM_X_002.json";
         private const int AlignmentBytes = 64;
-        private const int CaseCount = 8;
+        private const int CaseCount = 13;
         private const int ValidationIterations = 256;
 
         private const int FailureNone = 0;
@@ -71,12 +71,17 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                 CaseResult[] results = new CaseResult[CaseCount];
                 results[0] = RunCase("bad_stored_checksum", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureBadChecksum, MutateStoredChecksum);
                 results[1] = RunCase("bad_payload_checksum", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureBadChecksum, MutatePayloadByte);
-                results[2] = RunCase("bad_section_out_of_bounds", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureSectionOutOfRange, MutateSectionOutOfBounds);
-                results[3] = RunCase("bad_section_unaligned_offset", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureSectionAlignment, MutateSectionUnalignedOffset);
-                results[4] = RunCase("bad_section_table_void", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureDirectory, MutateSectionTableVoid);
-                results[5] = RunCase("bad_section_overlap", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureSectionOutOfRange, MutateSectionOverlap);
-                results[6] = RunCase("bad_localization_directory", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureLocalization, MutateLocalizationDirectory);
-                results[7] = RunTruncatedCase("truncated_blob", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureHeader);
+                results[2] = RunCase("bad_header_unknown_flags", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureHeader, MutateHeaderUnknownFlags);
+                results[3] = RunCase("bad_header_reserved", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureHeader, MutateHeaderReserved);
+                results[4] = RunCase("bad_directory_reserved", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureDirectory, MutateDirectoryReserved);
+                results[5] = RunCase("bad_header_section_count", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureHeader, MutateHeaderSectionCount);
+                results[6] = RunCase("bad_header_section_table_offset", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureHeader, MutateHeaderSectionTableOffset);
+                results[7] = RunCase("bad_section_out_of_bounds", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureSectionOutOfRange, MutateSectionOutOfBounds);
+                results[8] = RunCase("bad_section_unaligned_offset", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureSectionAlignment, MutateSectionUnalignedOffset);
+                results[9] = RunCase("bad_section_table_void", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureHeader, MutateSectionTableVoid);
+                results[10] = RunCase("bad_section_overlap", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureSectionOutOfRange, MutateSectionOverlap);
+                results[11] = RunCase("bad_localization_directory", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureLocalization, MutateLocalizationDirectory);
+                results[12] = RunTruncatedCase("truncated_blob", baseline, candidate, arenaBytes, publishedChecksum, publishCount, FailureHeader);
 
                 GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
                 GC.WaitForPendingFinalizers();
@@ -185,6 +190,34 @@ namespace Hecton8.Tools.DataMonolithBakeCli
             bytes[length - 1] ^= 0x5A;
         }
 
+        private static void MutateHeaderUnknownFlags(byte* bytes, int length)
+        {
+            WriteUInt32(bytes, 36, H8DataLayoutConstants.BlobFlagLittleEndian | 0x2u);
+            WriteUInt32(bytes, H8DataLayoutConstants.HeaderSizeBytes + 32, H8DataLayoutConstants.BlobFlagLittleEndian | 0x2u);
+            RecomputeHeaderChecksum(bytes, length);
+        }
+
+        private static void MutateHeaderReserved(byte* bytes, int length)
+        {
+            WriteUInt32(bytes, 52, 1u);
+        }
+
+        private static void MutateDirectoryReserved(byte* bytes, int length)
+        {
+            WriteUInt32(bytes, H8DataLayoutConstants.HeaderSizeBytes + 44, 1u);
+            RecomputeHeaderChecksum(bytes, length);
+        }
+
+        private static void MutateHeaderSectionCount(byte* bytes, int length)
+        {
+            WriteUInt32(bytes, 32, (uint)H8DataSectionId.PhysicsConstants - 1u);
+        }
+
+        private static void MutateHeaderSectionTableOffset(byte* bytes, int length)
+        {
+            WriteUInt32(bytes, 28, H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes + 64u);
+        }
+
         private static void MutateSectionOutOfBounds(byte* bytes, int length)
         {
             int firstEntry = (int)ReadUInt32(bytes, 28);
@@ -237,9 +270,13 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                 ReadUInt32(bytes, 16) != length ||
                 ReadUInt32(bytes, 20) != H8DataLayoutConstants.HeaderSizeBytes ||
                 ReadUInt32(bytes, 24) != H8DataLayoutConstants.DirectorySizeBytes ||
+                ReadUInt32(bytes, 28) != H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes ||
                 ReadUInt32(bytes, 32) != (uint)H8DataSectionId.PhysicsConstants ||
-                (ReadUInt32(bytes, 36) & H8DataLayoutConstants.BlobFlagLittleEndian) == 0u ||
-                ReadUInt32(bytes, 48) != H8DataLayoutConstants.SchemaHash)
+                ReadUInt32(bytes, 36) != H8DataLayoutConstants.BlobFlagLittleEndian ||
+                ReadUInt32(bytes, 48) != H8DataLayoutConstants.SchemaHash ||
+                ReadUInt32(bytes, 52) != 0u ||
+                ReadUInt32(bytes, 56) != 0u ||
+                ReadUInt32(bytes, 60) != 0u)
             {
                 failureCode = FailureHeader;
                 return false;
@@ -265,10 +302,17 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                 ReadUInt16(bytes, directoryOffset + 4) != H8DataLayoutConstants.FormatVersion ||
                 directorySectionCount != (ushort)H8DataSectionId.PhysicsConstants ||
                 sectionTableOffset != ReadUInt32(bytes, 28) ||
+                sectionTableOffset != H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes ||
                 sectionTableBytes != directorySectionCount * 16u ||
                 directoryBlobBytes != length ||
                 dataStartOffset != AlignUp(sectionTableOffset + sectionTableBytes, H8DataLayoutConstants.SectionAlignmentBytes) ||
-                (dataStartOffset & (H8DataLayoutConstants.SectionAlignmentBytes - 1u)) != 0u)
+                (dataStartOffset & (H8DataLayoutConstants.SectionAlignmentBytes - 1u)) != 0u ||
+                ReadUInt32(bytes, directoryOffset + 32) != H8DataLayoutConstants.BlobFlagLittleEndian ||
+                ReadUInt32(bytes, directoryOffset + 44) != 0u ||
+                ReadUInt32(bytes, directoryOffset + 48) != 0u ||
+                ReadUInt32(bytes, directoryOffset + 52) != 0u ||
+                ReadUInt32(bytes, directoryOffset + 56) != 0u ||
+                ReadUInt32(bytes, directoryOffset + 60) != 0u)
             {
                 failureCode = FailureDirectory;
                 return false;
@@ -464,11 +508,15 @@ namespace Hecton8.Tools.DataMonolithBakeCli
             report.Append("  \"validationAllocatedBytes\": ").Append(validationAllocatedBytes).AppendLine(",");
             report.AppendLine("  \"failureCodeLegend\": {");
             report.AppendLine("    \"0\": \"None\",");
+            report.AppendLine("    \"1\": \"TooSmall\",");
             report.AppendLine("    \"2\": \"Header\",");
             report.AppendLine("    \"3\": \"BadChecksum\",");
             report.AppendLine("    \"4\": \"Directory\",");
+            report.AppendLine("    \"5\": \"SectionOrder\",");
+            report.AppendLine("    \"6\": \"SectionRecordSize\",");
             report.AppendLine("    \"7\": \"SectionAlignment\",");
-            report.AppendLine("    \"8\": \"SectionOutOfRange\"");
+            report.AppendLine("    \"8\": \"SectionOutOfRange\",");
+            report.AppendLine("    \"9\": \"LocalizationDirectory\"");
             report.AppendLine("  },");
             report.AppendLine("  \"cases\": [");
             for (int i = 0; i < cases.Length; i++)

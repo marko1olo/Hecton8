@@ -28,9 +28,9 @@ namespace Hecton8.Audio.Editor
         {
             bool passed = Run(out string jsonReport);
             if (passed)
-                Debug.Log(jsonReport);
+                Hecton8.Core.H8Debug.Log(jsonReport);
             else
-                Debug.LogError(jsonReport);
+                Hecton8.Core.H8Debug.LogError(jsonReport);
         }
 
         public static bool Run(out string jsonReport)

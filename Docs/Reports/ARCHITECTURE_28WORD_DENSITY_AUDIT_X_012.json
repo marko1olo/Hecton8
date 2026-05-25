@@ -1,0 +1,80 @@
+{
+  "schema": "hecton8.architecture_28word_density_audit.x012.v1",
+  "generatedUtc": "2026-05-25T02:37:28.720615+00:00",
+  "agent": "X_012",
+  "evidenceClass": [
+    "STATIC_DOC",
+    "STATIC_SOURCE",
+    "STATIC_FILESYSTEM"
+  ],
+  "scope": "active Docs/ARCHITECTURE/**/*.md|txt, excluding Docs/DEPRECATED and Docs/_Archive",
+  "manualRewrite": true,
+  "scriptUse": "discovery, count validation, JSON proof, and scanner enforcement only; prose edits were manual apply_patch hunks",
+  "threshold": {
+    "auditedInclusiveWords": 28,
+    "enforcedScannerMaxWords": 27,
+    "offenderKinds": [
+      "unstructured paragraph",
+      "unstructured sentence",
+      "structured list/table line"
+    ]
+  },
+  "initialOffenders": {
+    "count": 104,
+    "byKind": {
+      "structuredLine": 73,
+      "paragraph": 27,
+      "sentence": 4
+    },
+    "pathCount": 69,
+    "maxWordCount": 28
+  },
+  "finalOffenders": {
+    "count": 0,
+    "byKind": {},
+    "pathCount": 0
+  },
+  "oopScannerFinal": {
+    "finalPass": true,
+    "activeFileCount": 597,
+    "activeWordCount": 545472,
+    "inventoryFileCount": 4843,
+    "activeStaleParameterFiles": 0,
+    "sourceSyncPass": true,
+    "wordReductionPercent": 54.63695643676832,
+    "architectureFileCount": 192,
+    "architectureWordCount": 163713,
+    "strictUnstructuredParagraphThresholdWords": 27,
+    "strictUnstructuredParagraphCount": 0,
+    "strictUnstructuredSentenceThresholdWords": 27,
+    "strictUnstructuredSentenceCount": 0,
+    "strictStructuredLineThresholdWords": 27,
+    "strictStructuredLineCount": 0,
+    "tutorialMarkerHitCount": 0,
+    "strictFileWordCount": 0,
+    "strictNonContractTextFileCount": 0
+  },
+  "sourceConstants": {
+    "saveCurrentVersion": "0x000B",
+    "saveCurrentHeaderSize": "56",
+    "saveLegacyHeaderSize": "44",
+    "alignedSectionHeaderVersion": "0x000B",
+    "signalBusRegistryLaneCapacity": "512",
+    "signalBusDefaultExpectedCapacity": "64",
+    "signalBusDefaultMaxFrameSignals": null,
+    "dataMonolithHeaderBytes": "64",
+    "dataMonolithDirectoryBytes": "64",
+    "dataMonolithFormatVersion": "1",
+    "dataMonolithSchemaHash": "0x58303032",
+    "dataMonolithPayloadExists": true,
+    "dataMonolithPayloadBytes": 1064384
+  },
+  "promptExampleCorrections": {
+    "signalBusCapacity256": "stale prompt example; source authority is Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs LaneCapacity = 512"
+  },
+  "commands": [
+    "python Tools\\OOP_Doc_Scanner.py",
+    "custom active architecture >=28 word discovery using Tools/OOP_Doc_Scanner.py words() regex"
+  ],
+  "result": "PASS"
+}

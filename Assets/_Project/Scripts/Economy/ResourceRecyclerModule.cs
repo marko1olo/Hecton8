@@ -502,7 +502,7 @@ namespace Hecton8.Economy
         private static float ResolvePowerMultiplier(ItemData sourceItem, int yieldUnits)
         {
             float scarcityScale = 1f;
-            ResourceScarcityDirector director = GlobalRegistry.ResourceScarcity;
+            IResourceScarcityReadModel director = GlobalRegistry.ResourceScarcityReadModel;
             if (director != null && sourceItem != null)
                 scarcityScale = Mathf.Max(1f, director.GetIngredientMultiplier(sourceItem.PersistentHashId));
 

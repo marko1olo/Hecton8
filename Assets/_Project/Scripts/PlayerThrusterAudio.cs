@@ -91,9 +91,9 @@ namespace Hecton8.Audio
         private const float ProceduralWhineFrequencyHertz = 137f;
         private const float ProceduralThrusterSampleRateInv = 0.000045351474f;
         private const float ProceduralTwoPi = 6.28318530718f;
+        private const uint KccVelocityThrusterAudioMaxAgeFrames = 12u;
 
         private AudioSource _audioSource;
-        private Rigidbody _playerRb;
         private AudioClip _proceduralThrusterClip;
         private float _currentVolume;
         private float _currentPitch;
@@ -133,7 +133,6 @@ namespace Hecton8.Audio
 
             if (playerMovement != null)
             {
-                playerMovement.TryGetComponent(out _playerRb);
                 if (playerToolManager == null)
                     playerMovement.TryGetComponent(out playerToolManager);
                 if (playerTransportCoordinator == null)
@@ -226,7 +225,7 @@ namespace Hecton8.Audio
 
         public void Tick(float deltaTime)
         {
-            if (playerMovement == null || _playerRb == null)
+            if (playerMovement == null)
                 return;
 
             float dt = deltaTime;
@@ -277,7 +276,9 @@ namespace Hecton8.Audio
             float speedFactor = 0f;
             if (_modeBlend > 0.01f)
             {
-                Vector3 velocity = _playerRb.linearVelocity;
+                Vector3 velocity = TryResolveKccVelocity(out Vector3 kccVelocity)
+                    ? kccVelocity
+                    : Vector3.zero;
                 float maxSpeed = playerMovement.CurrentSuit != null
                     ? playerMovement.CurrentSuit.maxSwimSpeed
                     : 12f;
@@ -487,10 +488,22 @@ namespace Hecton8.Audio
 
         private float ResolveDiveAttack01()
         {
-            Vector3 velocity = _playerRb.linearVelocity;
+            if (!TryResolveKccVelocity(out Vector3 velocity))
+                return 0f;
+
             float downwardSpeed = math.max(0f, -velocity.y);
             float reference = math.max(diveVelocityReference, 0.01f);
             return math.saturate(downwardSpeed / reference);
+        }
+
+        private static bool TryResolveKccVelocity(out Vector3 velocity)
+        {
+            velocity = Vector3.zero;
+            if (!CoreDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityThrusterAudioMaxAgeFrames, out float3 velocity3))
+                return false;
+
+            velocity = new Vector3(velocity3.x, velocity3.y, velocity3.z);
+            return true;
         }
 
         private static float ResolveDecayBlend(float speed, float deltaTime)
@@ -525,7 +538,7 @@ namespace Hecton8.Audio
 
         private void RefreshRuntimeAudioServicesCold()
         {
-            CacheSpatialAudioManager(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
+            CacheSpatialAudioManager(GlobalRegistry.Audio);
         }
 
         private void CacheSpatialAudioManager(IAudioService audioService)

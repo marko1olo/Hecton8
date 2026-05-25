@@ -308,7 +308,7 @@ namespace Hecton8.Interaction
 
         private void RefreshColdRegistryReferences()
         {
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
         }
 
         public void OnGlobalRegistryServiceReplaced(

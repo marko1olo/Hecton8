@@ -126,9 +126,10 @@ namespace Hecton8.Optimization
                 return;
             
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (Time.time >= _nextLogTime)
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (now >= _nextLogTime)
             {
-                _nextLogTime = Time.time + LogThrottleInterval;
+                _nextLogTime = now + LogThrottleInterval;
                 LogBudgetViolation();
             }
 #endif
@@ -209,7 +210,7 @@ namespace Hecton8.Optimization
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void LogBudgetViolation()
         {
-            Debug.LogWarning("[UIRTManager] BUDGET EXCEEDED", this);
+            Hecton8.Core.H8Debug.LogWarning("[UIRTManager] BUDGET EXCEEDED", this);
         }
 #endif
     }

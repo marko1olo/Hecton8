@@ -4,9 +4,9 @@ namespace Hecton8.Items
     using Hecton.Localization;
     using Hecton8.Core;
     using Hecton8.Inventory;
-    using Hecton8.Physics;
     using UnityEngine;
     using UnityEngine.Serialization;
+    using BuoyancyProfile = Hecton8.Physics.BuoyancyProfile;
 
     public enum ItemCategory
     {

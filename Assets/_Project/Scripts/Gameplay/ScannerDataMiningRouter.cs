@@ -825,7 +825,7 @@ namespace Hecton8.Gameplay
 
         private void CachePlayerRuntimeContextCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedPlayerMovement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
         }
 
@@ -2731,35 +2731,5 @@ namespace Hecton8.Gameplay
                 ScannerHudHashId,
                 new Vector4(vfx.TargetHash, vfx.Flags, vfx.BeamScore, vfx.HitDistance));
         }
-    }
-}
-
-namespace Hecton8.Core.Contracts.Signals
-{
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public partial struct EncyclopediaUnlockSignal : ISignal
-    {
-        [FieldOffset(0)] public uint EntityHash;
-        [FieldOffset(4)] public uint SourceHash;
-        [FieldOffset(8)] public uint Frame;
-        [FieldOffset(12)] public uint ScanId;
-        [FieldOffset(16)] public byte Kind;
-        [FieldOffset(17)] public byte Flags;
-        [FieldOffset(18)] public ushort RequiredToolLevel;
-        [FieldOffset(20)] public uint Reserved0;
-        [FieldOffset(24)] public ulong Reserved1;
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public partial struct EntityDepletedSignal : ISignal
-    {
-        [FieldOffset(0)] public uint EntityHash;
-        [FieldOffset(4)] public uint SourceHash;
-        [FieldOffset(8)] public uint Frame;
-        [FieldOffset(12)] public ushort WordIndex;
-        [FieldOffset(14)] public byte Operation;
-        [FieldOffset(15)] public byte Flags;
-        [FieldOffset(16)] public long SectorHash;
-        [FieldOffset(24)] public ulong DepletionMask;
     }
 }

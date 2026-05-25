@@ -1235,7 +1235,7 @@ namespace Hecton8.World
             {
                 telemetry[_abyssalPathTelemetryCursor] = new AbyssalPathTelemetryEntry
                 {
-                    Frame = Time.frameCount,
+                    Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                     RawCount = rawCount,
                     OutputCount = outputCount,
                     PortalLookAhead = _lastAbyssalPathPortalLookAhead,

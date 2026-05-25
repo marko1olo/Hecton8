@@ -1,0 +1,178 @@
+{
+  "schema": "HECTON8_DATA_MONOLITH_APEX_PARANOID_PASS2_V1",
+  "agent": "1313",
+  "date": "2026-05-25",
+  "domain": "Echelon 1 Core Infrastructure / Data Monolith Static Data Pipeline",
+  "evidence": "STATIC_SOURCE_STATIC_BINARY_NO_DOTNET_NO_UNITY",
+  "prompt": {
+    "source": "Docs/Tasks/CURRENT_BATCH.md",
+    "tag": "AGENT_PROMPT id=\"1313\"",
+    "taskCount": 10,
+    "extractedByCliRegex": true
+  },
+  "activeReleaseTokenScan": {
+    "forbiddenTokens": [
+      "new",
+      "FileStream",
+      "BinaryWriter",
+      "UnityWebRequest",
+      "DownloadHandlerFile",
+      "FileInfo",
+      "Path.Combine",
+      "string.Format",
+      "ToString",
+      "LINQ",
+      "catch(Exception)",
+      "literal string concat",
+      "string.Split",
+      "File.ReadAll*"
+    ],
+    "h8StaticDataArenaWindowsReleaseHits": 0,
+    "h8StaticDataArenaNonWindowsReleaseHits": 0,
+    "gameBootstrapperOwnedRanges": {
+      "dataMonolithBoot_1850_1875": 0,
+      "bootStateRecord_5038_5060": 0,
+      "fatalBootLog_5358_5455": 0
+    },
+    "h8StaticDataArenaAllBranchManagedResidueCount": 22,
+    "h8StaticDataArenaAllBranchManagedResidueLines": [
+      173,
+      175,
+      199,
+      201,
+      202,
+      205,
+      206,
+      217,
+      231,
+      249,
+      345,
+      1481,
+      1482,
+      1500,
+      1595,
+      2202,
+      2203,
+      2204,
+      2205,
+      2207,
+      2220,
+      2221
+    ]
+  },
+  "dtoLayout": {
+    "fullByteMapMarkdown": "Docs/Reports/DATA_MONOLITH_BYTE_OFFSET_MAP_1313.md",
+    "fullByteMapJson": "Docs/Reports/DATA_MONOLITH_BYTE_OFFSET_MAP_1313.json",
+    "dtoStructsParsedFromTypes": 32,
+    "layoutGuardDtoCalls": 32,
+    "dtoCoverageFailures": 0,
+    "h8ItemRecord": {
+      "sourceLines": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs:217-235",
+      "sizeBytes": 80,
+      "multipleOf8": true,
+      "strictOrder": "PASS",
+      "offsets": {
+        "RecipeMask0": 0,
+        "RecipeMask1": 8,
+        "HashId": 16,
+        "RecordIndex": 20,
+        "CategoryHash": 24,
+        "Flags": 28,
+        "MassKg": 32,
+        "VolumeM3": 36,
+        "BaseQuality": 40,
+        "HeatCapacity": 44,
+        "YieldHash": 48,
+        "NameUtf8Offset": 52,
+        "DescriptionUtf8Offset": 56,
+        "NameUtf8ByteLength": 60,
+        "DescriptionUtf8ByteLength": 64,
+        "Cost": 68,
+        "AccessFrequency": 72,
+        "MaxStack": 76,
+        "RecipeIngredientCount": 78
+      }
+    },
+    "h8DataBlobHeader": {
+      "sourceLines": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs:131-171",
+      "sizeBytes": 64,
+      "multipleOf8": true,
+      "naturalAlignment": "PASS",
+      "strictOrder": "ABI_EXCEPTION_FAIL",
+      "reason": "Magic/FormatVersion/HeaderBytes own file offsets 0/4/6 before Checksum64 at offset 8."
+    }
+  },
+  "activeBlob": {
+    "path": "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin",
+    "bytes": 1064384,
+    "magic": "0x4D443848",
+    "formatVersion": 2,
+    "headerBytes": 64,
+    "schemaHash": "0x33313331",
+    "checksum64": "0x19D880780D6E1B46",
+    "directoryFormatVersion": 2,
+    "sectionTableOffset": 128,
+    "sectionTableBytes": 416,
+    "sectionTableEnd": 544,
+    "dataStartOffset": 576,
+    "dataStartProof": "AlignUp(128 + 416, 64) = 576",
+    "directoryFlags": "0x00000001",
+    "itemSection": {
+      "sectionId": 1,
+      "recordSize": 80,
+      "count": 4,
+      "offsetBytes": 576
+    },
+    "validator": {
+      "report": "Docs/Reports/DATA_MONOLITH_H8BIN_VALIDATOR_1313.json",
+      "status": "PASS",
+      "filesChecked": 1,
+      "structsParsed": 32,
+      "sectionsExpected": 26,
+      "sampledRecords": 3339,
+      "elapsedSeconds": 0.140687
+    }
+  },
+  "aup": {
+    "loaderPerformsSpatialMath": false,
+    "storageFields": [
+      "H8NarrativeTriggerRecord.AupX/Y/Z at H8DataMonolithTypes.cs:425-427",
+      "H8SectorPageRecord.AupX/AupZ at H8DataMonolithTypes.cs:526-527",
+      "H8PhysicsConstantsRecord.AupSectorSizeMeters at H8DataMonolithTypes.cs:568"
+    ],
+    "requiredConsumerFormula": "double3 local = objectAup - originAup; float3 localFloat = (float3)local;",
+    "absoluteAupToFloatCastInOwnedLoader": false
+  },
+  "dependencyIsolation": {
+    "runtimeNamespace": "Hecton8.Data",
+    "bootstrapRoute": "GameBootstrapper.InitializeBootstrapDataMonolith -> H8StaticDataArena.TryInitializeFromStreamingAssets -> GlobalDataVault",
+    "releasePalBlockerLines": "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithReleaseBuildGate.cs:77-85",
+    "windowsOnlyProductionPalLines": "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithReleaseBuildGate.cs:123-127",
+    "batchAuditReleaseGateLines": "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithBatchAudit.cs:19-24,42",
+    "newRuntimeHorizontalDependencyIntroduced": false
+  },
+  "failClosed": {
+    "corruptBlobPopulatesVault": false,
+    "staleV1BlobAccepted": false,
+    "windowsReleaseDumpPath": "Docs/AgentLogs/Dump_1313.bin",
+    "windowsReleaseDumpRouteLines": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs:2253-2343",
+    "nonWindowsProductionHydration": "FAIL_CLOSED_NO_NATIVE_PAL",
+    "managedExceptionInActiveReleaseFailurePath": false
+  },
+  "overengineering": {
+    "simulationAdded": false,
+    "lutRelevant": false,
+    "reason": "No runtime physical/math solver was added; pass is binary layout, checksum, and scanner proof."
+  },
+  "releaseReadiness": {
+    "windowsStaticReleaseLoaderTokenProof": "PASS",
+    "questAndroidProductionHydrator": "FAIL_CLOSED_NO_NATIVE_PAL",
+    "strictGlobalParserBlockers": 262,
+    "h8DataBlobHeaderStrictOrder": "ABI_EXCEPTION_FAIL",
+    "unityImportRun": false,
+    "playerBootRun": false,
+    "profilerRun": false,
+    "gcProofRun": false,
+    "verdict": "REJECT_RELEASE_READY_CLAIM"
+  }
+}

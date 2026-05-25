@@ -4,7 +4,6 @@ namespace Hecton8.Gameplay
     using Hecton8.Bootstrap;
     using Hecton8.Core;
     using Hecton8.Interaction;
-    using Hecton8.Physics;
     using Hecton8.World;
     using Unity.Mathematics;
     using UnityEngine;
@@ -259,6 +258,7 @@ namespace Hecton8.Gameplay
         private AbsoluteUniversePosition _currentAup;
         private Vector3 _currentRuntimePosition;
         private bool _hasCurrentAup;
+        private IPhysicsService _physicsService;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetResidencyStatics()
@@ -313,7 +313,8 @@ namespace Hecton8.Gameplay
             Vector3 launchVelocity = inheritedVelocity * math.lerp(0.94f, 1.08f, clampedSeverity) +
                                      bailoutImpulse * math.lerp(0.12f, 0.28f, clampedSeverity);
             launchVelocity.y -= math.lerp(0.05f, 0.45f, clampedSeverity);
-            Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(_rigidbody, ResolveSafeVelocity(launchVelocity, linearVelocityCap));
+            IPhysicsService physicsService = _physicsService;
+            physicsService?.QueueLinearVelocitySet(_rigidbody, ResolveSafeVelocity(launchVelocity, linearVelocityCap));
 
             float bailoutImpulseSq = bailoutImpulse.sqrMagnitude;
             Vector3 spinAxis = bailoutImpulseSq > 0.0001f
@@ -335,7 +336,7 @@ namespace Hecton8.Gameplay
                 : Vector3.forward;
             Vector3 angularVelocity = normalizedSpinAxis *
                                       (spinSign * math.lerp(spinVelocityMin, spinVelocityMax, clampedSeverity));
-            Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(_rigidbody, ResolveSafeVelocity(angularVelocity, angularVelocityCap));
+            physicsService?.QueueAngularVelocitySet(_rigidbody, ResolveSafeVelocity(angularVelocity, angularVelocityCap));
 
             UpdateResidencyState(markDehydrated: false);
             TryRegisterFixedTick();
@@ -387,7 +388,7 @@ namespace Hecton8.Gameplay
             }
 
             UpdateResidencyState(markDehydrated: false);
-            PhysicsForceRouter.QueueForce(
+            _physicsService?.QueueForce(
                 _rigidbody,
                 Vector3.down * sinkVelocityChangePerSecond * fixedDeltaTime,
                 ForceMode.VelocityChange);
@@ -421,6 +422,9 @@ namespace Hecton8.Gameplay
 
             if (_rigidbody == null)
                 TryGetComponent(out _rigidbody);
+
+            if (_physicsService == null)
+                _physicsService = GlobalRegistry.Physics;
         }
 
         private void EnsureRigidbody()
@@ -458,8 +462,9 @@ namespace Hecton8.Gameplay
             if (_rigidbody == null)
                 return;
 
-            Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(_rigidbody, Vector3.zero, wake: false);
-            Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(_rigidbody, Vector3.zero, wake: false);
+            IPhysicsService physicsService = _physicsService;
+            physicsService?.QueueLinearVelocitySet(_rigidbody, Vector3.zero, wake: false);
+            physicsService?.QueueAngularVelocitySet(_rigidbody, Vector3.zero, wake: false);
             _rigidbody.linearDamping = idleLinearDamping;
             _rigidbody.angularDamping = idleAngularDamping;
             _rigidbody.useGravity = false;
@@ -528,6 +533,12 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Physics)
+            {
+                _physicsService = currentService as IPhysicsService;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
                 currentService == null ||
                 !isActiveAndEnabled)
@@ -612,8 +623,9 @@ namespace Hecton8.Gameplay
             _rigidbody.angularDamping = activeAngularDamping;
             _rigidbody.position = runtimePosition;
             _rigidbody.rotation = state.rotation;
-            Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(_rigidbody, ResolveSafeVelocity(state.linearVelocity, ResolveLinearVelocityCap()));
-            Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(_rigidbody, ResolveSafeVelocity(state.angularVelocity, ResolveAngularVelocityCap()));
+            IPhysicsService physicsService = _physicsService;
+            physicsService?.QueueLinearVelocitySet(_rigidbody, ResolveSafeVelocity(state.linearVelocity, ResolveLinearVelocityCap()));
+            physicsService?.QueueAngularVelocitySet(_rigidbody, ResolveSafeVelocity(state.angularVelocity, ResolveAngularVelocityCap()));
             _rigidbody.WakeUp();
 
             UpdateResidencyState(markDehydrated: false);

@@ -146,6 +146,7 @@ namespace Hecton8.World
         private IPlayerSensoryService _playerSensoryService;
         private bool _layerCullDistancesApplied;
         private bool _layerCullDistancesDirty;
+        private bool _cullingEvaluationRequested;
         private bool _registered;
         private bool _registeredLateFrame;
         private bool _serviceRegistered;
@@ -194,7 +195,7 @@ namespace Hecton8.World
             if (registered != null && registered != this)
             {
                 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[CullingManager] Duplicate instance detected. Destroying duplicate.");
+                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Duplicate instance detected. Destroying duplicate.");
                 #endif
                 Destroy(gameObject);
                 return;
@@ -378,6 +379,11 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
+            _cullingEvaluationRequested = true;
+        }
+
+        private void RunCullingEvaluationVisualSync()
+        {
             long startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
 
             // Cache camera reference
@@ -449,6 +455,12 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
+            if (_cullingEvaluationRequested)
+            {
+                _cullingEvaluationRequested = false;
+                RunCullingEvaluationVisualSync();
+            }
+
             if (_layerCullDistancesDirty || !_layerCullDistancesApplied)
             {
                 _layerCullDistancesDirty = false;
@@ -518,7 +530,7 @@ namespace Hecton8.World
             if (!TryCacheManagedRenderers(obj, renderer, out Renderer[] managedRenderers, out bool[] originalForceRenderingOffStates))
             {
                 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[CullingManager] Skipping registration for object without Renderer owner.", obj);
+                Hecton8.Core.H8Debug.LogWarning("[CullingManager] Skipping registration for object without Renderer owner.", obj);
                 #endif
                 return;
             }
@@ -533,13 +545,13 @@ namespace Hecton8.World
 
                 if (!managedRenderer.enabled)
                 {
-                    Debug.LogWarning("[CullingManager] Registering object with disabled Renderer.", obj);
+                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with disabled Renderer.", obj);
                     return;
                 }
 
                 if (managedRenderer.forceRenderingOff)
                 {
-                    Debug.LogWarning("[CullingManager] Registering object with externally force-culled Renderer.", obj);
+                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Registering object with externally force-culled Renderer.", obj);
                     return;
                 }
             }
@@ -612,7 +624,7 @@ namespace Hecton8.World
                 {
                     _layerCullDistancesApplied = false;
                     #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning("[CullingManager] Cannot apply layer cull distances: runtime camera is unresolved.");
+                    Hecton8.Core.H8Debug.LogWarning("[CullingManager] Cannot apply layer cull distances: runtime camera is unresolved.");
                     #endif
                     return;
                 }

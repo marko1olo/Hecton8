@@ -16,14 +16,14 @@ namespace Hecton8.Core
             GlobalSignals.DisposeAllQueues();
         }
 
-        public static void FlushPreSimulation()
+        public static void PreSimulationHeartbeat()
         {
-            GlobalSignals.FlushPreSimulation();
+            GlobalSignals.PreSimulationHeartbeat();
         }
 
-        public static void ClearPostSimulationSnapshots()
+        public static void FlushPostSimulation()
         {
-            GlobalSignals.ClearPostSimulationSnapshots();
+            GlobalSignals.FlushPostSimulation();
         }
 
         public static void EnsureDebugSignalLaneInitialized()

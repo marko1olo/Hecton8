@@ -55,9 +55,9 @@ namespace Hecton8.Audio.Editor
         {
             bool passed = Run(out string report);
             if (passed)
-                Debug.Log(report);
+                Hecton8.Core.H8Debug.Log(report);
             else
-                Debug.LogError(report);
+                Hecton8.Core.H8Debug.LogError(report);
         }
 
         public static bool Run(out string report)

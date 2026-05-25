@@ -146,7 +146,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             {
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
-                Debug.Log("[AITextureIngestionWatcher] Imported AI textures=" + imported + ".");
+                Hecton8.Core.H8Debug.Log("[AITextureIngestionWatcher] Imported AI textures=" + imported + ".");
             }
 
             UnregisterDrainIfIdleAfterStop();

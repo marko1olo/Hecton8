@@ -1,12 +1,16 @@
 using System;
 using System.Diagnostics;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System.IO;
-#if !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
+#endif
+#if (UNITY_EDITOR || DEVELOPMENT_BUILD) && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
 using System.IO.MemoryMappedFiles;
 #endif
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System.Text;
+#endif
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
@@ -16,7 +20,9 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 using UnityEngine;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using UnityEngine.Networking;
+#endif
 
 namespace Hecton8.Data
 {
@@ -36,17 +42,21 @@ namespace Hecton8.Data
         private const BufferID DataMonolithPayloadBufferId = BufferID.DataMonolithPayload;
         private const BufferID DataMonolithTelemetryRingBufferId = BufferID.DataMonolithTelemetryRing;
         private const BufferID DataMonolithTelemetryCursorBufferId = BufferID.DataMonolithTelemetryCursor;
-        private const uint PathFlagFileStream = 1u;
+        private const uint PathFlagManagedFileFallback = 1u;
         private const uint PathFlagMemoryMappedFile = 2u;
         private const uint PathFlagVaultBacked = 4u;
         private const uint PathFlagStreamingUriStaged = 8u;
         private const uint PathFlagNativeFile = 16u;
 #if (UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN) && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
         private const uint NativeGenericRead = 0x80000000u;
+        private const uint NativeGenericWrite = 0x40000000u;
         private const uint NativeFileShareRead = 0x00000001u;
+        private const uint NativeFileShareWrite = 0x00000002u;
+        private const uint NativeCreateAlways = 2u;
         private const uint NativeOpenExisting = 3u;
         private const uint NativeFileFlagSequentialScan = 0x08000000u;
-        private static readonly IntPtr NativeInvalidHandleValue = new IntPtr(-1);
+        private const int NativePathCapacity = 1024;
+        private static readonly IntPtr NativeInvalidHandleValue = unchecked((IntPtr)(-1));
 #endif
 
         private static IDataVault _vault;
@@ -115,6 +125,23 @@ namespace Hecton8.Data
             bool failIfMissing,
             out H8DataBlobLoadStatus status)
         {
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
+            return TryInitializeFromWindowsPlayerStreamingAssets(
+                vault,
+                expectedWorldSeed,
+                expectedAppVersionHash,
+                failIfMissing,
+                out status);
+#elif !UNITY_EDITOR && !DEVELOPMENT_BUILD
+            if (vault != null || !IsLoaded)
+                _vault = vault;
+
+            status = H8DataBlobLoadStatus.ReadFailed;
+            if (failIfMissing)
+                RecordFailureTelemetry(status, 0u);
+
+            return !failIfMissing && IsLoaded;
+#else
             string absolutePath = BuildStreamingAssetsLocation(
                 Application.streamingAssetsPath,
                 H8DataLayoutConstants.DefaultStreamingAssetsRelativePath);
@@ -134,12 +161,11 @@ namespace Hecton8.Data
                 failIfMissing,
                 pathFlags,
                 out status);
-            if (!loaded && failIfMissing)
-                throw new FatalArchitectureException("Data Monolith boot failure: " + status);
-
             return loaded;
+#endif
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static string BuildStreamingAssetsLocation(string root, string relativePath)
         {
             if (string.IsNullOrEmpty(root))
@@ -226,6 +252,7 @@ namespace Hecton8.Data
             {
             }
         }
+#endif
 
         /// <summary>
         /// Loads one monolith file into a persistent native arena and validates the header checksum.
@@ -243,6 +270,13 @@ namespace Hecton8.Data
             bool failIfMissing,
             out H8DataBlobLoadStatus status)
         {
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+            status = H8DataBlobLoadStatus.ReadFailed;
+            if (failIfMissing)
+                RecordFailureTelemetry(status, 0u);
+
+            return !failIfMissing && IsLoaded;
+#else
             return TryInitializeFromFile(
                 GlobalRegistry.DataVault,
                 absolutePath,
@@ -251,6 +285,7 @@ namespace Hecton8.Data
                 failIfMissing,
                 0u,
                 out status);
+#endif
         }
 
         public static bool TryInitializeFromFile(
@@ -261,6 +296,16 @@ namespace Hecton8.Data
             bool failIfMissing,
             out H8DataBlobLoadStatus status)
         {
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+            if (vault != null || !IsLoaded)
+                _vault = vault;
+
+            status = H8DataBlobLoadStatus.ReadFailed;
+            if (failIfMissing)
+                RecordFailureTelemetry(status, 0u);
+
+            return !failIfMissing && IsLoaded;
+#else
             return TryInitializeFromFile(
                 vault,
                 absolutePath,
@@ -269,8 +314,10 @@ namespace Hecton8.Data
                 failIfMissing,
                 0u,
                 out status);
+#endif
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static bool TryInitializeFromFile(
             IDataVault vault,
             string absolutePath,
@@ -348,6 +395,7 @@ namespace Hecton8.Data
                 DumpTelemetry(status);
             return true;
         }
+#endif
 
         private static void RecordFailureTelemetry(H8DataBlobLoadStatus status, uint pathFlags)
         {
@@ -485,7 +533,19 @@ namespace Hecton8.Data
         public static bool TryGetSection(H8DataSectionId sectionId, out H8DataSectionEntry section)
         {
             section = default;
-            if (!IsLoaded || !TryRefreshArenaView(out NativeArray<byte> arena) || _directory.SectionCount == 0)
+            if (!IsLoaded || !TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly arena))
+                return false;
+
+            return TryGetSectionFromArena(arena, sectionId, out section);
+        }
+
+        private static bool TryGetSectionFromArena(
+            NativeArray<byte>.ReadOnly arena,
+            H8DataSectionId sectionId,
+            out H8DataSectionEntry section)
+        {
+            section = default;
+            if (!arena.IsCreated || _directory.SectionCount == 0)
                 return false;
 
             byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(arena);
@@ -538,46 +598,21 @@ namespace Hecton8.Data
             where T : unmanaged
         {
             records = ReadOnlySpan<T>.Empty;
-            if (!TryGetSection(sectionId, out H8DataSectionEntry section))
+            if (!IsLoaded ||
+                !TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly arena) ||
+                !TryGetSectionFromArena(arena, sectionId, out H8DataSectionEntry section))
+            {
                 return false;
+            }
 
             int recordSize = UnsafeUtility.SizeOf<T>();
             if (section.RecordSize != (uint)recordSize || section.Count == 0u)
                 return false;
 
-            if (!TryRefreshArenaView(out NativeArray<byte> arena))
-                return false;
-
             byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(arena);
-            records = new ReadOnlySpan<T>(basePtr + section.OffsetBytes, (int)section.Count);
+            ref T firstRecord = ref UnsafeUtility.ArrayElementAsRef<T>(basePtr + section.OffsetBytes, 0);
+            records = MemoryMarshal.CreateReadOnlySpan(ref firstRecord, (int)section.Count);
             return true;
-        }
-
-        /// <summary>
-        /// Returns a typed pointer to the beginning of a section.
-        /// </summary>
-        /// <param name="sectionId">Section identifier.</param>
-        /// <param name="recordSize">Expected record byte size.</param>
-        /// <param name="count">Resolved record count.</param>
-        /// <returns>Pointer to the section payload, or null.</returns>
-        public static void* GetSectionDataPointer(H8DataSectionId sectionId, int recordSize, out int count)
-        {
-            count = 0;
-            if (recordSize <= 0 || !TryGetSection(sectionId, out H8DataSectionEntry section))
-                return null;
-
-            if (section.RecordSize != (uint)recordSize)
-                return null;
-
-            count = (int)section.Count;
-            if (section.Count == 0)
-                return null;
-
-            if (!TryRefreshArenaView(out NativeArray<byte> arena))
-                return null;
-
-            byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(arena);
-            return basePtr + section.OffsetBytes;
         }
 
         /// <summary>
@@ -586,15 +621,11 @@ namespace Hecton8.Data
         public static bool TryGetItemRecord(uint recordIndex, out H8ItemRecord record)
         {
             record = default;
-            H8ItemRecord* records = (H8ItemRecord*)GetSectionDataPointer(
-                H8DataSectionId.Items,
-                H8DataLayoutConstants.ItemRecordSize,
-                out int count);
-
-            if (records == null || recordIndex >= (uint)count)
+            ReadOnlySpan<H8ItemRecord> records = GetSectionSpan<H8ItemRecord>(H8DataSectionId.Items);
+            if (recordIndex >= (uint)records.Length)
                 return false;
 
-            record = records[recordIndex];
+            record = records[(int)recordIndex];
             return true;
         }
 
@@ -604,26 +635,19 @@ namespace Hecton8.Data
         public static bool TryGetCreatureGenomeBlock(uint recordIndex, out H8CreatureGenomeTraitBlock block)
         {
             block = default;
-            H8CreatureTraitRecord* records = (H8CreatureTraitRecord*)GetSectionDataPointer(
-                H8DataSectionId.Creatures,
-                H8DataLayoutConstants.CreatureTraitRecordSize,
-                out int count);
-
-            if (records == null || recordIndex >= (uint)count)
+            ReadOnlySpan<H8CreatureTraitRecord> records = GetSectionSpan<H8CreatureTraitRecord>(H8DataSectionId.Creatures);
+            if (recordIndex >= (uint)records.Length)
                 return false;
 
-            H8CreatureTraitRecord record = records[recordIndex];
-            block = new H8CreatureGenomeTraitBlock
-            {
-                Aggression = math.isfinite(record.Genome.Aggression) ? record.Genome.Aggression : 0f,
-                Metabolism = math.isfinite(record.Genome.Metabolism) ? record.Genome.Metabolism : 1f,
-                MaxHealth = math.isfinite(record.Genome.MaxHealth) ? record.Genome.MaxHealth : 1f,
-                CruiseSpeed = math.isfinite(record.Genome.CruiseSpeed) ? record.Genome.CruiseSpeed : 0f,
-                BurstSpeed = math.isfinite(record.Genome.BurstSpeed) ? record.Genome.BurstSpeed : 0f,
-                SpawnCreditCost = math.isfinite(record.Genome.SpawnCreditCost) ? record.Genome.SpawnCreditCost : 0f,
-                PressureMinMeters = math.isfinite(record.Genome.PressureMinMeters) ? record.Genome.PressureMinMeters : 0f,
-                PressureMaxMeters = math.isfinite(record.Genome.PressureMaxMeters) ? record.Genome.PressureMaxMeters : 0f
-            };
+            H8CreatureTraitRecord record = records[(int)recordIndex];
+            block.Aggression = math.isfinite(record.Genome.Aggression) ? record.Genome.Aggression : 0f;
+            block.Metabolism = math.isfinite(record.Genome.Metabolism) ? record.Genome.Metabolism : 1f;
+            block.MaxHealth = math.isfinite(record.Genome.MaxHealth) ? record.Genome.MaxHealth : 1f;
+            block.CruiseSpeed = math.isfinite(record.Genome.CruiseSpeed) ? record.Genome.CruiseSpeed : 0f;
+            block.BurstSpeed = math.isfinite(record.Genome.BurstSpeed) ? record.Genome.BurstSpeed : 0f;
+            block.SpawnCreditCost = math.isfinite(record.Genome.SpawnCreditCost) ? record.Genome.SpawnCreditCost : 0f;
+            block.PressureMinMeters = math.isfinite(record.Genome.PressureMinMeters) ? record.Genome.PressureMinMeters : 0f;
+            block.PressureMaxMeters = math.isfinite(record.Genome.PressureMaxMeters) ? record.Genome.PressureMaxMeters : 0f;
             return true;
         }
 
@@ -636,19 +660,15 @@ namespace Hecton8.Data
             if (hashId == 0u)
                 return false;
 
-            H8ItemRecord* records = (H8ItemRecord*)GetSectionDataPointer(
-                H8DataSectionId.Items,
-                H8DataLayoutConstants.ItemRecordSize,
-                out int count);
-
-            if (records == null || count <= 0)
+            ReadOnlySpan<H8ItemRecord> records = GetSectionSpan<H8ItemRecord>(H8DataSectionId.Items);
+            if (records.Length <= 0)
                 return false;
 
-            return TryFindByHash(records, count, hashId, out record);
+            return TryFindByHash(records, hashId, out record);
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        public static bool TryFindByHash([NoAlias] H8ItemRecord* records, int count, uint hashId, out H8ItemRecord record)
+        private static bool TryFindByHash([NoAlias] H8ItemRecord* records, int count, uint hashId, out H8ItemRecord record)
         {
             record = default;
             if (records == null || count <= 0 || hashId == 0u)
@@ -691,10 +711,10 @@ namespace Hecton8.Data
         public static bool TryGetArena(out NativeArray<byte>.ReadOnly arena)
         {
             arena = default;
-            if (!IsLoaded || !TryRefreshArenaView(out NativeArray<byte> mutableArena))
+            if (!IsLoaded || !TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly readOnlyArena))
                 return false;
 
-            arena = mutableArena.AsReadOnly();
+            arena = readOnlyArena;
             return true;
         }
 
@@ -705,10 +725,10 @@ namespace Hecton8.Data
         {
             arena = default;
             blobBytes = _residentBlobBytes;
-            if (!IsLoaded || !TryRefreshArenaView(out NativeArray<byte> mutableArena) || _residentBlobBytes <= 0)
+            if (!IsLoaded || !TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly readOnlyArena) || _residentBlobBytes <= 0)
                 return false;
 
-            arena = mutableArena.AsReadOnly();
+            arena = readOnlyArena;
             return true;
         }
 
@@ -718,16 +738,20 @@ namespace Hecton8.Data
         public static bool TryResolveLootItem(uint tableHash, uint threshold, out uint itemHash)
         {
             itemHash = 0u;
-            if (tableHash == 0u || !TryFindLootTableRange(tableHash, out int start, out int end, out uint totalWeight) || totalWeight == 0u)
+            ReadOnlySpan<H8LootCdfRecord> records = GetSectionSpan<H8LootCdfRecord>(H8DataSectionId.LootCdf);
+            if (tableHash == 0u ||
+                records.Length <= 0 ||
+                !TryFindLootTableRange(records, tableHash, out int start, out int end, out uint totalWeight) ||
+                totalWeight == 0u)
+            {
                 return false;
+            }
 
             if (threshold >= totalWeight)
                 threshold = totalWeight - 1u;
 
-            H8LootCdfRecord* records = (H8LootCdfRecord*)GetSectionDataPointer(
-                H8DataSectionId.LootCdf,
-                UnsafeUtility.SizeOf<H8LootCdfRecord>(),
-                out _);
+            if ((uint)start >= (uint)records.Length || end > records.Length)
+                return false;
 
             int low = start;
             int high = end - 1;
@@ -760,18 +784,14 @@ namespace Hecton8.Data
         public static bool TryGetBiomeHeatmapCell(int x, int y, out uint biomeHash)
         {
             biomeHash = 0u;
-            H8BiomeHeatmapCellRecord* records = (H8BiomeHeatmapCellRecord*)GetSectionDataPointer(
-                H8DataSectionId.BiomeHeatmap,
-                UnsafeUtility.SizeOf<H8BiomeHeatmapCellRecord>(),
-                out int count);
-
-            if (records == null || count <= 0)
+            ReadOnlySpan<H8BiomeHeatmapCellRecord> records = GetSectionSpan<H8BiomeHeatmapCellRecord>(H8DataSectionId.BiomeHeatmap);
+            if (records.Length <= 0)
                 return false;
 
             int clampedX = math.clamp(x, 0, 255);
             int clampedY = math.clamp(y, 0, 255);
             int directIndex = (clampedY << 8) + clampedX;
-            if (directIndex >= count)
+            if (directIndex >= records.Length)
                 return false;
 
             H8BiomeHeatmapCellRecord direct = records[directIndex];
@@ -797,16 +817,12 @@ namespace Hecton8.Data
         public static bool TryFindVoxelMaterialRecord(uint voxelHash, out H8VoxelMaterialRecord record)
         {
             record = default;
-            H8VoxelMaterialRecord* records = (H8VoxelMaterialRecord*)GetSectionDataPointer(
-                H8DataSectionId.VoxelMaterials,
-                UnsafeUtility.SizeOf<H8VoxelMaterialRecord>(),
-                out int count);
-
-            if (records == null || voxelHash == 0u)
+            ReadOnlySpan<H8VoxelMaterialRecord> records = GetSectionSpan<H8VoxelMaterialRecord>(H8DataSectionId.VoxelMaterials);
+            if (records.Length <= 0 || voxelHash == 0u)
                 return false;
 
             int low = 0;
-            int high = count - 1;
+            int high = records.Length - 1;
             while (low <= high)
             {
                 int index = low + ((high - low) >> 1);
@@ -832,16 +848,12 @@ namespace Hecton8.Data
         public static bool TryFindAudioClipRecord(uint eventHash, out H8AudioClipRegistryRecord record)
         {
             record = default;
-            H8AudioClipRegistryRecord* records = (H8AudioClipRegistryRecord*)GetSectionDataPointer(
-                H8DataSectionId.AudioClipRegistry,
-                UnsafeUtility.SizeOf<H8AudioClipRegistryRecord>(),
-                out int count);
-
-            if (records == null || eventHash == 0u)
+            ReadOnlySpan<H8AudioClipRegistryRecord> records = GetSectionSpan<H8AudioClipRegistryRecord>(H8DataSectionId.AudioClipRegistry);
+            if (records.Length <= 0 || eventHash == 0u)
                 return false;
 
             int low = 0;
-            int high = count - 1;
+            int high = records.Length - 1;
             while (low <= high)
             {
                 int index = low + ((high - low) >> 1);
@@ -877,15 +889,11 @@ namespace Hecton8.Data
         public static bool TryGetDepthPressureSample(int sampleIndex, out H8DepthPressureSampleRecord record)
         {
             record = default;
-            H8DepthPressureSampleRecord* records = (H8DepthPressureSampleRecord*)GetSectionDataPointer(
-                H8DataSectionId.DepthPressureCurve,
-                UnsafeUtility.SizeOf<H8DepthPressureSampleRecord>(),
-                out int count);
-
-            if (records == null || count <= 0)
+            ReadOnlySpan<H8DepthPressureSampleRecord> records = GetSectionSpan<H8DepthPressureSampleRecord>(H8DataSectionId.DepthPressureCurve);
+            if (records.Length <= 0)
                 return false;
 
-            int index = math.clamp(sampleIndex, 0, count - 1);
+            int index = math.clamp(sampleIndex, 0, records.Length - 1);
             record = records[index];
             return true;
         }
@@ -909,16 +917,12 @@ namespace Hecton8.Data
         public static bool TryFindSubmarineHullConstants(uint partHash, out H8SubmarineHullConstantRecord record)
         {
             record = default;
-            H8SubmarineHullConstantRecord* records = (H8SubmarineHullConstantRecord*)GetSectionDataPointer(
-                H8DataSectionId.SubmarineHullConstants,
-                UnsafeUtility.SizeOf<H8SubmarineHullConstantRecord>(),
-                out int count);
-
-            if (records == null || partHash == 0u)
+            ReadOnlySpan<H8SubmarineHullConstantRecord> records = GetSectionSpan<H8SubmarineHullConstantRecord>(H8DataSectionId.SubmarineHullConstants);
+            if (records.Length <= 0 || partHash == 0u)
                 return false;
 
             int low = 0;
-            int high = count - 1;
+            int high = records.Length - 1;
             while (low <= high)
             {
                 int index = low + ((high - low) >> 1);
@@ -944,16 +948,12 @@ namespace Hecton8.Data
         public static bool TryFindPhysicsMaterial(uint surfaceHash, out H8PhysicsMaterialRecord record)
         {
             record = default;
-            H8PhysicsMaterialRecord* records = (H8PhysicsMaterialRecord*)GetSectionDataPointer(
-                H8DataSectionId.PhysicsMaterials,
-                UnsafeUtility.SizeOf<H8PhysicsMaterialRecord>(),
-                out int count);
-
-            if (records == null || surfaceHash == 0u)
+            ReadOnlySpan<H8PhysicsMaterialRecord> records = GetSectionSpan<H8PhysicsMaterialRecord>(H8DataSectionId.PhysicsMaterials);
+            if (records.Length <= 0 || surfaceHash == 0u)
                 return false;
 
             int low = 0;
-            int high = count - 1;
+            int high = records.Length - 1;
             while (low <= high)
             {
                 int index = low + ((high - low) >> 1);
@@ -995,7 +995,7 @@ namespace Hecton8.Data
         {
             text = default;
             if (!IsLoaded ||
-                !TryRefreshArenaView(out NativeArray<byte> arena) ||
+                !TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly arena) ||
                 utf8Offset == MissingUtf8Offset ||
                 destination.Length == 0 ||
                 _directory.LocalizationBytes == 0)
@@ -1017,12 +1017,11 @@ namespace Hecton8.Data
             if (byteLength <= 0)
                 return false;
 
-            ReadOnlySpan<byte> utf8 = new ReadOnlySpan<byte>(locPtr + offset, byteLength);
-            int requiredChars = Encoding.UTF8.GetCharCount(utf8);
-            if (requiredChars > destination.Length)
+            ref byte firstUtf8Byte = ref UnsafeUtility.ArrayElementAsRef<byte>(locPtr + offset, 0);
+            ReadOnlySpan<byte> utf8 = MemoryMarshal.CreateReadOnlySpan(ref firstUtf8Byte, byteLength);
+            if (!TryDecodeUtf8(utf8, destination, out int charsWritten))
                 return false;
 
-            int charsWritten = Encoding.UTF8.GetChars(utf8, destination);
             text = destination.Slice(0, charsWritten);
             return true;
         }
@@ -1036,12 +1035,89 @@ namespace Hecton8.Data
             if (!TryGetLocalizedUtf8Span(utf8Offset, (int)byteLength, out ReadOnlySpan<byte> utf8))
                 return false;
 
-            int requiredChars = Encoding.UTF8.GetCharCount(utf8);
-            if (requiredChars > destination.Length)
+            if (!TryDecodeUtf8(utf8, destination, out int charsWritten))
                 return false;
 
-            int charsWritten = Encoding.UTF8.GetChars(utf8, destination);
             text = destination.Slice(0, charsWritten);
+            return true;
+        }
+
+        private static bool TryDecodeUtf8(ReadOnlySpan<byte> utf8, Span<char> destination, out int charsWritten)
+        {
+            charsWritten = 0;
+            int read = 0;
+            while (read < utf8.Length)
+            {
+                byte b0 = utf8[read++];
+                uint scalar;
+                if (b0 < 0x80)
+                {
+                    scalar = b0;
+                }
+                else if ((b0 & 0xE0) == 0xC0)
+                {
+                    if (read >= utf8.Length)
+                        return false;
+
+                    byte b1 = utf8[read++];
+                    if ((b1 & 0xC0) != 0x80)
+                        return false;
+
+                    scalar = (uint)(((b0 & 0x1Fu) << 6) | (b1 & 0x3Fu));
+                    if (scalar < 0x80u)
+                        return false;
+                }
+                else if ((b0 & 0xF0) == 0xE0)
+                {
+                    if (read + 1 >= utf8.Length)
+                        return false;
+
+                    byte b1 = utf8[read++];
+                    byte b2 = utf8[read++];
+                    if ((b1 & 0xC0) != 0x80 || (b2 & 0xC0) != 0x80)
+                        return false;
+
+                    scalar = (uint)(((b0 & 0x0Fu) << 12) | ((b1 & 0x3Fu) << 6) | (b2 & 0x3Fu));
+                    if (scalar < 0x800u || (scalar >= 0xD800u && scalar <= 0xDFFFu))
+                        return false;
+                }
+                else if ((b0 & 0xF8) == 0xF0)
+                {
+                    if (read + 2 >= utf8.Length)
+                        return false;
+
+                    byte b1 = utf8[read++];
+                    byte b2 = utf8[read++];
+                    byte b3 = utf8[read++];
+                    if ((b1 & 0xC0) != 0x80 || (b2 & 0xC0) != 0x80 || (b3 & 0xC0) != 0x80)
+                        return false;
+
+                    scalar = (uint)(((b0 & 0x07u) << 18) | ((b1 & 0x3Fu) << 12) | ((b2 & 0x3Fu) << 6) | (b3 & 0x3Fu));
+                    if (scalar < 0x10000u || scalar > 0x10FFFFu)
+                        return false;
+                }
+                else
+                {
+                    return false;
+                }
+
+                if (scalar <= 0xFFFFu)
+                {
+                    if (charsWritten >= destination.Length)
+                        return false;
+
+                    destination[charsWritten++] = (char)scalar;
+                    continue;
+                }
+
+                if (charsWritten + 1 >= destination.Length)
+                    return false;
+
+                scalar -= 0x10000u;
+                destination[charsWritten++] = (char)(0xD800u + (scalar >> 10));
+                destination[charsWritten++] = (char)(0xDC00u + (scalar & 0x3FFu));
+            }
+
             return true;
         }
 
@@ -1051,11 +1127,12 @@ namespace Hecton8.Data
         public static bool TryGetLocalizedUtf8Block(out ReadOnlySpan<byte> utf8Bytes)
         {
             utf8Bytes = default;
-            if (!IsLoaded || !TryRefreshArenaView(out NativeArray<byte> arena) || _directory.LocalizationBytes == 0)
+            if (!IsLoaded || !TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly arena) || _directory.LocalizationBytes == 0)
                 return false;
 
             byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(arena);
-            utf8Bytes = new ReadOnlySpan<byte>(basePtr + _directory.LocalizationOffset, (int)_directory.LocalizationBytes);
+            ref byte firstUtf8Byte = ref UnsafeUtility.ArrayElementAsRef<byte>(basePtr + _directory.LocalizationOffset, 0);
+            utf8Bytes = MemoryMarshal.CreateReadOnlySpan(ref firstUtf8Byte, (int)_directory.LocalizationBytes);
             return true;
         }
 
@@ -1077,7 +1154,7 @@ namespace Hecton8.Data
         {
             utf8Bytes = default;
             if (!IsLoaded ||
-                !TryRefreshArenaView(out NativeArray<byte> arena) ||
+                !TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly arena) ||
                 utf8Offset == MissingUtf8Offset ||
                 byteLength < 0 ||
                 _directory.LocalizationBytes == 0)
@@ -1093,7 +1170,8 @@ namespace Hecton8.Data
 
             byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(arena);
             byte* locPtr = basePtr + _directory.LocalizationOffset;
-            utf8Bytes = new ReadOnlySpan<byte>(locPtr + (int)utf8Offset, byteLength);
+            ref byte firstUtf8Byte = ref UnsafeUtility.ArrayElementAsRef<byte>(locPtr + (int)utf8Offset, 0);
+            utf8Bytes = MemoryMarshal.CreateReadOnlySpan(ref firstUtf8Byte, byteLength);
             return true;
         }
 
@@ -1115,7 +1193,7 @@ namespace Hecton8.Data
         {
             utf8Bytes = default;
             if (!IsLoaded ||
-                !TryRefreshArenaView(out NativeArray<byte> arena) ||
+                !TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly arena) ||
                 utf8Offset == MissingUtf8Offset ||
                 _directory.LocalizationBytes == 0)
             {
@@ -1136,7 +1214,8 @@ namespace Hecton8.Data
             if (byteLength <= 0)
                 return false;
 
-            utf8Bytes = new ReadOnlySpan<byte>(locPtr + offset, byteLength);
+            ref byte firstUtf8Byte = ref UnsafeUtility.ArrayElementAsRef<byte>(locPtr + offset, 0);
+            utf8Bytes = MemoryMarshal.CreateReadOnlySpan(ref firstUtf8Byte, byteLength);
             return true;
         }
 
@@ -1145,7 +1224,7 @@ namespace Hecton8.Data
         /// </summary>
         public static int GetStaticLocalizationReferenceCount()
         {
-            if (!IsLoaded || !TryRefreshArenaView(out _) || _directory.LocalizationBytes == 0)
+            if (!IsLoaded || !TryRefreshArenaReadOnly(out _) || _directory.LocalizationBytes == 0)
                 return 0;
 
             int count = 0;
@@ -1169,7 +1248,7 @@ namespace Hecton8.Data
             out H8StaticLocalizationReference reference)
         {
             reference = default;
-            if (!IsLoaded || !TryRefreshArenaView(out _) || _directory.LocalizationBytes == 0)
+            if (!IsLoaded || !TryRefreshArenaReadOnly(out _) || _directory.LocalizationBytes == 0)
                 return false;
 
             if (cursor.Section < 0)
@@ -1222,18 +1301,14 @@ namespace Hecton8.Data
             ref int recordIndex,
             out H8StaticLocalizationReference reference)
         {
-            H8ItemRecord* records = (H8ItemRecord*)GetSectionDataPointer(
-                H8DataSectionId.Items,
-                H8DataLayoutConstants.ItemRecordSize,
-                out int recordCount);
-
-            if (records == null || recordCount <= 0)
+            ReadOnlySpan<H8ItemRecord> records = GetSectionSpan<H8ItemRecord>(H8DataSectionId.Items);
+            if (records.Length <= 0)
             {
                 reference = default;
                 return false;
             }
 
-            while (recordIndex < recordCount)
+            while (recordIndex < records.Length)
             {
                 int index = recordIndex++;
                 if (TryBuildStaticLocalizationReference(records[index].HashId, records[index].NameUtf8Offset, records[index].NameUtf8ByteLength, out reference))
@@ -1248,18 +1323,14 @@ namespace Hecton8.Data
             ref int recordIndex,
             out H8StaticLocalizationReference reference)
         {
-            H8CreatureTraitRecord* records = (H8CreatureTraitRecord*)GetSectionDataPointer(
-                H8DataSectionId.Creatures,
-                H8DataLayoutConstants.CreatureTraitRecordSize,
-                out int recordCount);
-
-            if (records == null || recordCount <= 0)
+            ReadOnlySpan<H8CreatureTraitRecord> records = GetSectionSpan<H8CreatureTraitRecord>(H8DataSectionId.Creatures);
+            if (records.Length <= 0)
             {
                 reference = default;
                 return false;
             }
 
-            while (recordIndex < recordCount)
+            while (recordIndex < records.Length)
             {
                 int index = recordIndex++;
                 if (TryBuildStaticLocalizationReference(records[index].SpeciesHash, records[index].DisplayNameUtf8Offset, records[index].DisplayNameUtf8ByteLength, out reference))
@@ -1274,18 +1345,14 @@ namespace Hecton8.Data
             ref int recordIndex,
             out H8StaticLocalizationReference reference)
         {
-            H8BiomeRecord* records = (H8BiomeRecord*)GetSectionDataPointer(
-                H8DataSectionId.Biomes,
-                H8DataLayoutConstants.BiomeRecordSize,
-                out int recordCount);
-
-            if (records == null || recordCount <= 0)
+            ReadOnlySpan<H8BiomeRecord> records = GetSectionSpan<H8BiomeRecord>(H8DataSectionId.Biomes);
+            if (records.Length <= 0)
             {
                 reference = default;
                 return false;
             }
 
-            while (recordIndex < recordCount)
+            while (recordIndex < records.Length)
             {
                 int index = recordIndex++;
                 if (TryBuildStaticLocalizationReference(records[index].BiomeHash, records[index].DisplayNameUtf8Offset, records[index].DisplayNameUtf8ByteLength, out reference))
@@ -1300,18 +1367,14 @@ namespace Hecton8.Data
             ref int recordIndex,
             out H8StaticLocalizationReference reference)
         {
-            H8GhostModuleRecord* records = (H8GhostModuleRecord*)GetSectionDataPointer(
-                H8DataSectionId.GhostModules,
-                UnsafeUtility.SizeOf<H8GhostModuleRecord>(),
-                out int recordCount);
-
-            if (records == null || recordCount <= 0)
+            ReadOnlySpan<H8GhostModuleRecord> records = GetSectionSpan<H8GhostModuleRecord>(H8DataSectionId.GhostModules);
+            if (records.Length <= 0)
             {
                 reference = default;
                 return false;
             }
 
-            while (recordIndex < recordCount)
+            while (recordIndex < records.Length)
             {
                 int index = recordIndex++;
                 if (TryBuildStaticLocalizationReference(records[index].ModuleHash, records[index].DisplayNameUtf8Offset, records[index].DisplayNameUtf8ByteLength, out reference))
@@ -1326,18 +1389,14 @@ namespace Hecton8.Data
             ref int recordIndex,
             out H8StaticLocalizationReference reference)
         {
-            H8SopErrorRecord* records = (H8SopErrorRecord*)GetSectionDataPointer(
-                H8DataSectionId.SopErrors,
-                UnsafeUtility.SizeOf<H8SopErrorRecord>(),
-                out int recordCount);
-
-            if (records == null || recordCount <= 0)
+            ReadOnlySpan<H8SopErrorRecord> records = GetSectionSpan<H8SopErrorRecord>(H8DataSectionId.SopErrors);
+            if (records.Length <= 0)
             {
                 reference = default;
                 return false;
             }
 
-            while (recordIndex < recordCount)
+            while (recordIndex < records.Length)
             {
                 int index = recordIndex++;
                 if (TryBuildStaticLocalizationReference(records[index].ErrorHash, records[index].MessageUtf8Offset, records[index].MessageUtf8ByteLength, out reference))
@@ -1363,12 +1422,9 @@ namespace Hecton8.Data
                 return false;
             }
 
-            reference = new H8StaticLocalizationReference
-            {
-                KeyHash = keyHash,
-                Utf8Offset = utf8Offset,
-                ByteLength = (int)byteLength
-            };
+            reference.KeyHash = keyHash;
+            reference.Utf8Offset = utf8Offset;
+            reference.ByteLength = (int)byteLength;
             return true;
         }
 
@@ -1388,7 +1444,7 @@ namespace Hecton8.Data
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static ulong ComputeResidentPayloadHash64()
         {
-            if (!TryRefreshArenaView(out NativeArray<byte> arena) || arena.Length <= H8DataLayoutConstants.HeaderSizeBytes)
+            if (!TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly arena) || arena.Length <= H8DataLayoutConstants.HeaderSizeBytes)
                 return 0UL;
 
             byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(arena);
@@ -1398,6 +1454,7 @@ namespace Hecton8.Data
             return ((ulong)hash.y << 32) | hash.x;
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static bool TryReadWholeFileIntoArena(string absolutePath, int expectedBytes, uint inheritedPathFlags, out H8DataBlobLoadStatus status)
         {
             status = H8DataBlobLoadStatus.None;
@@ -1448,7 +1505,7 @@ namespace Hecton8.Data
                 status = ok ? H8DataBlobLoadStatus.None : H8DataBlobLoadStatus.ReadFailed;
                 long streamElapsedTicks = Stopwatch.GetTimestamp() - readStart;
                 _lastReadTicks = streamElapsedTicks;
-                _lastReadPathFlags = pathFlags | PathFlagFileStream;
+                _lastReadPathFlags = pathFlags | PathFlagManagedFileFallback;
                 return ok;
             }
             catch (Exception)
@@ -1458,11 +1515,6 @@ namespace Hecton8.Data
                 _lastReadPathFlags = pathFlags;
                 return false;
             }
-        }
-
-        private static bool ExceedsTelemetryDumpThreshold(long ticks)
-        {
-            return ticks > Stopwatch.Frequency / 20L;
         }
 
 #if (UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN) && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
@@ -1557,6 +1609,271 @@ namespace Hecton8.Data
             }
         }
 #endif
+#endif
+
+        private static bool ExceedsTelemetryDumpThreshold(long ticks)
+        {
+            return ticks > Stopwatch.Frequency / 20L;
+        }
+
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
+        private static bool TryInitializeFromWindowsPlayerStreamingAssets(
+            IDataVault vault,
+            uint expectedWorldSeed,
+            uint expectedAppVersionHash,
+            bool failIfMissing,
+            out H8DataBlobLoadStatus status)
+        {
+            if (vault != null || !IsLoaded)
+                _vault = vault;
+
+            char* path = stackalloc char[NativePathCapacity];
+            if (!TryBuildWindowsPlayerMonolithPath(path, NativePathCapacity))
+            {
+                status = H8DataBlobLoadStatus.Missing;
+                if (failIfMissing)
+                    RecordFailureTelemetry(status, 0u);
+
+                return !failIfMissing && IsLoaded;
+            }
+
+            if (IsWriteLocked && IsLoaded)
+            {
+                status = H8DataBlobLoadStatus.ReadyLocked;
+                return false;
+            }
+
+            if (!TryGetNativeFileSize(path, out long blobLength))
+            {
+                status = H8DataBlobLoadStatus.Missing;
+                if (failIfMissing)
+                    RecordFailureTelemetry(status, 0u);
+
+                return !failIfMissing && IsLoaded;
+            }
+
+            if (blobLength < H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes)
+            {
+                status = H8DataBlobLoadStatus.FileTooSmall;
+                RecordFailureTelemetry(status, 0u);
+                return false;
+            }
+
+            if (blobLength > MaxBlobBytes || blobLength > int.MaxValue)
+            {
+                status = H8DataBlobLoadStatus.FileTooLarge;
+                RecordFailureTelemetry(status, 0u);
+                return false;
+            }
+
+            int blobBytes = (int)blobLength;
+            IDataVault activeVault = _vault;
+            ShutdownArenaOnly();
+            _vault = activeVault;
+            if (!TryAllocateArena(blobBytes))
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+                RecordFailureTelemetry(status, 0u);
+                return false;
+            }
+
+            _residentBlobBytes = blobBytes;
+            if (!TryReadWholeNativeFileIntoArena(path, blobBytes, out status))
+            {
+                RecordTelemetry(status, _lastReadTicks, _lastReadTicks, _lastReadPathFlags);
+                DumpTelemetry(status);
+                ShutdownArenaOnly();
+                return false;
+            }
+
+            if (!TryValidateResidentArena(expectedWorldSeed, expectedAppVersionHash, out status))
+            {
+                RecordTelemetry(status, _lastReadTicks, _lastReadTicks, _lastReadPathFlags);
+                DumpTelemetry(status);
+                ShutdownArenaOnly();
+                return false;
+            }
+
+            Volatile.Write(ref _loaded, 1);
+            LockReady();
+            status = H8DataBlobLoadStatus.Loaded;
+            RecordTelemetry(status, _lastReadTicks, _lastReadTicks, _lastReadPathFlags);
+            if (ExceedsTelemetryDumpThreshold(_lastReadTicks))
+                DumpTelemetry(status);
+
+            return true;
+        }
+
+        private static bool TryBuildWindowsPlayerMonolithPath(char* buffer, int capacity)
+        {
+            if (buffer == null || capacity <= 0)
+                return false;
+
+            uint length = GetModuleFileNameW(IntPtr.Zero, buffer, (uint)capacity);
+            if (length == 0u || length >= (uint)capacity)
+                return false;
+
+            int charCount = (int)length;
+            int lastSlash = -1;
+            for (int i = 0; i < charCount; i++)
+            {
+                char c = buffer[i];
+                if (c == '\\' || c == '/')
+                    lastSlash = i;
+            }
+
+            int stemStart = lastSlash + 1;
+            int stemEnd = charCount;
+            if (stemEnd - stemStart > 4 &&
+                buffer[stemEnd - 4] == '.' &&
+                IsAsciiEqualIgnoreCase(buffer[stemEnd - 3], 'e') &&
+                IsAsciiEqualIgnoreCase(buffer[stemEnd - 2], 'x') &&
+                IsAsciiEqualIgnoreCase(buffer[stemEnd - 1], 'e'))
+            {
+                stemEnd -= 4;
+            }
+
+            int stemLength = stemEnd - stemStart;
+            if (stemLength <= 0)
+                return false;
+
+            int write = stemStart;
+            for (int i = 0; i < stemLength; i++)
+                buffer[write++] = buffer[stemStart + i];
+
+            if (!AppendLiteral(buffer, capacity, ref write, "_Data\\StreamingAssets\\Hecton8\\DataMonolith\\static_data.h8bin"))
+                return false;
+
+            buffer[write] = '\0';
+            return true;
+        }
+
+        private static bool IsAsciiEqualIgnoreCase(char value, char expectedLower)
+        {
+            if (value >= 'A' && value <= 'Z')
+                value = (char)(value + ('a' - 'A'));
+
+            return value == expectedLower;
+        }
+
+        private static bool AppendLiteral(char* buffer, int capacity, ref int write, ReadOnlySpan<char> literal)
+        {
+            if (literal.IsEmpty || write < 0 || write + literal.Length >= capacity)
+                return false;
+
+            for (int i = 0; i < literal.Length; i++)
+                buffer[write++] = literal[i];
+
+            return true;
+        }
+
+        private static bool TryGetNativeFileSize(char* path, out long byteLength)
+        {
+            byteLength = 0L;
+            IntPtr handle = CreateFileWNative(
+                path,
+                NativeGenericRead,
+                NativeFileShareRead,
+                IntPtr.Zero,
+                NativeOpenExisting,
+                NativeFileFlagSequentialScan,
+                IntPtr.Zero);
+            if (handle == IntPtr.Zero || handle == NativeInvalidHandleValue)
+                return false;
+
+            bool ok = GetFileSizeEx(handle, out byteLength);
+            CloseHandleNative(handle);
+            return ok && byteLength >= 0L;
+        }
+
+        private static bool TryReadWholeNativeFileIntoArena(char* path, int expectedBytes, out H8DataBlobLoadStatus status)
+        {
+            status = H8DataBlobLoadStatus.None;
+            long readStart = Stopwatch.GetTimestamp();
+            uint pathFlags = PathFlagVaultBacked | PathFlagNativeFile;
+            _lastReadTicks = 0L;
+            _lastReadPathFlags = pathFlags;
+            if (!TryRefreshArenaView(out NativeArray<byte> arena) || arena.Length < expectedBytes)
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+                return false;
+            }
+
+            byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(arena);
+            IntPtr handle = CreateFileWNative(
+                path,
+                NativeGenericRead,
+                NativeFileShareRead,
+                IntPtr.Zero,
+                NativeOpenExisting,
+                NativeFileFlagSequentialScan,
+                IntPtr.Zero);
+            if (handle == IntPtr.Zero || handle == NativeInvalidHandleValue)
+            {
+                status = H8DataBlobLoadStatus.ReadFailed;
+                _lastReadTicks = Stopwatch.GetTimestamp() - readStart;
+                return false;
+            }
+
+            int totalRead = 0;
+            while (totalRead < expectedBytes)
+            {
+                uint chunkBytes = (uint)Math.Min(1024 * 1024, expectedBytes - totalRead);
+                if (!ReadFileNative(handle, destination + totalRead, chunkBytes, out uint read, IntPtr.Zero) || read == 0u)
+                    break;
+
+                totalRead += (int)read;
+            }
+
+            CloseHandleNative(handle);
+            bool ok = totalRead == expectedBytes;
+            status = ok ? H8DataBlobLoadStatus.None : H8DataBlobLoadStatus.ReadFailed;
+            _lastReadTicks = Stopwatch.GetTimestamp() - readStart;
+            _lastReadPathFlags = pathFlags;
+            return ok;
+        }
+
+        [DllImport("kernel32.dll", EntryPoint = "GetModuleFileNameW", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern uint GetModuleFileNameW(IntPtr hModule, char* lpFilename, uint nSize);
+
+        [DllImport("kernel32.dll", EntryPoint = "CreateFileW", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern IntPtr CreateFileWNative(
+            char* lpFileName,
+            uint dwDesiredAccess,
+            uint dwShareMode,
+            IntPtr lpSecurityAttributes,
+            uint dwCreationDisposition,
+            uint dwFlagsAndAttributes,
+            IntPtr hTemplateFile);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool GetFileSizeEx(IntPtr hFile, out long lpFileSize);
+
+        [DllImport("kernel32.dll", EntryPoint = "ReadFile", SetLastError = true)]
+        private static extern bool ReadFileNative(
+            IntPtr hFile,
+            void* lpBuffer,
+            uint nNumberOfBytesToRead,
+            out uint lpNumberOfBytesRead,
+            IntPtr lpOverlapped);
+
+        [DllImport("kernel32.dll", EntryPoint = "WriteFile", SetLastError = true)]
+        private static extern bool WriteFileNative(
+            IntPtr hFile,
+            void* lpBuffer,
+            uint nNumberOfBytesToWrite,
+            out uint lpNumberOfBytesWritten,
+            IntPtr lpOverlapped);
+
+        [DllImport("kernel32.dll", EntryPoint = "CreateDirectoryW", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern bool CreateDirectoryWNative(char* lpPathName, IntPtr lpSecurityAttributes);
+
+        [DllImport("kernel32.dll", EntryPoint = "GetCurrentDirectoryW", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern uint GetCurrentDirectoryW(uint nBufferLength, char* lpBuffer);
+
+        [DllImport("kernel32.dll", EntryPoint = "CloseHandle", SetLastError = true)]
+        private static extern bool CloseHandleNative(IntPtr hObject);
+#endif
 
         private static bool TryValidateResidentArena(
             uint expectedWorldSeed,
@@ -1570,7 +1887,7 @@ namespace Hecton8.Data
                 return false;
             }
 
-            if (!TryRefreshArenaView(out NativeArray<byte> arena) || _residentBlobBytes < H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes)
+            if (!TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly arena) || _residentBlobBytes < H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes)
             {
                 status = H8DataBlobLoadStatus.FileTooSmall;
                 return false;
@@ -1603,13 +1920,17 @@ namespace Hecton8.Data
             if (_header.BlobBytes != _residentBlobBytes ||
                 _header.DirectoryOffset != H8DataLayoutConstants.HeaderSizeBytes ||
                 _header.DirectoryBytes != H8DataLayoutConstants.DirectorySizeBytes ||
+                _header.SectionTableOffset != H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes ||
                 _header.SectionTableOffset != _directory.SectionTableOffset ||
                 _header.SectionCount != _directory.SectionCount ||
-                (_header.Flags & H8DataLayoutConstants.BlobFlagLittleEndian) == 0u ||
+                _header.Flags != H8DataLayoutConstants.BlobFlagLittleEndian ||
                 _header.Flags != _directory.Flags ||
                 _header.WorldSeed != _directory.WorldSeed ||
                 _header.AppVersionHash != _directory.AppVersionHash ||
-                _header.SchemaHash != H8DataLayoutConstants.SchemaHash)
+                _header.SchemaHash != H8DataLayoutConstants.SchemaHash ||
+                _header.Reserved0 != 0u ||
+                _header.Reserved1 != 0u ||
+                _header.Reserved2 != 0u)
             {
                 status = H8DataBlobLoadStatus.HeaderMismatch;
                 return false;
@@ -1656,8 +1977,17 @@ namespace Hecton8.Data
             if (_directory.SectionCount != ExpectedSectionCount)
                 return false;
 
-            if (_directory.SectionTableOffset < H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes)
+            if (_directory.SectionTableOffset != H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes)
                 return false;
+
+            if (_directory.Reserved0 != 0u ||
+                _directory.Reserved1 != 0u ||
+                _directory.Reserved2 != 0u ||
+                _directory.Reserved3 != 0u ||
+                _directory.Reserved4 != 0u)
+            {
+                return false;
+            }
 
             if (_directory.SectionTableBytes != (uint)(_directory.SectionCount * UnsafeUtility.SizeOf<H8DataSectionEntry>()))
                 return false;
@@ -1682,7 +2012,7 @@ namespace Hecton8.Data
                 return false;
             }
 
-            if (!TryRefreshArenaView(out NativeArray<byte> arena))
+            if (!TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly arena))
                 return false;
 
             byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(arena);
@@ -1781,6 +2111,16 @@ namespace Hecton8.Data
             return vault.TryResolveHandle(in _arenaHandle, out arena) && arena.IsCreated;
         }
 
+        private static bool TryRefreshArenaReadOnly(out NativeArray<byte>.ReadOnly arena)
+        {
+            arena = default;
+            IDataVault vault = _vault;
+            if (vault == null || _arenaHandle.BufferID == 0u)
+                return false;
+
+            return vault.TryReadOnlyHandle(in _arenaHandle, out arena) && arena.IsCreated;
+        }
+
         private static bool EnsureTelemetry()
         {
             IDataVault vault = _vault;
@@ -1847,18 +2187,17 @@ namespace Hecton8.Data
             uint stateHash = ((uint)_residentBlobBytes * H8DataHash.Fnv1A32Prime) ^
                              ((uint)_directory.SectionCount << 16) ^
                              (uint)status;
-            ring[index] = new H8DataMonolithTelemetryEntry
-            {
-                Checksum64 = _header.Checksum64,
-                LoadTicks = loadTicks,
-                IoTicks = ioTicks,
-                FrameIndex = (uint)Interlocked.Increment(ref _telemetryFrame),
-                BlobBytes = (uint)Math.Max(0, _residentBlobBytes),
-                SectionCount = _directory.SectionCount,
-                LoadStatus = (uint)status,
-                PathFlags = pathFlags,
-                StateHash = stateHash
-            };
+            H8DataMonolithTelemetryEntry entry = default;
+            entry.Checksum64 = _header.Checksum64;
+            entry.LoadTicks = loadTicks;
+            entry.IoTicks = ioTicks;
+            entry.FrameIndex = (uint)Interlocked.Increment(ref _telemetryFrame);
+            entry.BlobBytes = (uint)Math.Max(0, _residentBlobBytes);
+            entry.SectionCount = _directory.SectionCount;
+            entry.LoadStatus = (uint)status;
+            entry.PathFlags = pathFlags;
+            entry.StateHash = stateHash;
+            ring[index] = entry;
 
             index++;
             if (index >= H8DataLayoutConstants.TelemetryRingCapacity)
@@ -1874,6 +2213,9 @@ namespace Hecton8.Data
                 return;
             }
 
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
+            WriteTelemetryDumpsWin32(status, ring, cursor[0]);
+#elif UNITY_EDITOR || DEVELOPMENT_BUILD
             try
             {
                 string folder = System.IO.Path.GetFullPath("Docs/AgentLogs");
@@ -1881,12 +2223,15 @@ namespace Hecton8.Data
                 WriteTelemetryDump(System.IO.Path.Combine(folder, "Dump_SHINOBU_103.bin"), status, ring, cursor[0]);
                 WriteTelemetryDump(System.IO.Path.Combine(folder, "Dump_DATA_MONOLITH.bin"), status, ring, cursor[0]);
                 WriteTelemetryDump(System.IO.Path.Combine(folder, "Dump_X_002.bin"), status, ring, cursor[0]);
+                WriteTelemetryDump(System.IO.Path.Combine(folder, "Dump_1313.bin"), status, ring, cursor[0]);
             }
             catch (Exception)
             {
             }
+#endif
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static void WriteTelemetryDump(
             string path,
             H8DataBlobLoadStatus status,
@@ -1918,22 +2263,162 @@ namespace Hecton8.Data
                 writer.Write(entry.Reserved3);
             }
         }
+#endif
+
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD && UNITY_STANDALONE_WIN && !UNITY_WEBGL && !UNITY_ANDROID && !UNITY_IOS
+        private static void WriteTelemetryDumpsWin32(
+            H8DataBlobLoadStatus status,
+            NativeArray<H8DataMonolithTelemetryEntry> ring,
+            int cursor)
+        {
+            char* path = stackalloc char[NativePathCapacity];
+            if (TryBuildCurrentDirectoryPath(path, NativePathCapacity, "Docs"))
+                CreateDirectoryWNative(path, IntPtr.Zero);
+
+            if (TryBuildCurrentDirectoryPath(path, NativePathCapacity, "Docs\\AgentLogs"))
+                CreateDirectoryWNative(path, IntPtr.Zero);
+
+            if (TryBuildCurrentDirectoryPath(path, NativePathCapacity, "Docs\\AgentLogs\\Dump_SHINOBU_103.bin"))
+                WriteTelemetryDumpWin32(path, status, ring, cursor);
+
+            if (TryBuildCurrentDirectoryPath(path, NativePathCapacity, "Docs\\AgentLogs\\Dump_DATA_MONOLITH.bin"))
+                WriteTelemetryDumpWin32(path, status, ring, cursor);
+
+            if (TryBuildCurrentDirectoryPath(path, NativePathCapacity, "Docs\\AgentLogs\\Dump_X_002.bin"))
+                WriteTelemetryDumpWin32(path, status, ring, cursor);
+
+            if (TryBuildCurrentDirectoryPath(path, NativePathCapacity, "Docs\\AgentLogs\\Dump_1313.bin"))
+                WriteTelemetryDumpWin32(path, status, ring, cursor);
+        }
+
+        private static bool TryBuildCurrentDirectoryPath(char* buffer, int capacity, ReadOnlySpan<char> relativePath)
+        {
+            if (buffer == null || capacity <= 0)
+                return false;
+
+            uint length = GetCurrentDirectoryW((uint)capacity, buffer);
+            if (length == 0u || length >= (uint)capacity)
+                return false;
+
+            int write = (int)length;
+            if (write > 0 && buffer[write - 1] != '\\' && buffer[write - 1] != '/')
+                buffer[write++] = '\\';
+
+            if (!AppendLiteral(buffer, capacity, ref write, relativePath))
+                return false;
+
+            buffer[write] = '\0';
+            return true;
+        }
+
+        private static bool WriteTelemetryDumpWin32(
+            char* path,
+            H8DataBlobLoadStatus status,
+            NativeArray<H8DataMonolithTelemetryEntry> ring,
+            int cursor)
+        {
+            IntPtr handle = CreateFileWNative(
+                path,
+                NativeGenericWrite,
+                NativeFileShareRead | NativeFileShareWrite,
+                IntPtr.Zero,
+                NativeCreateAlways,
+                NativeFileFlagSequentialScan,
+                IntPtr.Zero);
+            if (handle == IntPtr.Zero || handle == NativeInvalidHandleValue)
+                return false;
+
+            int entrySize = UnsafeUtility.SizeOf<H8DataMonolithTelemetryEntry>();
+            byte* header = stackalloc byte[20];
+            int headerOffset = 0;
+            WriteUInt32Le(header, ref headerOffset, 0x4858444Du);
+            WriteUInt32Le(header, ref headerOffset, (uint)status);
+            WriteInt32Le(header, ref headerOffset, cursor);
+            WriteInt32Le(header, ref headerOffset, H8DataLayoutConstants.TelemetryRingCapacity);
+            WriteInt32Le(header, ref headerOffset, entrySize);
+            if (!WriteFileNative(handle, header, (uint)headerOffset, out uint headerWritten, IntPtr.Zero) ||
+                headerWritten != (uint)headerOffset)
+            {
+                CloseHandleNative(handle);
+                return false;
+            }
+
+            byte* entryBytes = stackalloc byte[H8DataLayoutConstants.TelemetryEntrySize];
+            for (int i = 0; i < H8DataLayoutConstants.TelemetryRingCapacity; i++)
+            {
+                H8DataMonolithTelemetryEntry entry = ring[i];
+                int entryOffset = 0;
+                WriteUInt64Le(entryBytes, ref entryOffset, entry.Checksum64);
+                WriteInt64Le(entryBytes, ref entryOffset, entry.LoadTicks);
+                WriteInt64Le(entryBytes, ref entryOffset, entry.IoTicks);
+                WriteUInt32Le(entryBytes, ref entryOffset, entry.FrameIndex);
+                WriteUInt32Le(entryBytes, ref entryOffset, entry.BlobBytes);
+                WriteUInt32Le(entryBytes, ref entryOffset, entry.SectionCount);
+                WriteUInt32Le(entryBytes, ref entryOffset, entry.LoadStatus);
+                WriteUInt32Le(entryBytes, ref entryOffset, entry.PathFlags);
+                WriteUInt32Le(entryBytes, ref entryOffset, entry.StateHash);
+                WriteUInt32Le(entryBytes, ref entryOffset, entry.Reserved0);
+                WriteUInt32Le(entryBytes, ref entryOffset, entry.Reserved1);
+                WriteUInt32Le(entryBytes, ref entryOffset, entry.Reserved2);
+                WriteUInt32Le(entryBytes, ref entryOffset, entry.Reserved3);
+                if (!WriteFileNative(handle, entryBytes, (uint)entryOffset, out uint entryWritten, IntPtr.Zero) ||
+                    entryWritten != (uint)entryOffset)
+                {
+                    CloseHandleNative(handle);
+                    return false;
+                }
+            }
+
+            CloseHandleNative(handle);
+            return true;
+        }
+
+        private static void WriteInt32Le(byte* output, ref int offset, int value)
+        {
+            WriteUInt32Le(output, ref offset, (uint)value);
+        }
+
+        private static void WriteInt64Le(byte* output, ref int offset, long value)
+        {
+            WriteUInt64Le(output, ref offset, (ulong)value);
+        }
+
+        private static void WriteUInt32Le(byte* output, ref int offset, uint value)
+        {
+            output[offset++] = (byte)value;
+            output[offset++] = (byte)(value >> 8);
+            output[offset++] = (byte)(value >> 16);
+            output[offset++] = (byte)(value >> 24);
+        }
+
+        private static void WriteUInt64Le(byte* output, ref int offset, ulong value)
+        {
+            for (int i = 0; i < 8; i++)
+                output[offset++] = (byte)(value >> (i * 8));
+        }
+#endif
 
         private static bool TryFindLootTableRange(uint tableHash, out int start, out int end, out uint totalWeight)
+        {
+            ReadOnlySpan<H8LootCdfRecord> records = GetSectionSpan<H8LootCdfRecord>(H8DataSectionId.LootCdf);
+            return TryFindLootTableRange(records, tableHash, out start, out end, out totalWeight);
+        }
+
+        private static bool TryFindLootTableRange(
+            ReadOnlySpan<H8LootCdfRecord> records,
+            uint tableHash,
+            out int start,
+            out int end,
+            out uint totalWeight)
         {
             start = 0;
             end = 0;
             totalWeight = 0u;
-            H8LootCdfRecord* records = (H8LootCdfRecord*)GetSectionDataPointer(
-                H8DataSectionId.LootCdf,
-                UnsafeUtility.SizeOf<H8LootCdfRecord>(),
-                out int count);
-
-            if (records == null || count <= 0)
+            if (records.Length <= 0)
                 return false;
 
             int low = 0;
-            int high = count;
+            int high = records.Length;
             while (low < high)
             {
                 int index = low + ((high - low) >> 1);
@@ -1944,11 +2429,11 @@ namespace Hecton8.Data
             }
 
             start = low;
-            if (start >= count || records[start].TableHash != tableHash)
+            if (start >= records.Length || records[start].TableHash != tableHash)
                 return false;
 
             low = start + 1;
-            high = count;
+            high = records.Length;
             while (low < high)
             {
                 int index = low + ((high - low) >> 1);

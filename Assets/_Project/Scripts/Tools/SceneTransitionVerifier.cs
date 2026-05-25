@@ -26,7 +26,7 @@ namespace Hecton8.Tools
         private float _transitionTimeout = 10f;
 
         private string _lastSceneName;
-        private float _sceneLoadStartTime;
+        private double _sceneLoadStartTime;
         private bool _isTransitioning;
 
         private void OnEnable()
@@ -90,7 +90,7 @@ namespace Hecton8.Tools
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            float loadTime = Time.unscaledTime - _sceneLoadStartTime;
+            float loadTime = (float)(SystemDispatcher.CurrentUnscaledTimeSeconds - _sceneLoadStartTime);
             _isTransitioning = false;
             LogVerification("Scene loaded: " + scene.name + " (mode: " + mode + ", time: " + loadTime.ToString("0.00", CultureInfo.InvariantCulture) + "s)");
         }
@@ -102,7 +102,7 @@ namespace Hecton8.Tools
 
         private void OnActiveSceneChanged(Scene previous, Scene current)
         {
-            _sceneLoadStartTime = Time.unscaledTime;
+            _sceneLoadStartTime = SystemDispatcher.CurrentUnscaledTimeSeconds;
             _isTransitioning = true;
             _lastSceneName = current.name;
             LogVerification($"Active scene changed: {previous.name} -> {current.name}");
@@ -120,8 +120,8 @@ namespace Hecton8.Tools
                 cancellationToken.ThrowIfCancellationRequested();
                 LogVerification($"Starting verification: {transitionName}");
 
-                float deadline = Time.unscaledTime + Mathf.Max(0.1f, _transitionTimeout);
-                while (_isTransitioning && Time.unscaledTime < deadline)
+                double deadline = SystemDispatcher.CurrentUnscaledTimeSeconds + Mathf.Max(0.1f, _transitionTimeout);
+                while (_isTransitioning && SystemDispatcher.CurrentUnscaledTimeSeconds < deadline)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
@@ -155,7 +155,7 @@ namespace Hecton8.Tools
             {
                 LogVerification($"FAIL {transitionName} - exception {exception.Message}");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogException(exception);
+                Hecton8.Core.H8Debug.LogException(exception);
 #endif
             }
         }

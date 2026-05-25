@@ -33,7 +33,7 @@ namespace Hecton8.Editor
         public static void WriteSelfAuditReportMenu()
         {
             WriteSelfAuditReport();
-            Debug.Log("SHINOBU_204 self-audit written: " + ReportPath);
+            Hecton8.Core.H8Debug.Log("SHINOBU_204 self-audit written: " + ReportPath);
         }
 
         [MenuItem("Hecton8/Diagnostics/Run SHINOBU_204 Self Audit CLI")]
@@ -43,7 +43,7 @@ namespace Hecton8.Editor
             if (!ValidateCriticalLayouts(out string failure))
                 throw new BuildFailedException(failure);
 
-            Debug.Log("SHINOBU_204 self-audit gate passed: " + ReportPath);
+            Hecton8.Core.H8Debug.Log("SHINOBU_204 self-audit gate passed: " + ReportPath);
         }
 
         internal static void WriteSelfAuditReport()

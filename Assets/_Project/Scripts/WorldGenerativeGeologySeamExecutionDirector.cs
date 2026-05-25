@@ -577,7 +577,7 @@ namespace Hecton8.World
             if (!_loggedMissingGapDitherMaterial)
             {
                 _loggedMissingGapDitherMaterial = true;
-                Debug.LogError("[WorldGenerativeGeologySeamExecutionDirector] Missing gapDitherMaterial asset. Runtime material creation is forbidden for seam dither particles.", this);
+                Hecton8.Core.H8Debug.LogError("[WorldGenerativeGeologySeamExecutionDirector] Missing gapDitherMaterial asset. Runtime material creation is forbidden for seam dither particles.", this);
             }
 
             return null;
@@ -838,7 +838,7 @@ namespace Hecton8.World
             if (integrationDirector != null && playerTransform != null)
                 return;
 
-            float now = Time.realtimeSinceStartup;
+            float now = (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (now < _nextAutoResolveAttemptTime)
                 return;
 

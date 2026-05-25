@@ -1,0 +1,399 @@
+{
+  "agent_id": "X_018",
+  "role": "SIGNAL_CORRIDOR_AND_SPSC_SYNCHRONIZATION_SCOUT",
+  "domain": "ECHELON 1 Core & Memory Infrastructure / Typed SignalBus Corridor (SPSC/MPSC)",
+  "mode": "read-only C# audit; documentation writes only",
+  "task_count": 4,
+  "source_files": [
+    {
+      "logical_name": "SpscSignalRingBuffer.cs",
+      "path": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+      "status": "found",
+      "line_range": "1-120"
+    },
+    {
+      "logical_name": "SignalBusRegistry.cs",
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "status": "embedded_registry_found_no_standalone_file",
+      "evidence": "SignalBusRegistry declaration at lines 33-37; source scan found no standalone SignalBusRegistry.cs."
+    },
+    {
+      "logical_name": "SignalLaneTelemetry contract",
+      "path": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+      "status": "found",
+      "line_range": "179-198"
+    },
+    {
+      "logical_name": "Unity NativeQueue source",
+      "path": "Library/PackageCache/com.unity.collections@538ace9075bc/Unity.Collections/NativeQueue.cs",
+      "status": "found",
+      "line_range": "15-120, 406-446"
+    }
+  ],
+  "mandates_used": [
+    "ARCH_Signal_Lane_Segregation",
+    "AUD_DSP_Audio_Synthesis_ThreadSafe_SPSC",
+    "DATA_Runtime_Struct_Layout_ARM64",
+    "OPT_Native_Memory_Collections_JobSystem_Protocol",
+    "ARCH_Execution_Phases",
+    "ARCH_Global_Registry_ServiceLocator_DI_Init",
+    "OPT_Zero_GC_Policy_AllocFree_Mandate"
+  ],
+  "high_confidence_findings": [
+    {
+      "id": "FINDING_SPSC_UNUSED_IN_SIGNALBUS",
+      "severity": "HIGH_ARCHITECTURE_MISMATCH",
+      "fact": "SpscSignalRingBuffer<T> is not referenced by first-party source except its own declaration file. Active SignalBus<T> storage uses NativeQueue<T> plus optional NativeQueue<T>.ParallelWriter.",
+      "evidence": [
+        "Spsc only self-references: Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs:11,20,25.",
+        "SignalBus<T> declares NativeQueue<T> at SignalBusRuntime.cs:305.",
+        "SignalBus<T> exposes NativeQueue<T>.ParallelWriter at SignalBusRuntime.cs:395-408 and 421-427."
+      ],
+      "sync_consequence": "Future agents must not assume SignalBus<T> uses the SPSC ring. The SPSC buffer is a standalone fallback primitive, while active high-frequency signal lanes are NativeQueue-backed and can accept legacy MPSC writers."
+    },
+    {
+      "id": "FINDING_SPSC_PADDED_INDEX_SIZE_PROVEN_PARENT_ALIGNMENT_NOT_PROVEN",
+      "severity": "MEDIUM_FALSE_SHARING_RISK",
+      "fact": "PaddedSignalIndex is explicitly 64 bytes, but SpscSignalRingBuffer<T> has no explicit parent layout or 64-byte alignment guarantee for _head and _tail field starts.",
+      "evidence": [
+        "PaddedSignalIndex explicit layout and size: SpscSignalRingBuffer.cs:94-105.",
+        "_head and _tail fields are default-layout parent fields: SpscSignalRingBuffer.cs:17-18.",
+        "No StructLayout attribute exists on SpscSignalRingBuffer<T>: SpscSignalRingBuffer.cs:11."
+      ],
+      "sync_consequence": "Head and tail each occupy a 64-byte nested struct, but cache-line isolation is not byte-perfectly guaranteed unless the parent instance and field offsets are 64-byte aligned by runtime allocation."
+    },
+    {
+      "id": "FINDING_REGISTRY_REGISTRATION_COLD_ONLY",
+      "severity": "MEDIUM_THREAD_SAFETY_SCOPE",
+      "fact": "SignalBusRegistry.Register mutates _laneCount and _dispatchLaneCount using plain increments and array writes. Dispatch readers use Volatile.Read on _dispatchLaneCount, but registration itself has no lock, CAS, or Interlocked reservation.",
+      "evidence": [
+        "_laneCount and _dispatchLaneCount fields: SignalBusRuntime.cs:48-49.",
+        "Duplicate scan and lane writes: SignalBusRuntime.cs:90-116.",
+        "_dispatchLaneCount++ inside registry write: SignalBusRuntime.cs:110.",
+        "Flush reads dispatch count with Volatile.Read: SignalBusRuntime.cs:244-247."
+      ],
+      "sync_consequence": "Correct only under cold single-threaded lane registration before concurrent dispatch. Concurrent first-touch initialization of different SignalBus<T> lanes can race registration table writes."
+    },
+    {
+      "id": "FINDING_SIGNALBUS_FLUSH_HAS_NO_JOB_FENCE",
+      "severity": "HIGH_PHASE_CONTRACT_DEPENDENCY",
+      "fact": "SignalBusRegistry.FlushPreSimulation only dispatches lane flush delegates. It does not complete producer jobs or fence NativeQueue<T>.ParallelWriter producers before consumers drain queues.",
+      "evidence": [
+        "Registry flush entry: SignalBusRuntime.cs:147-153.",
+        "Dispatch loop calls delegate directly: SignalBusRuntime.cs:244-258.",
+        "SignalBus<T>.FlushPreSimulation drains _queue.TryDequeue: SignalBusRuntime.cs:783-880.",
+        "ParallelWriter facade exists: SignalBusRuntime.cs:395-408 and 421-427."
+      ],
+      "sync_consequence": "The dispatcher phase outside this file must guarantee all producers are complete before flush. This file contains no local JobHandle ownership or completion window."
+    },
+    {
+      "id": "FINDING_NATIVEQUEUE_NOT_RING_BUFFER",
+      "severity": "MEDIUM_PERFORMANCE_AND_MODEL_DRIFT",
+      "fact": "SignalBus<T> queue is Unity NativeQueue<T>, whose Count property traverses an internal linked list of blocks; this differs from a fixed power-of-two SPSC ring buffer with O(1) cursor arithmetic.",
+      "evidence": [
+        "NativeQueue<T> source states Count requires traversing linked list: NativeQueue.cs:66-77.",
+        "SignalBus<T>.TryPush checks _queue.Count >= _expectedCapacity: SignalBusRuntime.cs:597.",
+        "SignalBus<T>.FlushPreSimulation reads _queue.Count at SignalBusRuntime.cs:809 and again at 847."
+      ],
+      "sync_consequence": "The active SignalBus<T> path is bounded by policy counters and frame-limit shedding, not by SPSC mask-wrapped fixed storage."
+    }
+  ],
+  "spsc_ring_buffer": {
+    "type": "Hecton8.Core.SpscSignalRingBuffer<T>",
+    "declaration": {
+      "path": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+      "lines": "10-18",
+      "snippet": "public struct SpscSignalRingBuffer<T> : IDisposable where T : unmanaged"
+    },
+    "field_map_source_order": [
+      {
+        "field": "_buffer",
+        "type": "Unity.Collections.NativeArray<T>",
+        "line": 14,
+        "source_order": 0,
+        "byte_offset": "UNVERIFIED_SOURCE_ONLY",
+        "reason": "NativeArray<T> physical layout is Unity runtime/safety-define dependent."
+      },
+      {
+        "field": "_owner",
+        "type": "Hecton8.Core.Memory.SystemID",
+        "line": 15,
+        "source_order": 1,
+        "enum_backing": "ushort",
+        "enum_evidence": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:16",
+        "byte_offset": "UNVERIFIED_SOURCE_ONLY"
+      },
+      {
+        "field": "_mask",
+        "type": "int",
+        "line": 16,
+        "source_order": 2,
+        "byte_offset": "UNVERIFIED_SOURCE_ONLY"
+      },
+      {
+        "field": "_head",
+        "type": "PaddedSignalIndex",
+        "line": 17,
+        "source_order": 3,
+        "nested_size_bytes": 64,
+        "byte_offset": "UNVERIFIED_PARENT_ALIGNMENT"
+      },
+      {
+        "field": "_tail",
+        "type": "PaddedSignalIndex",
+        "line": 18,
+        "source_order": 4,
+        "nested_size_bytes": 64,
+        "byte_offset": "UNVERIFIED_PARENT_ALIGNMENT"
+      }
+    ],
+    "nested_layouts": [
+      {
+        "type": "PaddedSignalIndex",
+        "layout": "Explicit",
+        "size_bytes": 64,
+        "evidence": "SpscSignalRingBuffer.cs:94-105",
+        "fields": [
+          { "name": "Value", "type": "int", "offset": 0, "size_bytes": 4, "line": 97 },
+          { "name": "implicit_gap", "type": "padding", "offset": 4, "size_bytes": 4, "line": "implicit before _pad0" },
+          { "name": "_pad0", "type": "ulong", "offset": 8, "size_bytes": 8, "line": 98 },
+          { "name": "_pad1", "type": "ulong", "offset": 16, "size_bytes": 8, "line": 99 },
+          { "name": "_pad2", "type": "ulong", "offset": 24, "size_bytes": 8, "line": 100 },
+          { "name": "_pad3", "type": "ulong", "offset": 32, "size_bytes": 8, "line": 101 },
+          { "name": "_pad4", "type": "ulong", "offset": 40, "size_bytes": 8, "line": 102 },
+          { "name": "_pad5", "type": "ulong", "offset": 48, "size_bytes": 8, "line": 103 },
+          { "name": "_pad6", "type": "ulong", "offset": 56, "size_bytes": 8, "line": 104 }
+        ],
+        "arm64_alignment_assessment": "Nested struct total size is multiple of 8. False-sharing prevention is not fully proven because parent field start alignment is not proven."
+      }
+    ],
+    "capacity_and_wrap": {
+      "constructor_lines": "25-35",
+      "capacity_formula": "capacity = CeilPowerOfTwo(max(2, requestedCapacity + 1)); exposed Capacity = _buffer.Length - 1",
+      "mask_formula": "_mask = capacity - 1",
+      "wrap_formula": "(cursor + 1) & _mask",
+      "evidence": [
+        "Capacity allocation: SpscSignalRingBuffer.cs:27-33.",
+        "Public capacity subtracts one slot: SpscSignalRingBuffer.cs:39.",
+        "Power-of-two clamp/bit spread: SpscSignalRingBuffer.cs:107-118."
+      ],
+      "full_empty_guard": "One slot is intentionally unavailable because full state is nextTail == head."
+    },
+    "cursor_algorithm": {
+      "producer_try_enqueue": [
+        { "step": 1, "line": 61, "operation": "return false if _buffer is not created" },
+        { "step": 2, "line": 64, "operation": "Volatile.Read(ref _tail.Value)" },
+        { "step": 3, "line": 65, "operation": "nextTail = (tail + 1) & _mask" },
+        { "step": 4, "line": 66, "operation": "Volatile.Read(ref _head.Value) for full check" },
+        { "step": 5, "line": 69, "operation": "_buffer[tail] = signal" },
+        { "step": 6, "line": 70, "operation": "Interlocked.Exchange(ref _tail.Value, nextTail)" }
+      ],
+      "consumer_try_dequeue": [
+        { "step": 1, "line": 76, "operation": "return false/default if _buffer is not created" },
+        { "step": 2, "line": 82, "operation": "Volatile.Read(ref _head.Value)" },
+        { "step": 3, "line": 83, "operation": "Volatile.Read(ref _tail.Value) for empty check" },
+        { "step": 4, "line": 89, "operation": "signal = _buffer[head]" },
+        { "step": 5, "line": 90, "operation": "Interlocked.Exchange(ref _head.Value, (head + 1) & _mask)" }
+      ],
+      "clear": [
+        { "line": 55, "operation": "Interlocked.Exchange(ref _head.Value, 0)" },
+        { "line": 56, "operation": "Interlocked.Exchange(ref _tail.Value, 0)" }
+      ],
+      "memory_barriers_found": [
+        "Volatile.Read",
+        "Interlocked.Exchange"
+      ],
+      "memory_barriers_not_found": [
+        "Thread.MemoryBarrier",
+        "Volatile.Write",
+        "Interlocked.CompareExchange"
+      ],
+      "spsc_contract_risk": "Algorithm is SPSC only. Multiple producers can observe same tail/full state and overwrite the same slot because there is no CAS reservation. Multiple consumers can read same head slot for the same reason."
+    }
+  },
+  "signal_bus_registry": {
+    "type": "Hecton8.Core.Contracts.Signals.SignalBusRegistry",
+    "declaration": {
+      "path": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "lines": "33-37"
+    },
+    "registry_storage": [
+      {
+        "field": "_laneDisposeDispatch",
+        "type": "SignalLaneDisposeDelegate[]",
+        "capacity": 512,
+        "line": 43,
+        "allocation": "static managed array; cold allocation"
+      },
+      {
+        "field": "_laneTelemetryDispatch",
+        "type": "SignalLaneTelemetryDelegate[]",
+        "capacity": 512,
+        "line": 45,
+        "allocation": "static managed array; cold allocation"
+      },
+      {
+        "field": "_laneDispatch",
+        "type": "SignalLaneDispatch[]",
+        "capacity": 512,
+        "line": 47,
+        "allocation": "static managed array; cold allocation"
+      }
+    ],
+    "signal_lane_dispatch_layout": {
+      "type": "SignalLaneDispatch",
+      "lines": "227-242",
+      "fields": [
+        { "name": "Flush", "type": "SignalLaneFlushDelegate", "line": 229 },
+        { "name": "Clear", "type": "SignalLaneClearDelegate", "line": 230 },
+        { "name": "FlushDuringSimulationPause", "type": "byte", "line": 231 }
+      ],
+      "byte_size": "MANAGED_RUNTIME_DEPENDENT",
+      "reason": "Contains managed delegate references. Not an unmanaged/native DTO; exact size depends on CLR/IL2CPP object/reference layout."
+    },
+    "registration_sequence": [
+      { "step": 1, "lines": "80-88", "operation": "Register receives dispose/flush/clear/telemetry delegates and returns if dispose is null." },
+      { "step": 2, "lines": "90-94", "operation": "Linear duplicate check by ReferenceEquals against existing dispose delegate slots." },
+      { "step": 3, "lines": "96-103", "operation": "If _laneCount >= 512, Volatile.Write registration overflow flag and return." },
+      { "step": 4, "lines": "105-107", "operation": "Store dispose and telemetry delegates at laneIndex = _laneCount." },
+      { "step": 5, "lines": "108-114", "operation": "If flush and clear are both non-null, store SignalLaneDispatch at _laneDispatch[_dispatchLaneCount++] with pause flag." },
+      { "step": 6, "line": 116, "operation": "Increment _laneCount." }
+    ],
+    "flush_sequence": [
+      { "step": 1, "lines": "148-152", "operation": "FlushPreSimulation reads _systemStressMilli with Volatile.Read, reads SimulationSignalRoute.SimulationPaused, then calls FlushRegisteredSignalLanes." },
+      { "step": 2, "line": 246, "operation": "FlushRegisteredSignalLanes reads _dispatchLaneCount with Volatile.Read." },
+      { "step": 3, "lines": "247-258", "operation": "For each dispatch record, skip null delegates or paused lanes without pause permission; otherwise invoke dispatch.Flush(systemStressMilli)." }
+    ],
+    "clear_sequence": [
+      { "step": 1, "lines": "156-158", "operation": "ClearPostSimulationSnapshots calls ClearRegisteredSignalLaneSnapshots." },
+      { "step": 2, "line": 263, "operation": "ClearRegisteredSignalLaneSnapshots reads _dispatchLaneCount with Volatile.Read." },
+      { "step": 3, "lines": "264-269", "operation": "For each dispatch record, invoke dispatch.Clear() if non-null." }
+    ],
+    "dispose_sequence": [
+      { "step": 1, "lines": "162-169", "operation": "Copy _laneCount to local laneCount; invoke each non-null dispose delegate." },
+      { "step": 2, "lines": "171-177", "operation": "Null dispose/telemetry slots and default dispatch records." },
+      { "step": 3, "lines": "175-183", "operation": "Reset counts and volatile scalar/latch flags." }
+    ],
+    "atomic_operations": [
+      { "lines": "59,62,69,72,75,77,78", "operation": "Volatile.Read for registry public/cold scalar accessors." },
+      { "lines": "98,124,132,138,144,180-183", "operation": "Volatile.Write for overflow/stress/quality/halt/reset scalars." }
+    ]
+  },
+  "signal_bus_t_active_lane": {
+    "type": "Hecton8.Core.Contracts.Signals.SignalBus<T>",
+    "declaration": "SignalBusRuntime.cs:275-281",
+    "storage": [
+      { "field": "_queue", "type": "NativeQueue<T>", "line": 305 },
+      { "field": "_parallelWriterBudget", "type": "NativeArray<int>", "line": 306 },
+      { "field": "_frameSnapshotHandle", "type": "VaultGenerationHandle<T>", "line": 307 },
+      { "field": "_frameSnapshotCount", "type": "int", "line": 310 },
+      { "field": "_latestSignal", "type": "T", "line": 326 },
+      { "field": "_latestSignalSequence", "type": "int", "line": 327 }
+    ],
+    "initialization": [
+      { "lines": "511-529", "operation": "Apply defaults, register delegates, reject invalid payload stride." },
+      { "lines": "531-537", "operation": "Allocate NativeQueue<T> and register NativeMemorySentinel." },
+      { "lines": "539-545", "operation": "Acquire frame snapshot buffer or dispose queue on failure." },
+      { "lines": "547-549", "operation": "Prewarm queue and allocate NativeArray<int>[2] writer budget." },
+      { "lines": "550-568", "operation": "Reset cursors/counters/state; set _initialized = true." }
+    ],
+    "try_push_main_thread_path": [
+      { "line": 585, "operation": "EnsureInitialized()" },
+      { "lines": "589-595", "operation": "Stress-based load shedding for non-critical VFX using Interlocked counters." },
+      { "lines": "597-602", "operation": "Capacity policy gate via _queue.Count >= _expectedCapacity." },
+      { "lines": "604-611", "operation": "Copy payload, sanitize finite values, publish guard telemetry on rejection." },
+      { "lines": "613-614", "operation": "Fatal signal sets simulation halt via SignalBusRegistry.SetSimulationHalted()." },
+      { "lines": "616-620", "operation": "Enqueue sanitized payload, update latest signal, increment accepted total." }
+    ],
+    "parallel_writer_path": [
+      { "lines": "395-402", "operation": "OpenLegacyMpscWriter increments _legacyWriterOpenPending and returns _queue.AsParallelWriter()." },
+      { "lines": "639-654", "operation": "TryEnqueueBounded obtains raw int* to writer budget and Interlocked.Decrement claims one slot." },
+      { "lines": "655-658", "operation": "If budget below zero, Interlocked.Increment dropped counter and return false." },
+      { "lines": "661-662", "operation": "writer.Enqueue(signal); return true." }
+    ],
+    "frame_flush": [
+      { "lines": "783-793", "operation": "Open snapshot for owner write; reset count/read cursor; increment generation." },
+      { "lines": "794-802", "operation": "Consume pending drop counters with Interlocked.Exchange and reset budget." },
+      { "lines": "809-817", "operation": "Read queue count; calculate continuous frame limit from quality/stress/profile; clamp to snapshot length." },
+      { "lines": "819-834", "operation": "If queued > 1024, drop all, publish degradation, set kill switch, return." },
+      { "lines": "836-845", "operation": "Drop oldest overflow beyond current frame limit." },
+      { "lines": "847-864", "operation": "TryDequeue up to copyLimit, sanitize, coalesce or append into snapshot." },
+      { "lines": "866-879", "operation": "Update coalesce/load/corrupt counters and optionally sort deterministic snapshot." }
+    ],
+    "snapshot_reads": [
+      { "lines": "681-690", "operation": "GetFrameSnapshot returns ReadOnlySpan<T> over unsafe read-only pointer." },
+      { "lines": "700-710", "operation": "GetFrameSnapshotArray creates NativeArray read-only view from unsafe pointer." },
+      { "lines": "1418-1435", "operation": "TryReadFrameSnapshot resolves read-only vault handle and clamps count to frameSnapshot.Length." }
+    ],
+    "payload_layout_gate": {
+      "lines": "1370-1385",
+      "rule": "UnsafeUtility.SizeOf<T>() must be > 0, <= 192, and multiple of 8. Cache-line-critical lanes flag debt unless payload size is 64 or 128."
+    }
+  },
+  "verified_explicit_layouts": [
+    {
+      "type": "SignalLaneTelemetry",
+      "path": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+      "layout": "Explicit",
+      "size_bytes": 32,
+      "lines": "179-198",
+      "fields": [
+        { "name": "LaneHash", "type": "uint", "offset": 0, "size_bytes": 4, "line": 185 },
+        { "name": "QueuedBeforeFlush", "type": "int", "offset": 4, "size_bytes": 4, "line": 186 },
+        { "name": "SnapshotCount", "type": "int", "offset": 8, "size_bytes": 4, "line": 187 },
+        { "name": "DroppedCount", "type": "int", "offset": 12, "size_bytes": 4, "line": 188 },
+        { "name": "CoalescedCount", "type": "int", "offset": 16, "size_bytes": 4, "line": 189 },
+        { "name": "Flags", "type": "byte", "offset": 20, "size_bytes": 1, "line": 191 },
+        { "name": "Reserved0", "type": "byte", "offset": 21, "size_bytes": 1, "line": 193 },
+        { "name": "Reserved1", "type": "ushort", "offset": 22, "size_bytes": 2, "line": 195 },
+        { "name": "Reserved2", "type": "ulong", "offset": 24, "size_bytes": 8, "line": 197 }
+      ],
+      "arm64_alignment_assessment": "32 bytes, multiple of 8, explicit offsets; ARM64-safe by source layout."
+    }
+  ],
+  "proof_boundaries": [
+    {
+      "subject": "SpscSignalRingBuffer<T> total size",
+      "status": "NOT_PROVEN_FROM_SOURCE",
+      "reason": "Parent struct is default-layout and contains NativeArray<T>; Unity NativeArray<T> size varies with safety defines/runtime target. No explicit StructLayout exists on SpscSignalRingBuffer<T>."
+    },
+    {
+      "subject": "SignalLaneDispatch byte size",
+      "status": "MANAGED_RUNTIME_DEPENDENT",
+      "reason": "Struct contains managed delegate references. It is stored in a managed array, not a NativeArray."
+    },
+    {
+      "subject": "PowerShell reflection size probe",
+      "status": "FAILED_NON_UNITY_RUNTIME_PROBE",
+      "reason": "Loading Hecton8.Core.dll under external PowerShell CLR failed to materialize SpscSignalRingBuffer<T>.PaddedSignalIndex with TypeLoadException: generic types cannot have explicit layout. This is not a Unity runtime proof and was not used as a size claim."
+    }
+  ],
+  "atomic_instruction_inventory": [
+    { "instruction": "Volatile.Read", "locations": ["SpscSignalRingBuffer.cs:64", "SpscSignalRingBuffer.cs:66", "SpscSignalRingBuffer.cs:82", "SpscSignalRingBuffer.cs:83", "SignalBusRuntime.cs:59", "SignalBusRuntime.cs:62", "SignalBusRuntime.cs:69", "SignalBusRuntime.cs:72", "SignalBusRuntime.cs:75", "SignalBusRuntime.cs:77", "SignalBusRuntime.cs:78", "SignalBusRuntime.cs:150", "SignalBusRuntime.cs:246", "SignalBusRuntime.cs:263", "SignalBusRuntime.cs:675", "SignalBusRuntime.cs:668"] },
+    { "instruction": "Volatile.Write", "locations": ["SignalBusRuntime.cs:98", "SignalBusRuntime.cs:124", "SignalBusRuntime.cs:132", "SignalBusRuntime.cs:138", "SignalBusRuntime.cs:144", "SignalBusRuntime.cs:180-183", "SignalBusRuntime.cs:1277", "SignalBusRuntime.cs:1287-1288"] },
+    { "instruction": "Interlocked.Exchange", "locations": ["SpscSignalRingBuffer.cs:55", "SpscSignalRingBuffer.cs:56", "SpscSignalRingBuffer.cs:70", "SpscSignalRingBuffer.cs:90", "SignalBusRuntime.cs:794", "SignalBusRuntime.cs:802", "SignalBusRuntime.cs:1276"] },
+    { "instruction": "Interlocked.Increment", "locations": ["SignalBusRuntime.cs:401", "SignalBusRuntime.cs:484", "SignalBusRuntime.cs:592", "SignalBusRuntime.cs:593", "SignalBusRuntime.cs:599", "SignalBusRuntime.cs:600", "SignalBusRuntime.cs:608", "SignalBusRuntime.cs:619", "SignalBusRuntime.cs:649", "SignalBusRuntime.cs:657", "SignalBusRuntime.cs:670"] },
+    { "instruction": "Interlocked.Decrement", "locations": ["SignalBusRuntime.cs:654"] },
+    { "instruction": "Interlocked.Add", "locations": ["SignalBusRuntime.cs:799", "SignalBusRuntime.cs:822", "SignalBusRuntime.cs:840", "SignalBusRuntime.cs:869", "SignalBusRuntime.cs:873", "SignalBusRuntime.cs:876"] },
+    { "instruction": "Thread.MemoryBarrier", "locations": [] },
+    { "instruction": "Interlocked.CompareExchange", "locations": [] }
+  ],
+  "regression_model": {
+    "cpu": "No runtime code changed. Audit identifies potential O(n) NativeQueue.Count traversals at SignalBusRuntime.cs:597,809,847.",
+    "gc": "No runtime code changed. Registry uses cold managed arrays and delegates at SignalBusRuntime.cs:42-47 and 340-347.",
+    "memory": "No runtime code changed. SPSC parent struct size remains unproven; PaddedSignalIndex and SignalLaneTelemetry explicit sizes are source-proven.",
+    "cadence": "Flush and clear are phase-dispatched via SignalBusRegistry; external dispatcher must enforce producer job completion before flush.",
+    "correctness": "SPSC algorithm is correct only for one producer and one consumer; active SignalBus<T> is NativeQueue-backed MPSC-capable legacy writer path, not SPSC."
+  },
+  "verification": {
+    "csharp_source_modified_by_x018": false,
+    "dirty_csharp_source_observed": "git status shows Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs modified; X_018 did not edit or revert it",
+    "dotnet_build_launched": false,
+    "build_reason": "No C# source changes. Project instruction forbids unnecessary dotnet rebuilds under possible CPU/build contention.",
+    "static_scans": [
+      "SpscSignalRingBuffer references under Assets/_Project/Scripts: only own file.",
+      "SignalBusRegistry declaration found in SignalBusRuntime.cs.",
+      "NativeQueue package source inspected for Count and ParallelWriter behavior."
+    ]
+  }
+}

@@ -468,7 +468,7 @@ namespace Hecton8.Physics.Vehicles
         // job is alive. The job never reads from the queue and no second vehicle-hazard producer is scheduled
         // against the same queue handle in this pass.
         [NoAlias, NativeDisableContainerSafetyRestriction]
-        public NativeQueue<VehicleHazardSignal>.ParallelWriter HazardWriter;
+        public global::Hecton8.Core.MpscSignalRingBuffer<VehicleHazardSignal>.ParallelWriter HazardWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> HazardWriterBudget;
         public int CellCount;
         public int SignalCount;

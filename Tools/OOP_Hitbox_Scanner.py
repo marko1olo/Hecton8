@@ -1017,6 +1017,26 @@ def main() -> int:
         submarine_structural_grid_text,
         "private bool TryResolveLocalDirection",
     )
+    submarine_breach_screen_feedback_block = extract_csharp_block_after(
+        submarine_structural_grid_text,
+        "private void FlushQueuedBreachScreenSpaceFeedback",
+    )
+    submarine_resolve_player_camera_block = extract_csharp_block_after(
+        submarine_structural_grid_text,
+        "private Camera ResolvePlayerCamera",
+    )
+    submarine_cache_registry_services_block = extract_csharp_block_after(
+        submarine_structural_grid_text,
+        "private void CacheGlobalRegistryServices",
+    )
+    submarine_clear_registry_services_block = extract_csharp_block_after(
+        submarine_structural_grid_text,
+        "private void ClearGlobalRegistryServiceCache",
+    )
+    submarine_registry_hot_swap_block = extract_csharp_block_after(
+        submarine_structural_grid_text,
+        "public void OnGlobalRegistryServiceReplaced",
+    )
     hull_dent_shader_text = read_source(hull_dent_shader_controller)
     hull_dent_local_impact_block = extract_csharp_block_after(
         hull_dent_shader_text,
@@ -1466,6 +1486,39 @@ def main() -> int:
             "hullDentShaderQuaternionInverseCalls": hull_dent_local_impact_block.count("Quaternion.Inverse"),
             "mathContract": "Unity Transform.rotation is unit; inverse(q) == conjugate(q) for damage feedback local projection.",
             "truthCaveat": "This proof is for deferred visual dent projection only; central combat health truth still stays on LUT/CAS routes.",
+        },
+        "submarineHullVisualRegistryCacheProof": {
+            "verdict": (
+                "PASS"
+                if "private IPlayerRuntimeContext _cachedPlayerRuntime;" in submarine_structural_grid_text
+                and "private AbyssalFluidDecalManager _cachedFluidDecals;" in submarine_structural_grid_text
+                and "CacheGlobalRegistryServices();" in extract_csharp_block_after(submarine_structural_grid_text, "private void OnEnable")
+                and "ClearGlobalRegistryServiceCache();" in extract_csharp_block_after(submarine_structural_grid_text, "private void OnDisable")
+                and "ClearGlobalRegistryServiceCache();" in extract_csharp_block_after(submarine_structural_grid_text, "private void OnDestroy")
+                and "_cachedPlayerRuntime = GlobalRegistry.Player;" in submarine_cache_registry_services_block
+                and "_cachedFluidDecals = GlobalRegistry.AbyssalFluidDecals;" in submarine_cache_registry_services_block
+                and "_cachedPlayerRuntime = null;" in submarine_clear_registry_services_block
+                and "_cachedFluidDecals = null;" in submarine_clear_registry_services_block
+                and "IPlayerRuntimeContext playerContext = _cachedPlayerRuntime;" in submarine_resolve_player_camera_block
+                and "AbyssalFluidDecalManager fluidDecals = _cachedFluidDecals;" in submarine_breach_screen_feedback_block
+                and "GlobalRegistry.Player" not in submarine_resolve_player_camera_block
+                and "GlobalRegistry.AbyssalFluidDecals" not in submarine_breach_screen_feedback_block
+                and "serviceSlot == GlobalRegistryServiceSlot.Player" in submarine_registry_hot_swap_block
+                and "_cachedPlayerRuntime = currentService as IPlayerRuntimeContext;" in submarine_registry_hot_swap_block
+                and "serviceSlot == GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime" in submarine_registry_hot_swap_block
+                and "_cachedFluidDecals = currentService as AbyssalFluidDecalManager;" in submarine_registry_hot_swap_block
+                else "FAIL"
+            ),
+            "resolvePlayerCameraGlobalRegistryReads": submarine_resolve_player_camera_block.count("GlobalRegistry.Player"),
+            "breachScreenFeedbackFluidRegistryReads": submarine_breach_screen_feedback_block.count("GlobalRegistry.AbyssalFluidDecals"),
+            "coldCacheReadsGlobalRegistryPlayer": "_cachedPlayerRuntime = GlobalRegistry.Player;" in submarine_cache_registry_services_block,
+            "coldCacheReadsGlobalRegistryFluidDecals": "_cachedFluidDecals = GlobalRegistry.AbyssalFluidDecals;" in submarine_cache_registry_services_block,
+            "hotSwapUpdatesPlayerRuntime": "_cachedPlayerRuntime = currentService as IPlayerRuntimeContext;" in submarine_registry_hot_swap_block,
+            "hotSwapUpdatesFluidDecals": "_cachedFluidDecals = currentService as AbyssalFluidDecalManager;" in submarine_registry_hot_swap_block,
+            "contract": (
+                "Submarine hull damage presentation may read GlobalRegistry during OnEnable cold cache and hot-swap rebinding, "
+                "but LateFrame leak plume camera and breach spray flush paths must read local cached services only."
+            ),
         },
         "branchlessArmorLookupProof": {
             "sourceBranchlessnessVerdict": (

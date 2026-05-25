@@ -1,0 +1,328 @@
+﻿{
+    "generatedUtc":  "2026-05-25T19:00:00.9628158Z",
+    "mode":  "all-domain-player-preprocessor-surface-after-UNITY_EDITOR-removal",
+    "scannedFileCount":  48,
+    "scannedFiles":  [
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\AnalyticalGerstnerWaveContracts.cs",
+                             "playerLineCount":  258,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\AnalyticalGerstnerWaveJobs.cs",
+                             "playerLineCount":  709,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\AnalyticalGerstnerWaveRuntime.cs",
+                             "playerLineCount":  778,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\AnalyticalWaveTunerWindow.Editor.cs",
+                             "playerLineCount":  0,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\AsyncReadback\\AsyncBuoyancyReadbackContracts.cs",
+                             "playerLineCount":  214,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\AsyncReadback\\AsyncBuoyancyReadbackJobs.cs",
+                             "playerLineCount":  255,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\AsyncReadback\\AsyncBuoyancyReadbackRuntime.cs",
+                             "playerLineCount":  1619,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\BuoyancyDisplacementContracts.cs",
+                             "playerLineCount":  834,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\BuoyancyDisplacementJobs.cs",
+                             "playerLineCount":  1160,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\BuoyancyDisplacementRuntime.cs",
+                             "playerLineCount":  1378,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\BuoyancySimdVectorization.cs",
+                             "playerLineCount":  1295,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\GlobalPhysicsStateManager.BuoyancyBridge.cs",
+                             "playerLineCount":  117,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\PhysicsApplySystem.BuoyancyQueue.cs",
+                             "playerLineCount":  142,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Cavitation\\AbyssalCavitationContracts.cs",
+                             "playerLineCount":  412,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Cavitation\\AbyssalCavitationRuntime.cs",
+                             "playerLineCount":  2226,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\CCD\\KinematicCcdMath.cs",
+                             "playerLineCount":  67,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Determinism\\DeterministicPhysicsMath.cs",
+                             "playerLineCount":  119,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Exosuit\\ExosuitKinematicsContracts.cs",
+                             "playerLineCount":  234,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Exosuit\\ExosuitKinematicsJobs.cs",
+                             "playerLineCount":  1468,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Exosuit\\ExosuitKinematicsRuntime.cs",
+                             "playerLineCount":  1606,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\FluidFeedbackListener.cs",
+                             "playerLineCount":  275,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\FluidImpulseJob.cs",
+                             "playerLineCount":  105,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\FluidMathCore.cs",
+                             "playerLineCount":  236,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                             "playerLineCount":  1632,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\GlobalPhysicsStateManager.WakeRequests.cs",
+                             "playerLineCount":  39,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\HabitatFluidIncursionCsv.cs",
+                             "playerLineCount":  6,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\HabitatFluidIncursionDirector.cs",
+                             "playerLineCount":  1508,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\HabitatFluidIncursionJobs.cs",
+                             "playerLineCount":  918,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\HarpoonTensionSolver328.cs",
+                             "playerLineCount":  1984,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\KCC\\HectonKccRuntime_SmokeTest.cs",
+                             "playerLineCount":  1039,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\KCC\\HydrodynamicKccRuntime.cs",
+                             "playerLineCount":  3665,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\KCC\\KinematicSleepStateJobs.cs",
+                             "playerLineCount":  379,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\KCC\\SdfSqueezeJob.cs",
+                             "playerLineCount":  436,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\PhysicsDeterminismSignals.cs",
+                             "playerLineCount":  149,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Seaglide\\PhysicsApplySystem.SeaglideQueue.cs",
+                             "playerLineCount":  126,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Seaglide\\SeaglideHydrodynamicsContracts.cs",
+                             "playerLineCount":  428,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Seaglide\\SeaglideHydrodynamicsJobs.cs",
+                             "playerLineCount":  605,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Seaglide\\SeaglideHydrodynamicsRuntime.cs",
+                             "playerLineCount":  1324,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Seaglide\\SeaglideVehicleProfileCsv.cs",
+                             "playerLineCount":  192,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Vehicles\\Automation\\DockingAutopilotService.cs",
+                             "playerLineCount":  650,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Vehicles\\Automation\\SubmarineAutopilotSdfNavigator.cs",
+                             "playerLineCount":  2449,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Vehicles\\SubmarineBallastBuoyancyContracts.cs",
+                             "playerLineCount":  542,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Vehicles\\SubmarineDynamicsContracts.cs",
+                             "playerLineCount":  2118,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Vehicles\\SubmarineDynamicsRuntime.cs",
+                             "playerLineCount":  967,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Vehicles\\SubmarineDynamicsRuntime_Gyroscopes.cs",
+                             "playerLineCount":  548,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Vehicles\\VehicleComponentDamageContracts.cs",
+                             "playerLineCount":  235,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Vehicles\\VehicleComponentDamageJobs.cs",
+                             "playerLineCount":  775,
+                             "preprocessorBalanceOk":  true
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics\\Vehicles\\VehicleComponentDamageRuntime.cs",
+                             "playerLineCount":  922,
+                             "preprocessorBalanceOk":  true
+                         }
+                     ],
+    "hitCount":  13,
+    "hits":  [
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics\\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                     "line":  2,
+                     "token":  "UsingSystemIO",
+                     "text":  "using System.IO;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics\\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                     "line":  2,
+                     "token":  "SystemIONamespace",
+                     "text":  "using System.IO;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics\\HarpoonTensionSolver328.cs",
+                     "line":  2,
+                     "token":  "UsingSystemIO",
+                     "text":  "using System.IO;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics\\HarpoonTensionSolver328.cs",
+                     "line":  2,
+                     "token":  "SystemIONamespace",
+                     "text":  "using System.IO;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics\\HarpoonTensionSolver328.cs",
+                     "line":  705,
+                     "token":  "DirectoryApi",
+                     "text":  "string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics\\HarpoonTensionSolver328.cs",
+                     "line":  706,
+                     "token":  "PathApi",
+                     "text":  "string path = Path.Combine(root, \"Docs\", \"AgentLogs\", \"Dump_SHINOBU_328.bin\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics\\HarpoonTensionSolver328.cs",
+                     "line":  1095,
+                     "token":  "DirectoryApi",
+                     "text":  "Directory.CreateDirectory(Path.GetDirectoryName(path) ?? \".\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics\\HarpoonTensionSolver328.cs",
+                     "line":  1095,
+                     "token":  "PathApi",
+                     "text":  "Directory.CreateDirectory(Path.GetDirectoryName(path) ?? \".\");"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics\\HarpoonTensionSolver328.cs",
+                     "line":  1096,
+                     "token":  "FileStream",
+                     "text":  "using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics\\HarpoonTensionSolver328.cs",
+                     "line":  1096,
+                     "token":  "FileApi",
+                     "text":  "using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics\\HarpoonTensionSolver328.cs",
+                     "line":  1096,
+                     "token":  "FileMode",
+                     "text":  "using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics\\HarpoonTensionSolver328.cs",
+                     "line":  1096,
+                     "token":  "FileAccess",
+                     "text":  "using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics\\HarpoonTensionSolver328.cs",
+                     "line":  1096,
+                     "token":  "FileShare",
+                     "text":  "using (FileStream stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 }
+             ]
+}

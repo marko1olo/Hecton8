@@ -1166,14 +1166,19 @@ namespace Hecton8.Gameplay
                     return;
 
                 NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
-                unsafe
+                try
                 {
-                    void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
-                    void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                    UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)UnsafeUtility.SizeOf<T>() * safeCount);
+                    unsafe
+                    {
+                        void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                        void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                        UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)UnsafeUtility.SizeOf<T>() * safeCount);
+                    }
                 }
-
-                destination.UnlockBufferAfterWrite<T>(safeCount);
+                finally
+                {
+                    destination.UnlockBufferAfterWrite<T>(safeCount);
+                }
             }
 
             public static bool HasValidGraphicsBuffer<T>(GraphicsBuffer buffer, int requiredCount) where T : unmanaged

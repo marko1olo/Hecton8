@@ -403,7 +403,7 @@ namespace Hecton8.Modding
                         ModCommandDispatcher.ReportModManagedAllocation(entry.SubscriberHash, allocationDelta);
                         CullEntry(i, ref entry, ExceptionCullEventHash, ModCullReason.Exception, 0f, ExceptionDisableReason);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                        Debug.LogError(ExceptionCullMessage);
+                        Hecton8.Core.H8Debug.LogError(ExceptionCullMessage);
 #endif
                         continue;
                     }
@@ -505,7 +505,7 @@ namespace Hecton8.Modding
             if (allocatedBytes <= 0L)
                 return false;
 
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (entry.AllocationFrame != frame)
             {
                 entry.AllocationFrame = frame;
@@ -534,7 +534,7 @@ namespace Hecton8.Modding
             {
                 GlobalTelemetryBus.PublishModStallWarning(modHash, eventHash, math.max(0f, scalar));
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning(TimeoutCullMessage);
+                Hecton8.Core.H8Debug.LogWarning(TimeoutCullMessage);
 #endif
             }
             else if (reason == ModCullReason.GcQuota)
@@ -544,7 +544,7 @@ namespace Hecton8.Modding
                     (long)math.max(0f, scalar),
                     PerFrameManagedAllocationLimitBytes);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning(GcCullMessage);
+                Hecton8.Core.H8Debug.LogWarning(GcCullMessage);
 #endif
             }
 
@@ -669,7 +669,7 @@ namespace Hecton8.Modding
                         Scalar1 = signal.IntegrityDelta,
                         Kind = (ushort)ModEventKind.CombatDamage,
                         Flags = (ushort)(signal.Flags | sampleFlags),
-                        QualityTier = 0,
+                        QualityTier = (byte)math.clamp((int)math.round(quality * 255f), 0, 255),
                         Sequence = (ushort)math.min(i, ushort.MaxValue)
                     });
                 }

@@ -63,7 +63,7 @@ namespace Hecton8.Dev
                 if (_debugLastPass)
                     Hecton8.Core.H8Debug.Log("[ThermalSurvivalSmoke] PASS");
                 else
-                    Debug.LogError("[ThermalSurvivalSmoke] FAIL mask=" + _debugLastFailureMask);
+                    Hecton8.Core.H8Debug.LogError("[ThermalSurvivalSmoke] FAIL mask=" + _debugLastFailureMask);
             }
 #endif
         }

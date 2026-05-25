@@ -1,5 +1,7 @@
 using System;
+#if UNITY_EDITOR
 using System.IO;
+#endif
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Unity.Collections;
@@ -22,6 +24,8 @@ namespace Hecton8.Physics
         private const int LockTuning = 1 << 5;
         private const int LockTelemetryRing = 1 << 6;
         private const int LockTelemetryCursor = 1 << 7;
+        private const uint GerstnerFaultEventHash = 0x47464654u; // GFFT
+        private const uint GerstnerFaultDumpHash = 0x47464450u; // GFDP
 
         [Header("Vault Capacity")]
         [SerializeField, Range(1, AnalyticalGerstnerWaveConstants.SampleCapacity)]
@@ -37,10 +41,12 @@ namespace Hecton8.Physics
         [SerializeField] private bool _seedMockSpectrumOnEnable = true;
         [Tooltip("Seeds deterministic mock requests only when no current-frame external producer owns the request buffer.")]
         [SerializeField] private bool _seedMockRequestsWhenEmpty = true;
+#if UNITY_EDITOR
         [Tooltip("Loads the cold wave-spectrum CSV bridge into DataVault profile rows during boot.")]
         [SerializeField] private bool _loadCsvOnEnable = true;
         [Tooltip("Project-root relative CSV path for authored ocean wave spectrum profiles.")]
         [SerializeField] private string _csvRelativePath = AnalyticalGerstnerWaveConstants.CsvRelativePath;
+#endif
 
         private IDataVault _dataVault;
         private VaultGenerationHandle<GerstnerWaveParamsDTO> _spectrumHandle;
@@ -50,7 +56,9 @@ namespace Hecton8.Physics
         private VaultGenerationHandle<float> _macroGridHandle;
         private VaultGenerationHandle<WaveMathTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<int> _telemetryCursorHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
         private VaultGenerationHandle<WaveSpectrumProfileDTO> _profilesHandle;
         private VaultGenerationHandle<WaveMathCounterLane> _countersHandle;
 
@@ -65,6 +73,7 @@ namespace Hecton8.Physics
         private bool _registeredHotSwap;
         private bool _coldBootCompleted;
         private bool _dumpedFault;
+        private bool _coreBlackboxWarmed;
         private bool _mockRequestsSeeded;
         private bool _runtimeActive;
         private bool _registeredOriginShiftListener;
@@ -149,6 +158,7 @@ namespace Hecton8.Physics
             RefreshCachedOriginSnapshot();
             RefreshColdDependencies();
             EnsureColdBooted();
+            WarmCoreBlackboxRoute();
             TryRegisterOriginShiftListener();
             TryRegister();
         }
@@ -156,6 +166,7 @@ namespace Hecton8.Physics
         private void OnDisable()
         {
             _runtimeActive = false;
+            _coreBlackboxWarmed = false;
             TryUnregisterOriginShiftListener();
             TryUnregister();
             CompletePendingForTeardown();
@@ -168,6 +179,7 @@ namespace Hecton8.Physics
                 _activeRuntimeInstance = null;
 #endif
             _runtimeActive = false;
+            _coreBlackboxWarmed = false;
             TryUnregisterOriginShiftListener();
             TryUnregister();
             CompletePendingForTeardown();
@@ -328,7 +340,9 @@ namespace Hecton8.Physics
             _dataVault = currentService as IDataVault;
             _coldBootCompleted = false;
             _mockRequestsSeeded = false;
+            _coreBlackboxWarmed = false;
             EnsureColdBooted();
+            WarmCoreBlackboxRoute();
         }
 
         private GerstnerWaveTuningDTO PrepareTuning(GerstnerWaveTuningDTO tuning, int requestCapacity, float fixedDeltaTime)
@@ -379,7 +393,9 @@ namespace Hecton8.Physics
             NativeArray<GerstnerWaveTuningDTO> tuning = ResolveVaultBuffer(vault, in _tuningHandle);
             NativeArray<GerstnerWaveParamsDTO> spectrum = ResolveVaultBuffer(vault, in _spectrumHandle);
             NativeArray<WaveSpectrumProfileDTO> profiles = ResolveVaultBuffer(vault, in _profilesHandle);
+#if UNITY_EDITOR
             NativeArray<byte> csvScratch = ResolveVaultBuffer(vault, in _csvScratchHandle);
+#endif
             NativeArray<int> telemetryCursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
             NativeArray<WaveMathCounterLane> counters = ResolveVaultBuffer(vault, in _countersHandle);
             if (!tuning.IsCreated || tuning.Length <= 0 || !spectrum.IsCreated || spectrum.Length <= 0)
@@ -468,7 +484,9 @@ namespace Hecton8.Physics
             _macroGridHandle = EnsureHandle(vault, _macroGridHandle, AnalyticalGerstnerWaveBufferIds.MacroGrid, AnalyticalGerstnerWaveConstants.MacroGridMaxCells, NativeArrayOptions.UninitializedMemory);
             _telemetryHandle = EnsureHandle(vault, _telemetryHandle, AnalyticalGerstnerWaveBufferIds.TelemetryRing, AnalyticalGerstnerWaveConstants.TelemetryCapacity, NativeArrayOptions.ClearMemory);
             _telemetryCursorHandle = EnsureHandle(vault, _telemetryCursorHandle, AnalyticalGerstnerWaveBufferIds.TelemetryCursor, 1, NativeArrayOptions.ClearMemory);
+#if UNITY_EDITOR
             _csvScratchHandle = EnsureHandle(vault, _csvScratchHandle, AnalyticalGerstnerWaveBufferIds.CsvScratch, AnalyticalGerstnerWaveConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory);
+#endif
             _profilesHandle = EnsureHandle(vault, _profilesHandle, AnalyticalGerstnerWaveBufferIds.Profiles, AnalyticalGerstnerWaveConstants.ProfileCapacity, NativeArrayOptions.ClearMemory);
             _countersHandle = EnsureHandle(vault, _countersHandle, AnalyticalGerstnerWaveBufferIds.Counters, AnalyticalGerstnerWaveConstants.CounterCapacity, NativeArrayOptions.ClearMemory);
             return HandlesReady(vault);
@@ -501,7 +519,9 @@ namespace Hecton8.Physics
                    HasHandle(in _macroGridHandle) &&
                    HasHandle(in _telemetryHandle) &&
                    HasHandle(in _telemetryCursorHandle) &&
+#if UNITY_EDITOR
                    HasHandle(in _csvScratchHandle) &&
+#endif
                    HasHandle(in _profilesHandle) &&
                    HasHandle(in _countersHandle) &&
                    vault.TryResolveHandle(in _tuningHandle, out NativeArray<GerstnerWaveTuningDTO> tuning) &&
@@ -728,7 +748,9 @@ namespace Hecton8.Physics
             ReleaseHandle(vault, ref _macroGridHandle);
             ReleaseHandle(vault, ref _telemetryHandle);
             ReleaseHandle(vault, ref _telemetryCursorHandle);
+#if UNITY_EDITOR
             ReleaseHandle(vault, ref _csvScratchHandle);
+#endif
             ReleaseHandle(vault, ref _profilesHandle);
             ReleaseHandle(vault, ref _countersHandle);
             _mockRequestsSeeded = false;
@@ -808,6 +830,7 @@ namespace Hecton8.Physics
             return new float4(angle, steepness, wavelength, speed);
         }
 
+#if UNITY_EDITOR
         private static string ResolveProjectPath(string relativePath)
         {
             if (string.IsNullOrEmpty(relativePath))
@@ -844,6 +867,7 @@ namespace Hecton8.Physics
                 return 0;
             }
         }
+#endif
 
         private static float ResolveElapsedMicros(long scheduleTimestamp)
         {
@@ -859,81 +883,26 @@ namespace Hecton8.Physics
             return math.max(0f, math.select(0f, value, math.isfinite(value)));
         }
 
-        private static void DumpBlackBoxOnce(NativeArray<WaveMathTelemetryEntry> telemetry, NativeArray<int> telemetryCursor)
+        private void DumpBlackBoxOnce(NativeArray<WaveMathTelemetryEntry> telemetry, NativeArray<int> telemetryCursor)
         {
-            if (!telemetry.IsCreated || telemetry.Length <= 0)
+            if (!telemetry.IsCreated || telemetry.Length <= 0 || !_coreBlackboxWarmed || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
                 return;
 
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string dumpPath = Path.Combine(projectRoot, AnalyticalGerstnerWaveConstants.DumpRelativePath);
-            string directory = Path.GetDirectoryName(dumpPath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-
-            try
-            {
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                    int rowBytes = UnsafeUtility.SizeOf<WaveMathTelemetryEntry>();
-                    int capacity = telemetry.Length;
-                    int writeCount = telemetryCursor.IsCreated && telemetryCursor.Length > 0
-                        ? math.max(0, telemetryCursor[0])
-                        : 0;
-                    int validRows = math.min(writeCount, capacity);
-                    int oldestStart = writeCount > capacity ? writeCount % capacity : 0;
-
-                    Span<byte> header = stackalloc byte[32];
-                    header.Clear();
-                    header[0] = (byte)'H';
-                    header[1] = (byte)'8';
-                    header[2] = (byte)'S';
-                    header[3] = (byte)'2';
-                    header[4] = (byte)'6';
-                    header[5] = (byte)'3';
-                    WriteUInt32LittleEndian(header, 8, (uint)rowBytes);
-                    WriteUInt32LittleEndian(header, 12, (uint)capacity);
-                    WriteUInt32LittleEndian(header, 16, (uint)writeCount);
-                    WriteUInt32LittleEndian(header, 20, AnalyticalGerstnerWaveConstants.KernelHash);
-                    WriteUInt32LittleEndian(header, 24, (uint)oldestStart);
-                    WriteUInt32LittleEndian(header, 28, (uint)validRows);
-                    stream.Write(header);
-
-                    if (writeCount > capacity)
-                    {
-                        WriteTelemetryRange(stream, ptr, rowBytes, oldestStart, capacity - oldestStart);
-                        WriteTelemetryRange(stream, ptr, rowBytes, 0, oldestStart);
-                    }
-                    else
-                    {
-                        WriteTelemetryRange(stream, ptr, rowBytes, 0, validRows);
-                        WriteTelemetryRange(stream, ptr, rowBytes, validRows, capacity - validRows);
-                    }
-                }
-            }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
+            int cursorValue = telemetryCursor.IsCreated && telemetryCursor.Length > 0 ? math.max(0, telemetryCursor[0]) : 0;
+            int latestIndex = cursorValue > 0 ? (cursorValue - 1) % telemetry.Length : 0;
+            WaveMathTelemetryEntry latest = telemetry[latestIndex];
+            float scalar = math.max(latest.BurstMicros, latest.MaxAbsHeight);
+            GlobalTelemetryBus.PushEvent(GerstnerFaultEventHash, scalar, latest.LastEntityHashID);
+            _ = GlobalTelemetryBus.TryDumpBlackboxNow(GerstnerFaultDumpHash);
         }
 
-        private static void WriteTelemetryRange(FileStream stream, byte* basePtr, int rowBytes, int startIndex, int rowCount)
+        private void WarmCoreBlackboxRoute()
         {
-            if (rowCount <= 0)
+            if (_coreBlackboxWarmed)
                 return;
 
-            ReadOnlySpan<byte> source = new ReadOnlySpan<byte>(basePtr + startIndex * rowBytes, rowCount * rowBytes);
-            stream.Write(source);
-        }
-
-        private static void WriteUInt32LittleEndian(Span<byte> target, int offset, uint value)
-        {
-            target[offset] = (byte)value;
-            target[offset + 1] = (byte)(value >> 8);
-            target[offset + 2] = (byte)(value >> 16);
-            target[offset + 3] = (byte)(value >> 24);
+            GlobalTelemetryBus.Initialize();
+            _coreBlackboxWarmed = GlobalTelemetryBus.BlackboxActiveFrameCount > 0;
         }
 
 #if UNITY_EDITOR

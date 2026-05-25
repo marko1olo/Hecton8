@@ -2,8 +2,8 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
-using Hecton8.Physics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -16,7 +16,7 @@ namespace Hecton8.Tools
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9916)]
-    public sealed class ToolHapticsRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IPhysicsAcousticImpulseEventListener, IGlobalRegistryHotSwapListener
+    public sealed class ToolHapticsRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int BufferCapacity = 16;
         private const float DefaultDecayRate = 1.5f;
@@ -31,6 +31,8 @@ namespace Hecton8.Tools
         private const float MaxCommandDurationSeconds = 2f;
         private const float MaxCommandDecayRate = 64f;
         private const float MaxCommandFrequencyHz = 60f;
+        private const ushort PhysicsEventTypeAcousticImpulse = 4;
+        private const uint AcousticImpulseFlagCritical = 1u;
         internal const byte PriorityCritical = 3;
         internal const byte BlendModeOverride = 0;
         internal const byte BlendModeAdditive = 1;
@@ -44,6 +46,7 @@ namespace Hecton8.Tools
         private VaultGenerationHandle<HapticCommand> _backBufferHandle;
         private int _frontCount;
         private int _backCount;
+        private int _lastPhysicsEventSnapshotGeneration;
         private float _leftHapticCooldownTimer;
         private float _rightHapticCooldownTimer;
         private bool _registeredUpdate;
@@ -282,6 +285,8 @@ namespace Hecton8.Tools
                 return;
             }
 
+            DrainPhysicsEventPayloads();
+
             if (!TryResolveBuffers(out NativeArray<HapticCommand> frontBuffer, out NativeArray<HapticCommand> backBuffer))
                 return;
 
@@ -356,7 +361,6 @@ namespace Hecton8.Tools
             TryRegisterHotSwap();
             TryRegisterUpdate();
             TryRegisterLateFrame();
-            PhysicsEventBus.Register(this);
         }
 
         private void OnDisable()
@@ -367,13 +371,13 @@ namespace Hecton8.Tools
                 return;
             }
 
-            PhysicsEventBus.Unregister(this);
             TryUnregisterLateFrame();
             TryUnregisterUpdate();
             TryUnregisterHotSwap();
             TryUnregisterService();
             if (ReferenceEquals(s_runtime, this))
                 s_runtime = null;
+            _lastPhysicsEventSnapshotGeneration = 0;
             ClearBuffers();
             DisposeBuffers();
         }
@@ -386,21 +390,39 @@ namespace Hecton8.Tools
                 return;
             }
 
-            PhysicsEventBus.Unregister(this);
             TryUnregisterLateFrame();
             TryUnregisterUpdate();
             TryUnregisterHotSwap();
             TryUnregisterService();
             if (ReferenceEquals(s_runtime, this))
                 s_runtime = null;
+            _lastPhysicsEventSnapshotGeneration = 0;
             ClearBuffers();
             DisposeBuffers();
         }
 
-        void IPhysicsAcousticImpulseEventListener.OnAcousticImpulse(in AcousticImpulseEvent impulseEvent)
+        private void DrainPhysicsEventPayloads()
         {
-            float impulseVolume = ClampFinite01(impulseEvent.Volume01);
-            if ((impulseEvent.Flags & AcousticImpulseFlags.Critical) == 0 ||
+            int snapshotGeneration = SignalBus<PhysicsEventPayload>.SnapshotGeneration;
+            if (snapshotGeneration == _lastPhysicsEventSnapshotGeneration)
+                return;
+
+            _lastPhysicsEventSnapshotGeneration = snapshotGeneration;
+            ReadOnlySpan<PhysicsEventPayload> signals = SignalBus<PhysicsEventPayload>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PhysicsEventPayload payload = signals[i];
+                if (payload.EventType != PhysicsEventTypeAcousticImpulse)
+                    continue;
+
+                HandlePhysicsAcousticImpulse(in payload);
+            }
+        }
+
+        private void HandlePhysicsAcousticImpulse(in PhysicsEventPayload impulseEvent)
+        {
+            float impulseVolume = ClampFinite01(impulseEvent.Scalar1);
+            if ((impulseEvent.StatusBits & AcousticImpulseFlagCritical) == 0u ||
                 impulseVolume < PhysicsImpulseHapticMinimumVolume)
             {
                 return;

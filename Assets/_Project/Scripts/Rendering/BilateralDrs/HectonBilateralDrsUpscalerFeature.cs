@@ -223,7 +223,7 @@ namespace Hecton8.Rendering
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     if (!_reportedMissingKernels)
                     {
-                        Debug.LogError("[SHINOBU_236] Bilateral DRS compute shader is missing a clear edge-mask kernel.");
+                        Hecton8.Core.H8Debug.LogError("[SHINOBU_236] Bilateral DRS compute shader is missing a clear edge-mask kernel.");
                         _reportedMissingKernels = true;
                     }
 #endif
@@ -257,7 +257,7 @@ namespace Hecton8.Rendering
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     if (!_reportedMissingKernels)
                     {
-                        Debug.LogError("[SHINOBU_236] Bilateral DRS compute shader is missing one or more active upscaler kernels.");
+                        Hecton8.Core.H8Debug.LogError("[SHINOBU_236] Bilateral DRS compute shader is missing one or more active upscaler kernels.");
                         _reportedMissingKernels = true;
                     }
 #endif

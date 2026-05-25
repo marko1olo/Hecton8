@@ -1,6 +1,7 @@
 using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
+using Stopwatch = System.Diagnostics.Stopwatch;
 #if UNITY_ADDRESSABLES_EXIST
 using UnityEngine.ResourceManagement.AsyncOperations;
 #endif
@@ -564,12 +565,12 @@ namespace Hecton8.Optimization
                 return;
             }
 
-            float dispatchStart = Time.realtimeSinceStartup;
+            long dispatchStartTicks = Stopwatch.GetTimestamp();
             while (_queuedRequestCount > 0 &&
                    _readyTicketCount < readyTicketLimit &&
                    _inflightRequestCount < _inflightRequests.Length)
             {
-                float elapsedMilliseconds = (Time.realtimeSinceStartup - dispatchStart) * 1000f;
+                float elapsedMilliseconds = (float)((Stopwatch.GetTimestamp() - dispatchStartTicks) * 1000.0 / Stopwatch.Frequency);
                 if (elapsedMilliseconds >= dispatchBudgetMilliseconds)
                     break;
 

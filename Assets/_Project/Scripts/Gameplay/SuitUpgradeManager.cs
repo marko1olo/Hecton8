@@ -215,7 +215,7 @@ namespace Hecton8.Gameplay
             if (baseStats == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[SuitUpgrade] baseStats not assigned. Disabling.", this);
+                Hecton8.Core.H8Debug.LogError("[SuitUpgrade] baseStats not assigned. Disabling.", this);
 #endif
                 enabled = false;
                 return;
@@ -245,7 +245,7 @@ namespace Hecton8.Gameplay
             TryRegisterLateFrame();
             CacheSuitDataVaultCold();
             EnsureSuitVaultBuffers();
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = Hecton8.Core.GlobalRegistry.Save;
             TryRegisterSaveParticipant();
 
             NarrativeEvents.Register(this);
@@ -365,7 +365,7 @@ namespace Hecton8.Gameplay
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = Hecton8.Core.GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;
@@ -1380,7 +1380,7 @@ namespace Hecton8.Gameplay
             catch (Exception exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogException(exception, this);
+                Hecton8.Core.H8Debug.LogException(exception, this);
 #endif
             }
         }

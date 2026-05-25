@@ -1650,6 +1650,8 @@ namespace Hecton8.Construction
                 return false;
 
             bool locked = false;
+            bool copied = false;
+            bool unlocked = false;
             try
             {
                 NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
@@ -1657,34 +1659,31 @@ namespace Hecton8.Construction
                 void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
                 void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
                 UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<T>());
+                copied = true;
             }
             catch (Exception)
             {
-                if (locked)
-                    TryUnlockBufferAfterFailedWrite<T>(destination, safeCount);
-
                 return false;
             }
+            finally
+            {
+                if (locked)
+                    unlocked = TryUnlockBufferAfterWrite<T>(destination, safeCount);
+            }
 
+            return copied && unlocked;
+        }
+
+        private static bool TryUnlockBufferAfterWrite<T>(GraphicsBuffer destination, int count) where T : struct
+        {
             try
             {
-                destination.UnlockBufferAfterWrite<T>(safeCount);
+                destination.UnlockBufferAfterWrite<T>(count);
                 return true;
             }
             catch (Exception)
             {
                 return false;
-            }
-        }
-
-        private static void TryUnlockBufferAfterFailedWrite<T>(GraphicsBuffer destination, int count) where T : struct
-        {
-            try
-            {
-                destination.UnlockBufferAfterWrite<T>(count);
-            }
-            catch (Exception)
-            {
             }
         }
 

@@ -33,7 +33,6 @@ using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Physics;
 using Hecton8.UI;
 using Hecton8.World;
 using Unity.Collections;
@@ -236,6 +235,7 @@ namespace Hecton8.Gameplay
         private static int _nextFrameEndedCount;
         private static int _pendingSeismicShockwaveCount;
         private static int _nextFrameSeismicShockwaveCount;
+        private static int s_x001RandomEventEventsSignalPushDropCount;
         private static bool _isDispatching;
 
         public static int PendingCount
@@ -428,14 +428,23 @@ namespace Hecton8.Gameplay
 
         public static bool TryRaiseSeismicShockwave(in SeismicShockwaveEvent payload)
         {
-            PhysicsEventBus.TryNotifyAcousticPing(new AcousticPingEvent(
-                payload.EpicenterWS,
-                math.max(payload.ImpulseRadiusMeters, payload.ImpulseRadiusMeters * 4f),
-                math.saturate(payload.ImpulseMagnitude / 48f),
-                8f,
-                FieldTargetRole.HazardProbe,
-                0,
-                payload.ImpulseMagnitude * 1000f));
+            PhysicsEventPayload physicsPayload = new PhysicsEventPayload
+            {
+                RuntimePosition = payload.EpicenterWS,
+                Direction = default,
+                ForceVector = default,
+                ImpulseVector = default,
+                RadiusMeters = math.max(payload.ImpulseRadiusMeters, payload.ImpulseRadiusMeters * 4f),
+                Scalar0 = math.saturate(payload.ImpulseMagnitude / 48f),
+                Scalar1 = 8f,
+                Scalar2 = payload.ImpulseMagnitude * 1000f,
+                PrimaryId = 0,
+                DataHash = 0u,
+                StatusBits = unchecked((uint)FieldTargetRole.HazardProbe),
+                EventType = (ushort)PhysicsEventType.AcousticPing,
+                Reserved = 0
+            };
+            SignalBus<PhysicsEventPayload>.TryPushTracked(in physicsPayload, ref s_x001RandomEventEventsSignalPushDropCount);
             if (_listenerCount <= 0)
                 return false;
 
@@ -844,6 +853,7 @@ namespace Hecton8.Gameplay
     public sealed class RandomEventSystem : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         public const int EventTypeCount = 7;
+        private static int s_x001RandomEventSystemSignalPushDropCount;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -923,6 +933,7 @@ namespace Hecton8.Gameplay
         private IPlayerRuntimeContext _cachedPlayerContext;
         private HectonVoxelEngine _cachedVoxelEngine;
         private SargassumGlobalDragManager _cachedSargassumDrag;
+        private IPhysicsService _cachedPhysicsService;
         private double _cachedUniverseTimeSeconds;
         private uint _eventRandomState = 0xA341316Cu;
         private float _meteorSeed = 99173f;
@@ -1355,6 +1366,9 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.Player:
                     _cachedPlayerContext = currentService as IPlayerRuntimeContext;
                     break;
+                case GlobalRegistryServiceSlot.Physics:
+                    _cachedPhysicsService = currentService as IPhysicsService;
+                    break;
                 case GlobalRegistryServiceSlot.VoxelEngineRuntime:
                     _cachedVoxelEngine = currentService as HectonVoxelEngine;
                     if (ReferenceEquals(voxelEngine, previousService) || voxelEngine == null)
@@ -1386,11 +1400,12 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold()
         {
             _cachedLocalization = GlobalRegistry.LocalizationText;
-            _cachedSpatialAudioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance as IMeteorShowerAudioSink;
+            _cachedSpatialAudioManager = GlobalRegistry.Audio as IMeteorShowerAudioSink;
             _cachedObjectPool = GlobalRegistry.ObjectPoolService;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedVoxelEngine = GlobalRegistry.VoxelEngine;
             _cachedSargassumDrag = GlobalRegistry.SargassumDrag;
+            _cachedPhysicsService = GlobalRegistry.Physics;
 
             if (voxelEngine == null)
                 voxelEngine = _cachedVoxelEngine;
@@ -1657,7 +1672,7 @@ namespace Hecton8.Gameplay
                 SubmersionFactor = 1f,
                 SampleIndex = -1
             };
-            FluidFeedbackEvents.TryPublishSplashQueued(in splashEvent);
+            SignalBus<SplashEvent>.TryPushTracked(in splashEvent, ref s_x001RandomEventSystemSignalPushDropCount);
         }
 
         private void SpawnMeteorWaterSplashPrefab(Vector3 impactPosition)
@@ -1684,14 +1699,14 @@ namespace Hecton8.Gameplay
 
             if (prefab.GetComponentInChildren<ParticleSystem>(true) != null)
             {
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     "[RandomEventSystem] Meteor splash prefab contains ParticleSystem. Replace with MeteorSplashQuadVfx two-quad DrawMeshInstanced fake.",
                     prefab);
             }
 
             if (!HasMeteorSplashQuadVfx(prefab))
             {
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     "[RandomEventSystem] Meteor splash prefab has no MeteorSplashQuadVfx. Splash pool is prewarmed, but the asset is not the two-quad cinematic fake.",
                     prefab);
             }
@@ -2200,7 +2215,7 @@ namespace Hecton8.Gameplay
                 float distance01 = 1f - math.saturate(distance / safeRadius);
                 float impulseFalloff = math.saturate(distance01 * math.rcp(0.55f + (0.45f * distance01)));
                 float resolvedImpulse = impulseMagnitude * impulseFalloff;
-                PhysicsForceRouter.QueueForce(body, direction * resolvedImpulse, ForceMode.Impulse);
+                _cachedPhysicsService?.QueueForce(body, direction * resolvedImpulse, ForceMode.Impulse);
             }
         }
 

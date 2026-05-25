@@ -81,7 +81,7 @@ namespace Hecton8.UI
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerMovement _playerMovement;
         private ILocalizationTextReadModel _localization;
-        private DepthZoneDirector _depthZoneDirector;
+        private IDepthZoneReadModel _depthZoneReadModel;
         private bool _hotSwapRegistered;
         private uint _lastSessionLifecycleSequence;
         private readonly char[] _sequencePayloadBuffer = new char[BootPayloadCharCapacity]; // COLD ALLOC: char[1024] — Hecton-OS boot TMP payload buffer — owner: HectonOSBootManager
@@ -209,7 +209,7 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            float deltaTime = Time.unscaledDeltaTime;
+            float deltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             ProcessSessionLifecycleSignals();
             ConsumeFatalPressureSignals();
 
@@ -406,8 +406,8 @@ namespace Hecton8.UI
 
             ILocalizationTextReadModel manager = _localization;
             SurvivalStats stats = _survivalSystem != null ? _survivalSystem.Stats : null;
-            DepthZoneDirector depthZoneDirector = _depthZoneDirector;
-            DepthZoneProfile currentZone = depthZoneDirector != null ? depthZoneDirector.CurrentZone : null;
+            IDepthZoneReadModel depthZoneReadModel = _depthZoneReadModel;
+            DepthZoneProfile currentZone = depthZoneReadModel != null ? depthZoneReadModel.CurrentZone : null;
 
             ReadOnlySpan<char> metersLabel = ResolveLocalizedSpan(manager, MetersKeyHash, "m".AsSpan());
             ReadOnlySpan<char> atmLabel = ResolveLocalizedSpan(manager, AtmosphereKeyHash, "ATM".AsSpan());
@@ -641,7 +641,7 @@ namespace Hecton8.UI
                         _consoleLabel.font = font;
                     break;
                 case GlobalRegistryServiceSlot.DepthZoneRuntime:
-                    _depthZoneDirector = currentService as DepthZoneDirector;
+                    _depthZoneReadModel = currentService as IDepthZoneReadModel;
                     break;
             }
         }
@@ -649,7 +649,7 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _localization = GlobalRegistry.LocalizationText;
-            _depthZoneDirector = GlobalRegistry.DepthZone;
+            _depthZoneReadModel = GlobalRegistry.DepthZoneReadModel;
         }
 
         private void TryRegisterHotSwapListener()

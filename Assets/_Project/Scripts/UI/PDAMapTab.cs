@@ -4,6 +4,7 @@ using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Cartography;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.PDA;
@@ -591,9 +592,9 @@ namespace Hecton8.UI
             _explorationTracker = GlobalRegistry.PlayerExploration as IPdaCartographyReadModel;
             _markerRegistry = GlobalRegistry.PDAMarkers;
             _encounterDirector = GlobalRegistry.EncounterDirector;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _worldSeedProvider = GlobalRegistry.WorldSeedProvider;
-            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerContext = GlobalRegistry.Player;
             _streamingBackpressureService = GlobalRegistry.StreamingBackpressure;
         }
 
@@ -911,7 +912,9 @@ namespace Hecton8.UI
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                 return;
 
-            Vector3 playerPosition = playerAup.ToRuntimeFloat3();
+            if (!TryResolveRuntimePosition(in playerAup, out Vector3 playerPosition))
+                return;
+
             if (!TryResolvePointCloudFrame(out Matrix4x4 localToWorld, out Bounds bounds, out Camera renderCamera))
                 return;
 
@@ -1278,9 +1281,8 @@ namespace Hecton8.UI
                 return true;
             }
 
-            renderCamera = PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext)
-                ? runtimeContext.PlayerCamera
-                : null;
+            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
+            renderCamera = playerContext != null ? playerContext.PlayerCamera : null;
             return renderCamera != null;
         }
 
@@ -1753,7 +1755,7 @@ namespace Hecton8.UI
             int seed = worldSeedProvider != null && worldSeedProvider.IsInitialized
                 ? worldSeedProvider.RuntimeWorldSeed
                 : 1;
-            float unscaledTime = Time.unscaledTime;
+            float unscaledTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             float depthMeters = ResolvePlayerDepthMeters();
             if (!GhostSignalUtility.TryResolveCandidate(
                     seed,
@@ -1803,17 +1805,6 @@ namespace Hecton8.UI
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null)
-            {
-                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
-                {
-                    playerAup = movementState.PredictedAup;
-                    return true;
-                }
-            }
-
             IPlayerRuntimeContext playerContext = ResolvePlayerContext();
             HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
             if (playerMovement != null)
@@ -1824,6 +1815,33 @@ namespace Hecton8.UI
 
             playerAup = default;
             return false;
+        }
+
+        private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition targetAup, out Vector3 runtimePosition)
+        {
+            runtimePosition = default;
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            double3 localDelta = AupPrecisionMath.LocalDeltaDouble(
+                targetAup.ToAbsoluteDouble3(),
+                originAup.ToAbsoluteDouble3());
+
+            if (!math.all(math.isfinite(localDelta)) ||
+                math.abs(localDelta.x) > AupPrecisionMath.DefaultMaxLocalCastMeters ||
+                math.abs(localDelta.y) > AupPrecisionMath.DefaultMaxLocalCastMeters ||
+                math.abs(localDelta.z) > AupPrecisionMath.DefaultMaxLocalCastMeters)
+            {
+                return false;
+            }
+
+            float3 local = default;
+            local.x = (float)localDelta.x;
+            local.y = (float)localDelta.y;
+            local.z = (float)localDelta.z;
+            if (!math.all(math.isfinite(local)))
+                return false;
+
+            runtimePosition = (Vector3)local;
+            return true;
         }
 
         private static CartographyAup ToCartographyAup(in AbsoluteUniversePosition aup)
@@ -1959,16 +1977,16 @@ namespace Hecton8.UI
             return new Vector4(localHalfExtent.x, localHalfExtent.y, localHalfExtent.z, 0f);
         }
 
-        private static bool TryGetEmpBlindState(out TraumaDispatcher traumaDispatcher)
+        private bool TryGetEmpBlindState(out TraumaDispatcher traumaDispatcher)
         {
             traumaDispatcher = null;
-            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
-                runtimeContext == null)
+            IPlayerRuntimeContext playerContext = ResolvePlayerContext();
+            if (playerContext == null)
             {
                 return false;
             }
 
-            traumaDispatcher = runtimeContext.TraumaDispatcher;
+            traumaDispatcher = playerContext.TraumaDispatcher;
             return traumaDispatcher != null && traumaDispatcher.IsEmpSensorBlindActive;
         }
 

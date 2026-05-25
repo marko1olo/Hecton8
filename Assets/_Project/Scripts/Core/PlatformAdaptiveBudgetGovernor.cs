@@ -317,7 +317,7 @@ namespace Hecton8.Core
 
             public void Tick(float deltaTime)
             {
-                int frame = Time.frameCount;
+                int frame = SystemDispatcher.CurrentFrameIndex;
                 if (frame < _nextSampleFrame)
                     return;
 

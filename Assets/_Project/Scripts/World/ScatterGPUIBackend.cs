@@ -101,15 +101,21 @@ namespace Hecton8.World
             {
                 NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
                     _argsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-                argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+                try
                 {
-                    indexCountPerInstance = mesh.GetIndexCount(0),
-                    instanceCount = (uint)instanceCount,
-                    startIndex = mesh.GetIndexStart(0),
-                    baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
-                    startInstance = 0u
-                };
-                _argsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+                    argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+                    {
+                        indexCountPerInstance = mesh.GetIndexCount(0),
+                        instanceCount = (uint)instanceCount,
+                        startIndex = mesh.GetIndexStart(0),
+                        baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
+                        startInstance = 0u
+                    };
+                }
+                finally
+                {
+                    _argsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+                }
                 _argsUploadMesh = mesh;
                 _argsUploadInstanceCount = instanceCount;
             }

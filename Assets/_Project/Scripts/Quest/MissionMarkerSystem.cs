@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using Hecton8.AtlasSignal;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
@@ -73,7 +72,7 @@ namespace Hecton8.Quest
 
         private IPlayerRuntimeContext _playerRuntimeContext;
         private QuestManager _questManager;
-        private AtlasSignalSystem _atlasSignalSystem;
+        private IAtlasSignalReadModel _atlasSignalReadModel;
         private HectonPlayerMovement _playerMovement;
         private Material _runtimeMarkerMaterial;
         private Mesh _runtimeMarkerMesh;
@@ -279,7 +278,7 @@ namespace Hecton8.Quest
 
         private void ResolvePlayerContextCold()
         {
-            CachePlayerContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+            CachePlayerContext(GlobalRegistry.Player);
             ResolvePlayerContext();
         }
 
@@ -290,7 +289,7 @@ namespace Hecton8.Quest
 
         private void ResolveAtlasSignalCold()
         {
-            CacheAtlasSignal(GlobalRegistry.AtlasSignal);
+            CacheAtlasSignal(GlobalRegistry.AtlasSignalReadModel);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -308,7 +307,7 @@ namespace Hecton8.Quest
                     PrimeActiveQuestSet();
                     break;
                 case GlobalRegistryServiceSlot.AtlasSignalRuntime:
-                    CacheAtlasSignal(currentService as AtlasSignalSystem);
+                    CacheAtlasSignal(currentService as IAtlasSignalReadModel);
                     _markerCacheDirty = true;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
@@ -336,9 +335,9 @@ namespace Hecton8.Quest
             }
         }
 
-        private void CacheAtlasSignal(AtlasSignalSystem atlasSignalSystem)
+        private void CacheAtlasSignal(IAtlasSignalReadModel atlasSignalReadModel)
         {
-            _atlasSignalSystem = atlasSignalSystem;
+            _atlasSignalReadModel = atlasSignalReadModel;
         }
 
         private void TryRegisterHotSwapListener()
@@ -535,11 +534,13 @@ namespace Hecton8.Quest
             Vector3 resolvedPosition;
             if (cache.TargetHash == _atlasCoreMarkerTargetHash)
             {
-                AtlasSignalSystem atlasSignalSystem = _atlasSignalSystem;
-                if (atlasSignalSystem == null)
+                IAtlasSignalReadModel atlasSignalReadModel = _atlasSignalReadModel;
+                if (atlasSignalReadModel == null ||
+                    !atlasSignalReadModel.TryReadAtlasSignalCoreAup(out AbsoluteUniversePosition atlasCoreAup))
+                {
                     return false;
+                }
 
-                AbsoluteUniversePosition atlasCoreAup = atlasSignalSystem.AtlasCoreAup;
                 markerAup = ResolveOffsetAup(in atlasCoreAup, cache.HeightOffset);
                 float3 runtimePosition = markerAup.ToRuntimeFloat3();
                 resolvedPosition = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
@@ -586,9 +587,11 @@ namespace Hecton8.Quest
                 return false;
             }
 
-            if (!questManager.TryGetQuestPresentation(
+            if (!questManager.TryCopyQuestPresentation(
                     questHash,
+                    null,
                     out _,
+                    null,
                     out _,
                     out uint markerTargetHash,
                     out Vector3 markerWorldPosition,

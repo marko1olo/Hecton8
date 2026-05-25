@@ -1,0 +1,1081 @@
+{
+    "schema":  "hecton8.vault_exorcism_report.v2.apex",
+    "agentId":  "1309",
+    "codename":  "MEMORY_SOVEREIGN_UI_PRESENTATION_EXORCIST",
+    "generatedUtc":  "2026-05-25T17:31:38Z",
+    "prompt":  {
+                   "source":  "Docs/Tasks/CURRENT_BATCH.md",
+                   "startLine":  724,
+                   "endLine":  805,
+                   "extractedTo":  "Docs/AgentLogs/Prompt_1309_last_extract.xml",
+                   "taskCount":  20,
+                   "sha256":  "42b3ac83ae20881eeafaf45f9e32c9fb5fe90138c2f8de3e00f5200a9287b721"
+               },
+    "sourceRoots":  [
+                        "Assets/_Project/Scripts/UI",
+                        "Assets/_Project/Scripts/Visor"
+                    ],
+    "modifiedSourceFiles":  [
+                                "Assets/_Project/Scripts/UI/BaseIntegrityHUD.cs",
+                                "Assets/_Project/Scripts/UI/NotificationEvents.cs",
+                                "Assets/_Project/Scripts/UI/PDAIntrusionManager.cs",
+                                "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                                "Assets/_Project/Scripts/UI/PdaH8lrLoreStore.cs",
+                                "Assets/_Project/Scripts/Visor/DeferredDecalPass.cs",
+                                "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+                                "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                "Assets/_Project/Scripts/Visor/VisorHUDController.cs",
+                                "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+                                "Assets/_Project/Scripts/UI/CharBufferPool.cs",
+                                "Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs",
+                                "Assets/_Project/Scripts/UI/DiegeticVisorHudMesh.cs",
+                                "Assets/_Project/Scripts/UI/FontStreamingManager.cs",
+                                "Assets/_Project/Scripts/UI/PDADecryptionSpectrogramPanel.cs",
+                                "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs",
+                                "Assets/_Project/Scripts/UI/PDAShellChrome.cs",
+                                "Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs",
+                                "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs",
+                                "Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs",
+                                "Assets/_Project/Scripts/UI/WristHologramHudRuntime_PdaScreenProjector.cs",
+                                "Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs",
+                                "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs",
+                                "Assets/_Project/Scripts/UI/TopographicalSonar/TopographicalSonarSynthesizer.cs",
+                                "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs",
+                                "Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs",
+                                "Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs",
+                                "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs",
+                                "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs",
+                                "Assets/_Project/Scripts/Visor/HectonVolumetricParticulateFogFeature.cs",
+                                "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs",
+                                "Assets/_Project/Scripts/UI/TerminalOS/Editor/TerminalOsLayoutValidator.cs",
+                                "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+                                "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs",
+                                "Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs",
+                                "Assets/_Project/Scripts/UI/Editor/BabelSyncTunerWindow.cs",
+                                "Assets/_Project/Scripts/UI/Editor/PDAEncyclopediaTunerWindow.cs",
+                                "Assets/_Project/Scripts/UI/HectonSubmarineOsDisplay.cs",
+                                "Assets/_Project/Scripts/UI/PDAAtlasSignalTab.cs",
+                                "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+                                "Assets/_Project/Scripts/UI/PDADataLogTab.cs",
+                                "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+                                "Assets/_Project/Scripts/UI/SettingsComparisonView.cs",
+                                "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime_TerminalProjection.cs"
+                            ],
+    "before":  {
+                   "uiForbiddenPersistentCandidates":  8,
+                   "visorForbiddenPersistentCandidates":  13,
+                   "totalForbiddenPersistentCandidates":  21
+               },
+    "after":  {
+                  "uiForbiddenPersistentCandidates":  0,
+                  "visorForbiddenPersistentCandidates":  0,
+                  "totalForbiddenPersistentCandidates":  0,
+                  "uiParseFailures":  0,
+                  "visorParseFailures":  0,
+                  "uiNativeFieldDeclarations":  110,
+                  "visorNativeFieldDeclarations":  17,
+                  "uiJobTransientFields":  110,
+                  "visorJobTransientFields":  17,
+                  "uiNativeAuditHashSha256":  "23e84f0285793aedd7914afbd356bd751e87ef5c3e74a251b9e9321dad3c9a44",
+                  "visorNativeAuditHashSha256":  "962eab6fe11bad068fe07dad99094245c2c0ea13097397d57af875a06abc653f",
+                  "uiPresentationReportHashSha256":  "23a095453d15b82028d8cbbafca24efd26d9debf6f8f788f6c130fc5a03c37c8",
+                  "visorPresentationReportHashSha256":  "dbd0fa95ef35ef51ddf618b98c5dbfadb44aea0699884a54d1100ceeba4339c7",
+                  "presentationFatalHotPathFindings":  0,
+                  "presentationBoundaryLeaks":  0,
+                  "presentationUiStringGcRisks":  0
+              },
+    "managedRuntimeScan":  {
+                               "addedDiffForbiddenConstructs":  0,
+                               "modifiedSourceFileCount":  44,
+                               "fullFileLinqStringFormatToStringForeachInterpolationHits":  0,
+                               "fullFileNewListOrManagedDynamicContainerHits":  0,
+                               "fullFileDirectRuntimeContextServiceHitsInPatchedScope":  0,
+                               "fullFileConcreteSubmarineStructuralGridHitsInPatchedScope":  0,
+                               "fullFileDirectAupToRuntimeFloat3HitsInPatchedScope":  0,
+                               "spanConstructorNewHitsInModifiedVaultPaths":  0,
+                               "modifiedSourceStructGenericConstraintHits":  0,
+                               "publicPaddingOrExternalPaddingWriteHits":  0,
+                               "fullFileBareNewKeywordHits":  79,
+                               "fullFileBareNewClassification":  "Not zero across full modified files: remaining hits are pre-existing fixed managed arrays/caches, serialized Unity Vector defaults, Unity CommandBuffer cold setup, FileInfo/FileStream/BinaryWriter cold dump/open paths, Burst job/value constructors, and comments. Added diff forbidden construct scan is 0; targeted hot value-constructor scan was reduced to 8 residual cold/fixed-cache hits.",
+                               "fixedUiEventQueueConstraint":  "where T : unmanaged",
+                               "orphanMetaAfterFixedUiEventQueueDeletion":  0,
+                               "objectKeywordHits":  12,
+                               "objectKeywordClassification":  "IGlobalRegistryHotSwapListener callback signatures only; no boxing site added by this pass.",
+                               "publicPaddingFieldsAfterApexPass":  0,
+                               "privateUlongPaddingFieldsAfterApexPass":  0,
+                               "coldArrayCaveat":  "Listener registry managed arrays removed in BaseIntegrityEvents, PDAIntrusionEvents, NotificationEvents, and SpectrumEvents. Remaining managed arrays are pre-existing fixed UI component/cached text buffers, span message backing store, passive radar rows, and active sonar presentation buffers; not reported as zero.",
+                               "caveat":  "Full source still contains value-type constructors, job struct constructors, FileStream failure-path construction, and pre-existing fixed managed arrays. Added diff contains no managed dynamic container or string-GC construct.",
+                               "listenerRegistryManagedArrayHitsAfter":  0,
+                               "listenerRegistryBareNewRemovedThisPass":  20,
+                               "addedDiffForbiddenConstructsAfterListenerFix":  0,
+                               "targetedForbiddenHitsAfterListenerFix":  0,
+                               "hotValueConstructorSyntaxRemovedThisPass":  64,
+                               "fullFileBareNewKeywordHitsAfterHotValuePass":  79,
+                               "targetedConstructorOrColdAllocationHitsAfterHotValuePass":  8,
+                               "targetedConstructorOrColdAllocationResiduals":  [
+                                                                                    "Assets/_Project/Scripts/UI/PDAIntrusionManager.cs:590 fixed Vector2[] drift base position cache",
+                                                                                    "Assets/_Project/Scripts/Visor/SpectrumSystem.cs:1833 fixed Vector4[] passive radar shader row cache",
+                                                                                    "Assets/_Project/Scripts/Visor/SpectrumSystem.cs:1843 fixed Vector4[] active sonar center/radius shader cache",
+                                                                                    "Assets/_Project/Scripts/Visor/SpectrumSystem.cs:1845 fixed Vector4[] active sonar parameter shader cache",
+                                                                                    "Assets/_Project/Scripts/Visor/VisorHUDController.cs:164 serialized Vector3 default",
+                                                                                    "Assets/_Project/Scripts/Visor/VisorHUDController.cs:166 serialized Vector3 default",
+                                                                                    "Assets/_Project/Scripts/Visor/VisorHUDController.cs:2367 cold CommandBuffer setup",
+                                                                                    "Assets/_Project/Scripts/Visor/VisorHUDController.cs:2370 cold CommandBuffer setup"
+                                                                                ],
+                               "domainGenericStructConstraintHitsAfterUnmanagedPass":  0,
+                               "domainNativeAllocatorConstructorHitsAfterUnmanagedPass":  0,
+                               "domainAddedDiffPatternHitsAfterValuePatch":  2,
+                               "domainAddedDiffColdGraphicsBufferAllocations":  2,
+                               "domainAddedDiffForbiddenConstructsExcludingDocumentedColdGraphicsBuffers":  0,
+                               "domainAddedDiffResidualsAfterValuePatch":  [
+                                                                               "Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:1449 documented cold GraphicsBuffer indirect args A allocation",
+                                                                               "Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs:1450 documented cold GraphicsBuffer indirect args B allocation"
+                                                                           ],
+                               "additionalValueConstructorLinesRemovedAfterDomainDiffScan":  7,
+                               "additionalValueConstructorFiles":  [
+                                                                       "Assets/_Project/Scripts/UI/PDADecryptionSpectrogramPanel.cs",
+                                                                       "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+                                                                       "Assets/_Project/Scripts/UI/VehicleSubOsCockpitRuntime.cs",
+                                                                       "Assets/_Project/Scripts/UI/WristHologramHudRuntime_PdaScreenProjector.cs"
+                                                                   ],
+                               "domainSpanConstructorNewHitsAfterPurge":  0,
+                               "domainRuntimeOldDumpRouteHitsAfterPurge":  0,
+                               "domainStructGenericConstraintHitsAfterSpanPurge":  0,
+                               "domainNativeAllocatorConstructorHitsAfterSpanPurge":  0,
+                               "targetedRuntimeManagedPatternHitsAfterSpanPurge":  0,
+                               "domainPlayerRuntimeContextServiceHitsAfterContextPurge":  0,
+                               "domainDirectToRuntimeFloat3HitsAfterContextPurge":  0,
+                               "domainSpanConstructorHitsAfterContextPurge":  0,
+                               "domainOldDumpRouteHitsAfterContextPurge":  0,
+                               "domainStructGenericConstraintHitsAfterContextPurge":  0,
+                               "pdaSpectrumFloat3Double3ConstructorHitsAfterPatch":  0,
+                               "targetedPatchedFilesRuntimePatternHitsAfterContextPurge":  0,
+                               "domainRuntimeNewListHitsRemainingColdCaches":  30,
+                               "domainRuntimeSceneSearchTextHitsRemainingColdResolution":  18,
+                               "targetedRuntimeManagedPatternScope":  "22 runtime files touched by span/AUP purge, editor tuner windows excluded from runtime-zero claim.",
+                               "aupDirectToRuntimeFloat3HitsAfterTerminalTooltipPatch":  0,
+                               "spanConstructorFilesFixedThisPass":  [
+                                                                         "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs",
+                                                                         "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+                                                                         "Assets/_Project/Scripts/UI/BuilderStatusOverlay.cs",
+                                                                         "Assets/_Project/Scripts/UI/CharBufferPool.cs",
+                                                                         "Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs",
+                                                                         "Assets/_Project/Scripts/UI/HectonSubmarineOsDisplay.cs",
+                                                                         "Assets/_Project/Scripts/UI/PDAAtlasSignalTab.cs",
+                                                                         "Assets/_Project/Scripts/UI/PDAControlsRebindUI.cs",
+                                                                         "Assets/_Project/Scripts/UI/PDADataLogTab.cs",
+                                                                         "Assets/_Project/Scripts/UI/PDAEncyclopediaStreamer.cs",
+                                                                         "Assets/_Project/Scripts/UI/PDAShellChrome.cs",
+                                                                         "Assets/_Project/Scripts/UI/PauseControlsPanel.cs",
+                                                                         "Assets/_Project/Scripts/UI/SettingsComparisonView.cs",
+                                                                         "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+                                                                         "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs",
+                                                                         "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime_TerminalProjection.cs",
+                                                                         "Assets/_Project/Scripts/UI/TopographicalSonar/TopographicalSonarSynthesizer.cs",
+                                                                         "Assets/_Project/Scripts/UI/WristHologramHudRuntime.cs",
+                                                                         "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs",
+                                                                         "Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs",
+                                                                         "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs",
+                                                                         "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs",
+                                                                         "Assets/_Project/Scripts/Visor/HectonVolumetricParticulateFogFeature.cs"
+                                                                     ]
+                           },
+    "byteOffsetMaps":  [
+                           {
+                               "dto":  "BaseIntegrityEventPayload",
+                               "file":  "Assets/_Project/Scripts/UI/BaseIntegrityHUD.cs",
+                               "line":  37,
+                               "sizeBytes":  8,
+                               "offsets":  {
+                                               "Value":  "0:float",
+                                               "FailureMode":  "4:byte",
+                                               "EventType":  "5:byte",
+                                               "Reserved":  "6:ushort"
+                                           }
+                           },
+                           {
+                               "dto":  "NotificationEventPayload",
+                               "file":  "Assets/_Project/Scripts/UI/NotificationEvents.cs",
+                               "line":  17,
+                               "sizeBytes":  8,
+                               "offsets":  {
+                                               "MessageHash":  "0:uint",
+                                               "Severity":  "4:ushort",
+                                               "Reserved":  "6:ushort"
+                                           }
+                           },
+                           {
+                               "dto":  "PDAIntrusionEventPayload",
+                               "file":  "Assets/_Project/Scripts/UI/PDAIntrusionManager.cs",
+                               "line":  28,
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "SourceID":  "0:uint",
+                                               "EventHashID":  "4:uint",
+                                               "EventType":  "8:ushort",
+                                               "Reserved":  "10:ushort",
+                                               "_pad0":  "12:uint"
+                                           }
+                           },
+                           {
+                               "dto":  "ScrambledCharacterDTO",
+                               "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                               "line":  40,
+                               "sizeBytes":  8,
+                               "offsets":  {
+                                               "OriginalChar":  "0:byte",
+                                               "GlitchChar":  "1:byte",
+                                               "_pad0":  "2:ushort",
+                                               "_pad1":  "4:uint"
+                                           }
+                           },
+                           {
+                               "dto":  "MockTextSpan",
+                               "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                               "line":  52,
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "BufferId":  "0:uint",
+                                               "BufferGeneration":  "4:uint",
+                                               "Length":  "8:int",
+                                               "ReadabilityPrefixChars":  "12:int",
+                                               "ReadabilityDigitBudget":  "16:int",
+                                               "Flags":  "20:uint",
+                                               "_pad0":  "24:uint",
+                                               "_pad1":  "28:uint"
+                                           }
+                           },
+                           {
+                               "dto":  "GlitchBlackBoxDumpHeader",
+                               "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                               "line":  177,
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "Magic":  "0:uint",
+                                               "Version":  "4:uint",
+                                               "EntryCount":  "8:uint",
+                                               "Cursor":  "12:uint",
+                                               "FaultFlags":  "16:uint",
+                                               "TableHash":  "20:uint",
+                                               "TimestampTicksLow":  "24:uint",
+                                               "TimestampTicksHigh":  "28:uint"
+                                           }
+                           },
+                           {
+                               "dto":  "GlitchStateDTO",
+                               "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                               "line":  21,
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "GlobalIntensity":  "0:float",
+                                               "Seed":  "4:float",
+                                               "GlitchTableOffset":  "8:uint",
+                                               "_pad0":  "12:uint"
+                                           }
+                           },
+                           {
+                               "dto":  "MockCorruptionLevelSignal",
+                               "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                               "line":  68,
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "Corruption01":  "0:float",
+                                               "SimulationSeconds":  "4:float",
+                                               "Frame":  "8:uint",
+                                               "_pad0":  "12:uint"
+                                           }
+                           },
+                           {
+                               "dto":  "MockDepthSignal",
+                               "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                               "line":  80,
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "DepthMeters":  "0:float",
+                                               "BaselineIntensity":  "4:float",
+                                               "Frame":  "8:uint",
+                                               "_pad0":  "12:uint"
+                                           }
+                           },
+                           {
+                               "dto":  "MockModuleBreachSignal",
+                               "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                               "line":  92,
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "BreachedMask0":  "0:uint",
+                                               "BreachedMask1":  "4:uint",
+                                               "ActiveRoomIndex":  "8:uint",
+                                               "Frame":  "12:uint"
+                                           }
+                           },
+                           {
+                               "dto":  "GlitchTuningDTO",
+                               "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                               "line":  104,
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "MasterIntensity":  "0:float",
+                                               "TextScrambleRate":  "4:float",
+                                               "MatrixShatterStrength":  "8:float",
+                                               "GhostBlipCount":  "12:float",
+                                               "DepthStartMeters":  "16:float",
+                                               "DepthFullMeters":  "20:float",
+                                               "GlobalQualityWeight":  "24:float",
+                                               "FrameSeed":  "28:uint"
+                                           }
+                           },
+                           {
+                               "dto":  "GlitchQuadTransformDTO",
+                               "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                               "line":  120,
+                               "sizeBytes":  112,
+                               "offsets":  {
+                                               "Matrix":  "0:float4x4",
+                                               "Color":  "64:float4",
+                                               "UVRect":  "80:float4",
+                                               "CharacterCode":  "96:uint",
+                                               "GlitchIntensity":  "100:float",
+                                               "_pad0":  "104:uint",
+                                               "_pad1":  "108:uint"
+                                           }
+                           },
+                           {
+                               "dto":  "RadarBlipDTO",
+                               "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                               "line":  135,
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "LocalPositionIntensity":  "0:float4",
+                                               "ColorSizeAgeFlags":  "16:float4"
+                                           }
+                           },
+                           {
+                               "dto":  "GlitchSynthParametersDTO",
+                               "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                               "line":  145,
+                               "sizeBytes":  16,
+                               "offsets":  {
+                                               "BaseFrequency":  "0:float",
+                                               "ModulationIndex":  "4:float",
+                                               "GrainSize":  "8:float",
+                                               "PressureScalar":  "12:float"
+                                           }
+                           },
+                           {
+                               "dto":  "DiegeticGlitchTelemetryEntry",
+                               "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                               "line":  157,
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "FrameIndex":  "0:uint",
+                                               "StateHash":  "4:uint",
+                                               "Flags":  "8:uint",
+                                               "ScrambledCharacters":  "12:uint",
+                                               "CurrentGlitchIntensity":  "16:float",
+                                               "GlobalQualityWeight":  "20:float",
+                                               "ComputeTimeMs":  "24:float",
+                                               "DepthMeters":  "28:float",
+                                               "GhostBlipCount":  "32:uint",
+                                               "TextSpanLength":  "36:uint",
+                                               "TableHash":  "40:uint",
+                                               "ModuleMask":  "44:uint",
+                                               "MasterIntensity":  "48:float",
+                                               "MatrixStrength":  "52:float",
+                                               "AudioPitchScalar":  "56:float",
+                                               "Reserved0":  "60:float"
+                                           }
+                           },
+                           {
+                               "dto":  "AcousticEchoEvent",
+                               "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                               "line":  54,
+                               "sizeBytes":  80,
+                               "offsets":  {
+                                               "WorldAup":  "0:AbsoluteUniversePosition",
+                                               "WorldPosition":  "48:Vector3",
+                                               "DistanceMeters":  "60:float",
+                                               "ReturnStrength":  "64:float",
+                                               "Resonance":  "68:float",
+                                               "AudioMaterialId":  "72:byte",
+                                               "_hasWorldAup":  "73:byte",
+                                               "_pad0":  "74:ushort",
+                                               "_pad1":  "76:uint"
+                                           }
+                           },
+                           {
+                               "dto":  "PingReturnSignal",
+                               "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                               "line":  170,
+                               "sizeBytes":  80,
+                               "offsets":  {
+                                               "WorldAup":  "0:AbsoluteUniversePosition",
+                                               "WorldPosition":  "48:Vector3",
+                                               "DistanceMeters":  "60:float",
+                                               "ReturnStrength":  "64:float",
+                                               "EchoDelaySeconds":  "68:float",
+                                               "AudioMaterialId":  "72:byte",
+                                               "_hasWorldAup":  "73:byte",
+                                               "_pad0":  "74:ushort",
+                                               "_pad1":  "76:uint"
+                                           }
+                           },
+                           {
+                               "dto":  "ActiveSonarGeoTelemetryEntry",
+                               "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                               "line":  2590,
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "Frame":  "0:uint",
+                                               "ActiveRingCount":  "4:int",
+                                               "PrimaryRadius":  "8:float",
+                                               "PrimaryCenter":  "12:float3",
+                                               "Flags":  "24:uint",
+                                               "_pad0":  "28:uint"
+                                           }
+                           },
+                           {
+                               "dto":  "TraumaDecalDTO",
+                               "file":  "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+                               "line":  54,
+                               "sizeBytes":  80,
+                               "offsets":  {
+                                               "LocalToWorld":  "0:float4x4",
+                                               "DecalTypeHash":  "64:uint",
+                                               "Opacity01":  "68:float",
+                                               "BirthTime":  "72:float",
+                                               "Flags":  "76:uint"
+                                           }
+                           },
+                           {
+                               "dto":  "DecalRequestSignal",
+                               "file":  "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+                               "line":  64,
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "ImpactAup":  "0:double3",
+                                               "Normal":  "24:float3",
+                                               "RadiusMeters":  "36:float",
+                                               "ProjectionDepthMeters":  "40:float",
+                                               "LifetimeSeconds":  "44:float",
+                                               "MaterialHash":  "48:uint",
+                                               "Flags":  "52:uint",
+                                               "StableSeed":  "56:uint",
+                                               "SourceFrame":  "60:uint"
+                                           }
+                           },
+                           {
+                               "dto":  "DecalRequestQueueStateDTO",
+                               "file":  "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+                               "line":  79,
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "WriteIndex":  "0:int",
+                                               "ReadIndex":  "4:int",
+                                               "PendingCount":  "8:int",
+                                               "Capacity":  "12:int",
+                                               "EnqueuedTotal":  "16:uint",
+                                               "DrainedTotal":  "20:uint",
+                                               "DroppedTotal":  "24:uint",
+                                               "LastFrame":  "28:uint",
+                                               "_pad0":  "32:uint",
+                                               "_pad1":  "36:uint",
+                                               "_pad2":  "40:uint",
+                                               "_pad3":  "44:uint",
+                                               "_pad4":  "48:uint",
+                                               "_pad5":  "52:uint",
+                                               "_pad6":  "56:uint",
+                                               "_pad7":  "60:uint"
+                                           }
+                           },
+                           {
+                               "dto":  "TraumaWoundTelemetryEntry",
+                               "file":  "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+                               "line":  134,
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "Frame":  "0:uint",
+                                               "ActiveDecals":  "4:uint",
+                                               "NewDecals":  "8:uint",
+                                               "UploadCount":  "12:uint",
+                                               "GpuUploadMicroseconds":  "16:float",
+                                               "CpuMicroseconds":  "20:float",
+                                               "GlobalQualityWeight":  "24:float",
+                                               "ThermalPressure01":  "28:float",
+                                               "Flags":  "32:uint",
+                                               "StateHash":  "36:uint",
+                                               "DroppedThisFrame":  "40:uint",
+                                               "TotalWritten":  "44:uint",
+                                               "MaxActiveThisFrame":  "48:uint",
+                                               "LastBallisticFrame":  "52:uint",
+                                               "_pad0":  "56:uint",
+                                               "_pad1":  "60:uint"
+                                           }
+                           },
+                           {
+                               "dto":  "DecalMaterialProfileDTO",
+                               "file":  "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+                               "line":  155,
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "SourceHash":  "0:uint",
+                                               "AtlasSlice":  "4:uint",
+                                               "LifetimeSeconds":  "8:float",
+                                               "RadiusMeters":  "12:float",
+                                               "ProjectionDepthMeters":  "16:float",
+                                               "Flags":  "20:uint",
+                                               "_pad0":  "24:uint",
+                                               "_pad1":  "28:uint"
+                                           }
+                           },
+                           {
+                               "dto":  "DecalRuntimeStateDTO",
+                               "file":  "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+                               "line":  99,
+                               "sizeBytes":  64,
+                               "offsets":  {
+                                               "CurrentWriteIndex":  "0:int",
+                                               "ActiveCount":  "4:int",
+                                               "TotalWritten":  "8:uint",
+                                               "Frame":  "12:uint",
+                                               "LastUploadCount":  "16:int",
+                                               "NewThisFrame":  "20:int",
+                                               "DroppedThisFrame":  "24:int",
+                                               "MaxActiveThisFrame":  "28:int",
+                                               "GlobalQualityWeight":  "32:float",
+                                               "DecayRate":  "36:float",
+                                               "ThermalPressure01":  "40:float",
+                                               "CpuMicroseconds":  "44:float",
+                                               "UploadMicroseconds":  "48:float",
+                                               "Flags":  "52:uint",
+                                               "LastBallisticFrame":  "56:uint",
+                                               "NormalRefractionIntensity":  "60:float"
+                                           }
+                           },
+                           {
+                               "dto":  "DecalTuningDTO",
+                               "file":  "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+                               "line":  120,
+                               "sizeBytes":  32,
+                               "offsets":  {
+                                               "BaseFadeTimeSeconds":  "0:float",
+                                               "MaximumOverkillCapacity":  "4:float",
+                                               "NormalRefractionIntensity":  "8:float",
+                                               "ProjectionDepthMeters":  "12:float",
+                                               "LowTierCapacity":  "16:float",
+                                               "BaseRadiusMeters":  "20:float",
+                                               "Revision":  "24:uint",
+                                               "Flags":  "28:uint"
+                                           }
+                           },
+                           {
+                               "dto":  "DynamicDecalFrameStats",
+                               "file":  "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+                               "line":  168,
+                               "sizeBytes":  56,
+                               "offsets":  {
+                                               "UploadHandle":  "0:VaultGenerationHandle\u003cTraumaDecalDTO\u003e",
+                                               "UploadCapacity":  "16:int",
+                                               "UploadCount":  "20:int",
+                                               "ActiveCount":  "24:int",
+                                               "NewCount":  "28:int",
+                                               "MaxActiveCount":  "32:int",
+                                               "CpuMicroseconds":  "36:float",
+                                               "UploadMicroseconds":  "40:float",
+                                               "GlobalQualityWeight":  "44:float",
+                                               "ThermalPressure01":  "48:float",
+                                               "NormalRefractionIntensity":  "52:float"
+                                           }
+                           }
+                       ],
+    "aupProof":  {
+                     "dynamicDecalMatrix":  {
+                                                "file":  "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+                                                "methodLine":  2757,
+                                                "formula":  "double3 local = request.ImpactAup - CameraAup; finite(local); float3 position = (float3)local; finite(position); matrix uses local position only."
+                                            },
+                     "pdaIntrusionRuntimeOrigin":  {
+                                                       "file":  "Assets/_Project/Scripts/UI/PDAIntrusionManager.cs",
+                                                       "methodLine":  858,
+                                                       "formula":  "AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup(); double3 localDelta = AbsoluteUniversePosition.DeltaMetersClamped(positionAup, originAup); finite(localDelta); assign Vector3 fields from localDelta only."
+                                                   },
+                     "spectrumRuntimeOrigin":  {
+                                                   "file":  "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                                   "methodLines":  [
+                                                                       2686,
+                                                                       2705
+                                                                   ],
+                                                   "formula":  "AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup(); double3 localDelta = AbsoluteUniversePosition.DeltaMetersClamped(positionAup, originAup); finite(localDelta); assign Vector3/float3 fields from localDelta only."
+                                               },
+                     "directAbsoluteAupToFloatCastFoundInModifiedDiff":  false,
+                     "terminalAndTooltipRuntimeOrigin":  {
+                                                             "files":  [
+                                                                           "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime_TerminalProjection.cs",
+                                                                           "Assets/_Project/Scripts/UI/TerminalOS/TerminalOsRuntime.cs",
+                                                                           "Assets/_Project/Scripts/UI/DiegeticTooltipSystem.cs"
+                                                                       ],
+                                                             "formula":  "AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup(); AupPrecisionMath.LocalDeltaFloat3(targetAup.ToAbsoluteDouble3(), originAup.ToAbsoluteDouble3(), fallback); no direct targetAup.ToRuntimeFloat3 remains in patched scope.",
+                                                             "directToRuntimeFloat3HitsAfter":  0
+                                                         },
+                     "beaconRelayPdaStressRuntimeOrigin":  {
+                                                               "files":  [
+                                                                             "Assets/_Project/Scripts/UI/BeaconHUDElement.cs",
+                                                                             "Assets/_Project/Scripts/UI/RelayHUDElement.cs",
+                                                                             "Assets/_Project/Scripts/UI/PDAMapTab.cs",
+                                                                             "Assets/_Project/Scripts/Visor/PlayerStressVFX.cs"
+                                                                         ],
+                                                               "formula":  "AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup(); double3 localDelta = AupPrecisionMath.LocalDeltaDouble(targetAup.ToAbsoluteDouble3(), originAup.ToAbsoluteDouble3()); finite(localDelta); cast only localDelta to Vector3.",
+                                                               "directToRuntimeFloat3HitsAfter":  0
+                                                           },
+                     "pdaSpectrumRuntimeAup":  {
+                                                   "file":  "Assets/_Project/Scripts/UI/PDASpectrumTab.cs",
+                                                   "methodLine":  692,
+                                                   "formula":  "Runtime Vector3 is first checked as finite local float3, then offset from RuntimeOriginRoute.CurrentRuntimeOriginAup() using local double3; no absolute AUP is cast to float.",
+                                                   "playerRuntimeContextServiceHitsAfter":  0
+                                                         }
+                 },
+    "failClosed":  {
+                       "fixedQueueOverflow":  "Enqueue returns false; caller increments drop counter and returns false. No managed exception.",
+                       "fixedQueuePayloadContract":  "FixedUiEventQueue\u003cT\u003e and Spectrum queue helpers require unmanaged payloads; managed-reference event payloads are compile-time rejected.",
+                       "pdaLoreMirrorWriteLock":  "After TryAcquireWriteLock succeeds, all invalid mirror, short-read, validation-failure, and exception exits release through finally; vault mirror state is published only after ValidateMappedBytes succeeds.",
+                       "vaultResolveFailure":  "TryResolve* returns false; caller marks fault/defaults/drops update.",
+                       "nonFiniteAup":  "math.isfinite gate rejects request before float cast/matrix upload.",
+                       "pdaOwnerResolve":  "ResolveRuntimeOwners is bounded to 0.5s retry when references are missing; hot LateFrame does not traverse owned hierarchy every frame.",
+                       "cachedPlayerContextRoute":  "PDASpectrumTab, PDAMapTab, AcousticEcholocationTranslator, AcousticRadarSphereRenderer, FakeRadarBlipController, SonarHoloCompass, PlayerStressVFX, and HectonVRDiegeticFocusController read cached IPlayerRuntimeContext snapshots or fail closed; PlayerRuntimeContextService runtime domain hits are 0.",
+                       "runtimeAupProjection":  "Beacon, relay, PDA map, Terminal/Tooltip, Spectrum, and PlayerStressVFX runtime position helpers subtract the runtime origin in double precision and reject non-finite local deltas before any float cast.",
+                       "dumpPath":  "Docs/AgentLogs/Dump_1309_UIPresentation.bin",
+                       "dumpLineGlitch":  239,
+                       "dumpLineDecal":  211,
+                       "spectrumPlayerRoute":  "SpectrumSystem caches IPlayerRuntimeContext from GlobalRegistry cold/hot-swap and reads owner-published snapshots; no PlayerRuntimeContextService hot lookup remains.",
+                       "visorHullRoute":  "VisorHUDController stores ISubmarineHullBreachReadModel, not SubmarineStructuralGrid; destroyed Unity read-models fail closed to zero fatigue.",
+                       "visorActiveRegistry":  "VisorHUDController uses eight explicit static slots; CompactActiveControllerSlots removes destroyed Unity references before registration; capacity overflow returns without allocation.",
+                       "dumpRoutes1309":  [
+                                              "Docs/AgentLogs/Dump_1309_BabelSubtitleSync.bin",
+                                              "Docs/AgentLogs/Dump_1309_UIPresentation.bin",
+                                              "Docs/AgentLogs/Dump_1309_VisorARStencil.bin",
+                                              "Docs/AgentLogs/Dump_1309_VisorUberPostNoir.bin",
+                                              "Docs/AgentLogs/Dump_1309_VolumetricFog.bin",
+                                              "Docs/AgentLogs/Dump_1309_TerminalOS.bin",
+                                              "Docs/AgentLogs/Dump_1309_TerminalProjection.bin",
+                                              "Docs/AgentLogs/Dump_1309_TerminalDecryption.bin",
+                                              "Docs/AgentLogs/Dump_1309_PDAEncyclopedia.bin",
+                                              "Docs/AgentLogs/Dump_1309_WristHologramHud.bin",
+                                              "Docs/AgentLogs/Dump_1309_UIPresentation_PdaProjection.bin"
+                                          ]
+                   },
+    "cinematicCheats":  [
+                            "FixedUiEventQueue inline slots replace NativeQueue for local visual event lanes.",
+                            "PDA text drift uses cheap triangle wave EvaluateCheapDriftWaveSigned, no sine/no physics.",
+                            "Visor mode-change pulse uses direct fixed-slot controller walk, not a List copy.",
+                            "Dynamic decals remain screen-space wound decals and matrix/LUT style presentation data, not physical wound simulation."
+                        ],
+    "verification":  {
+                         "roslynPersistentAliasAudit":  "PASS: UI forbiddenPersistentCandidates=0 hash=23e84f0285793aedd7914afbd356bd751e87ef5c3e74a251b9e9321dad3c9a44; Visor forbiddenPersistentCandidates=0 hash=962eab6fe11bad068fe07dad99094245c2c0ea13097397d57af875a06abc653f",
+                         "presentationDecouplingRoslynAudit":  "PASS: UI fatalHotPath=0 boundaryLeaks=0 hash=23a095453d15b82028d8cbbafca24efd26d9debf6f8f788f6c130fc5a03c37c8; Visor fatalHotPath=0 boundaryLeaks=0 hash=dbd0fa95ef35ef51ddf618b98c5dbfadb44aea0699884a54d1100ceeba4339c7",
+                         "roslynAuditRuntime":  "net10.0 already-built CLI; net8.0 CLI unavailable because .NET 8 runtime is not installed",
+                         "promptExtract":  "PASS",
+                         "dotnetBuild":  "BLOCKED_BY_NON_DOMAIN_ERRORS",
+                         "dotnetBuildReason":  "Previous build attempt 1 exposed missing FixedUiEventQueue\u003c\u003e because the new file was not included by generated Hecton8.Core.csproj; fixed by moving the type into BaseIntegrityHUD.cs. Previous build attempt 2 emitted only non-domain errors: Audio/AcousticPortalPropagation.cs:588-589 inaccessible AcousticPathResult reserved fields and TetherInstance.cs:1996-2176 unassigned out parameters. Current APEX pass did not launch dotnet build per user instruction to keep build attempts rare."
+                     },
+    "currentPass":  {
+                        "buildRun":  false,
+                        "buildReason":  "Not run per user build-rare order; only existing audit executables and text scans were executed.",
+                        "dotnetBuildRun":  false,
+                        "roslynAuditExecutablesRun":  true,
+                        "cpuBeforeAuditPercent":  19.4127895126532,
+                        "activeDotnetOrCscBeforeAudit":  0,
+                        "listenerRegistryArrayFix":  {
+                                                         "files":  [
+                                                                       "Assets/_Project/Scripts/UI/BaseIntegrityHUD.cs",
+                                                                       "Assets/_Project/Scripts/UI/PDAIntrusionManager.cs",
+                                                                       "Assets/_Project/Scripts/UI/NotificationEvents.cs",
+                                                                       "Assets/_Project/Scripts/Visor/SpectrumSystem.cs"
+                                                                   ],
+                                                         "removedManagedListenerArrays":  20,
+                                                         "residualListenerSlotSymbols":  0,
+                                                         "residualDeferredListenerCountFields":  0
+                                                     },
+                        "hotValueConstructorSyntaxFix":  {
+                                                             "files":  [
+                                                                           "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                                                                           "Assets/_Project/Scripts/UI/PDAIntrusionManager.cs",
+                                                                           "Assets/_Project/Scripts/Visor/DeferredDecalPass.cs",
+                                                                           "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+                                                                           "Assets/_Project/Scripts/Visor/SpectrumSystem.cs",
+                                                                           "Assets/_Project/Scripts/Visor/VisorHUDController.cs"
+                                                                       ],
+                                                             "fullFileBareNewBeforeThisPass":  143,
+                                                             "fullFileBareNewAfterThisPass":  79,
+                                                             "targetedHitsAfterThisPass":  8,
+                                                             "addedDiffForbiddenHitsAfterThisPass":  0,
+                                                             "dotnetBuildRun":  false
+                                                         },
+                        "unmanagedGenericConstraintPass":  {
+                                                               "changedRuntimeFiles":  22,
+                                                               "changedEditorValidatorFiles":  1,
+                                                               "remainingWhereTStructHitsInUiVisor":  0,
+                                                               "nativeAllocatorConstructorHitsInUiVisor":  0,
+                                                               "dotnetBuildRun":  false
+                                                           },
+                        "domainDiffValueConstructorFollowup":  {
+                                                                   "valueConstructorOrObjectInitializerLinesConverted":  7,
+                                                                   "residualAddedDiffNewHits":  2,
+                                                                   "residualAddedDiffNewClassification":  "documented cold GraphicsBuffer resource creation in DiegeticGyroCompassRuntime.cs:1449-1450 only",
+                                                                   "dotnetBuildRun":  false
+                                                               },
+                        "spanConstructorDomainPurge":  {
+                                                           "domainNewSpanConstructorHits":  0,
+                                                           "runtimeOldDumpRouteHits":  0,
+                                                           "directToRuntimeFloat3HitsInPatchedTerminalTooltipScope":  0,
+                                                           "dotnetBuildRun":  false,
+                                                           "proof":  "rg new Span/ReadOnlySpan over UI+Visor returned no hits; rg Dump_SHINOBU/Dump_GLITCH over runtime UI+Visor returned no hits; targeted runtime pattern scan over touched runtime files returned no hits."
+                                                       },
+                        "domainPlayerContextAupPurge":  {
+                                                            "files":  [
+                                                                          "Assets/_Project/Scripts/UI/BeaconHUDElement.cs",
+                                                                          "Assets/_Project/Scripts/UI/RelayHUDElement.cs",
+                                                                          "Assets/_Project/Scripts/UI/PDAMapTab.cs",
+                                                                          "Assets/_Project/Scripts/UI/PDASpectrumTab.cs",
+                                                                          "Assets/_Project/Scripts/UI/AcousticEcholocationTranslator.cs",
+                                                                          "Assets/_Project/Scripts/UI/AcousticRadarSphereRenderer.cs",
+                                                                          "Assets/_Project/Scripts/UI/FakeRadarBlipController.cs",
+                                                                          "Assets/_Project/Scripts/UI/SonarHoloCompass.cs",
+                                                                          "Assets/_Project/Scripts/Visor/PlayerStressVFX.cs",
+                                                                          "Assets/_Project/Scripts/Visor/HectonVRDiegeticFocusController.cs",
+                                                                          "Assets/_Project/Scripts/Visor/InternalFloodWaterlineRuntime.cs"
+                                                                      ],
+                                                            "domainPlayerRuntimeContextServiceHits":  0,
+                                                            "domainDirectToRuntimeFloat3Hits":  0,
+                                                            "domainNewSpanConstructorHits":  0,
+                                                            "domainOldDumpRouteHits":  0,
+                                                            "domainStructGenericConstraintHits":  0,
+                                                            "pdaSpectrumNewFloat3Double3Hits":  0,
+                                                            "domainNewListHitsRemainingColdCaches":  30,
+                                                            "domainSceneSearchTextHitsRemainingColdResolution":  18,
+                                                            "dotnetBuildRun":  false,
+                                                            "proof":  "rg gates over runtime UI+Visor excluding Editor returned zero for concrete player context, direct AUP float conversion, Span constructors, old dump routes, and struct generic constraints. Remaining new List/scene-search hits are cold cached Unity UI resolution surfaces and are not claimed as zero."
+                                                       }
+                    },
+    "latestApexReaudit":  {
+                              "generatedUtc":  "2026-05-25T19:19:19Z",
+                              "dotnetBuildRun":  false,
+                              "dotnetBuildReason":  "Not run: user ordered rare build attempts; no active dotnet/csc process and CPU sample was 46.2%, but the last known build wall is non-domain Audio/Tether and this was a focused text-gate patch.",
+                              "roslynNativeAlias":  {
+                                                        "uiForbiddenPersistentCandidates":  0,
+                                                        "uiParseFailures":  0,
+                                                        "uiHashSha256":  "7bd9bcca5639fa9255c84a668749f9b0bcebf04bd1379f85f8cc20615b44298a",
+                                                        "visorForbiddenPersistentCandidates":  0,
+                                                        "visorParseFailures":  0,
+                                                        "visorHashSha256":  "86d2a05204fb5a040c42f4af79c21ef4e1cbb9b7aa5d551f18ef85ad71925238"
+                                                    },
+                              "presentationDecoupling":  {
+                                                             "uiFatalHotPath":  0,
+                                                             "uiBoundaryLeaks":  0,
+                                                             "uiHashSha256":  "23a095453d15b82028d8cbbafca24efd26d9debf6f8f788f6c130fc5a03c37c8",
+                                                             "visorFatalHotPath":  0,
+                                                             "visorBoundaryLeaks":  0,
+                                                             "visorHashSha256":  "dbd0fa95ef35ef51ddf618b98c5dbfadb44aea0699884a54d1100ceeba4339c7"
+                                                         },
+                              "runtimeTextScans":  {
+                                                       "stringLiteralConcatHits":  0,
+                                                       "stringFormatToStringLinqEnumerableForeachInterpolationHits":  0,
+                                                       "nativeAllocatorConstructorHits":  0,
+                                                       "spanConstructorHits":  0,
+                                                       "tryGetLatestCreatedHits":  0,
+                                                       "completeHits":  0,
+                                                       "throwNewHits":  0,
+                                                       "playerRuntimeContextServiceHits":  0,
+                                                       "directToRuntimeFloat3Hits":  0,
+                                                       "toCameraRelativeFloat3Hits":  0,
+                                                       "concretePhysicsFluidHullHits":  0,
+                                                       "getComponentsInChildrenHits":  0,
+                                                       "getRootGameObjectsHits":  0,
+                                                       "newListHits":  1,
+                                                       "newListResidual":  "Assets/_Project/Scripts/UI/DiegeticPDAController.cs:73 _raycastResults; Unity GraphicRaycaster fallback API requires List<RaycastResult>, fallback is disabled by EnableGraphicRaycasterFallback=false.",
+                                                       "newNativeSliceHits":  0,
+                                                       "newNativeSliceResidual":  "None. DiegeticGyroCompassRuntime now uses NativeArray.Slice() value views at lines 560, 574, 589, 699, 700, and 701."
+                                                   },
+                              "arm64PaddingScan":  {
+                                                       "publicPaddingFields":  0,
+                                                       "privateUlongPaddingFields":  0,
+                                                       "externalPaddingWrites":  0,
+                                                       "nameofPrivatePaddingHits":  0
+                                                   },
+                              "failClosedPatch":  {
+                                                      "files":  [
+                                                                    "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs",
+                                                                    "Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs"
+                                                                ],
+                                                      "behavior":  "Vault descriptor loss and DTO validation failure now fail closed through constant error log/default state, not managed throw new."
+                                                  }
+                          },
+    "latestFixedSlotReaudit":  {
+                                  "generatedUtc":  "2026-05-25T19:30:00Z",
+                                  "prompt":  {
+                                                 "source":  "Docs/Tasks/CURRENT_BATCH.md:724-805",
+                                                 "taskCount":  20,
+                                                 "sha256":  "2b8da8f84d91ee1e180e39e4a511d83b42dbb718ed2ec225eb3e56f63276e00b",
+                                                 "extractor":  "flexible AGENT_PROMPT tag match because current tag includes extra attributes"
+                                             },
+                                  "dotnetBuildRun":  false,
+                                  "dotnetRoslynAuditRun":  false,
+                                  "dotnetReason":  "Not run: no active dotnet/csc process, but CPU sample was 83.5%, above the AGENTS 50% gate; user ordered rare dotnet/build attempts.",
+                                  "filesChanged":  [
+                                                       {
+                                                           "path":  "Assets/_Project/Scripts/UI/LocalizedLayoutMirror.cs",
+                                                           "change":  "Removed managed RectTransform[32] and Vector3[32] fixed-cache arrays; replaced with explicit fixed fields plus switch accessors.",
+                                                           "postScanHits":  0
+                                                       },
+                                                       {
+                                                           "path":  "Assets/_Project/Scripts/UI/PDADataLogTab.cs",
+                                                           "change":  "Removed managed LogRow[32] row cache; replaced with explicit fixed fields plus switch accessors.",
+                                                           "postScanHits":  0
+                                                       },
+                                                       {
+                                                           "path":  "Assets/_Project/Scripts/Visor/HectonDryVolumeStencilSource.cs",
+                                                           "change":  "Replaced editor GetComponentsInChildren<Renderer>() allocation with direct Transform traversal and TryGetComponent.",
+                                                           "postScanHits":  0
+                                                       }
+                                                   ],
+                                  "runtimeTextScans":  {
+                                                           "componentDiscoveryHits":  0,
+                                                           "foreachHits":  0,
+                                                           "combinedForbiddenHits":  0,
+                                                           "localizedLayoutManagedArrayHits":  0,
+                                                           "pdaDataLogRowArrayHits":  0,
+                                                           "addedDiffResidualNewLines":  7,
+                                                           "graphicsBufferFullSourceConstructors":  62,
+                                                           "diegeticGyroCompassGraphicsBufferConstructors":  4,
+                                                           "residuals":  [
+                                                                             "Assets/_Project/Scripts/UI/DiegeticGyroCompassRuntime.cs: cold GraphicsBuffer resource creation x2",
+                                                                             "Assets/_Project/Scripts/Visor/HectonDryVolumeStencilSource.cs: editor-only RendererEntry[] serialization rebuild allocation x1",
+                                                                             "Assets/_Project/Scripts/Visor/HectonFillrateDepthPrepassFeature.cs: shared static ShaderTagId value-struct cache x4"
+                                                                         ]
+                                                       },
+                                  "diffCheck":  {
+                                                    "exitCode":  0,
+                                                    "warnings":  "LF-to-CRLF warnings only"
+                                                }
+                              },
+    "latestShaderTagCacheReaudit":  {
+                                       "generatedUtc":  "2026-05-25T19:40:14Z",
+                                       "prompt":  {
+                                                      "source":  "Docs/Tasks/CURRENT_BATCH.md:724-805",
+                                                      "taskCount":  20,
+                                                      "utf8ContentSha256":  "619664fd6febd419b15df6c3aa622623166adf56114deed6f2063159549b541c",
+                                                      "extractArtifactSha256":  "7198968b3075b93fcded75d9e98281857f26a4095fab79fd83ad0b320f873da8",
+                                                      "note":  "Hash differs from older line-ending/encoding hash; source range and task count are the authority."
+                                                  },
+                                       "dotnetBuildRun":  false,
+                                       "dotnetReason":  "Not run: no active dotnet/csc process was found, but CPU sample was 100.0%, above the AGENTS 50% gate; user ordered rare dotnet/build attempts.",
+                                       "changes":  [
+                                                       {
+                                                           "path":  "Assets/_Project/Scripts/Visor/HectonFillrateDepthPrepassFeature.cs",
+                                                           "change":  "Added shared HectonVisorShaderTagIds cache and removed local duplicate tag fields."
+                                                       },
+                                                       {
+                                                           "path":  "Assets/_Project/Scripts/Visor/HectonHalfResParticlesFeature.cs",
+                                                           "change":  "Removed per-pass ShaderTagId fields and constructor assignments; pass now consumes shared tag cache."
+                                                       },
+                                                       {
+                                                           "path":  "Assets/_Project/Scripts/Visor/HectonOverdrawHeatmapFeature.cs",
+                                                           "change":  "Removed editor duplicate ShaderTagId fields; editor heatmap consumes shared tag cache."
+                                                       }
+                                                   ],
+                                       "proof":  {
+                                                     "domainShaderTagIdConstructorHits":  4,
+                                                     "domainGraphicsBufferConstructorHits":  62,
+                                                     "domainManagedArraySyntaxHits":  366,
+                                                     "domainNewListHits":  1,
+                                                     "domainNativeAllocatorConstructorHits":  0,
+                                                     "domainSpanConstructorHits":  0,
+                                                     "domainFormatToStringLinqHits":  0,
+                                                     "domainInterpolationHits":  0,
+                                                     "domainForeachHits":  0,
+                                                     "domainThrowNewHits":  0,
+                                                     "addedDiffNewLines":  7,
+                                                     "addedDiffResiduals":  [
+                                                                                 "DiegeticGyroCompassRuntime.cs: cold GraphicsBuffer x2 in added diff; full source has x4",
+                                                                                 "HectonDryVolumeStencilSource.cs: editor-only RendererEntry[] x1",
+                                                                                 "HectonFillrateDepthPrepassFeature.cs: shared static ShaderTagId x4"
+                                                                             ],
+                                                     "diffCheckExitCode":  0,
+                                                     "diffCheckWarnings":  "LF-to-CRLF warnings only"
+                                                 }
+                              },
+    "latestSpanConstructorTextGate":  {
+                                          "generatedUtc":  "2026-05-25T20:05:00Z",
+                                          "prompt":  {
+                                                         "source":  "Docs/Tasks/CURRENT_BATCH.md:724-805",
+                                                         "taskCount":  20,
+                                                         "utf8ContentSha256":  "619664fd6febd419b15df6c3aa622623166adf56114deed6f2063159549b541c",
+                                                         "note":  "Source range and task count are authoritative; older prompt hashes differ by extractor encoding/line endings."
+                                                     },
+                                          "dotnetBuildRun":  false,
+                                          "dotnetRoslynAuditRun":  false,
+                                          "dotnetReason":  "Not run: user ordered rare dotnet/build attempts; previous known build wall remains non-domain Audio/Tether errors.",
+                                          "changes":  [
+                                                          {
+                                                              "path":  "Assets/_Project/Scripts/UI/PDADataLogTab.cs",
+                                                              "line":  2123,
+                                                              "change":  "Removed playback timer ToCharArray cache and replaced new System.ReadOnlySpan<char> with PlaybackTimerTemplate.AsSpan()."
+                                                          },
+                                                          {
+                                                              "path":  "Assets/_Project/Scripts/UI/RelayHUDElement.cs",
+                                                              "line":  407,
+                                                              "change":  "Replaced new System.Span<char>(buffer) with buffer.AsSpan()."
+                                                          },
+                                                          {
+                                                              "path":  "Assets/_Project/Scripts/UI/SettingsPanel.cs",
+                                                              "line":  195,
+                                                              "change":  "Replaced new System.Span<char>(buffer) with buffer.AsSpan()."
+                                                          },
+                                                          {
+                                                              "path":  "Assets/_Project/Scripts/UI/UISliderValueDisplay.cs",
+                                                              "line":  97,
+                                                              "change":  "Replaced new System.ReadOnlySpan<char>(char[], int, int) with charArray.AsSpan(start, length)."
+                                                          }
+                                                      ],
+                                          "proof":  {
+                                                        "domainExplicitSpanConstructorHits":  0,
+                                                        "domainStringFormatHits":  0,
+                                                        "domainToStringHits":  0,
+                                                        "domainLinqEnumerableHits":  0,
+                                                        "domainForeachHits":  0,
+                                                        "domainThrowNewHits":  0,
+                                                        "domainTryGetLatestCreatedHits":  0,
+                                                        "domainCompleteHits":  0,
+                                                        "domainSceneSearchHits":  0,
+                                                        "domainPlayerRuntimeContextServiceHits":  0,
+                                                        "domainDirectAupFloatHelperHits":  0,
+                                                        "domainNativeAllocatorConstructorHits":  0,
+                                                        "domainNewNativeSliceHits":  0,
+                                                        "residualToCharArrayHits":  94,
+                                                        "residualGraphicsBufferConstructorHits":  62,
+                                                        "residualManagedArraySyntaxHits":  376,
+                                                        "residualNewListHits":  1,
+                                                        "residualNewListPath":  "Assets/_Project/Scripts/UI/DiegeticPDAController.cs:73 disabled GraphicRaycaster fallback compatibility buffer.",
+                                                        "residualShaderTagIdConstructorHits":  4,
+                                                        "residualShaderTagIdPath":  "Assets/_Project/Scripts/Visor/HectonFillrateDepthPrepassFeature.cs:17-20 shared static value cache.",
+                                                        "diffCheckExitCode":  0,
+                                                        "diffCheckWarnings":  "LF-to-CRLF warnings only"
+                                                    }
+                                      },
+    "latestChangedFilesDiffGate":  {
+                                       "generatedUtc":  "2026-05-25T19:56:36Z",
+                                       "prompt":  {
+                                                      "source":  "Docs/Tasks/CURRENT_BATCH.md:724-805",
+                                                      "taskCount":  20,
+                                                      "utf8ContentSha256":  "619664fd6febd419b15df6c3aa622623166adf56114deed6f2063159549b541c",
+                                                      "note":  "Flexible tag extraction required because AGENT_PROMPT has role/chat_name attributes."
+                                                  },
+                                       "dotnetBuildRun":  false,
+                                       "dotnetRoslynAuditRun":  false,
+                                       "dotnetReason":  "Not run: user ordered rare dotnet/build attempts; previous known build wall remains non-domain Audio/Tether errors.",
+                                       "changedUiVisorSourceFiles":  108,
+                                       "addedDiffPatternHits":  {
+                                                                    "new":  7,
+                                                                    "toString":  0,
+                                                                    "stringFormat":  0,
+                                                                    "linqEnumerable":  0,
+                                                                    "fixedInterpolation":  0,
+                                                                    "foreach":  0,
+                                                                    "throwNew":  0,
+                                                                    "tryGetLatestCreated":  0,
+                                                                    "complete":  0,
+                                                                    "newNativeSlice":  0,
+                                                                    "nativeAllocatorConstructor":  0,
+                                                                    "sceneSearch":  0,
+                                                                    "playerRuntimeContextService":  0,
+                                                                    "directAupFloatHelper":  0,
+                                                                    "toCharArray":  0
+                                                                },
+                                       "addedDiffNewResiduals":  [
+                                                                     {
+                                                                         "path":  "Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs",
+                                                                         "line":  1449,
+                                                                         "classification":  "COLD_GPU_RESOURCE_OWNER",
+                                                                         "text":  "_indirectArgsBufferA = new GraphicsBuffer(...)"
+                                                                     },
+                                                                     {
+                                                                         "path":  "Assets/_Project/Scripts/UI/Navigation/DiegeticGyroCompassRuntime.cs",
+                                                                         "line":  1450,
+                                                                         "classification":  "COLD_GPU_RESOURCE_OWNER",
+                                                                         "text":  "_indirectArgsBufferB = new GraphicsBuffer(...)"
+                                                                     },
+                                                                     {
+                                                                         "path":  "Assets/_Project/Scripts/Visor/HectonDryVolumeStencilSource.cs",
+                                                                         "line":  336,
+                                                                         "classification":  "EDITOR_ONLY_REBUILD_ARRAY",
+                                                                         "text":  "RendererEntry[] rebuiltEntries = new RendererEntry[rendererCount]"
+                                                                     },
+                                                                     {
+                                                                         "path":  "Assets/_Project/Scripts/Visor/HectonFillrateDepthPrepassFeature.cs",
+                                                                         "line":  17,
+                                                                         "classification":  "SHARED_VALUE_STRUCT_SHADER_TAG_CACHE",
+                                                                         "text":  "DepthOnly = new ShaderTagId(\"DepthOnly\")"
+                                                                     },
+                                                                     {
+                                                                         "path":  "Assets/_Project/Scripts/Visor/HectonFillrateDepthPrepassFeature.cs",
+                                                                         "line":  18,
+                                                                         "classification":  "SHARED_VALUE_STRUCT_SHADER_TAG_CACHE",
+                                                                         "text":  "UniversalForward = new ShaderTagId(\"UniversalForward\")"
+                                                                     },
+                                                                     {
+                                                                         "path":  "Assets/_Project/Scripts/Visor/HectonFillrateDepthPrepassFeature.cs",
+                                                                         "line":  19,
+                                                                         "classification":  "SHARED_VALUE_STRUCT_SHADER_TAG_CACHE",
+                                                                         "text":  "UniversalForwardOnly = new ShaderTagId(\"UniversalForwardOnly\")"
+                                                                     },
+                                                                     {
+                                                                         "path":  "Assets/_Project/Scripts/Visor/HectonFillrateDepthPrepassFeature.cs",
+                                                                         "line":  20,
+                                                                         "classification":  "SHARED_VALUE_STRUCT_SHADER_TAG_CACHE",
+                                                                         "text":  "SrpDefaultUnlit = new ShaderTagId(\"SRPDefaultUnlit\")"
+                                                                     }
+                                                                 ],
+                                       "runtimeFullSourceGateExcludingEditor":  {
+                                                                                  "explicitSpanConstructorHits":  0,
+                                                                                  "stringFormatHits":  0,
+                                                                                  "toStringHits":  0,
+                                                                                  "linqEnumerableHits":  0,
+                                                                                  "fixedInterpolationHits":  0,
+                                                                                  "foreachHits":  0,
+                                                                                  "throwNewHits":  0,
+                                                                                  "tryGetLatestCreatedHits":  0,
+                                                                                  "completeHits":  0,
+                                                                                  "newNativeSliceHits":  0,
+                                                                                  "nativeAllocatorConstructorHits":  0,
+                                                                                  "sceneSearchHits":  0,
+                                                                                  "playerRuntimeContextServiceHits":  0,
+                                                                                  "directAupFloatHelperHits":  0,
+                                                                                  "whereTStructHits":  0,
+                                                                                  "publicNumericPaddingHits":  0,
+                                                                                  "privateUlongPaddingHits":  0
+                                                                              },
+                                       "runtimeResidualBroadCountsExcludingEditor":  {
+                                                                                        "toCharArrayHits":  94,
+                                                                                        "graphicsBufferConstructorHits":  62,
+                                                                                        "managedArraySyntaxHits":  366,
+                                                                                        "newListHits":  1,
+                                                                                        "newListResidualPath":  "Assets/_Project/Scripts/UI/DiegeticPDAController.cs:73 disabled GraphicRaycaster fallback compatibility buffer.",
+                                                                                        "shaderTagIdConstructorHits":  4,
+                                                                                        "shaderTagIdResidualPath":  "Assets/_Project/Scripts/Visor/HectonFillrateDepthPrepassFeature.cs:17-20 shared static value cache."
+                                                                                    },
+                                       "assemblyIsolation":  {
+                                                                 "uiAsmdefDirectPhysicsReferences":  0,
+                                                                 "uiAsmdefDirectWorldReferences":  0,
+                                                                 "uiAsmdefDirectAudioReferences":  0,
+                                                                 "sourceConcretePhysicsFluidHullPlayerServiceHits":  0,
+                                                                 "sourceUsingCaveat":  "Runtime presentation sources still import Hecton8.World/Hecton8.Audio for AUP/audio contract types; direct concrete Physics/fluid/hull/player-service hits are zero."
+                                                             },
+                                       "dtoLayoutGate":  {
+                                                            "structLayoutFieldOffsetScanLines":  1467,
+                                                            "publicNumericPaddingHits":  0,
+                                                            "privateUlongPaddingHits":  0,
+                                                            "byteOffsetMaps":  "Existing DTO byte maps remain in this report; latest scan did not add new DTO layouts."
+                                                        },
+                                       "diffCheckExitCode":  0,
+                                       "diffCheckWarnings":  "LF-to-CRLF warnings only"
+                                   }
+}

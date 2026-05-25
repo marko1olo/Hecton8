@@ -11,7 +11,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using Stopwatch = System.Diagnostics.Stopwatch;
-using FluidCompartmentDTO = Hecton8.Physics.FluidCompartmentDTO;
+using FluidCompartmentDTO = global::Hecton8.Core.Contracts.Physics.FluidCompartmentDTO;
 using StructuralIntegrityStateDTO = Hecton8.Habitat.Deformation.IntegrityStateDTO;
 
 namespace Hecton8.Construction

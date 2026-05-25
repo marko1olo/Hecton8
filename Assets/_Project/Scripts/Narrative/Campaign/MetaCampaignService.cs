@@ -186,7 +186,7 @@ namespace Hecton8.Narrative.Campaign
             if (!_serviceRegistered)
                 return;
 
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             TryRegisterHotSwapListener();
             TryRegisterSaveService();
             PublishCachedVisualState(GlobalWorldStateSignal.ChangeKindLoad, (uint)Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
@@ -198,7 +198,7 @@ namespace Hecton8.Narrative.Campaign
             if (_serviceRegistered)
             {
                 if (_saveService == null)
-                    _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                    _saveService = GlobalRegistry.Save;
                 TryRegisterHotSwapListener();
                 TryRegisterSaveService();
             }
@@ -443,7 +443,7 @@ namespace Hecton8.Narrative.Campaign
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;
@@ -1214,7 +1214,7 @@ namespace Hecton8.Narrative.Campaign
             catch (Exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("MetaCampaignService blackbox dump failed.");
+                Hecton8.Core.H8Debug.LogError("MetaCampaignService blackbox dump failed.");
 #endif
             }
         }

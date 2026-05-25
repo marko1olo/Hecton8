@@ -3,15 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
-using Hecton8.AI;
 using Hecton8.Celestial;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Hecton8.Systems.AI;
 using Hecton8.VFX.Wakes;
 using Hecton.Localization;
@@ -37,6 +36,7 @@ namespace Hecton8.World
     {
         private static int s_x001FloraInteractionManagerSignalPushDropCount;
         private const int MaxModuleParentResolveDepth = 16;
+        private const uint KccVelocityFloraInteractionMaxAgeFrames = 12u;
 
         private static FloraInteractionManager s_ActiveRuntimeInstance;
 
@@ -1350,7 +1350,6 @@ namespace Hecton8.World
         private float _smoothRadius;
         private float _smoothForce;
         private Transform _playerTransform;
-        private Rigidbody _playerRb;
         private HectonPlayerMovement _playerMovement;
         private PlayerToolManager _playerToolManager;
         private IPlayerRuntimeContext _playerRuntimeContext;
@@ -2116,7 +2115,6 @@ namespace Hecton8.World
             }
 
             _playerTransform = runtimePlayerTransform;
-            runtimePlayerTransform.TryGetComponent(out _playerRb);
             runtimePlayerTransform.TryGetComponent(out _playerMovement);
             _playerToolManager = ResolvePlayerToolManager(runtimePlayerTransform);
             _activeScooterTransform = _scooterTransformOverride;
@@ -2158,11 +2156,11 @@ namespace Hecton8.World
 
         private Vector3 ResolvePlayerVelocity(Vector3 targetPosition, float deltaTime)
         {
-            if (_playerRb != null)
+            if (CoreDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityFloraInteractionMaxAgeFrames, out Vector3 kccVelocity))
             {
                 _lastPlayerPosition = targetPosition;
                 _hasLastPlayerPosition = true;
-                return _playerRb.linearVelocity;
+                return HectonPlayerMotor.SafeVelocity(kccVelocity);
             }
 
             if (!_hasLastPlayerPosition || deltaTime <= 0.0001f)
@@ -7234,8 +7232,8 @@ namespace Hecton8.World
                         continue;
 
                     bool leviathanThreat = hit.Transform.CompareTag("Leviathan");
-                    if (!leviathanThreat && hit.Owner is FaunaBrain brain && brain.SpeciesProfile != null)
-                        leviathanThreat = brain.SpeciesProfile.isLeviathan;
+                    if (!leviathanThreat && hit.Owner is IFaunaSpatialContact faunaContact)
+                        leviathanThreat = faunaContact.IsLeviathanContact;
                     if (!leviathanThreat)
                         continue;
 
@@ -7448,7 +7446,8 @@ namespace Hecton8.World
 
         private Vector3 ResolveGlobalOceanFlow(Vector3 samplePositionWS, IFluidSurfaceCurrentReadModel fluidReadModel)
         {
-            IHectonOceanKinematics provider = HectonOceanRegistry.ActiveProvider;
+            IHectonOceanKinematicsService oceanKinematics = GlobalRegistry.OceanKinematics;
+            IHectonOceanKinematics provider = oceanKinematics != null ? oceanKinematics.ActiveProvider : null;
             _oceanKinematicsProvider = provider;
             if (provider != null &&
                 provider.IsAvailable &&
@@ -7489,7 +7488,7 @@ namespace Hecton8.World
             if (_wakeTrailSimulationCompute == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[FloraInteractionManager] Missing wake trail compute shader. Expected Hecton_VegetationWakeTrailSim.compute.", this);
+                Hecton8.Core.H8Debug.LogError("[FloraInteractionManager] Missing wake trail compute shader. Expected Hecton_VegetationWakeTrailSim.compute.", this);
 #endif
                 _wakeTrailDisabled = true;
                 QueueWakeTrailGlobals();
@@ -8109,7 +8108,7 @@ namespace Hecton8.World
                 _constructionParasiteGraph = GlobalRegistry.ConstructionParasiteGraph;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             RefreshCachedSubmarineContext();
         }

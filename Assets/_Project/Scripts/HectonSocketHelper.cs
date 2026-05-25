@@ -99,7 +99,7 @@ namespace Hecton8.Building
             Undo.RecordObject(transform, "Snap Socket to Surface");
 #endif
 
-            Debug.LogWarning(
+            Hecton8.Core.H8Debug.LogWarning(
                 $"[SocketHelper] Snap to Surface is disabled for X_005 PhysX hygiene. " +
                 $"Route this editor action through the construction surface owner before re-enabling. " +
                 $"Configured probe: {snapRayDistance:0.###}m, mask {snapLayerMask.value}.",

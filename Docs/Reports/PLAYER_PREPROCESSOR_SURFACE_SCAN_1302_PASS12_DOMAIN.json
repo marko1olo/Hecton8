@@ -1,0 +1,16 @@
+﻿{
+    "schema":  "hecton8.player_preprocessor_surface_scan.v4.release_comment_stripped",
+    "pass":  12,
+    "mode":  "all-physics-final-pass12",
+    "generatedUtc":  "2026-05-25T19:23:41.4868149Z",
+    "fileCount":  50,
+    "blockingHitCount":  0,
+    "bridgeHitCount":  0,
+    "totalHitCount":  0,
+    "blockingHits":  [
+
+                     ],
+    "bridgeHits":  [
+
+                   ]
+}

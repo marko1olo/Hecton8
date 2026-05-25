@@ -1,0 +1,1695 @@
+﻿{
+    "schema":  "HECTON8_DATA_MONOLITH_EXTERNAL_RELEASE_ROUTE_SCAN_V1",
+    "agent":  "1313",
+    "evidence":  "RG_TOKEN_CANDIDATE_SCAN_NO_DOTNET_NO_UNITY_NOT_ROSLYN",
+    "filesScanned":  1731,
+    "productionCandidateFindingCount":  281,
+    "findings":  [
+                     {
+                         "file":  "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+                         "line":  2710,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryReloadMasterExecutionPriorityCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
+                         "line":  3491,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private void TryReloadMasterExecutionPriorityCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime_HatchLocks.cs",
+                         "line":  139,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadHatchProfilesFromCsvBytes(ReadOnlySpan\u003cbyte\u003e csv)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime_HatchLocks.cs",
+                         "line":  163,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadHatchProfilesFromCsvFile(string path)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault_AnxietyDecay.cs",
+                         "line":  424,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "tuning.CsvReloadVersion++;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault.cs",
+                         "line":  374,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadCsvProfiles(IDataVault vault, ref UtilityAICognitionVaultHandles handles, string projectRoot)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault.cs",
+                         "line":  402,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "tuning.CsvReloadVersion++;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault.cs",
+                         "line":  438,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "tuning.CsvReloadVersion++;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs",
+                         "line":  568,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadCsvOverrides(IDataVault vault, ref ApexBrainVaultHandles handles, string projectRoot)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs",
+                         "line":  593,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "tuning.CsvReloadVersion++;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs",
+                         "line":  621,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return TryLoadCsvOverrides(vault, ref handles, projectRoot);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
+                         "line":  146,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadPipeProfilesFromCsvBytes(byte[] csvBytes, out int profileCount)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
+                         "line":  153,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "runtime.TryLoadPipeProfilesFromCsv(csvBytes, out profileCount);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs",
+                         "line":  352,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public bool TryLoadPipeProfilesFromCsv(ReadOnlySpan\u003cbyte\u003e csvBytes, out int profileCount)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainContracts.cs",
+                         "line":  132,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "tuning.CsvReloadVersion = 0u;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs",
+                         "line":  373,
+                         "kind":  "managedTextStreamReader",
+                         "text":  "using (StreamReader reader = new StreamReader(stream))"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs",
+                         "line":  381,
+                         "kind":  "managedJsonDeserialize",
+                         "text":  "coefficient = JsonUtility.FromJson\u003cEcosystemCoefficientJson\u003e(json);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime.cs",
+                         "line":  160,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadProfilesFromCsvBytes(ReadOnlySpan\u003cbyte\u003e csv)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime.cs",
+                         "line":  175,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadProfilesFromCsvFile(string path)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorData.cs",
+                         "line":  511,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadProfilesFromCsvBytes("
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorData.cs",
+                         "line":  527,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return TryLoadProfilesFromCsvBytesUnlocked("
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorData.cs",
+                         "line":  540,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private static bool TryLoadProfilesFromCsvBytesUnlocked("
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorData.cs",
+                         "line":  637,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static unsafe bool TryLoadProfilesFromCsvFile(string path)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorData.cs",
+                         "line":  688,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return TryLoadProfilesFromCsvBytesUnlocked("
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs",
+                         "line":  499,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "int csvCount = TryLoadHapticProfilesFromCsv(profiles);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs",
+                         "line":  512,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private int TryLoadHapticProfilesFromCsv(NativeArray\u003cHapticProfileDTO\u003e profiles)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Core/Data/H8DataBaker.cs",
+                         "line":  1163,
+                         "kind":  "managedTextStreamReader",
+                         "text":  "using (StreamReader reader = new StreamReader(stream, StrictUtf8, true))"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs",
+                         "line":  325,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadValidationRulesCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs",
+                         "line":  331,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return runtime.LoadValidationRulesCsvInternal();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs",
+                         "line":  1584,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool LoadValidationRulesCsvInternal()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+                         "line":  561,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public bool TryReloadCsvOverrides()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
+                         "line":  646,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryReloadCsvOverrides();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs",
+                         "line":  809,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryReloadCsvOverrideFromDisk(IDataVault vault)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+                         "line":  289,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "_loadedCsv = TryLoadWeatherProfilesCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+                         "line":  963,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool TryLoadWeatherProfilesCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+                         "line":  984,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return TryLoadBeaufortProfilesCsv(root, scratch);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+                         "line":  991,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "changed |= TryLoadBeaufortProfilesCsv(root, scratch);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs",
+                         "line":  1011,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool TryLoadBeaufortProfilesCsv(string root, NativeArray\u003cbyte\u003e scratch)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Core/RebindingManager.cs",
+                         "line":  374,
+                         "kind":  "managedTextFileRead",
+                         "text":  "string json = File.ReadAllText(path);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+                         "line":  1917,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "LoadFaultProfilesCsvOrDefaults();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+                         "line":  2335,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private unsafe void LoadFaultProfilesCsvOrDefaults()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+                         "line":  2347,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "if (TryLoadFaultProfilesCsvAt(Path.Combine(Application.dataPath, \"..\", \"tectonic_fault_profiles.csv\"), scratch, profiles, tuningBuffer))"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+                         "line":  2349,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "if (TryLoadFaultProfilesCsvAt(Path.Combine(Application.dataPath, \"_Project\", \"Data\", \"Environment\", \"tectonic_fault_profiles.csv\"), scratch, profiles, tuningBuffer))"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs",
+                         "line":  2359,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private static unsafe bool TryLoadFaultProfilesCsvAt("
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorRuntime.cs",
+                         "line":  237,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadMaterialStrengthCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorRuntime.cs",
+                         "line":  494,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadMaterialStrengthCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorRuntime.cs",
+                         "line":  1289,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool TryLoadMaterialStrengthCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs",
+                         "line":  514,
+                         "kind":  "managedTextStreamReader",
+                         "text":  "using (StreamReader reader = new StreamReader(stream, OptionsEncoding, detectEncodingFromByteOrderMarks: true))"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs",
+                         "line":  569,
+                         "kind":  "managedJsonDeserialize",
+                         "text":  "OptionsFile file = JsonUtility.FromJson\u003cOptionsFile\u003e(json);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs",
+                         "line":  336,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryReloadEditorCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs",
+                         "line":  346,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "bool ready = active.HasCurrentCsvReloadState(vault) || active.TryInitializeVaultState(vault);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs",
+                         "line":  351,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "bool loadedAging = active.ReloadCsvFromDisk(vault, active._csvPath, ref active._csvLastWriteTicks, true);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs",
+                         "line":  354,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "loadedDegradation = active.ReloadCsvFromDisk(vault, active._degradationCsvPath, ref active._degradationCsvLastWriteTicks, true);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs",
+                         "line":  965,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool HasCurrentCsvReloadState(IDataVault vault)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs",
+                         "line":  1662,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool ReloadCsvFromDisk(IDataVault vault, string csvPath, ref long lastWriteTicks, bool force)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+                         "line":  177,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "bool loaded = runtime.TryLoadCarrionProfilesCsvCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+                         "line":  222,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "_carrionProfilesLoadedCold = TryLoadCarrionProfilesCsvCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+                         "line":  247,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "_carrionProfilesLoadedCold = TryLoadCarrionProfilesCsvCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+                         "line":  276,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "_carrionProfilesLoadedCold = TryLoadCarrionProfilesCsvCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs",
+                         "line":  673,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool TryLoadCarrionProfilesCsvCold()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+                         "line":  183,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return runtime.TryLoadProfilesCsvCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+                         "line":  503,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadProfilesCsvCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+                         "line":  531,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadProfilesCsvCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+                         "line":  568,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadProfilesCsvCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs",
+                         "line":  1005,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool TryLoadProfilesCsvCold()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Graphics/Culling/AbyssalShadowCullingRuntime.cs",
+                         "line":  329,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public bool LoadProfileCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Graphics/Culling/AbyssalShadowCullingRuntime.cs",
+                         "line":  474,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool LoadActiveProfileCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Graphics/Culling/AbyssalShadowCullingRuntime.cs",
+                         "line":  476,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return s_active != null \u0026\u0026 s_active.LoadProfileCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+                         "line":  503,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return director.TryLoadRulesCsvCold(vault, forceReload: true, locksHeld: true);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+                         "line":  645,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadRulesCsvCold(vault, forceReload: false, locksHeld: false);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+                         "line":  1800,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool TryLoadRulesCsvCold(IDataVault vault, bool forceReload, bool locksHeld)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs",
+                         "line":  1825,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return TryLoadRulesCsvCold(vault, forceReload, locksHeld: true);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Ecosystem/MacroEcosystemMathematicianRuntime.cs",
+                         "line":  164,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadBiomeSpecsCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Ecosystem/MacroEcosystemMathematicianRuntime.cs",
+                         "line":  788,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private unsafe void TryLoadBiomeSpecsCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain_Steering.cs",
+                         "line":  328,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadLeviathanSteeringProfilesCsvCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain_Steering.cs",
+                         "line":  733,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private static unsafe bool TryLoadLeviathanSteeringProfilesCsvCold()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain_Steering.cs",
+                         "line":  1813,
+                         "kind":  "managedTextFileRead",
+                         "text":  "string existing = File.Exists(path) ? File.ReadAllText(path) : \"{\\n}\\n\";"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain_Steering.cs",
+                         "line":  1923,
+                         "kind":  "managedTextFileRead",
+                         "text":  "string text = File.ReadAllText(files[i]);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+                         "line":  2315,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadMesofaunaSpeciesProfilesCsvCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+                         "line":  2872,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return TryLoadMesofaunaSpeciesProfilesCsvCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+                         "line":  2964,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return TryLoadBehaviorOverridesCsvCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+                         "line":  3146,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private static bool TryLoadBehaviorOverridesCsvCold()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+                         "line":  3156,
+                         "kind":  "managedTextFileRead",
+                         "text":  "string csv = File.ReadAllText(path);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs",
+                         "line":  3340,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private static unsafe bool TryLoadMesofaunaSpeciesProfilesCsvCold()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.AcousticSdf.cs",
+                         "line":  438,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadAcousticHearingProfilesCsvCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.AcousticSdf.cs",
+                         "line":  1422,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private static unsafe bool TryLoadAcousticHearingProfilesCsvCold()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Habitat/Deformation/Runtime/BaseStructuralWarningDispatcherTypes.cs",
+                         "line":  976,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public bool TryLoadBaseAlarmProfilesCsv(string relativePath = null)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Dev/CelestialCataclysmSmokeTester.cs",
+                         "line":  534,
+                         "kind":  "managedTextFileRead",
+                         "text":  "return File.Exists(fullPath) ? File.ReadAllText(fullPath) : string.Empty;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+                         "line":  248,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return AupOriginShiftCoordinator.TryReloadCsvOverrideFromDisk(vault);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs",
+                         "line":  415,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryReloadCsvOverrides();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs",
+                         "line":  587,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public void RequestCsvReload()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs",
+                         "line":  591,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryReloadCsvOverrides();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs",
+                         "line":  595,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public void RequestAmbientProfileCsvReload()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs",
+                         "line":  598,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryReloadAmbientProfileCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs",
+                         "line":  1615,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private void TryReloadCsvOverrides()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs",
+                         "line":  1645,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryReloadAmbientProfileCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs",
+                         "line":  1653,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private void TryReloadAmbientProfileCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuSuitIntegrityRuntime.cs",
+                         "line":  451,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "LoadCsvProfilesFromDisk(vault);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuSuitIntegrityRuntime.cs",
+                         "line":  805,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private void LoadCsvProfilesFromDisk(IDataVault vault)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Lighting/HectonLightingRuntime_DayNightRelay.cs",
+                         "line":  738,
+                         "kind":  "managedWholeFileByteRead",
+                         "text":  "byte[] bytes = File.ReadAllBytes(fullPath);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuSensoryImpairmentRuntime.cs",
+                         "line":  125,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadCsvProfilesCold(vault);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuSensoryImpairmentRuntime.cs",
+                         "line":  413,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadCsvProfilesCold(vault);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuSensoryImpairmentRuntime.cs",
+                         "line":  679,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool TryLoadCsvProfilesCold(IDataVault vault)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs",
+                         "line":  232,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadProfilesFromCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs",
+                         "line":  284,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public void RequestCsvReload()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs",
+                         "line":  292,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public bool ReloadCsvNow()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs",
+                         "line":  295,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return TryLoadProfilesFromCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs",
+                         "line":  1512,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool TryLoadProfilesFromCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs",
+                         "line":  876,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "_medicalBayCsvInitialized = TryLoadMedicalBayCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs",
+                         "line":  881,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "_penaltyCsvInitialized = TryLoadPenaltyCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs",
+                         "line":  1038,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool TryLoadMedicalBayCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs",
+                         "line":  1215,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool TryLoadPenaltyCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs",
+                         "line":  1437,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryReloadPenaltyCsvFromEditor()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs",
+                         "line":  1445,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "bool loaded = runtime.TryLoadPenaltyCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs",
+                         "line":  1450,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryReloadMedicalBayCsvFromEditor()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs",
+                         "line":  1458,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "bool loaded = runtime.TryLoadMedicalBayCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuRadiationMutationRuntime.cs",
+                         "line":  135,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadCsvProfilesCold(vault);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuRadiationMutationRuntime.cs",
+                         "line":  353,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadCsvProfilesCold(vault);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuRadiationMutationRuntime.cs",
+                         "line":  660,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool TryLoadCsvProfilesCold(IDataVault vault)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs",
+                         "line":  1056,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "LoadCsvOverridesFromDisk(vault);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs",
+                         "line":  1854,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private void LoadCsvOverridesFromDisk(IDataVault vault)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs",
+                         "line":  1856,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "LoadGasCsvOverridesFromDisk(vault);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs",
+                         "line":  1891,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private void LoadGasCsvOverridesFromDisk(IDataVault vault)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs",
+                         "line":  162,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadBiologicalProfilesCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs",
+                         "line":  164,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadSuitThermalProfilesCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs",
+                         "line":  513,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public bool TryLoadBiologicalProfilesCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs",
+                         "line":  581,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public bool TryLoadSuitThermalProfilesCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
+                         "line":  1023,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public bool TryLoadCsvFromFile(string path)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs",
+                         "line":  1689,
+                         "kind":  "managedTextFileRead",
+                         "text":  "text = File.ReadAllText(file);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+                         "line":  393,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryReloadCsvOverrides();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
+                         "line":  1666,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private void TryReloadCsvOverrides()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs",
+                         "line":  833,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadRadiationProfilesCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs",
+                         "line":  862,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private void TryLoadRadiationProfilesCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+                         "line":  500,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadCsvOverrides(IDataVault vault, ref VoxelSurfaceNetsVaultHandles handles, string projectRoot)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+                         "line":  549,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return TryLoadCsvOverrides(vault, ref handles, projectRoot);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Rendering/WaterOptics/WaterOpticsRuntime.cs",
+                         "line":  547,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public bool TryReloadEditorProfilesCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Rendering/WaterOptics/WaterOpticsRuntime.cs",
+                         "line":  557,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "bool loaded = TryLoadProfilesCsv(vault);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Rendering/WaterOptics/WaterOpticsRuntime.cs",
+                         "line":  625,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadProfilesCsv(vault);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Rendering/WaterOptics/WaterOpticsRuntime.cs",
+                         "line":  845,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool TryLoadProfilesCsv(IDataVault vault)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Rendering/OceanSinglePass/ShorelineFoamGraftContracts.cs",
+                         "line":  737,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "LoadProfilesCsvIfNeeded(vault, projectRootPath, profiles);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Rendering/OceanSinglePass/ShorelineFoamGraftContracts.cs",
+                         "line":  751,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private static void LoadProfilesCsvIfNeeded(IDataVault vault, string projectRootPath, NativeArray\u003cShorelineFoamProfileDTO\u003e profiles)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Rendering/OceanSinglePass/OceanSinglePassRuntime.cs",
+                         "line":  455,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "LoadAestheticProfilesCsvIfNeeded();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Rendering/OceanSinglePass/OceanSinglePassRuntime.cs",
+                         "line":  522,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private void LoadAestheticProfilesCsvIfNeeded()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                         "line":  322,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadCsvLayout();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                         "line":  790,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool TryLoadCsvLayout()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Rendering/GlobalShaderDispatcher.cs",
+                         "line":  248,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadCsvOverridesCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Rendering/GlobalShaderDispatcher.cs",
+                         "line":  1239,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private void TryLoadCsvOverridesCold()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Rendering/BilateralDrs/HectonBilateralDrsUpscalerRuntime.cs",
+                         "line":  365,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadQualityProfilesCsv(string projectRelativePath)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Rendering/BilateralDrs/HectonBilateralDrsUpscalerRuntime.cs",
+                         "line":  368,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return runtime != null \u0026\u0026 runtime.LoadQualityProfilesCsv(projectRelativePath);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Rendering/BilateralDrs/HectonBilateralDrsUpscalerRuntime.cs",
+                         "line":  723,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool LoadQualityProfilesCsv(string projectRelativePath)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Rendering/AbyssalCaustics/AbyssalDeferredCausticsRuntime.cs",
+                         "line":  304,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadLightingProfilesCsv(string projectRelativePath)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Rendering/AbyssalCaustics/AbyssalDeferredCausticsRuntime.cs",
+                         "line":  307,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return runtime != null \u0026\u0026 runtime.LoadLightingProfilesCsv(projectRelativePath);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Rendering/AbyssalCaustics/AbyssalDeferredCausticsRuntime.cs",
+                         "line":  310,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public bool LoadLightingProfilesCsv(string projectRelativePath)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Narrative/LoreDatabaseManager.cs",
+                         "line":  985,
+                         "kind":  "managedTextFileRead",
+                         "text":  "string[] lines = File.ReadAllLines(fullSourcePath);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Narrative/LoreDatabaseManager.cs",
+                         "line":  1031,
+                         "kind":  "managedTextStreamReader",
+                         "text":  "using (StreamReader reader = new StreamReader(filePath))"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/Combat/StatusEffectsEditorFacade.cs",
+                         "line":  131,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "root.Add(new Button(LoadCsv) { text = \"Load status_effect_profiles.csv\" });"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/Combat/StatusEffectsEditorFacade.cs",
+                         "line":  195,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private void LoadCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/Combat/StatusEffectsEditorFacade.cs",
+                         "line":  198,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "CombatDamageRuntime.TryLoadStatusEffectProfilesCsv(path);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/Combat/StatusEffectsEditorFacade.cs",
+                         "line":  398,
+                         "kind":  "managedTextFileRead",
+                         "text":  "string report = File.Exists(absoluteReport) ? File.ReadAllText(absoluteReport) : \"{\\n}\\n\";"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/Combat/StatusEffectsEditorFacade.cs",
+                         "line":  470,
+                         "kind":  "managedTextFileRead",
+                         "text":  "string text = File.ReadAllText(files[fileIndex]);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Quest/QuestDagDataLoading.cs",
+                         "line":  449,
+                         "kind":  "managedTextStreamReader",
+                         "text":  "using StreamReader reader = new StreamReader(path);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Quest/NarrativeDagInspectorWindow.cs",
+                         "line":  177,
+                         "kind":  "managedTextFileRead",
+                         "text":  "string[] lines = File.ReadAllLines(NodeNamesPath);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
+                         "line":  1841,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadArmorProfilesCsv(string path)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs",
+                         "line":  1847,
+                         "kind":  "managedWholeFileByteRead",
+                         "text":  "byte[] bytes = File.ReadAllBytes(path);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs",
+                         "line":  395,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "internal static bool TryLoadStatusEffectProfilesCsv(string path)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs",
+                         "line":  400,
+                         "kind":  "managedWholeFileByteRead",
+                         "text":  "byte[] bytes = File.ReadAllBytes(path);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Power/PowerGridSolarContracts.cs",
+                         "line":  1326,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadProfilesFromCsv(ReadOnlySpan\u003cbyte\u003e csvBytes, out int profileCount)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs",
+                         "line":  296,
+                         "kind":  "managedJsonDeserialize",
+                         "text":  "payload = JsonUtility.FromJson\u003cModWorldSavePayload\u003e(json);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs",
+                         "line":  896,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadPenetrationCsv(string csvPath)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/Combat/BallisticsEditorFacade.cs",
+                         "line":  140,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "Button csvButton = new Button(LoadCsv)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/Combat/BallisticsEditorFacade.cs",
+                         "line":  226,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private void LoadCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/Combat/BallisticsEditorFacade.cs",
+                         "line":  229,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "BallisticsRuntime.TryLoadPenetrationCsv(path);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/Combat/ArmorPenetrationEditorFacade.cs",
+                         "line":  132,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "root.Add(new Button(LoadCsv) { text = \"Load fauna_armor_luts.csv\" });"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/Combat/ArmorPenetrationEditorFacade.cs",
+                         "line":  198,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private void LoadCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/Combat/ArmorPenetrationEditorFacade.cs",
+                         "line":  201,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "CombatDamageRuntime.TryLoadArmorProfilesCsv(path);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/Combat/ArmorPenetrationEditorFacade.cs",
+                         "line":  691,
+                         "kind":  "managedTextFileRead",
+                         "text":  "string text = File.ReadAllText(filePath);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Gameplay/Combat/ArmorPenetrationEditorFacade.cs",
+                         "line":  728,
+                         "kind":  "managedTextFileRead",
+                         "text":  "string text = File.ReadAllText(filePath);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/ModdingAPI/ModLoader.cs",
+                         "line":  241,
+                         "kind":  "managedTextFileRead",
+                         "text":  "string json = File.ReadAllText(manifestPath);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/ModdingAPI/ModLoader.cs",
+                         "line":  242,
+                         "kind":  "managedJsonDeserialize",
+                         "text":  "ModManifest manifest = JsonUtility.FromJson\u003cModManifest\u003e(json);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveThumbnailSystem.cs",
+                         "line":  401,
+                         "kind":  "managedWholeFileByteRead",
+                         "text":  "byte[] bytes = File.ReadAllBytes(path);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveThumbnailSystem.cs",
+                         "line":  430,
+                         "kind":  "managedWholeFileByteRead",
+                         "text":  "bytes = File.ReadAllBytes(path);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsRuntime.cs",
+                         "line":  493,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadProfilesFromCsvBytes(ReadOnlySpan\u003cbyte\u003e csv)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/ModdingAPI/ModAssetManager.cs",
+                         "line":  193,
+                         "kind":  "managedWholeFileByteRead",
+                         "text":  "pngBytes = File.ReadAllBytes(filePath);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/ModdingAPI/ModAssetManager.cs",
+                         "line":  313,
+                         "kind":  "managedTextStreamReader",
+                         "text":  "using (StreamReader reader = new StreamReader(ledgerPath, LedgerEncoding, detectEncodingFromByteOrderMarks: true))"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore_SHINOBU357.cs",
+                         "line":  148,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "internal static bool TryLoadShinobu357ProfilesCsv("
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore_SHINOBU357.cs",
+                         "line":  157,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return TryLoadProfilesCsv(resolvedPath, profiles, out count, out errorCode);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore_SHINOBU357.cs",
+                         "line":  865,
+                         "kind":  "managedTextFileRead",
+                         "text":  "string text = File.ReadAllText(files[i]);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore.cs",
+                         "line":  182,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "if (TryLoadProfilesCsv(profilePath, profiles, out int count, out _) \u0026\u0026 count \u003e 0)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore.cs",
+                         "line":  323,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "internal static bool TryLoadProfilesCsv(string path, NativeArray\u003cWalFuzzerProfileDTO\u003e profiles, out int count, out uint errorCode)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                         "line":  645,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadVehicleProfileCsvCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                         "line":  1203,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private unsafe bool TryLoadVehicleProfileCsvCold()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SavePersistenceOmegaSmokeTester.cs",
+                         "line":  306,
+                         "kind":  "managedTextFileRead",
+                         "text":  "string text = File.Exists(absolutePath) ? File.ReadAllText(absolutePath) : string.Empty;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs",
+                         "line":  246,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryReloadCsvOverrides();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs",
+                         "line":  1236,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private void TryReloadCsvOverrides()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+                         "line":  975,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryReloadAllowedOpcodesCsvFromDisk()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs",
+                         "line":  1009,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryReloadKernelTuningProfilesCsvFromDisk()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                         "line":  919,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadDefaultOrdnanceCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                         "line":  921,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return TryLoadDefaultOrdnanceCsv(false);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                         "line":  924,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadDefaultOrdnanceCsv(bool forceReload)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                         "line":  940,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "if (TryLoadOrdnanceCsv(path))"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                         "line":  944,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return TryLoadOrdnanceCsv(legacyPath);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                         "line":  947,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static unsafe bool TryLoadOrdnanceCsv(string csvPath)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                         "line":  1310,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "if (autoLoadCsv)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                         "line":  1311,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "AbyssalCavitationRuntime.TryLoadDefaultOrdnanceCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                         "line":  1409,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "if (autoLoadCsv \u0026\u0026 !AbyssalCavitationRuntime.IsCsvLoaded())"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                         "line":  1410,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "AbyssalCavitationRuntime.TryLoadDefaultOrdnanceCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                         "line":  803,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public bool TryLoadMaterialVolumesCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                         "line":  829,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public bool TryLoadMaterialSettlingProfilesCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                         "line":  855,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public bool TryLoadSimdMathTolerancesCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                         "line":  912,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadMaterialVolumesCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                         "line":  914,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadMaterialSettlingProfilesCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                         "line":  916,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadSimdMathTolerancesCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                         "line":  2069,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public bool TryLoadScannerProfilesCsvForEditor(string projectRoot, out int appliedRows)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs",
+                         "line":  2076,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "bool loaded = CartographyVault.TryLoadScannerProfilesCsvForEditor("
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Thermodynamics/OOP_Thermal_Scanner.cs",
+                         "line":  66,
+                         "kind":  "managedTextFileRead",
+                         "text":  "string text = File.ReadAllText(path);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Thermodynamics/OOP_Thermal_Scanner.cs",
+                         "line":  99,
+                         "kind":  "managedTextFileRead",
+                         "text":  "string text = File.ReadAllText(files[i]);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Thermodynamics/OOP_Thermal_Scanner.cs",
+                         "line":  139,
+                         "kind":  "managedTextFileRead",
+                         "text":  "string existing = File.ReadAllText(sharedPath).Trim();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Thermodynamics/OOP_Thermal_Scanner.cs",
+                         "line":  157,
+                         "kind":  "managedStringSplit",
+                         "text":  "string[] lines = json.Split(\u0027\\n\u0027);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs",
+                         "line":  791,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadScannerProfilesCsvForEditor("
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Meta/GlobalProfileManager.cs",
+                         "line":  1059,
+                         "kind":  "managedTextFileRead",
+                         "text":  "string json = File.ReadAllText(path);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Meta/GlobalProfileManager.cs",
+                         "line":  1062,
+                         "kind":  "managedJsonDeserialize",
+                         "text":  ": JsonUtility.FromJson\u003cGlobalProfileData\u003e(json);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs",
+                         "line":  1921,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "root.Add(new Button(LoadCsv) { text = \"Load loot_distribution_tables.csv\" });"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs",
+                         "line":  1975,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private unsafe void LoadCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                         "line":  4890,
+                         "kind":  "managedWholeFileByteRead",
+                         "text":  "byte[] bytes = File.ReadAllBytes(path); // COLD ALLOC: byte[524288] - one-shot Sabine RT60+damping fallback read - owner: SpatialAudioManager"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+                         "line":  559,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return instance.TryLoadEmitterProfilesFromCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+                         "line":  821,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadEmitterProfilesFromCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs",
+                         "line":  1107,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool TryLoadEmitterProfilesFromCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs",
+                         "line":  1213,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "int parsed = TryLoadDistributionRulesFromCsv(csvPath, views);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs",
+                         "line":  1222,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private unsafe int TryLoadDistributionRulesFromCsv(string csvPath, ProceduralGeologyVaultViews views)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs",
+                         "line":  1241,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "int byteCount = LoadCsvFileIntoScratch(csvPath, csvScratch);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs",
+                         "line":  1257,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private static unsafe int LoadCsvFileIntoScratch(string csvPath, NativeArray\u003cbyte\u003e scratch)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs",
+                         "line":  652,
+                         "kind":  "managedTextFileRead",
+                         "text":  "return File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), relativePath));"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/VisualOmegaSmokeTester.cs",
+                         "line":  204,
+                         "kind":  "managedTextFileRead",
+                         "text":  "return File.Exists(fullPath) ? File.ReadAllText(fullPath) : string.Empty;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+                         "line":  3708,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryReloadFaunaGeneticsProfilesFromCsv();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/EcosystemDirector.cs",
+                         "line":  3713,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool TryReloadFaunaGeneticsProfilesFromCsv()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageVault.cs",
+                         "line":  476,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "return TryLoadCsvRules(vault, ref handles, projectRoot);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageVault.cs",
+                         "line":  527,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadCsvRules(IDataVault vault, ref ProceduralWreckageVaultHandles handles, string projectRoot)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageVault.cs",
+                         "line":  585,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadCsvRules(vault, ref handles, projectRoot);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+                         "line":  691,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadBiomeProfilesFromEditorCsv(vault);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs",
+                         "line":  843,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool TryLoadBiomeProfilesFromEditorCsv(IDataVault vault)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralVault.cs",
+                         "line":  527,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryLoadCsvRules(IDataVault vault, ref ProceduralCoralVaultHandles handles, string projectRoot)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs",
+                         "line":  971,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static unsafe bool TryLoadMaterialProfilesCsv(string csvPath, out int profilesWritten)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+                         "line":  2476,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "if (!TryLoadCsvMockProfile(silent: true))"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+                         "line":  2531,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "root.Add(new Button(OnLoadCsvButtonClicked) { text = \"Load CSV Mock Profile\" });"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+                         "line":  2585,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private void OnLoadCsvButtonClicked()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+                         "line":  2587,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadCsvMockProfile(silent: false);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+                         "line":  2633,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadCsvMockProfile(silent: true);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/GlobalWorldSampler.cs",
+                         "line":  2752,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private unsafe bool TryLoadCsvMockProfile(bool silent)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/FloraInteractionManager.cs",
+                         "line":  4010,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public bool TryReloadFloraStiffnessProfilesCsvForEditor(string path)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs",
+                         "line":  416,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public bool TryReloadCsvOverrides()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs",
+                         "line":  466,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryReloadCsvOverrides();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/World/Biomes/BiomeTransitionManagerRuntime.cs",
+                         "line":  1345,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static bool TryReloadCsvFromEditor()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/VFX/CameraJuiceSystem_CameraJuiceBurst.cs",
+                         "line":  402,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadCameraJuiceTraumaProfilesFromCsv(profiles, cameraJuiceCsvScratch, tuning);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/VFX/CameraJuiceSystem_CameraJuiceBurst.cs",
+                         "line":  732,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool TryLoadCameraJuiceTraumaProfilesFromCsv("
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/VFX/Parasites/ParasiteSwarmGpuRuntime.cs",
+                         "line":  275,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "ParasiteSwarmContracts.LoadProfilesFromCsv(vault, new ReadOnlySpan\u003cbyte\u003e(ptr, bytesRead));"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/VFX/Parasites/ParasiteSwarmContracts.cs",
+                         "line":  221,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public static int LoadProfilesFromCsv(IDataVault vault, ReadOnlySpan\u003cbyte\u003e bytes)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs",
+                         "line":  424,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadNoirColorCsvCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs",
+                         "line":  432,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadAestheticCsvCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs",
+                         "line":  1066,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private unsafe bool TryLoadNoirColorCsvCold()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+                         "line":  2279,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "RequestCsvReload();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+                         "line":  2298,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "RequestCsvReload();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+                         "line":  2303,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "RequestCsvReload();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs",
+                         "line":  2306,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private void RequestCsvReload()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs",
+                         "line":  435,
+                         "kind":  "managedTextFileRead",
+                         "text":  "string[] lines = File.ReadAllLines(path);"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs",
+                         "line":  843,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadNoirColorCsvCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs",
+                         "line":  855,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "TryLoadAestheticCsvCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs",
+                         "line":  1643,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private unsafe bool TryLoadAestheticCsvCold()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs",
+                         "line":  643,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "LoadCsvProfilesCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs",
+                         "line":  788,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "LoadCsvProfilesCold();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs",
+                         "line":  942,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private void LoadCsvProfilesCold()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                         "line":  349,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "private bool _pendingCsvReload;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                         "line":  921,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "_pendingCsvReload = true;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                         "line":  949,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "_pendingCsvReload = true;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                         "line":  954,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "public void ReloadCsvForEditor()"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                         "line":  958,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "_pendingCsvReload = true;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                         "line":  967,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "_pendingCsvReload = true;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                         "line":  982,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "_pendingCsvReload = false;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                         "line":  987,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "if (_pendingCsvReload)"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                         "line":  989,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "_pendingCsvReload = false;"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                         "line":  990,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "ReloadCsvForEditor();"
+                     },
+                     {
+                         "file":  "Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs",
+                         "line":  1006,
+                         "kind":  "csvOrManagedParserRoute",
+                         "text":  "ReloadCsvForEditor();"
+                     }
+                 ]
+}

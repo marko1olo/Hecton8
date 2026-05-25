@@ -483,7 +483,7 @@ namespace Hecton8.Ecosystem
             _vault = GlobalRegistry.DataVault;
             _thermalVentReadModel = GlobalRegistry.NutrientThermalVents;
             _abyssalFlowReadModel = GlobalRegistry.AbyssalFlowVolume;
-            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerContext = GlobalRegistry.Player;
             TryRegister();
             EnsureDensityTexture();
             EnsureVaultState();
@@ -559,7 +559,7 @@ namespace Hecton8.Ecosystem
                 TelemetryRing = (FluidGridTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetry)
             };
             initHandle = telemetryInitJob.Schedule(TelemetryCapacity, JobBatchSize, initHandle);
-            initHandle.Complete(); // COLD_BOOTSTRAP_SYNC: uninitialized Vault memory must be deterministically populated before first public read.
+            DispatcherJobFence.TryComplete(ref initHandle, forceComplete: true); // COLD_BOOTSTRAP_SYNC: uninitialized Vault memory must be deterministically populated before first public read.
 
             _initialized = true;
             if (!_profilesLoadedCold)
@@ -1057,6 +1057,9 @@ namespace Hecton8.Ecosystem
 
         private static string ResolveProfileCsvPath()
         {
+#if !UNITY_EDITOR
+            return string.Empty;
+#else
             string dataPath = Application.dataPath;
             string first = Path.Combine(dataPath, "_Project", "Data", ProfileCsvFileName);
             if (File.Exists(first))
@@ -1071,6 +1074,7 @@ namespace Hecton8.Ecosystem
                 return first;
 
             return Path.Combine(root.FullName, "Data", ProfileCsvFileName);
+#endif
         }
 
         private static bool OpenOrAcquireVaultBuffer<T>(

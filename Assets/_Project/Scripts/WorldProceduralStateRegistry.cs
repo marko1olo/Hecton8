@@ -230,7 +230,7 @@ namespace Hecton8.World
                     long runtimeKey = placementKeyEnumerator.Current;
                     if (suppressedIndex >= ProceduralWorldStateDTO.MaxSuppressedPlacements)
                     {
-                        Debug.LogWarning($"[WorldProceduralStateRegistry] Max suppressed placements ({ProceduralWorldStateDTO.MaxSuppressedPlacements}) reached. Extra entries were not saved.");
+                        Hecton8.Core.H8Debug.LogWarning($"[WorldProceduralStateRegistry] Max suppressed placements ({ProceduralWorldStateDTO.MaxSuppressedPlacements}) reached. Extra entries were not saved.");
                         break;
                     }
 
@@ -249,7 +249,7 @@ namespace Hecton8.World
                     KeyValuePair<long, FaunaSpawnState> pair = enumerator.Current;
                     if (faunaIndex >= ProceduralWorldStateDTO.MaxFaunaStates)
                     {
-                        Debug.LogWarning($"[WorldProceduralStateRegistry] Max fauna states ({ProceduralWorldStateDTO.MaxFaunaStates}) reached. Extra entries were not saved.");
+                        Hecton8.Core.H8Debug.LogWarning($"[WorldProceduralStateRegistry] Max fauna states ({ProceduralWorldStateDTO.MaxFaunaStates}) reached. Extra entries were not saved.");
                         break;
                     }
 
@@ -374,7 +374,7 @@ namespace Hecton8.World
             ISaveService saveService = _saveService;
             return saveService != null
                 ? saveService.CurrentPlayTimeSeconds
-                : Time.realtimeSinceStartup;
+                : (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
         }
 
         private void TryRegisterHotSwapListener()
@@ -399,7 +399,7 @@ namespace Hecton8.World
             if (_saveRegistered)
                 return;
 
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             if (_saveService == null)
                 return;
 

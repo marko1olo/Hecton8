@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Unity.Collections;
@@ -176,7 +177,7 @@ namespace Hecton8.World
             }
 
             if (removeCount > 0 && _nativeHash != null)
-                _nativeHash.ScheduleCompactionIfOverCapacity(MaxEntryCapacity * 4, MaxEntryCapacity * 4, Time.timeAsDouble);
+                _nativeHash.ScheduleCompactionIfOverCapacity(MaxEntryCapacity * 4, MaxEntryCapacity * 4, Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds);
             _nativeHash?.TrySwapCompletedCompaction();
         }
 
@@ -584,8 +585,8 @@ namespace Hecton8.World
                     continue;
                 }
 
-                FaunaBrain candidateBrain = candidateEntry.Owner as FaunaBrain;
-                if (candidateBrain == null || !candidateBrain.IsFlockingRuntime)
+                IFaunaSpatialContact candidateContact = candidateEntry.Owner as IFaunaSpatialContact;
+                if (candidateContact == null || !candidateContact.IsFlockingContact)
                     continue;
 
                 double aupDistanceSq = AUPMath.AUPDistanceSq(in candidateEntry.PositionAup, in sourceEntry.PositionAup);
@@ -676,7 +677,7 @@ namespace Hecton8.World
             if (_entries.Count >= MaxEntryCapacity)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[FaunaSpatialHashRegistry] Entry capacity exceeded. Runtime registry growth is forbidden.");
+                Hecton8.Core.H8Debug.LogError("[FaunaSpatialHashRegistry] Entry capacity exceeded. Runtime registry growth is forbidden.");
 #endif
                 return 0;
             }
@@ -758,7 +759,7 @@ namespace Hecton8.World
             out AbsoluteUniversePosition positionAup,
             out Vector3 runtimePosition)
         {
-            if (owner is FaunaBrain brain && brain.TryResolveLogicAup(out positionAup))
+            if (owner is IFaunaSpatialContact faunaContact && faunaContact.TryResolveLogicAup(out positionAup))
             {
                 if (!IsFiniteAup(in positionAup))
                 {
@@ -887,7 +888,7 @@ namespace Hecton8.World
             if (entry.Owner is Behaviour behaviour && !behaviour.isActiveAndEnabled)
                 return false;
 
-            if (entry.Owner is FaunaBrain faunaBrain && faunaBrain.IsDead)
+            if (entry.Owner is IFaunaSpatialContact faunaContact && faunaContact.IsDead)
                 return false;
 
             return true;

@@ -70,6 +70,8 @@ namespace Hecton8.Core
             RegisterLegacyLane<ScannerToolActiveSignal>(ScannerToolActiveSignalCapacity, nameof(ScannerToolActiveSignal));
             RegisterLegacyLane<ScanCompleteSignal>(ScanCompleteSignalCapacity, nameof(ScanCompleteSignal));
             RegisterLegacyLane<BlueprintUnlockedSignal>(BlueprintUnlockedSignalCapacity, nameof(BlueprintUnlockedSignal));
+            RegisterLegacyLane<EncyclopediaUnlockSignal>(64, nameof(EncyclopediaUnlockSignal));
+            RegisterLegacyLane<EntityDepletedSignal>(64, nameof(EntityDepletedSignal));
             RegisterLegacyLane<CraftingStartedSignal>(CraftingStartedSignalCapacity, nameof(CraftingStartedSignal));
             RegisterLegacyLane<CraftingCompletedSignal>(CraftingCompletedSignalCapacity, nameof(CraftingCompletedSignal));
             RegisterLegacyLane<ToolStateChangedSignal>(ToolStateChangedSignalCapacity, nameof(ToolStateChangedSignal));
@@ -328,22 +330,25 @@ namespace Hecton8.Core
             _initialized = false;
         }
 
-        /// <summary>Flushes typed signal queues into frame snapshots at the PRE_SIMULATION boundary.</summary>
-        public static void FlushPreSimulation()
+        /// <summary>Refreshes scalar lane controls before simulation without draining the signal rings.</summary>
+        public static void PreSimulationHeartbeat()
         {
             EnsureInitialized();
             float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
             SignalBusRegistry.SetGlobalQualityWeight01(qualityWeight);
             SignalBusRegistry.SetSystemStress01(global::Hecton8.Core.HomeostasisBrain.SystemHealthIndex01);
-            SignalBusRegistry.FlushPreSimulation();
-            ApplyAupShiftSafety();
-            ReportSignalLaneTelemetry();
         }
 
-        /// <summary>Clears typed signal snapshots at the POST_SIMULATION boundary.</summary>
-        public static void ClearPostSimulationSnapshots()
+        /// <summary>Flushes typed signal rings into next-frame snapshots at the POST_SIMULATION boundary.</summary>
+        public static void FlushPostSimulation()
         {
-            SignalBusRegistry.ClearPostSimulationSnapshots();
+            EnsureInitialized();
+            float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
+            SignalBusRegistry.SetGlobalQualityWeight01(qualityWeight);
+            SignalBusRegistry.SetSystemStress01(global::Hecton8.Core.HomeostasisBrain.SystemHealthIndex01);
+            SignalBusRegistry.FlushPostSimulation();
+            ApplyAupShiftSafety();
+            ReportSignalLaneTelemetry();
         }
 
         /// <summary>Resets static signal state on domain reload or subsystem registration.</summary>
@@ -452,7 +457,7 @@ namespace Hecton8.Core
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (stormDetected)
-                    Debug.LogWarning("[SIGNAL STORM DETECTED]");
+                    Hecton8.Core.H8Debug.LogWarning("[SIGNAL STORM DETECTED]");
 #endif
             }
 
@@ -476,14 +481,14 @@ namespace Hecton8.Core
                 droppedSignals > (pushedSignals >> 1) &&
                 ShouldDumpSignalDropStorm(frame))
             {
-                SignalTelemetryRingBuffer.DumpToDisk();
+                SignalTelemetryRingBuffer.RequestDumpToDiskAsync();
             }
 
             int previousCorrupted = Volatile.Read(ref _signalTelemetryLastCorruptedTotal);
             if (corruptedSignals > previousCorrupted)
             {
                 if (ShouldDumpSignalCorruption(frame))
-                    SignalTelemetryRingBuffer.DumpToDisk();
+                    SignalTelemetryRingBuffer.RequestDumpToDiskAsync();
 
                 Volatile.Write(ref _signalTelemetryLastCorruptedTotal, corruptedSignals);
             }
@@ -919,7 +924,7 @@ namespace Hecton8.Core
             where T : unmanaged
         {
             if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
-                Debug.LogError("[GlobalSignals] signal managed-reference violation.");
+                Hecton8.Core.H8Debug.LogError("[GlobalSignals] signal managed-reference violation.");
 
             ValidateSignalSize<T>(expectedBytes);
         }
@@ -929,7 +934,7 @@ namespace Hecton8.Core
         {
             int size = UnsafeUtility.SizeOf<T>();
             if (size != expectedBytes)
-                Debug.LogError("[GlobalSignals] signal size violation.");
+                Hecton8.Core.H8Debug.LogError("[GlobalSignals] signal size violation.");
         }
 #endif
     }

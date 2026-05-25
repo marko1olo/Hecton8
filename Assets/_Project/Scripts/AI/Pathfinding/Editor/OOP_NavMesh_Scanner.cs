@@ -49,7 +49,7 @@ namespace Hecton8.AI.Pathfinding.Editor
         private static void Run()
         {
             string report = RunAndWriteReport();
-            Debug.Log("[SHINOBU_304] OOP NavMesh scanner wrote " + report);
+            Hecton8.Core.H8Debug.Log("[SHINOBU_304] OOP NavMesh scanner wrote " + report);
         }
 
         public static string RunAndWriteReport()

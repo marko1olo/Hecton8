@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.UI;
 using Hecton8.World;
 using Unity.Mathematics;
@@ -76,8 +77,15 @@ namespace Hecton8.Visor
                 if ((target.Flags & 1u) == 0u || !target.PositionAup.IsFinite())
                     continue;
 
-                float3 local = AbsoluteUniversePosition.ToCameraRelativeFloat3(in target.PositionAup, in cameraAup);
-                Vector3 world = origin + new Vector3(local.x, local.y, local.z);
+                float3 local = AupPrecisionMath.LocalDeltaFloat3(
+                    target.PositionAup.ToAbsoluteDouble3(),
+                    cameraAup.ToAbsoluteDouble3(),
+                    float3.zero);
+                Vector3 localVector = default;
+                localVector.x = local.x;
+                localVector.y = local.y;
+                localVector.z = local.z;
+                Vector3 world = origin + localVector;
                 Gizmos.DrawLine(origin, world);
                 Gizmos.DrawWireSphere(world, 0.15f);
             }

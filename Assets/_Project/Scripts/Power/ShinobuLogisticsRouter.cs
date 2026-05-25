@@ -1141,8 +1141,10 @@ namespace Hecton8.Power
 
         private static float ResolveGlobalQualityWeight()
         {
-            float weight = HomeostasisBrain.GlobalQualityWeight;
-            return math.saturate(math.isfinite(weight) ? weight : 1f);
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f);
+
+            return MathLodApproximation.SaturateFinite(HomeostasisBrain.GlobalQualityWeight, 1f);
         }
 
         private bool ShouldRunOxygenSolver()
@@ -1322,7 +1324,7 @@ namespace Hecton8.Power
                 CrushDepthMultiplier = 1f,
                 BasePipeResistance = DefaultBasePipeResistance,
                 DeltaSmoothingFactor = DefaultDeltaSmoothing,
-                GlobalQualityWeight = 1f,
+                GlobalQualityWeight = ResolveGlobalQualityWeight(),
                 Flags = 0u
             };
         }

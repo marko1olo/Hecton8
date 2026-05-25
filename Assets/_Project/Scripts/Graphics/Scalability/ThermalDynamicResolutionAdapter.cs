@@ -28,7 +28,6 @@ namespace Hecton8.Graphics.Scalability
     [DefaultExecutionOrder(-9947)]
     public sealed unsafe class ThermalDynamicResolutionAdapter :
         MonoBehaviour,
-        IUpdatable,
         ILateFrameTickable,
         IGlobalRegistryHotSwapListener,
         IGlobalRegistryHotSwapRefListener,
@@ -178,7 +177,6 @@ namespace Hecton8.Graphics.Scalability
         private int _pressureFrameCount;
         private int _recoveryFrameCount = RecoveryHysteresisFrames;
         private int _aupShiftLockFrames;
-        private bool _registered;
         private bool _registeredLateFrame;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
@@ -476,7 +474,7 @@ namespace Hecton8.Graphics.Scalability
             _blackBoxDumpPath = null;
         }
 
-        public void Tick(float deltaTime)
+        private void AdvanceThermalResolutionState(float deltaTime)
         {
             TryFinalizePendingStressJobNoWait();
             if (!ReferenceEquals(s_activeAdapter, this))
@@ -579,6 +577,8 @@ namespace Hecton8.Graphics.Scalability
 
         public void LateFrameTick()
         {
+            AdvanceThermalResolutionState(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
+
             if (!ReferenceEquals(s_activeAdapter, this))
                 return;
 
@@ -1505,19 +1505,11 @@ namespace Hecton8.Graphics.Scalability
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying)
-                return;
-
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+            TryRegisterLateFrame();
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
-                return;
-
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-            _registered = false;
         }
 
         private void TryRegisterLateFrame()

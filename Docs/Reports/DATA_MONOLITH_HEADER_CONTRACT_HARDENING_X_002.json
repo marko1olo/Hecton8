@@ -1,0 +1,111 @@
+{
+  "schema": "HECTON8_DATA_MONOLITH_HEADER_CONTRACT_HARDENING_V1",
+  "agent": "X_002",
+  "generatedLocal": "2026-05-25T09:38:58+04:00",
+  "status": "PASS_STRICT_HEADER_DIRECTORY_FAIL_CLOSED",
+  "changedRuntimeContract": {
+    "flagsMustEqualLittleEndianOnly": true,
+    "headerReservedFieldsMustBeZero": true,
+    "directoryReservedFieldsMustBeZero": true,
+    "headerSectionTableOffsetMustEqual": 128,
+    "directorySectionTableOffsetMustEqualHeader": true,
+    "canonicalSectionCursorRequired": true
+  },
+  "binaryHeader": {
+    "magicOffset": 0,
+    "formatVersionOffset": 4,
+    "headerBytesOffset": 6,
+    "checksum64Offset": 8,
+    "blobBytesOffset": 16,
+    "directoryOffsetOffset": 20,
+    "directoryBytesOffset": 24,
+    "sectionTableOffsetOffset": 28,
+    "sectionCountOffset": 32,
+    "flagsOffset": 36,
+    "worldSeedOffset": 40,
+    "appVersionHashOffset": 44,
+    "schemaHashOffset": 48,
+    "reservedOffsets": [52, 56, 60],
+    "magicHex": "0x4D443848",
+    "formatVersion": 1,
+    "headerBytes": 64,
+    "checksum64Hex": "0x0D49885F30E5DF35",
+    "blobBytes": 1064384,
+    "directoryOffset": 64,
+    "directoryBytes": 64,
+    "sectionTableOffset": 128,
+    "sectionCount": 26,
+    "flagsHex": "0x00000001",
+    "worldSeed": 0,
+    "appVersionHashHex": "0x75536758",
+    "schemaHashHex": "0x58303032"
+  },
+  "requestedBlockOffsets": {
+    "Ecology": [
+      {"section": "Creatures", "offset": 896, "bytes": 192, "cacheLineAligned": true},
+      {"section": "Biomes", "offset": 1088, "bytes": 128, "cacheLineAligned": true},
+      {"section": "BiomeHeatmap", "offset": 1408, "bytes": 1048576, "cacheLineAligned": true},
+      {"section": "RadiationIntensityMap", "offset": 0, "bytes": 0, "cacheLineAligned": true},
+      {"section": "SpawnCreditCosts", "offset": 1054656, "bytes": 48, "cacheLineAligned": true}
+    ],
+    "Crafting": [
+      {"section": "Items", "offset": 576, "bytes": 320, "cacheLineAligned": true},
+      {"section": "Recipes", "offset": 1216, "bytes": 192, "cacheLineAligned": true},
+      {"section": "LootCdf", "offset": 1049984, "bytes": 64, "cacheLineAligned": true},
+      {"section": "Economy", "offset": 1064000, "bytes": 192, "cacheLineAligned": true}
+    ],
+    "Audio": [
+      {"section": "AudioClipRegistry", "offset": 1050112, "bytes": 48, "cacheLineAligned": true},
+      {"section": "SopErrors", "offset": 1062912, "bytes": 32, "cacheLineAligned": true}
+    ],
+    "Physiology": [
+      {"section": "DepthPressureCurve", "offset": 1050240, "bytes": 4096, "cacheLineAligned": true},
+      {"section": "ToolHeatCapacity", "offset": 1054336, "bytes": 32, "cacheLineAligned": true},
+      {"section": "SubmarineHullConstants", "offset": 1054400, "bytes": 64, "cacheLineAligned": true},
+      {"section": "PhysicsMaterials", "offset": 1054464, "bytes": 48, "cacheLineAligned": true},
+      {"section": "PhysicsConstants", "offset": 1064192, "bytes": 192, "cacheLineAligned": true}
+    ]
+  },
+  "corruptionProof": {
+    "editorFuzzerStatus": "PASS",
+    "editorFuzzerPassCount": 18,
+    "editorFuzzerFailCount": 0,
+    "failClosedStatus": "PASS_FAIL_CLOSED_NO_POISON_PUBLISH",
+    "failClosedCaseCount": 13,
+    "failClosedValidationMeanMicroseconds": 218.628,
+    "failClosedValidationAllocatedBytes": 0,
+    "unityStatus": "PASS_UNITY_GLOBAL_DATA_VAULT_FAIL_CLOSED_ZERO_GC_RESIDENT",
+    "unityColdCorruptCaseCount": 13,
+    "unityColdCorruptPassCount": 13,
+    "unityFileLoadManagedAllocatedBytes": 0
+  },
+  "loadProof": {
+    "releaseCliStatus": "PASS_NATIVE_READ_ZERO_GC_TARGET_TIME",
+    "nativeReadMicroseconds": 145.900,
+    "residentValidationMeanMicroseconds": 344.380,
+    "nativeResidentLoadEstimateMicroseconds": 490.280,
+    "nativeResidentLoadEstimateAllocatedBytes": 0,
+    "targetMicroseconds": 1000.000
+  },
+  "parserAbsenceProof": {
+    "status": "PASS_PLAYER_STATIC_CONFIG_PARSER_ABSENCE",
+    "releaseBlockingFindings": 0,
+    "developmentBlockingFindings": 0,
+    "directFileStreamReadByteCount": 0,
+    "allowedPersistenceFindings": 9
+  },
+  "buildProof": {
+    "dataMonolithBakeCliBuild": "PASS_0_ERRORS",
+    "coreBuild": "PASS_0_WARNINGS_0_ERRORS",
+    "assemblyCSharpBuild": "PASS_0_ERRORS_2_KNOWN_MSB9008_WARNINGS",
+    "unityBatch": "PASS_REPORT_TIMESTAMP_2026_05_25_09_38_58"
+  },
+  "changedFiles": [
+    "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+    "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCompiler.cs",
+    "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithCorruptionFuzzer.cs",
+    "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithGlobalDataVaultStressProbe.cs",
+    "Tools/DataMonolithBakeCli/DataMonolithFailClosedProbe.cs",
+    "Tools/DataMonolithBakeCli/DataMonolithLoadStressProbe.cs"
+  ]
+}

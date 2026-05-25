@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Core;
 
 namespace Hecton8.Audio
@@ -30,43 +31,44 @@ namespace Hecton8.Audio
         public const uint DescriptorMagicValue = 0x484B3031u;
         public const int RequiredAlignmentBytes = 8;
         public const int ReadIndexSlot = 0;
-        public const int WriteIndexSlot = 1;
-        public const int CapacityFramesSlot = 2;
-        public const int CapacityMaskSlot = 3;
-        public const int GuardValueSlotA = 4;
-        public const int GuardValueSlotB = 5;
-        public const int SharedStateSlotCount = 6;
+        public const int WriteIndexSlot = 2;
+        public const int CapacityFramesSlot = 4;
+        public const int CapacityMaskSlot = 6;
+        public const int GuardValueSlotA = 8;
+        public const int GuardValueSlotB = 10;
+        public const int SourceChannelsSlot = 12;
+        public const int SharedStateSlotCount = 14;
         public const int SharedStateGuardValueA = unchecked((int)0x48454354);
         public const int SharedStateGuardValueB = unchecked((int)0x4F4E2D38);
 
         [FieldOffset(0)]
-        public uint DescriptorMagic;
-#pragma warning disable 0169
-        [FieldOffset(4)]
-        private uint _descriptorPad0;
-#pragma warning restore 0169
-        [FieldOffset(8)]
         public IntPtr Frames;
-        [FieldOffset(16)]
+        [FieldOffset(8)]
         public IntPtr SharedState;
-        [FieldOffset(24)]
+        [FieldOffset(16)]
         public IntPtr ReadIndex;
-        [FieldOffset(32)]
+        [FieldOffset(24)]
         public IntPtr WriteIndex;
-        [FieldOffset(40)]
+        [FieldOffset(32)]
+        public uint DescriptorMagic;
+        [FieldOffset(36)]
         public int CapacityFrames;
-        [FieldOffset(44)]
+        [FieldOffset(40)]
         public int CapacityMask;
-        [FieldOffset(48)]
+        [FieldOffset(44)]
         public int SharedStateLengthInts;
 #pragma warning disable 0169
+        [FieldOffset(48)]
+        public int SourceChannels;
         [FieldOffset(52)]
-        private uint _reserved0;
+        private int _pad0;
 #pragma warning restore 0169
     }
 
-    internal static class HectonSensoryKernelNativeBridge
+    internal static unsafe class HectonSensoryKernelNativeBridge
     {
+        private const int RegisterRetryAttempts = 2;
+
         public static bool IsDescriptorValid(in NativeAudioKernelRingBufferDescriptor descriptor, out NativeAudioKernelBridgeStatus status)
         {
             status = NativeAudioKernelBridgeStatus.None;
@@ -97,13 +99,57 @@ namespace Hecton8.Audio
                 status |= NativeAudioKernelBridgeStatus.CapacityInvalid;
             }
 
+            if (descriptor.SourceChannels < 1 || descriptor.SourceChannels > 2)
+                status |= NativeAudioKernelBridgeStatus.SharedStateInvalid;
+
             if (descriptor.SharedStateLengthInts < NativeAudioKernelRingBufferDescriptor.SharedStateSlotCount)
                 status |= NativeAudioKernelBridgeStatus.SharedStateInvalid;
+
+            if (!HasValidSharedStatePointerLayout(in descriptor))
+                status |= NativeAudioKernelBridgeStatus.SharedStateInvalid;
+
+            if (status == NativeAudioKernelBridgeStatus.None &&
+                !HasValidSharedStateMetadata(in descriptor))
+            {
+                status |= NativeAudioKernelBridgeStatus.SharedStateInvalid;
+            }
 
             if (status == NativeAudioKernelBridgeStatus.None)
                 status = NativeAudioKernelBridgeStatus.Active;
 
             return status == NativeAudioKernelBridgeStatus.Active;
+        }
+
+        public static bool TryRegisterWithRetryGate(
+            ref NativeAudioKernelRingBufferDescriptor descriptor,
+            out NativeAudioKernelBridgeStatus status)
+        {
+            return TryRegisterWithRetryGate(ref descriptor, RegisterRetryAttempts, out status);
+        }
+
+        public static bool TryRegisterWithRetryGate(
+            ref NativeAudioKernelRingBufferDescriptor descriptor,
+            int maxAttempts,
+            out NativeAudioKernelBridgeStatus status)
+        {
+            if (!IsDescriptorValid(in descriptor, out status))
+            {
+                TryClear(out _);
+                return false;
+            }
+
+            int attempts = Math.Max(1, maxAttempts);
+            for (int i = 0; i < attempts; i++)
+            {
+                if (TryRegister(ref descriptor, out status))
+                    return true;
+
+                if ((status & NativeAudioKernelBridgeStatus.PluginUnavailable) != 0)
+                    break;
+            }
+
+            TryClear(out _);
+            return false;
         }
 
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN || UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX || UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
@@ -117,6 +163,9 @@ namespace Hecton8.Audio
 
         [DllImport(PluginName, EntryPoint = "HectonSensoryKernel_GetSharedRingBufferStatus")]
         private static extern int GetSharedRingBufferStatusNative();
+
+        [DllImport(PluginName, EntryPoint = "HectonSensoryKernel_DumpAudioBridgeTelemetry")]
+        private static extern int DumpAudioBridgeTelemetryNative(void* bytes, int byteCount);
 
         public static NativeAudioKernelBridgeStatus GetStatus()
         {
@@ -181,12 +230,32 @@ namespace Hecton8.Audio
             {
                 ClearSharedRingBuffer();
                 status = GetStatus();
-                return (status & NativeAudioKernelBridgeStatus.Active) == 0;
+                return (status & NativeAudioKernelBridgeStatus.Active) == 0 &&
+                       (status & NativeAudioKernelBridgeStatus.Busy) == 0;
             }
             catch (Exception exception) when (HectonNativeBridge.IsNativeLoadFailure(exception))
             {
                 HectonNativeBridge.MarkUnavailableFromException(HectonNativeLibrary.AudioKernel, exception);
                 status = NativeAudioKernelBridgeStatus.PluginUnavailable;
+                return false;
+            }
+        }
+
+        public static bool TryDumpAudioBridgeTelemetry(void* bytes, int byteCount)
+        {
+            if (bytes == null || byteCount <= 0)
+                return false;
+
+            if (!HectonNativeBridge.IsAvailable(HectonNativeLibrary.AudioKernel))
+                return false;
+
+            try
+            {
+                return DumpAudioBridgeTelemetryNative(bytes, byteCount) != 0;
+            }
+            catch (Exception exception) when (HectonNativeBridge.IsNativeLoadFailure(exception))
+            {
+                HectonNativeBridge.MarkUnavailableFromException(HectonNativeLibrary.AudioKernel, exception);
                 return false;
             }
         }
@@ -220,6 +289,11 @@ namespace Hecton8.Audio
             status = NativeAudioKernelBridgeStatus.PluginUnavailable;
             return false;
         }
+
+        public static bool TryDumpAudioBridgeTelemetry(void* bytes, int byteCount)
+        {
+            return false;
+        }
 #endif
 
         private static bool IsAligned(IntPtr pointer, int alignmentBytes)
@@ -229,6 +303,66 @@ namespace Hecton8.Audio
 
             long mask = alignmentBytes - 1L;
             return (pointer.ToInt64() & mask) == 0L;
+        }
+
+        private static bool HasValidSharedStatePointerLayout(in NativeAudioKernelRingBufferDescriptor descriptor)
+        {
+            if (descriptor.SharedState == IntPtr.Zero ||
+                descriptor.ReadIndex == IntPtr.Zero ||
+                descriptor.WriteIndex == IntPtr.Zero ||
+                descriptor.SharedStateLengthInts < NativeAudioKernelRingBufferDescriptor.SharedStateSlotCount)
+            {
+                return false;
+            }
+
+            long sharedStateBase = descriptor.SharedState.ToInt64();
+            long sharedStateBytes = (long)descriptor.SharedStateLengthInts * sizeof(int);
+            return HasExpectedSharedStateOffset(
+                       sharedStateBase,
+                       sharedStateBytes,
+                       descriptor.ReadIndex,
+                       NativeAudioKernelRingBufferDescriptor.ReadIndexSlot) &&
+                   HasExpectedSharedStateOffset(
+                       sharedStateBase,
+                       sharedStateBytes,
+                       descriptor.WriteIndex,
+                       NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
+        }
+
+        private static bool HasExpectedSharedStateOffset(
+            long sharedStateBase,
+            long sharedStateBytes,
+            IntPtr pointer,
+            int expectedSlot)
+        {
+            long pointerAddress = pointer.ToInt64();
+            long byteOffset = pointerAddress - sharedStateBase;
+            long expectedOffset = (long)expectedSlot * sizeof(int);
+            return byteOffset == expectedOffset &&
+                   byteOffset >= 0L &&
+                   byteOffset <= sharedStateBytes - sizeof(int) &&
+                   (byteOffset & (sizeof(int) - 1L)) == 0L;
+        }
+
+        private static bool HasValidSharedStateMetadata(in NativeAudioKernelRingBufferDescriptor descriptor)
+        {
+            if (descriptor.SharedState == IntPtr.Zero ||
+                descriptor.SharedStateLengthInts < NativeAudioKernelRingBufferDescriptor.SharedStateSlotCount)
+            {
+                return false;
+            }
+
+            int* sharedStatePtr = (int*)descriptor.SharedState;
+            int capacityFrames = Volatile.Read(ref sharedStatePtr[NativeAudioKernelRingBufferDescriptor.CapacityFramesSlot]);
+            int capacityMask = Volatile.Read(ref sharedStatePtr[NativeAudioKernelRingBufferDescriptor.CapacityMaskSlot]);
+            int guardA = Volatile.Read(ref sharedStatePtr[NativeAudioKernelRingBufferDescriptor.GuardValueSlotA]);
+            int guardB = Volatile.Read(ref sharedStatePtr[NativeAudioKernelRingBufferDescriptor.GuardValueSlotB]);
+            int sourceChannels = Volatile.Read(ref sharedStatePtr[NativeAudioKernelRingBufferDescriptor.SourceChannelsSlot]);
+            return capacityFrames == descriptor.CapacityFrames &&
+                   capacityMask == descriptor.CapacityMask &&
+                   guardA == NativeAudioKernelRingBufferDescriptor.SharedStateGuardValueA &&
+                   guardB == NativeAudioKernelRingBufferDescriptor.SharedStateGuardValueB &&
+                   sourceChannels == descriptor.SourceChannels;
         }
 
         private static bool IsPowerOfTwo(int value)

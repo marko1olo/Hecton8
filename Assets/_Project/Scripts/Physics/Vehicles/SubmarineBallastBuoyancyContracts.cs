@@ -19,7 +19,9 @@ namespace Hecton8.Physics.Vehicles
     {
         public const int TankCount = 4;
         public const int TelemetryCapacity = 300;
+#if UNITY_EDITOR
         public const int CsvScratchBytes = 32768;
+#endif
         public const int ProfileCapacity = 64;
         public const int TankBytes = 32;
         public const int CommandBytes = 32;
@@ -67,7 +69,9 @@ namespace Hecton8.Physics.Vehicles
         public const BufferID TelemetryRing = BufferID.Shinobu333BallastTelemetryRing;
         public const BufferID Profiles = BufferID.Shinobu333BallastProfiles;
         public const BufferID Tuning = BufferID.Shinobu333BallastTuning;
+#if UNITY_EDITOR
         public const BufferID CsvScratch = BufferID.Shinobu333BallastCsvScratch;
+#endif
     }
 
     [StructLayout(LayoutKind.Explicit, Size = SubmarineBallastConstants.TankBytes)]
@@ -460,7 +464,7 @@ namespace Hecton8.Physics.Vehicles
         // Safety proof 3/3: if the SignalBus lane is missing, the owner prevents scheduling by initializing the lane
         // in cold registration. Failure degrades to no acoustic presentation, not gameplay truth corruption; tank
         // liters, pressure flags, and force packets remain Vault-owned deterministic rows.
-        [NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<MovementAcousticSignal>.ParallelWriter AcousticWriter;
+        [NoAlias, NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<MovementAcousticSignal>.ParallelWriter AcousticWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> AcousticWriterBudget;
         public float DeltaTime;
         public uint Frame;

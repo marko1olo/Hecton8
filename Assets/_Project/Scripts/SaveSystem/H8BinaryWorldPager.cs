@@ -3,13 +3,16 @@ using System.IO;
 #if UNITY_EDITOR || UNITY_STANDALONE || HECTON8_MMF_AVAILABLE
 using System.IO.MemoryMappedFiles;
 #endif
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -18,7 +21,7 @@ namespace Hecton8.Core.Persistence.Paging
     public sealed class H8BinaryWorldPager : IDisposable, IGlobalRegistryHotSwapListener
     {
         private const string NativeMemoryOwner = nameof(H8BinaryWorldPager);
-        private const string DumpFileName = "Dump_SAVE_SURGEON.bin";
+        private const string DumpFileName = "Dump_1312_VoxelPaging.bin";
         private const string CrashDumpFileName = "Dump_CRASH.bin";
         private const string DumpH8FileName = "Dump_SAVE_SURGEON.h8dump";
         private const string CrashDumpH8FileName = "Dump_CRASH.h8dump";
@@ -60,6 +63,8 @@ namespace Hecton8.Core.Persistence.Paging
         private const uint PagerTelemetryFlagWalReplay = 1u << 9;
         private const uint PagerTelemetryFlagMmfCommit = 1u << 10;
         private const uint PagerTelemetryFlagFileStreamCommit = 1u << 11;
+        private const uint PagerTelemetryFlagDirectoryCollision = 1u << 12;
+        private const uint PagerTelemetryFlagPayloadOverflowRejected = 1u << 13;
 
         private VaultGenerationHandle<PageWriteCommand> _writeCommandsHandle;
         private VaultGenerationHandle<PageReadCommand> _readCommandsHandle;
@@ -84,10 +89,15 @@ namespace Hecton8.Core.Persistence.Paging
         private string _path;
         private string _walPath;
         private string _dumpPath;
+        private string _crashDumpPath;
+        private string _dumpH8Path;
+        private string _crashDumpH8Path;
         private int _writeSlotCursor;
         private int _readSlotCursor;
         private int _disposeRequested;
         private int _workerRunning;
+        private int _workerThreadId;
+        private int _dumpRequestPending;
         private Thread _workerThread;
         private int _initialized;
         private bool _registeredHotSwap;
@@ -143,6 +153,9 @@ namespace Hecton8.Core.Persistence.Paging
             _path = absolutePath;
             _walPath = ResolveWalPath(_path);
             _dumpPath = ResolveDumpPath();
+            _crashDumpPath = ResolveCrashDumpPath();
+            _dumpH8Path = ResolveAgentLogPath(DumpH8FileName);
+            _crashDumpH8Path = ResolveAgentLogPath(CrashDumpH8FileName);
             Volatile.Write(ref _initializationFault.Value, 0);
 
             try
@@ -169,14 +182,14 @@ namespace Hecton8.Core.Persistence.Paging
                     4096,
                     FileOptions.Asynchronous | FileOptions.WriteThrough | FileOptions.SequentialScan);
             }
-            catch (IOException exception)
+            catch (IOException)
             {
-                MarkInitializationFault(exception);
+                MarkInitializationFault();
                 return;
             }
-            catch (UnauthorizedAccessException exception)
+            catch (UnauthorizedAccessException)
             {
-                MarkInitializationFault(exception);
+                MarkInitializationFault();
                 return;
             }
 
@@ -199,9 +212,28 @@ namespace Hecton8.Core.Persistence.Paging
             uint sourceHash,
             uint frame)
         {
-            if (!IsInitialized || !payload.IsCreated || byteCount <= 0 || byteCount > payload.Length || byteCount > SectorPayloadBytes)
+            bool payloadOverflow = payload.IsCreated && byteCount > SectorPayloadBytes;
+            if (!IsInitialized || !payload.IsCreated || byteCount <= 0 || byteCount > payload.Length || payloadOverflow)
             {
                 Interlocked.Increment(ref _droppedWriteCount.Value);
+                if (payloadOverflow)
+                {
+                    int directorySlot = ResolveDirectorySlot(sectorHash);
+                    RecordTelemetry(
+                        sectorHash,
+                        ResolveOffset(sectorHash),
+                        payloadType,
+                        frame,
+                        0u,
+                        byteCount,
+                        PagerTelemetryOperation.WriteRejected,
+                        H8WorldPageStatus.IOError,
+                        PagerTelemetryFlagPayloadOverflowRejected,
+                        directorySlot,
+                        unchecked((uint)byteCount));
+                    DumpBlackBox();
+                }
+
                 return false;
             }
 
@@ -573,7 +605,42 @@ namespace Hecton8.Core.Persistence.Paging
                     }
                 }
             }
-            catch
+            catch (IOException)
+            {
+                status = H8WorldPageStatus.IOError;
+                Interlocked.Increment(ref _ioErrorCount.Value);
+                RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, bytesWritten, PagerTelemetryOperation.ReadCorrupt, status, PageFlagProceduralFallback);
+                return true;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                status = H8WorldPageStatus.IOError;
+                Interlocked.Increment(ref _ioErrorCount.Value);
+                RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, bytesWritten, PagerTelemetryOperation.ReadCorrupt, status, PageFlagProceduralFallback);
+                return true;
+            }
+            catch (ObjectDisposedException)
+            {
+                status = H8WorldPageStatus.IOError;
+                Interlocked.Increment(ref _ioErrorCount.Value);
+                RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, bytesWritten, PagerTelemetryOperation.ReadCorrupt, status, PageFlagProceduralFallback);
+                return true;
+            }
+            catch (NotSupportedException)
+            {
+                status = H8WorldPageStatus.IOError;
+                Interlocked.Increment(ref _ioErrorCount.Value);
+                RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, bytesWritten, PagerTelemetryOperation.ReadCorrupt, status, PageFlagProceduralFallback);
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                status = H8WorldPageStatus.IOError;
+                Interlocked.Increment(ref _ioErrorCount.Value);
+                RecordTelemetry(sectorHash, offset, payloadType, frame, 0u, bytesWritten, PagerTelemetryOperation.ReadCorrupt, status, PageFlagProceduralFallback);
+                return true;
+            }
+            catch (InvalidOperationException)
             {
                 status = H8WorldPageStatus.IOError;
                 Interlocked.Increment(ref _ioErrorCount.Value);
@@ -674,7 +741,7 @@ namespace Hecton8.Core.Persistence.Paging
             Volatile.Write(ref _initializationFault.Value, 1);
         }
 
-        private void MarkInitializationFault(Exception exception)
+        private void MarkInitializationFault()
         {
             FileStream stream = _stream;
             _stream = null;
@@ -692,11 +759,7 @@ namespace Hecton8.Core.Persistence.Paging
             Volatile.Write(ref _initializationFault.Value, 1);
             Interlocked.Increment(ref _ioErrorCount.Value);
 
-            Debug.LogWarning(
-                "H8BinaryWorldPager disabled page IO after initialization fault: " +
-                exception.GetType().Name +
-                ": " +
-                exception.Message);
+            Hecton8.Core.H8Debug.LogWarning("H8BinaryWorldPager disabled page IO after initialization fault.");
         }
 
         private bool WaitForWorkerExit()
@@ -738,7 +801,15 @@ namespace Hecton8.Core.Persistence.Paging
                     stream.Dispose();
                 }
             }
-            catch
+            catch (IOException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (ObjectDisposedException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (NotSupportedException)
             {
                 Interlocked.Increment(ref _ioErrorCount.Value);
             }
@@ -755,7 +826,15 @@ namespace Hecton8.Core.Persistence.Paging
                     stream.Dispose();
                 }
             }
-            catch
+            catch (IOException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (ObjectDisposedException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (NotSupportedException)
             {
                 Interlocked.Increment(ref _ioErrorCount.Value);
             }
@@ -766,7 +845,7 @@ namespace Hecton8.Core.Persistence.Paging
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null || vault.IsCompactionFenceActive || vault.IsAllocationLocked)
             {
-                MarkInitializationFault(new InvalidOperationException("GlobalDataVault is required for H8BinaryWorldPager buffers."));
+                MarkInitializationFault();
                 return;
             }
 
@@ -828,7 +907,7 @@ namespace Hecton8.Core.Persistence.Paging
             if (!ArePagerVaultHandlesReady())
             {
                 ReleasePagerVaultHandles(vault);
-                MarkInitializationFault(new InvalidOperationException("H8BinaryWorldPager failed Vault descriptor readiness proof."));
+                MarkInitializationFault();
                 return;
             }
 
@@ -1072,11 +1151,11 @@ namespace Hecton8.Core.Persistence.Paging
                 _workerThread = workerThread;
                 workerThread.Start();
             }
-            catch (Exception exception)
+            catch (ThreadStateException)
             {
                 _workerThread = null;
                 Volatile.Write(ref _workerRunning, 0);
-                MarkInitializationFault(exception);
+                MarkInitializationFault();
             }
         }
 
@@ -1084,9 +1163,16 @@ namespace Hecton8.Core.Persistence.Paging
         {
             try
             {
+                Volatile.Write(ref _workerThreadId, Thread.CurrentThread.ManagedThreadId);
                 while (Volatile.Read(ref _disposeRequested) == 0)
                 {
                     bool didWork = false;
+                    if (TryConsumeDumpRequest())
+                    {
+                        didWork = true;
+                        WriteBlackBoxDumps();
+                    }
+
                     if (TryDequeueWrite(out PageWriteCommand writeCommand))
                     {
                         didWork = true;
@@ -1111,13 +1197,38 @@ namespace Hecton8.Core.Persistence.Paging
                         Thread.Sleep(WorkerIdleSleepMilliseconds);
                 }
             }
-            catch
+            catch (IOException)
+            {
+                MarkWorkerFault();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                MarkWorkerFault();
+            }
+            catch (ObjectDisposedException)
+            {
+                MarkWorkerFault();
+            }
+            catch (NotSupportedException)
+            {
+                MarkWorkerFault();
+            }
+            catch (ArgumentException)
+            {
+                MarkWorkerFault();
+            }
+            catch (InvalidOperationException)
+            {
+                MarkWorkerFault();
+            }
+            catch (ThreadInterruptedException)
             {
                 MarkWorkerFault();
             }
             finally
             {
                 _workerThread = null;
+                Volatile.Write(ref _workerThreadId, 0);
                 Volatile.Write(ref _workerRunning, 0);
                 lock (_workerStopLock)
                 {
@@ -1133,7 +1244,27 @@ namespace Hecton8.Core.Persistence.Paging
             {
                 ProcessWrite(in command);
             }
-            catch
+            catch (IOException)
+            {
+                faulted = true;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                faulted = true;
+            }
+            catch (ObjectDisposedException)
+            {
+                faulted = true;
+            }
+            catch (NotSupportedException)
+            {
+                faulted = true;
+            }
+            catch (ArgumentException)
+            {
+                faulted = true;
+            }
+            catch (InvalidOperationException)
             {
                 faulted = true;
             }
@@ -1166,7 +1297,27 @@ namespace Hecton8.Core.Persistence.Paging
             {
                 ProcessRead(in command);
             }
-            catch
+            catch (IOException)
+            {
+                faulted = true;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                faulted = true;
+            }
+            catch (ObjectDisposedException)
+            {
+                faulted = true;
+            }
+            catch (NotSupportedException)
+            {
+                faulted = true;
+            }
+            catch (ArgumentException)
+            {
+                faulted = true;
+            }
+            catch (InvalidOperationException)
             {
                 faulted = true;
             }
@@ -1234,7 +1385,23 @@ namespace Hecton8.Core.Persistence.Paging
                     }
                 }
             }
-            catch
+            catch (IOException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (ObjectDisposedException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (NotSupportedException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (InvalidOperationException)
             {
                 Interlocked.Increment(ref _ioErrorCount.Value);
             }
@@ -1364,9 +1531,14 @@ namespace Hecton8.Core.Persistence.Paging
                         }
                     }
 
-                    if (!WriteDirectoryEntry(command.SectorHash, offset))
+                    if (!WriteDirectoryEntry(
+                            command.SectorHash,
+                            offset,
+                            out int directorySlot,
+                            out bool directoryCollision,
+                            out long previousSectorHash))
                     {
-                        RecordTelemetry(command.SectorHash, offset, command.PayloadType, command.Frame, 0u, command.ByteCount, PagerTelemetryOperation.Write, H8WorldPageStatus.IOError, flags | PagerTelemetryFlagWalAppend);
+                        RecordTelemetry(command.SectorHash, offset, command.PayloadType, command.Frame, 0u, command.ByteCount, PagerTelemetryOperation.Write, H8WorldPageStatus.IOError, flags | PagerTelemetryFlagWalAppend, directorySlot, FoldSectorHash(previousSectorHash));
                         return;
                     }
 
@@ -1374,9 +1546,36 @@ namespace Hecton8.Core.Persistence.Paging
                     Interlocked.Increment(ref _completedWriteCount.Value);
                     PublishLast(command.SectorHash, command.PayloadType, command.ByteCount, command.Frame);
                     uint telemetryFlags = flags | PagerTelemetryFlagWalAppend | (mappedWrite ? PagerTelemetryFlagMmfCommit : PagerTelemetryFlagFileStreamCommit);
-                    RecordTelemetry(command.SectorHash, offset, command.PayloadType, command.Frame, 0u, command.ByteCount, PagerTelemetryOperation.Write, H8WorldPageStatus.Ready, telemetryFlags);
+                    if (directoryCollision)
+                        telemetryFlags |= PagerTelemetryFlagDirectoryCollision;
+                    RecordTelemetry(command.SectorHash, offset, command.PayloadType, command.Frame, 0u, command.ByteCount, PagerTelemetryOperation.Write, H8WorldPageStatus.Ready, telemetryFlags, directorySlot, FoldSectorHash(previousSectorHash));
                 }
-                catch
+                catch (IOException)
+                {
+                    Interlocked.Increment(ref _ioErrorCount.Value);
+                    RecordTelemetry(command.SectorHash, offset, command.PayloadType, command.Frame, 0u, command.ByteCount, PagerTelemetryOperation.Write, H8WorldPageStatus.IOError, flags | PagerTelemetryFlagWalAppend);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    Interlocked.Increment(ref _ioErrorCount.Value);
+                    RecordTelemetry(command.SectorHash, offset, command.PayloadType, command.Frame, 0u, command.ByteCount, PagerTelemetryOperation.Write, H8WorldPageStatus.IOError, flags | PagerTelemetryFlagWalAppend);
+                }
+                catch (ObjectDisposedException)
+                {
+                    Interlocked.Increment(ref _ioErrorCount.Value);
+                    RecordTelemetry(command.SectorHash, offset, command.PayloadType, command.Frame, 0u, command.ByteCount, PagerTelemetryOperation.Write, H8WorldPageStatus.IOError, flags | PagerTelemetryFlagWalAppend);
+                }
+                catch (NotSupportedException)
+                {
+                    Interlocked.Increment(ref _ioErrorCount.Value);
+                    RecordTelemetry(command.SectorHash, offset, command.PayloadType, command.Frame, 0u, command.ByteCount, PagerTelemetryOperation.Write, H8WorldPageStatus.IOError, flags | PagerTelemetryFlagWalAppend);
+                }
+                catch (ArgumentException)
+                {
+                    Interlocked.Increment(ref _ioErrorCount.Value);
+                    RecordTelemetry(command.SectorHash, offset, command.PayloadType, command.Frame, 0u, command.ByteCount, PagerTelemetryOperation.Write, H8WorldPageStatus.IOError, flags | PagerTelemetryFlagWalAppend);
+                }
+                catch (InvalidOperationException)
                 {
                     Interlocked.Increment(ref _ioErrorCount.Value);
                     RecordTelemetry(command.SectorHash, offset, command.PayloadType, command.Frame, 0u, command.ByteCount, PagerTelemetryOperation.Write, H8WorldPageStatus.IOError, flags | PagerTelemetryFlagWalAppend);
@@ -1519,7 +1718,52 @@ namespace Hecton8.Core.Persistence.Paging
                 PublishLast(command.SectorHash, command.PayloadType, byteCount, command.Frame);
                 RecordTelemetry(command.SectorHash, offset, command.PayloadType, command.Frame, command.RequestId, byteCount, PagerTelemetryOperation.ReadReady, H8WorldPageStatus.Ready, flags);
             }
-            catch
+            catch (IOException)
+            {
+                if (resultSlot >= 0)
+                    ReleaseReadSlot(resultSlot);
+
+                CommitReadResult(command, H8WorldPageStatus.IOError, -1, 0);
+                Interlocked.Increment(ref _ioErrorCount.Value);
+                RecordTelemetry(command.SectorHash, offset, command.PayloadType, command.Frame, command.RequestId, byteCount, PagerTelemetryOperation.ReadCorrupt, H8WorldPageStatus.IOError, flags);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                if (resultSlot >= 0)
+                    ReleaseReadSlot(resultSlot);
+
+                CommitReadResult(command, H8WorldPageStatus.IOError, -1, 0);
+                Interlocked.Increment(ref _ioErrorCount.Value);
+                RecordTelemetry(command.SectorHash, offset, command.PayloadType, command.Frame, command.RequestId, byteCount, PagerTelemetryOperation.ReadCorrupt, H8WorldPageStatus.IOError, flags);
+            }
+            catch (ObjectDisposedException)
+            {
+                if (resultSlot >= 0)
+                    ReleaseReadSlot(resultSlot);
+
+                CommitReadResult(command, H8WorldPageStatus.IOError, -1, 0);
+                Interlocked.Increment(ref _ioErrorCount.Value);
+                RecordTelemetry(command.SectorHash, offset, command.PayloadType, command.Frame, command.RequestId, byteCount, PagerTelemetryOperation.ReadCorrupt, H8WorldPageStatus.IOError, flags);
+            }
+            catch (NotSupportedException)
+            {
+                if (resultSlot >= 0)
+                    ReleaseReadSlot(resultSlot);
+
+                CommitReadResult(command, H8WorldPageStatus.IOError, -1, 0);
+                Interlocked.Increment(ref _ioErrorCount.Value);
+                RecordTelemetry(command.SectorHash, offset, command.PayloadType, command.Frame, command.RequestId, byteCount, PagerTelemetryOperation.ReadCorrupt, H8WorldPageStatus.IOError, flags);
+            }
+            catch (ArgumentException)
+            {
+                if (resultSlot >= 0)
+                    ReleaseReadSlot(resultSlot);
+
+                CommitReadResult(command, H8WorldPageStatus.IOError, -1, 0);
+                Interlocked.Increment(ref _ioErrorCount.Value);
+                RecordTelemetry(command.SectorHash, offset, command.PayloadType, command.Frame, command.RequestId, byteCount, PagerTelemetryOperation.ReadCorrupt, H8WorldPageStatus.IOError, flags);
+            }
+            catch (InvalidOperationException)
             {
                 if (resultSlot >= 0)
                     ReleaseReadSlot(resultSlot);
@@ -1706,7 +1950,45 @@ namespace Hecton8.Core.Persistence.Paging
             mixed ^= mixed >> 33;
             mixed *= 0xff51afd7ed558ccdUL;
             mixed ^= mixed >> 33;
-            return (int)(mixed & (ulong)(DirectorySlotCount - 1));
+            return (int)(mixed % (ulong)DirectorySlotCount);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint FoldSectorHash(long sectorHash)
+        {
+            ulong value = unchecked((ulong)sectorHash);
+            return (uint)value ^ (uint)(value >> 32);
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
+        internal struct GenerateMockWorldPageWriteJob : IJobParallelFor
+        {
+            [WriteOnly] public NativeArray<long> SectorHashes;
+            [WriteOnly] public NativeArray<int> DirectorySlots;
+            [WriteOnly] public NativeArray<int> PayloadBytes;
+            [WriteOnly] public NativeArray<uint> Flags;
+            public ulong Seed;
+            public int PayloadByteCount;
+
+            public void Execute(int index)
+            {
+                ulong value = Seed + ((ulong)(uint)index * 0x9E3779B97F4A7C15UL);
+                value ^= value >> 30;
+                value *= 0xBF58476D1CE4E5B9UL;
+                value ^= value >> 27;
+                value *= 0x94D049BB133111EBUL;
+                value ^= value >> 31;
+
+                long sectorHash = unchecked((long)value);
+                int requestedBytes = math.max(0, PayloadByteCount);
+                int safeBytes = math.min(requestedBytes, SectorPayloadBytes);
+                uint flags = requestedBytes > SectorPayloadBytes ? PagerTelemetryFlagPayloadOverflowRejected : 0u;
+
+                SectorHashes[index] = sectorHash;
+                DirectorySlots[index] = ResolveDirectorySlot(sectorHash);
+                PayloadBytes[index] = safeBytes;
+                Flags[index] = flags;
+            }
         }
 
         private unsafe void EnsureDirectoryPage()
@@ -1760,7 +2042,27 @@ namespace Hecton8.Core.Persistence.Paging
                     stream.Flush(true);
                 }
             }
-            catch
+            catch (IOException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (ObjectDisposedException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (NotSupportedException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (ArgumentException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (InvalidOperationException)
             {
                 Interlocked.Increment(ref _ioErrorCount.Value);
             }
@@ -1768,6 +2070,14 @@ namespace Hecton8.Core.Persistence.Paging
 
         private unsafe bool WriteDirectoryEntry(long sectorHash, long offset)
         {
+            return WriteDirectoryEntry(sectorHash, offset, out _, out _, out _);
+        }
+
+        private unsafe bool WriteDirectoryEntry(long sectorHash, long offset, out int directorySlot, out bool collision, out long previousSectorHash)
+        {
+            directorySlot = ResolveDirectorySlot(sectorHash);
+            collision = false;
+            previousSectorHash = 0L;
             FileStream stream = _stream;
             if (stream == null)
                 return false;
@@ -1783,7 +2093,22 @@ namespace Hecton8.Core.Persistence.Paging
             {
                 lock (_streamLock)
                 {
-                    long directoryOffset = WorldDirectoryHeaderBytes + ((long)ResolveDirectorySlot(sectorHash) * DirectoryEntryBytes);
+                    long directoryOffset = WorldDirectoryHeaderBytes + ((long)directorySlot * DirectoryEntryBytes);
+                    if (stream.Length >= directoryOffset + DirectoryEntryBytes)
+                    {
+                        Span<byte> existing = stackalloc byte[DirectoryEntryBytes];
+                        stream.Position = directoryOffset;
+                        if (ReadExact(stream, existing))
+                        {
+                            fixed (byte* existingPtr = existing)
+                            {
+                                previousSectorHash = ReadLong(existingPtr, 0);
+                                long previousOffset = ReadLong(existingPtr, 8);
+                                collision = previousOffset != 0L && previousSectorHash != sectorHash;
+                            }
+                        }
+                    }
+
                     stream.Position = directoryOffset;
                     stream.Write(entry);
                     stream.Flush(true);
@@ -1791,7 +2116,32 @@ namespace Hecton8.Core.Persistence.Paging
 
                 return true;
             }
-            catch
+            catch (IOException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+                return false;
+            }
+            catch (ObjectDisposedException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+                return false;
+            }
+            catch (InvalidOperationException)
             {
                 Interlocked.Increment(ref _ioErrorCount.Value);
                 return false;
@@ -1873,7 +2223,27 @@ namespace Hecton8.Core.Persistence.Paging
 
                     return true;
                 }
-                catch
+                catch (IOException)
+                {
+                    return false;
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    return false;
+                }
+                catch (ObjectDisposedException)
+                {
+                    return false;
+                }
+                catch (NotSupportedException)
+                {
+                    return false;
+                }
+                catch (ArgumentException)
+                {
+                    return false;
+                }
+                catch (InvalidOperationException)
                 {
                     return false;
                 }
@@ -1895,7 +2265,27 @@ namespace Hecton8.Core.Persistence.Paging
                     walStream.Flush(true);
                 }
             }
-            catch
+            catch (IOException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (ObjectDisposedException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (NotSupportedException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (ArgumentException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (InvalidOperationException)
             {
                 Interlocked.Increment(ref _ioErrorCount.Value);
             }
@@ -2063,7 +2453,27 @@ namespace Hecton8.Core.Persistence.Paging
                     }
                 }
             }
-            catch
+            catch (IOException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (ObjectDisposedException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (NotSupportedException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (ArgumentException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (InvalidOperationException)
             {
                 Interlocked.Increment(ref _ioErrorCount.Value);
             }
@@ -2492,7 +2902,9 @@ namespace Hecton8.Core.Persistence.Paging
             int payloadBytes,
             PagerTelemetryOperation operation,
             H8WorldPageStatus status,
-            uint flags)
+            uint flags,
+            int directorySlot = -1,
+            uint metrics = 0u)
         {
             ResolveTelemetryRing(out NativeArray<PagerTelemetryEntry> telemetryRing);
             if (!telemetryRing.IsCreated || telemetryRing.Length < TelemetryCapacity)
@@ -2517,7 +2929,9 @@ namespace Hecton8.Core.Persistence.Paging
                 Operation = operation,
                 Status = status,
                 Flags = unchecked((ushort)flags),
-                TicksUtc = DateTime.UtcNow.Ticks
+                TicksUtc = DateTime.UtcNow.Ticks,
+                DirectorySlot = directorySlot,
+                Metrics = metrics
             };
         }
 
@@ -2544,14 +2958,31 @@ namespace Hecton8.Core.Persistence.Paging
 
         private unsafe void DumpBlackBox()
         {
+            if (Volatile.Read(ref _workerRunning) != 0 &&
+                Thread.CurrentThread.ManagedThreadId != Volatile.Read(ref _workerThreadId))
+            {
+                Volatile.Write(ref _dumpRequestPending, 1);
+                return;
+            }
+
+            WriteBlackBoxDumps();
+        }
+
+        private bool TryConsumeDumpRequest()
+        {
+            return Interlocked.Exchange(ref _dumpRequestPending, 0) != 0;
+        }
+
+        private unsafe void WriteBlackBoxDumps()
+        {
             ResolveTelemetryRing(out NativeArray<PagerTelemetryEntry> telemetryRing);
             if (!telemetryRing.IsCreated || string.IsNullOrEmpty(_dumpPath))
                 return;
 
             WriteBlackBoxDump(_dumpPath);
-            WriteBlackBoxDump(ResolveCrashDumpPath());
-            WriteBlackBoxDump(ResolveAgentLogPath(DumpH8FileName));
-            WriteBlackBoxDump(ResolveAgentLogPath(CrashDumpH8FileName));
+            WriteBlackBoxDump(_crashDumpPath);
+            WriteBlackBoxDump(_dumpH8Path);
+            WriteBlackBoxDump(_crashDumpH8Path);
         }
 
         private unsafe void WriteBlackBoxDump(string dumpPath)
@@ -2576,7 +3007,27 @@ namespace Hecton8.Core.Persistence.Paging
                 stream.Write(header);
                 stream.Write(new ReadOnlySpan<byte>(telemetryRing.GetUnsafeReadOnlyPtr(), telemetryRing.Length * UnsafeUtility.SizeOf<PagerTelemetryEntry>()));
             }
-            catch
+            catch (IOException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (ObjectDisposedException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (NotSupportedException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (ArgumentException)
+            {
+                Interlocked.Increment(ref _ioErrorCount.Value);
+            }
+            catch (InvalidOperationException)
             {
                 Interlocked.Increment(ref _ioErrorCount.Value);
             }
@@ -2618,10 +3069,10 @@ namespace Hecton8.Core.Persistence.Paging
             [FieldOffset(12)] public uint RequestId;
             [FieldOffset(16)] public int SlotIndex;
             [FieldOffset(20)] public int ByteCount;
-            [FieldOffset(24)] public H8WorldPageStatus Status;
-            [FieldOffset(25)] public byte Reserved0;
-            [FieldOffset(26)] public ushort Reserved1;
-            [FieldOffset(28)] public uint Reserved2;
+            [FieldOffset(24)] public uint Reserved2;
+            [FieldOffset(28)] public ushort Reserved1;
+            [FieldOffset(30)] public H8WorldPageStatus Status;
+            [FieldOffset(31)] public byte Reserved0;
         }
 
         private enum PagerTelemetryOperation : byte
@@ -2631,7 +3082,8 @@ namespace Hecton8.Core.Persistence.Paging
             ReadMiss = 3,
             ReadCorrupt = 4,
             WalReplay = 5,
-            WalAppendFailed = 6
+            WalAppendFailed = 6,
+            WriteRejected = 7
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -2639,18 +3091,19 @@ namespace Hecton8.Core.Persistence.Paging
         {
             [FieldOffset(0)] public long SectorHash;
             [FieldOffset(8)] public long Offset;
-            [FieldOffset(16)] public uint Frame;
-            [FieldOffset(20)] public uint RequestId;
+            [FieldOffset(16)] public long TicksUtc;
             [FieldOffset(24)] public uint PayloadType;
-            [FieldOffset(28)] public int PendingWrites;
-            [FieldOffset(32)] public int PendingReads;
-            [FieldOffset(36)] public int PageFaults;
-            [FieldOffset(40)] public int PayloadBytes;
-            [FieldOffset(44)] public PagerTelemetryOperation Operation;
-            [FieldOffset(45)] public H8WorldPageStatus Status;
-            [FieldOffset(46)] public ushort Flags;
-            [FieldOffset(48)] public long TicksUtc;
-            [FieldOffset(56)] public long Reserved;
+            [FieldOffset(28)] public uint Frame;
+            [FieldOffset(32)] public uint RequestId;
+            [FieldOffset(36)] public int PayloadBytes;
+            [FieldOffset(40)] public int PendingWrites;
+            [FieldOffset(44)] public int PendingReads;
+            [FieldOffset(48)] public int PageFaults;
+            [FieldOffset(52)] public uint Metrics;
+            [FieldOffset(56)] public int DirectorySlot;
+            [FieldOffset(60)] public ushort Flags;
+            [FieldOffset(62)] public PagerTelemetryOperation Operation;
+            [FieldOffset(63)] public H8WorldPageStatus Status;
         }
     }
 }

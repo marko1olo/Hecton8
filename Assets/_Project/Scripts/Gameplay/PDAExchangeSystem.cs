@@ -168,6 +168,7 @@ namespace Hecton8.Gameplay
         private IPlayerRuntimeContext _playerRuntime;
         private IScanLogService _scanLogRuntime;
         private ISaveService _saveService;
+        private IAtlas6DirectiveCommandSink _atlas6DirectiveCommandSink;
         private uint _inventorySignalHash;
         private uint _scanLogSourceId;
 
@@ -372,8 +373,8 @@ namespace Hecton8.Gameplay
             NotifyInfo(RelayConfirmedMessage);
             PublishExchangeStateChanged(PdaExchangeStateChangedSignal.ReasonExecuted);
 
-            // Notify Atlas6DirectiveSystem: barter raises trust.
-            Atlas6DirectiveSystem directive = Hecton8.Core.GlobalRegistry.Atlas6Directive;
+            // Notify Atlas-6 directive command sink: barter raises trust.
+            IAtlas6DirectiveCommandSink directive = _atlas6DirectiveCommandSink;
             if (directive != null)
                 directive.RegisterBarterTransaction();
 
@@ -589,9 +590,10 @@ namespace Hecton8.Gameplay
 
         private void RefreshColdRegistryReferences()
         {
-            _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntime = GlobalRegistry.Player;
             _scanLogRuntime = GlobalRegistry.ScanLogService;
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
+            _atlas6DirectiveCommandSink = GlobalRegistry.Atlas6DirectiveCommandSink;
         }
 
         private void AutoResolve(bool resolveHud)
@@ -651,6 +653,9 @@ namespace Hecton8.Gameplay
                     _saveService = currentService as ISaveService;
                     TryRegisterSaveParticipant();
                     break;
+                case GlobalRegistryServiceSlot.Atlas6DirectiveRuntime:
+                    _atlas6DirectiveCommandSink = currentService as IAtlas6DirectiveCommandSink;
+                    break;
             }
         }
 
@@ -660,7 +665,7 @@ namespace Hecton8.Gameplay
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;

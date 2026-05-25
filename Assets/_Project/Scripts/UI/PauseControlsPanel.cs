@@ -512,7 +512,7 @@ namespace Hecton8.UI
             catch (System.Exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[PauseControlsPanel] ModalWindow unavailable. Auto-canceling conflict.");
+                Hecton8.Core.H8Debug.LogWarning("[PauseControlsPanel] ModalWindow unavailable. Auto-canceling conflict.");
 #endif
                 // Fallback: auto-cancel if modal unavailable
                 SetStatus("CONFLICT: Cannot show dialog - ModalWindow unavailable", StatusColorConflict, StatusBgConflict);
@@ -926,7 +926,7 @@ namespace Hecton8.UI
                 return index;
 
             int safeLength = Mathf.Min(valueLength, value.Length);
-            return AppendToBuffer(buffer, index, new ReadOnlySpan<char>(value, 0, safeLength));
+            return AppendToBuffer(buffer, index, value.AsSpan(0, safeLength));
         }
 
         private static int AppendToBuffer(char[] buffer, int index, ReadOnlySpan<char> value)

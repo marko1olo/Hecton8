@@ -1321,20 +1321,32 @@ namespace Hecton8.Core.Diagnostics.Visuals
             if (uploadCount > 0)
             {
                 NativeArray<ArchitectEyeQuadInstance> mappedInstances = instanceWriteBuffer.LockBufferForWrite<ArchitectEyeQuadInstance>(0, uploadCount);
-                UnsafeUtility.MemCpy(
-                    NativeArrayUnsafeUtility.GetUnsafePtr(mappedInstances),
-                    NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(quads),
-                    uploadCount * UnsafeUtility.SizeOf<ArchitectEyeQuadInstance>());
-                instanceWriteBuffer.UnlockBufferAfterWrite<ArchitectEyeQuadInstance>(uploadCount);
+                try
+                {
+                    UnsafeUtility.MemCpy(
+                        NativeArrayUnsafeUtility.GetUnsafePtr(mappedInstances),
+                        NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(quads),
+                        uploadCount * UnsafeUtility.SizeOf<ArchitectEyeQuadInstance>());
+                }
+                finally
+                {
+                    instanceWriteBuffer.UnlockBufferAfterWrite<ArchitectEyeQuadInstance>(uploadCount);
+                }
             }
 
             NativeArray<uint> mappedArgs = argsWriteBuffer.LockBufferForWrite<uint>(0, 5);
-            mappedArgs[0] = _quadMesh.GetIndexCount(0);
-            mappedArgs[1] = (uint)uploadCount;
-            mappedArgs[2] = _quadMesh.GetIndexStart(0);
-            mappedArgs[3] = _quadMesh.GetBaseVertex(0);
-            mappedArgs[4] = 0u;
-            argsWriteBuffer.UnlockBufferAfterWrite<uint>(5);
+            try
+            {
+                mappedArgs[0] = _quadMesh.GetIndexCount(0);
+                mappedArgs[1] = (uint)uploadCount;
+                mappedArgs[2] = _quadMesh.GetIndexStart(0);
+                mappedArgs[3] = _quadMesh.GetBaseVertex(0);
+                mappedArgs[4] = 0u;
+            }
+            finally
+            {
+                argsWriteBuffer.UnlockBufferAfterWrite<uint>(5);
+            }
             _instanceBuffer = instanceWriteBuffer;
             _argsBuffer = argsWriteBuffer;
             if (_material != null)

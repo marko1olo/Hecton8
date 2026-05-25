@@ -60,9 +60,11 @@ namespace Hecton8.Audio.Propagation
         [FieldOffset(52)]
         public AcousticPortalFlags Flags;
         [FieldOffset(53)]
-        private byte _reserved0;
+        private byte _pad0;
         [FieldOffset(54)]
-        private ushort _reserved1;
+        private byte _pad1;
+        [FieldOffset(55)]
+        private byte _pad2;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -75,11 +77,19 @@ namespace Hecton8.Audio.Propagation
         [FieldOffset(8)]
         public AcousticPortalFlags Flags;
         [FieldOffset(9)]
-        private byte _reserved0;
+        private byte _pad0;
         [FieldOffset(10)]
-        private ushort _reserved1;
+        private byte _pad1;
+        [FieldOffset(11)]
+        private byte _pad2;
         [FieldOffset(12)]
-        private uint _reserved2;
+        private byte _pad3;
+        [FieldOffset(13)]
+        private byte _pad4;
+        [FieldOffset(14)]
+        private byte _pad5;
+        [FieldOffset(15)]
+        private byte _pad6;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 112)]
@@ -102,9 +112,11 @@ namespace Hecton8.Audio.Propagation
         [FieldOffset(108)]
         public byte DisablePortalPath;
         [FieldOffset(109)]
-        private byte _reserved0;
+        private byte _pad0;
         [FieldOffset(110)]
-        private ushort _reserved1;
+        private byte _pad1;
+        [FieldOffset(111)]
+        private byte _pad2;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -123,9 +135,19 @@ namespace Hecton8.Audio.Propagation
         [FieldOffset(56)]
         public readonly AcousticPortalFlags Flags;
         [FieldOffset(57)]
-        private readonly byte _reserved0;
+        private readonly byte _pad0;
         [FieldOffset(58)]
-        private readonly ushort _reserved1;
+        private readonly byte _pad1;
+        [FieldOffset(59)]
+        private readonly byte _pad2;
+        [FieldOffset(60)]
+        private readonly byte _pad3;
+        [FieldOffset(61)]
+        private readonly byte _pad4;
+        [FieldOffset(62)]
+        private readonly byte _pad5;
+        [FieldOffset(63)]
+        private readonly byte _pad6;
 
         public SoundEmissionSignal(
             uint eventID,
@@ -141,8 +163,13 @@ namespace Hecton8.Audio.Propagation
             Pitch = pitch;
             StationaryCacheKey = stationaryCacheKey;
             Flags = flags;
-            _reserved0 = 0;
-            _reserved1 = 0;
+            _pad0 = 0;
+            _pad1 = 0;
+            _pad2 = 0;
+            _pad3 = 0;
+            _pad4 = 0;
+            _pad5 = 0;
+            _pad6 = 0;
         }
     }
 
@@ -186,11 +213,35 @@ namespace Hecton8.Audio.Propagation
         [FieldOffset(95)]
         public byte UsedReprojectionCache;
         [FieldOffset(96)]
-        private uint _reserved0;
+        private byte _pad0;
+        [FieldOffset(97)]
+        private byte _pad1;
+        [FieldOffset(98)]
+        private byte _pad2;
+        [FieldOffset(99)]
+        private byte _pad3;
+        [FieldOffset(100)]
+        private byte _pad4;
+        [FieldOffset(101)]
+        private byte _pad5;
+        [FieldOffset(102)]
+        private byte _pad6;
+        [FieldOffset(103)]
+        private byte _pad7;
 
         public static AcousticPathResult Fallback(AcousticPathStatus status, in AcousticPathQuery query)
         {
-            float distance = AcousticAup.DistanceMeters(in query.SourceAup, in query.ListenerAup);
+            bool sourceFinite = AcousticAup.IsFinite(in query.SourceAup);
+            bool listenerFinite = AcousticAup.IsFinite(in query.ListenerAup);
+            float distance = sourceFinite && listenerFinite
+                ? AcousticAup.DistanceMeters(in query.SourceAup, in query.ListenerAup)
+                : 0f;
+            if (!math.isfinite(distance) || distance < 0f)
+                distance = 0f;
+            float delay = distance * math.rcp(AcousticPortalConstants.SoundSpeedWaterMetersPerSecond);
+            if (!math.isfinite(delay) || delay < 0f)
+                delay = 0f;
+            AcousticAup lastPortalAup = sourceFinite ? query.SourceAup : default;
             return new AcousticPathResult
             {
                 Status = status,
@@ -203,42 +254,65 @@ namespace Hecton8.Audio.Propagation
                 SourceNodeIndex = -1,
                 ListenerNodeIndex = -1,
                 TrueDistanceMeters = distance,
-                DelaySeconds = distance * math.rcp(AcousticPortalConstants.SoundSpeedWaterMetersPerSecond),
+                DelaySeconds = delay,
                 Transmission01 = 1f,
                 LowPassCutoffHz = AcousticPortalConstants.OpenLowPassCutoffHertz,
                 ItdSeconds = 0f,
                 RoomVolumeCubicMeters = 0f,
                 PathfindingMs = 0f,
-                LastPortalAup = query.SourceAup,
+                LastPortalAup = lastPortalAup,
                 StateHash = 0u,
-                _reserved0 = 0u
+                _pad0 = 0,
+                _pad1 = 0,
+                _pad2 = 0,
+                _pad3 = 0,
+                _pad4 = 0,
+                _pad5 = 0,
+                _pad6 = 0,
+                _pad7 = 0
             };
         }
     }
 
-    [StructLayout(LayoutKind.Explicit, Size = 40)]
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct AcousticTelemetryEntry
     {
         [FieldOffset(0)]
-        public int Frame;
-        [FieldOffset(4)]
-        public int NodeCount;
+        public long StopwatchTicks;
         [FieldOffset(8)]
-        public int CornerCount;
+        public int Frame;
         [FieldOffset(12)]
-        public int ExpandedNodeCount;
+        public int NodeCount;
         [FieldOffset(16)]
-        public float PathfindingMs;
+        public int CornerCount;
         [FieldOffset(20)]
-        public float TrueDistanceMeters;
+        public int ExpandedNodeCount;
         [FieldOffset(24)]
-        public float DelaySeconds;
+        public float PathfindingMs;
         [FieldOffset(28)]
-        public float LowPassCutoffHz;
+        public float TrueDistanceMeters;
         [FieldOffset(32)]
-        public uint Flags;
+        public float DelaySeconds;
         [FieldOffset(36)]
+        public float LowPassCutoffHz;
+        [FieldOffset(40)]
+        public uint Flags;
+        [FieldOffset(44)]
         public uint StateHash;
+        [FieldOffset(48)]
+        public uint BufferId;
+        [FieldOffset(52)]
+        public uint Generation;
+        [FieldOffset(56)]
+        public uint FailureCode;
+        [FieldOffset(60)]
+        private byte _pad0;
+        [FieldOffset(61)]
+        private byte _pad1;
+        [FieldOffset(62)]
+        private byte _pad2;
+        [FieldOffset(63)]
+        private byte _pad3;
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
@@ -247,9 +321,9 @@ namespace Hecton8.Audio.Propagation
         [ReadOnly, NoAlias] public NativeArray<AcousticPortalNode> Nodes;
         [ReadOnly, NoAlias] public NativeArray<AcousticPortalEdge> Edges;
         [NoAlias]
-        public NativeList<int> OpenSet;
+        public NativeArray<int> OpenSet;
         [NoAlias]
-        public NativeList<int> ClosedSet;
+        public NativeArray<int> ClosedSet;
         [NoAlias]
         public NativeArray<float> Costs;
         [NoAlias]
@@ -291,8 +365,8 @@ namespace Hecton8.Audio.Propagation
                 !States.IsCreated ||
                 !OpenSet.IsCreated ||
                 !ClosedSet.IsCreated ||
-                OpenSet.Capacity <= 0 ||
-                ClosedSet.Capacity <= 0)
+                OpenSet.Length <= 0 ||
+                ClosedSet.Length <= 0)
             {
                 Result[0] = fallback;
                 return;
@@ -332,26 +406,27 @@ namespace Hecton8.Audio.Propagation
                 States[i] = 0;
             }
 
-            OpenSet.Clear();
-            ClosedSet.Clear();
+            int openCount = 0;
+            int closedCount = 0;
             Costs[sourceNode] = 0f;
             States[sourceNode] = 1;
-            OpenSet.AddNoResize(sourceNode);
+            OpenSet[openCount++] = sourceNode;
 
             int expanded = 0;
             bool found = false;
-            while (OpenSet.Length > 0 && expanded < maxExpansions)
+            while (openCount > 0 && expanded < maxExpansions)
             {
-                int openIndex = FindLowestCostOpenIndex();
+                int openIndex = FindLowestCostOpenIndex(openCount);
                 int current = OpenSet[openIndex];
-                OpenSet.RemoveAtSwapBack(openIndex);
+                openCount--;
+                OpenSet[openIndex] = OpenSet[openCount];
 
                 if ((uint)current >= (uint)nodeCount || States[current] == 2)
                     continue;
 
                 States[current] = 2;
-                if (ClosedSet.Length < ClosedSet.Capacity)
-                    ClosedSet.AddNoResize(current);
+                if (closedCount < ClosedSet.Length)
+                    ClosedSet[closedCount++] = current;
                 expanded++;
 
                 if (current == listenerNode)
@@ -388,10 +463,10 @@ namespace Hecton8.Audio.Propagation
 
                     Costs[next] = nextCost;
                     CameFrom[next] = current;
-                    if (States[next] == 0 && OpenSet.Length < OpenSet.Capacity)
+                    if (States[next] == 0 && openCount < OpenSet.Length)
                     {
                         States[next] = 1;
-                        OpenSet.AddNoResize(next);
+                        OpenSet[openCount++] = next;
                     }
                 }
             }
@@ -440,11 +515,11 @@ namespace Hecton8.Audio.Propagation
             return bestIndex;
         }
 
-        private int FindLowestCostOpenIndex()
+        private int FindLowestCostOpenIndex(int openCount)
         {
             int bestOpenIndex = 0;
             float bestCost = float.PositiveInfinity;
-            for (int i = 0; i < OpenSet.Length; i++)
+            for (int i = 0; i < openCount; i++)
             {
                 int nodeIndex = OpenSet[i];
                 float cost = (uint)nodeIndex < (uint)Costs.Length ? Costs[nodeIndex] : float.PositiveInfinity;
@@ -470,7 +545,7 @@ namespace Hecton8.Audio.Propagation
             if ((uint)predecessor < (uint)nodeCount)
                 lastPortalIndex = predecessor;
 
-            while (pathNode != sourceNode && pathNodeCount <= AcousticPortalConstants.MaxPathNodes)
+            while (pathNode != sourceNode && pathNodeCount < AcousticPortalConstants.MaxPathNodes)
             {
                 int previous = CameFrom[pathNode];
                 if ((uint)previous >= (uint)nodeCount)
@@ -485,6 +560,14 @@ namespace Hecton8.Audio.Propagation
                 stateHash = (stateHash ^ (uint)(pathNode + 1)) * 16777619u;
                 pathNode = previous;
                 pathNodeCount++;
+            }
+
+            if (pathNode != sourceNode)
+            {
+                AcousticPathResult invalid = AcousticPathResult.Fallback(AcousticPathStatus.NoPath, in Query);
+                invalid.ExpandedNodeCount = expanded;
+                invalid.StateHash = stateHash;
+                return invalid;
             }
 
             int corners = math.max(0, pathNodeCount - 2);
@@ -592,6 +675,132 @@ namespace Hecton8.Audio.Propagation
             }
 
             return false;
+        }
+    }
+
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard, CompileSynchronously = true)]
+    public struct GenerateMockAcousticLoadJob : IJob
+    {
+        [WriteOnly, NoAlias] public NativeArray<AcousticPortalNode> Nodes;
+        [WriteOnly, NoAlias] public NativeArray<AcousticPortalEdge> Edges;
+        [WriteOnly, NoAlias] public NativeArray<AcousticPathQuery> QueryOutput;
+        public int RequestedNodeCount;
+        public uint Seed;
+        public float GlobalQualityWeight;
+        public byte DisablePortalPath;
+
+        public void Execute()
+        {
+            int nodeCapacity = math.min(Nodes.Length, AcousticPortalConstants.MaxPathNodes);
+            int edgeCapacity = math.min(Edges.Length, AcousticPortalConstants.MaxPathEdges);
+            int requestedNodes = RequestedNodeCount <= 0 ? nodeCapacity : RequestedNodeCount;
+            int nodeCount = math.clamp(requestedNodes, 0, nodeCapacity);
+            int edgeCursor = 0;
+
+            for (int i = 0; i < nodeCapacity; i++)
+                Nodes[i] = default;
+            for (int i = 0; i < edgeCapacity; i++)
+                Edges[i] = default;
+
+            if (nodeCount <= 0)
+                return;
+
+            for (int i = 0; i < nodeCount; i++)
+            {
+                AcousticPortalNode node = new AcousticPortalNode
+                {
+                    Position = BuildAup(i, Seed),
+                    FirstEdge = edgeCursor,
+                    EdgeCount = 0,
+                    RoomVolumeCubicMeters = ResolveMockRoomVolume(i, Seed),
+                    Flags = AcousticPortalFlags.Voxel
+                };
+
+                TryAppendMockEdge(i, i - 1, nodeCount, edgeCapacity, ref edgeCursor);
+                TryAppendMockEdge(i, i + 1, nodeCount, edgeCapacity, ref edgeCursor);
+                node.EdgeCount = edgeCursor - node.FirstEdge;
+                Nodes[i] = node;
+            }
+
+            int queryCount = QueryOutput.Length;
+            int maxExpansions = ResolveMaxNodeExpansions(nodeCount, GlobalQualityWeight);
+            for (int i = 0; i < queryCount; i++)
+            {
+                int sourceIndex = i % nodeCount;
+                int listenerIndex = (i * 7 + 3) % nodeCount;
+                QueryOutput[i] = new AcousticPathQuery
+                {
+                    SourceAup = BuildAup(sourceIndex, Seed),
+                    ListenerAup = BuildAup(listenerIndex, Seed),
+                    ListenerRight = new float3(1f, 0f, 0f),
+                    NodeCount = nodeCount,
+                    EdgeCount = edgeCursor,
+                    MaxNodeExpansions = maxExpansions,
+                    GlobalQualityWeight = math.saturate(GlobalQualityWeight),
+                    DisablePortalPath = DisablePortalPath
+                };
+            }
+        }
+
+        private void TryAppendMockEdge(int from, int to, int nodeCount, int edgeCapacity, ref int edgeCursor)
+        {
+            if (to < 0 || to >= nodeCount || edgeCursor >= edgeCapacity)
+                return;
+
+            AcousticAup a = BuildAup(from, Seed);
+            AcousticAup b = BuildAup(to, Seed);
+            float distance = AcousticAup.DistanceMeters(in a, in b);
+            if (!math.isfinite(distance) || distance <= 0f)
+                distance = 1f;
+
+            AcousticPortalFlags flags = ((from + to + (int)(Seed & 7u)) % 9) == 0
+                ? AcousticPortalFlags.SealedBulkhead
+                : AcousticPortalFlags.None;
+            Edges[edgeCursor++] = new AcousticPortalEdge
+            {
+                ToNode = to,
+                DistanceMeters = distance,
+                Flags = flags
+            };
+        }
+
+        private static int ResolveMaxNodeExpansions(int nodeCount, float qualityWeight)
+        {
+            float quality = math.saturate(qualityWeight);
+            float scaled = math.lerp(2f, nodeCount, quality);
+            return math.clamp((int)math.round(scaled), 1, math.max(1, nodeCount));
+        }
+
+        private static float ResolveMockRoomVolume(int index, uint seed)
+        {
+            uint mixed = Mix((uint)index, seed);
+            float t = ((mixed >> 8) & 255u) * (1f / 255f);
+            return math.lerp(8f, 96f, t);
+        }
+
+        private static AcousticAup BuildAup(int index, uint seed)
+        {
+            uint mixed = Mix((uint)index, seed);
+            int gridX = (int)(mixed & 7u) - 3;
+            int gridY = (int)((mixed >> 3) & 3u) - 1;
+            int gridZ = (int)((mixed >> 5) & 7u) - 3;
+            float cell = AcousticPortalConstants.AupCellSizeMeters;
+            float3 local = new float3(
+                (((mixed >> 8) & 1023u) * (cell / 1024f)) - (cell * 0.5f),
+                (((mixed >> 18) & 255u) * (cell / 256f)) - (cell * 0.5f),
+                (((mixed >> 24) & 255u) * (cell / 256f)) - (cell * 0.5f));
+            return new AcousticAup(gridX, gridY, gridZ, local);
+        }
+
+        private static uint Mix(uint value, uint seed)
+        {
+            uint mixed = value * 747796405u + seed * 2891336453u + 0x9E3779B9u;
+            mixed ^= mixed >> 16;
+            mixed *= 2246822519u;
+            mixed ^= mixed >> 13;
+            mixed *= 3266489917u;
+            mixed ^= mixed >> 16;
+            return mixed;
         }
     }
 }

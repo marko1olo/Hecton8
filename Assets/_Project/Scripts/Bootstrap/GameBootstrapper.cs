@@ -4,7 +4,6 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using Hecton8.AI;
@@ -27,7 +26,6 @@ using Hecton8.Interaction;
 using Hecton8.Input;
 using Hecton8.Optimization;
 using Hecton8.Modding;
-using Hecton8.Physics;
 using Hecton8.Power;
 using Hecton8.Quest;
 using Hecton8.SaveSystem;
@@ -52,6 +50,9 @@ using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using CoreAudioEvent = Hecton8.Core.AudioEvent;
+using GlobalPhysicsStateManager = Hecton8.Physics.GlobalPhysicsStateManager;
+using PhysicsApplySystem = Hecton8.Physics.PhysicsApplySystem;
+using PhysicsEventBus = Hecton8.Physics.PhysicsEventBus;
 
 namespace Hecton8.Bootstrap
 {
@@ -110,8 +111,8 @@ namespace Hecton8.Bootstrap
         private const int HighTierProcessorCount = 8;
         private const int UltraTierProcessorCount = 12;
         private const double ObjectPoolWarmupFrameBudgetMilliseconds = 8.0d;
-        private const int FatalBootCrashLogBufferBytes = 24576;
         private const int BootStateRecordBytes = 32;
+        private const int FatalBootCrashMessageByteCount = 66;
         private const uint BootStateMagic = 0x38484248u; // HBH8
         private const ushort BootStateVersion = 1;
         private const int PendingEventCapacity = 12;
@@ -145,7 +146,6 @@ namespace Hecton8.Bootstrap
         private const double BootstrapJobWaitWatchdogSeconds = 10.0d;
         private const int BootstrapSceneRootScratchCapacity = 256;
         private const int BootstrapTransformScratchCapacity = 4096;
-        private static readonly UTF8Encoding _fatalBootCrashEncoding = new UTF8Encoding(false);
 #if UNITY_INCLUDE_TESTS
         private static readonly bool _isUnityTestRunnerProcess = ResolveUnityTestRunnerProcess();
 #endif
@@ -159,8 +159,6 @@ namespace Hecton8.Bootstrap
             "BIOS ERROR 0xBOOT\nEXPECTED: 00_BOOTSTRAP [0]\nACTION: FORCED RECOVERY";
         private const string FatalBootOverlayMessage =
             "BIOS ERROR 0xBOOT_FATAL\nACTION: SEE fatal_boot_crash.log";
-        private const string FatalBootCrashMessage =
-            "HECTON-8 FATAL BOOT CRASH\nACTION: SEE UNITY LOG AND BOOT BLACKBOX\n";
         private struct ListenerSlot
         {
             public IGameBootstrapperEventListener Listener;
@@ -1874,10 +1872,7 @@ namespace Hecton8.Bootstrap
 #if UNITY_EDITOR
             return loaded || dataStatus == global::Hecton8.Data.H8DataBlobLoadStatus.Missing;
 #else
-            if (!loaded)
-                throw new global::Hecton8.Core.FatalArchitectureException("Data Monolith boot failure: " + dataStatus);
-
-            return true;
+            return loaded;
 #endif
         }
 
@@ -4562,17 +4557,13 @@ namespace Hecton8.Bootstrap
             if (readModel == null)
                 return false;
 
-            if (!readModel.TryRaymarchNearestSonarSdf(
-                    new float3(rayOrigin.x, rayOrigin.y, rayOrigin.z),
-                    new float3(0f, -1f, 0f),
+            if (!VoxelSonarSdfMath.TryResolveNearestSdfSurface(
+                    readModel,
+                    math.float3(rayOrigin.x, rayOrigin.y, rayOrigin.z),
+                    math.float3(0f, -1f, 0f),
                     GroundCheckRayLength,
                     ResolveGroundReadySdfStepMeters(),
-                    out VoxelSonarSdfRaycastHit hit,
-                    out NativeArray<byte>.ReadOnly _,
-                    out int3 _,
-                    out float3 _,
-                    out float3 _,
-                    out float _) ||
+                    out VoxelSonarSdfRaycastHit hit) ||
                 (hit.Flags & VoxelSonarSdfRaycastHit.FlagHit) == 0u ||
                 !math.all(math.isfinite(hit.Point)) ||
                 !math.isfinite(hit.Distance))
@@ -5054,29 +5045,19 @@ namespace Hecton8.Bootstrap
         {
             string absolutePath = HectonPersistentPathPolicy.CombineFile(BootStateFileName);
             HectonPersistentPathPolicy.EnsureParentDirectory(absolutePath);
-            NativeArray<byte> record = new NativeArray<byte>(
-                BootStateRecordBytes,
-                Allocator.Temp,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[32] - boot crash recovery state - owner: GameBootstrapper
-            try
-            {
-                byte* data = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(record);
-                WriteUInt32(data, 0, BootStateMagic);
-                WriteUInt16(data, 4, BootStateVersion);
-                data[6] = (byte)marker;
-                data[7] = (byte)phase;
-                data[8] = serviceSlot == GlobalRegistryServiceSlot.Unknown ? byte.MaxValue : (byte)serviceSlot;
-                WriteUInt32(data, 12, _registryCoreReadyChecksum);
-                WriteUInt32(data, 16, GlobalRegistry.ActiveServiceTypeHash);
-                WriteUInt64(data, 20, unchecked((ulong)DateTime.UtcNow.Ticks));
-                data[28] = _bootStateSafeModeRequested ? (byte)1 : (byte)0;
-                data[29] = (byte)GlobalRegistry.ActiveBootProfile;
-                AsyncWriteManager.WriteAll(absolutePath, data, BootStateRecordBytes, out _);
-            }
-            finally
-            {
-                record.Dispose();
-            }
+            byte* data = stackalloc byte[BootStateRecordBytes];
+            UnsafeUtility.MemClear(data, BootStateRecordBytes);
+            WriteUInt32(data, 0, BootStateMagic);
+            WriteUInt16(data, 4, BootStateVersion);
+            data[6] = (byte)marker;
+            data[7] = (byte)phase;
+            data[8] = serviceSlot == GlobalRegistryServiceSlot.Unknown ? byte.MaxValue : (byte)serviceSlot;
+            WriteUInt32(data, 12, _registryCoreReadyChecksum);
+            WriteUInt32(data, 16, GlobalRegistry.ActiveServiceTypeHash);
+            WriteUInt64(data, 20, unchecked((ulong)DateTime.UtcNow.Ticks));
+            data[28] = _bootStateSafeModeRequested ? (byte)1 : (byte)0;
+            data[29] = (byte)GlobalRegistry.ActiveBootProfile;
+            AsyncWriteManager.WriteAll(absolutePath, data, BootStateRecordBytes, out _);
         }
 
         private static uint CalculateRegistryActiveServiceTypeHash()
@@ -5359,7 +5340,7 @@ namespace Hecton8.Bootstrap
             if (exception == null)
                 return;
 
-            WriteFatalBootstrapLog(FatalBootCrashMessage);
+            WriteFatalBootstrapLog();
             BootstrapBiosErrorOverlay.Show(FatalBootOverlayMessage);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -5381,39 +5362,85 @@ namespace Hecton8.Bootstrap
             body.isKinematic = isKinematic;
         }
 
-        private static unsafe void WriteFatalBootstrapLog(string message)
+        private static unsafe void WriteFatalBootstrapLog()
         {
-            if (string.IsNullOrEmpty(message))
-                return;
-
-            string truncatedMessage = message;
-            int requiredBytes = _fatalBootCrashEncoding.GetByteCount(truncatedMessage);
-            while (requiredBytes > FatalBootCrashLogBufferBytes && truncatedMessage.Length > 1)
-            {
-                truncatedMessage = truncatedMessage.Substring(0, truncatedMessage.Length >> 1);
-                requiredBytes = _fatalBootCrashEncoding.GetByteCount(truncatedMessage);
-            }
-
-            if (requiredBytes <= 0)
-                return;
-
+            const int byteCount = FatalBootCrashMessageByteCount;
             string absolutePath = HectonPersistentPathPolicy.CombineFile(FatalBootCrashFileName);
             HectonPersistentPathPolicy.EnsureParentDirectory(absolutePath);
-            NativeArray<byte> scratch = new NativeArray<byte>(requiredBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[fatal boot crash payload bytes] - bootstrap fatal log staging - owner: GameBootstrapper
-            try
-            {
-                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(scratch);
-                fixed (char* source = truncatedMessage)
-                {
-                    int bytesWritten = _fatalBootCrashEncoding.GetBytes(source, truncatedMessage.Length, destination, requiredBytes);
-                    if (bytesWritten > 0)
-                        AsyncWriteManager.WriteAll(absolutePath, destination, bytesWritten, out _);
-                }
-            }
-            finally
-            {
-                scratch.Dispose();
-            }
+            byte* scratch = stackalloc byte[byteCount];
+            WriteFatalBootstrapMarker(scratch);
+
+            AsyncWriteManager.WriteAll(absolutePath, scratch, byteCount, out _);
+        }
+
+        private static unsafe void WriteFatalBootstrapMarker(byte* scratch)
+        {
+            scratch[0] = 72;
+            scratch[1] = 69;
+            scratch[2] = 67;
+            scratch[3] = 84;
+            scratch[4] = 79;
+            scratch[5] = 78;
+            scratch[6] = 45;
+            scratch[7] = 56;
+            scratch[8] = 32;
+            scratch[9] = 70;
+            scratch[10] = 65;
+            scratch[11] = 84;
+            scratch[12] = 65;
+            scratch[13] = 76;
+            scratch[14] = 32;
+            scratch[15] = 66;
+            scratch[16] = 79;
+            scratch[17] = 79;
+            scratch[18] = 84;
+            scratch[19] = 32;
+            scratch[20] = 67;
+            scratch[21] = 82;
+            scratch[22] = 65;
+            scratch[23] = 83;
+            scratch[24] = 72;
+            scratch[25] = 10;
+            scratch[26] = 65;
+            scratch[27] = 67;
+            scratch[28] = 84;
+            scratch[29] = 73;
+            scratch[30] = 79;
+            scratch[31] = 78;
+            scratch[32] = 58;
+            scratch[33] = 32;
+            scratch[34] = 83;
+            scratch[35] = 69;
+            scratch[36] = 69;
+            scratch[37] = 32;
+            scratch[38] = 85;
+            scratch[39] = 78;
+            scratch[40] = 73;
+            scratch[41] = 84;
+            scratch[42] = 89;
+            scratch[43] = 32;
+            scratch[44] = 76;
+            scratch[45] = 79;
+            scratch[46] = 71;
+            scratch[47] = 32;
+            scratch[48] = 65;
+            scratch[49] = 78;
+            scratch[50] = 68;
+            scratch[51] = 32;
+            scratch[52] = 66;
+            scratch[53] = 79;
+            scratch[54] = 79;
+            scratch[55] = 84;
+            scratch[56] = 32;
+            scratch[57] = 66;
+            scratch[58] = 76;
+            scratch[59] = 65;
+            scratch[60] = 67;
+            scratch[61] = 75;
+            scratch[62] = 66;
+            scratch[63] = 79;
+            scratch[64] = 88;
+            scratch[65] = 10;
         }
 
         private static bool IsBootstrapScene(Scene scene)

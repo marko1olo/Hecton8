@@ -348,10 +348,15 @@ namespace Hecton8.AI.Ecosystem
                 _jobScheduled = true;
                 _jobLocksHeld = true;
             }
-            catch (Exception)
+            catch (InvalidOperationException)
             {
                 UnlockJobBuffers();
-                throw;
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53364A53u, SourceHash, 0f);
+            }
+            catch (ArgumentException)
+            {
+                UnlockJobBuffers();
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53364A53u, SourceHash, 0f);
             }
         }
 
@@ -771,7 +776,23 @@ namespace Hecton8.AI.Ecosystem
                 _runtimeFlags |= TuningFlagCsvOverride;
                 _csvTimestampTicks = lastWriteUtc.Ticks;
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53364356u, SourceHash, 0f);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53364356u, SourceHash, 0f);
+            }
+            catch (ArgumentException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53364356u, SourceHash, 0f);
+            }
+            catch (NotSupportedException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53364356u, SourceHash, 0f);
+            }
+            catch (InvalidOperationException)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(0x53364356u, SourceHash, 0f);
             }
@@ -828,7 +849,23 @@ namespace Hecton8.AI.Ecosystem
                 _runtimeFlags |= TuningFlagLegacyBinary;
                 return true;
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (InvalidOperationException)
             {
                 return false;
             }
@@ -1177,7 +1214,23 @@ namespace Hecton8.AI.Ecosystem
                 WriteBlackBoxFile(Path.Combine(root, DumpRelativePath), telemetry, cursor);
                 WriteBlackBoxFile(Path.Combine(root, DumpSymbiosisRelativePath), telemetry, cursor);
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53364450u, SourceHash, 0f);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53364450u, SourceHash, 0f);
+            }
+            catch (ArgumentException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53364450u, SourceHash, 0f);
+            }
+            catch (NotSupportedException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53364450u, SourceHash, 0f);
+            }
+            catch (InvalidOperationException)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(0x53364450u, SourceHash, 0f);
             }
@@ -1667,6 +1720,9 @@ namespace Hecton8.AI.Ecosystem
 
     public static class SymbiosisLayoutManifest
     {
+        private const string LayoutSizeMismatchMessage = "[SymbiosisLayoutManifest] Size mismatch";
+        private const string LayoutOffsetMismatchMessage = "[SymbiosisLayoutManifest] Offset mismatch";
+
         private static bool _verified;
 
         public static void VerifyColdBoot()
@@ -1707,19 +1763,19 @@ namespace Hecton8.AI.Ecosystem
         {
             int observed = UnsafeUtility.SizeOf<T>();
             if (observed != expected)
-                Fail(typeof(T).Name, expected, observed);
+                Fail(LayoutSizeMismatchMessage);
         }
 
         private static void AssertOffset<T>(string fieldName, int expected) where T : unmanaged
         {
             int observed = (int)Marshal.OffsetOf<T>(fieldName);
             if (observed != expected)
-                Fail(typeof(T).Name + "." + fieldName, expected, observed);
+                Fail(LayoutOffsetMismatchMessage);
         }
 
-        private static void Fail(string label, int expected, int observed)
+        private static void Fail(string message)
         {
-            throw new CriticalBootException("[SymbiosisLayoutManifest] Layout mismatch " + label + " expected=" + expected + " observed=" + observed);
+            throw new CriticalBootException(message);
         }
     }
 

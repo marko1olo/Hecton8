@@ -35,7 +35,7 @@ namespace Hecton8.Visor
         private const int NoirTelemetryCapacity = 300;
         private const int NoirColorProfileCapacity = 32;
         private const int NoirCsvScratchBytes = 16 * 1024;
-        private const string NoirDumpFileName = "Dump_SHINOBU_235.bin";
+        private const string NoirDumpFileName = "Dump_1309_VisorUberPostNoir.bin";
         private const string NoirColorCsvFileName = "noir_color_grading_profiles.csv";
         private const BufferID NoirConstantsVaultId = BufferID.Shinobu235NoirConstants;
         private const BufferID NoirInputVaultId = BufferID.Shinobu235NoirInput;
@@ -506,7 +506,7 @@ namespace Hecton8.Visor
         {
             _dataVault = GlobalRegistry.DataVault;
             _noirResolutionScaler = GlobalRegistry.ResolutionScaler;
-            _noirPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _noirPlayerContext = GlobalRegistry.Player;
             RefreshNoirPlayerContextCold();
         }
 
@@ -672,7 +672,7 @@ namespace Hecton8.Visor
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options)
-            where T : struct
+            where T : unmanaged
         {
             if (_dataVault == null || requiredLength <= 0)
             {
@@ -696,7 +696,7 @@ namespace Hecton8.Visor
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId)
-            where T : struct
+            where T : unmanaged
         {
             if (vault != null && IsNoirVaultHandle(in handle, bufferId))
                 vault.ReleaseBuffer(in handle);
@@ -710,7 +710,7 @@ namespace Hecton8.Visor
             BufferID bufferId,
             int requiredLength,
             out NativeArray<T> buffer)
-            where T : struct
+            where T : unmanaged
         {
             return TryOpenNoirVaultBuffer(vault, in handle, bufferId, requiredLength, readOnly: false, out buffer);
         }
@@ -721,7 +721,7 @@ namespace Hecton8.Visor
             BufferID bufferId,
             int requiredLength,
             out NativeArray<T> buffer)
-            where T : struct
+            where T : unmanaged
         {
             return TryOpenNoirVaultBuffer(vault, in handle, bufferId, requiredLength, readOnly: true, out buffer);
         }
@@ -733,7 +733,7 @@ namespace Hecton8.Visor
             int requiredLength,
             bool readOnly,
             out NativeArray<T> buffer)
-            where T : struct
+            where T : unmanaged
         {
             buffer = default;
             if (vault == null ||
@@ -753,7 +753,7 @@ namespace Hecton8.Visor
         }
 
         private static bool IsNoirVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
-            where T : struct
+            where T : unmanaged
         {
             return handle.BufferID == unchecked((uint)(int)bufferId) &&
                    handle.SystemID == (uint)SystemID.GraphicsScalability &&
@@ -1000,7 +1000,7 @@ namespace Hecton8.Visor
                 {
                     int count = math.min(1024, totalBytes - offset);
                     UnsafeUtility.MemCpy(chunk, source + offset, count);
-                    stream.Write(new ReadOnlySpan<byte>(chunk, count));
+                    stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(chunk), count));
                     offset += count;
                 }
             }
@@ -1103,7 +1103,7 @@ namespace Hecton8.Visor
                 {
                     int max = math.min(scratch.Length, NoirCsvScratchBytes);
                     void* scratchPtr = scratch.GetUnsafePtr();
-                    read = stream.Read(new Span<byte>(scratchPtr, max));
+                    read = stream.Read(MemoryMarshal.CreateSpan(ref UnsafeUtility.AsRef<byte>(scratchPtr), max));
                 }
 
                 if (read <= 0)

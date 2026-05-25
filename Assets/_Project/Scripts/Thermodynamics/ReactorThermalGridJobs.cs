@@ -2,7 +2,6 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Gameplay.AirlockPressurization;
-using Hecton8.Physics;
 using Hecton8.Power;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
@@ -11,6 +10,8 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
+
+using FluidCompartmentDTO = global::Hecton8.Core.Contracts.Physics.FluidCompartmentDTO;
 
 namespace Hecton8.Thermodynamics
 {
@@ -736,11 +737,11 @@ namespace Hecton8.Thermodynamics
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // No queue storage is read, retained, or aliased with reactor Vault rows;
         // the only persistent truth remains BaseReactorStateDTO/ledger rows.
-        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<BaseModuleCompromisedSignal>.ParallelWriter BaseModuleWriter;
+        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<BaseModuleCompromisedSignal>.ParallelWriter BaseModuleWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> BaseModuleWriterBudget;
-        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<RadiationSourceSignal>.ParallelWriter RadiationWriter;
+        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<RadiationSourceSignal>.ParallelWriter RadiationWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> RadiationWriterBudget;
-        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<CombatDamageSignal>.ParallelWriter DamageWriter;
+        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<CombatDamageSignal>.ParallelWriter DamageWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> DamageWriterBudget;
         public NuclearReactorThermalTuningDTO Tuning;
         public ThermalGridTuningDTO GridTuning;
@@ -860,10 +861,10 @@ namespace Hecton8.Thermodynamics
         [NativeDisableUnsafePtrRestriction, NoAlias] public ReactorThermalScratchDTO* Scratch;
 
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
-        // SignalBus exposes bounded NativeQueue<T>.ParallelWriter lanes. Unity's
+        // SignalBus exposes bounded MPSC ring writer lanes. Unity's
         // container safety cannot see the bus owner-phase initialization performed
-        // before this job is scheduled, so the write-only queue field is otherwise
-        // rejected even though this job never reads from the queue or retains it.
+        // before this job is scheduled, so the write-only writer field is otherwise
+        // rejected even though this job never reads from the lane or retains it.
         //
         // SAFETY_JUSTIFICATION_PARAGRAPH_2:
         // Alternatives considered: (a) direct managed event publication, rejected
@@ -877,10 +878,10 @@ namespace Hecton8.Thermodynamics
         // Invariant: Execute(index) writes at most one thermal and one damage
         // signal per reactor, capped by MaxReactors=16 and gated by frame strides.
         // The owner calls SignalBus<T>.EnsureInitialized in cold setup, and no job
-        // reads either queue while this producer handle is live.
-        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<ThermalStateChangedSignal>.ParallelWriter ThermalWriter;
+        // reads either lane while this producer handle is live.
+        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<ThermalStateChangedSignal>.ParallelWriter ThermalWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> ThermalWriterBudget;
-        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<CombatDamageSignal>.ParallelWriter DamageWriter;
+        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<CombatDamageSignal>.ParallelWriter DamageWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> DamageWriterBudget;
         public ReactorThermalTuningDTO Tuning;
         public ThermalGridTuningDTO GridTuning;

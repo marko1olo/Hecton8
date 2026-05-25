@@ -462,7 +462,7 @@ namespace Hecton8.World.Biomes
             }
 
             if (_playerContext == null)
-                _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerContext = GlobalRegistry.Player;
 
             if (_playerContext != null && _playerContext.PlayerTransform != null)
             {
@@ -1244,7 +1244,7 @@ namespace Hecton8.World.Biomes
             catch (Exception exception)
             {
 #if UNITY_EDITOR
-                Debug.LogWarning("[BiomeTransitionManagerRuntime] CSV load failed: " + exception.Message, this);
+                Hecton8.Core.H8Debug.LogWarning("[BiomeTransitionManagerRuntime] CSV load failed: " + exception.Message, this);
 #endif
                 return 0;
             }
@@ -1643,7 +1643,7 @@ namespace Hecton8.World.Biomes
             catch (Exception exception)
             {
 #if UNITY_EDITOR
-                Debug.LogError("[BiomeTransitionManagerRuntime] Black-box dump failed: " + exception.Message);
+                Hecton8.Core.H8Debug.LogError("[BiomeTransitionManagerRuntime] Black-box dump failed: " + exception.Message);
 #endif
                 return false;
             }

@@ -187,7 +187,7 @@ namespace Hecton8.Dev
             catch (Exception ex)
             {
                 FailRecovery(ex.Message);
-                Debug.LogException(ex);
+                Hecton8.Core.H8Debug.LogException(ex);
             }
             finally
             {
@@ -494,7 +494,7 @@ namespace Hecton8.Dev
             _debugCriticalRecoveryPromoted = false;
             _debugLastIssue = string.IsNullOrEmpty(issue) ? "Unknown save recovery failure." : issue;
             _debugLastPhase = "Failed";
-            Debug.LogWarning($"[SaveRecoverySmoke] FAIL {_debugLastIssue}");
+            Hecton8.Core.H8Debug.LogWarning($"[SaveRecoverySmoke] FAIL {_debugLastIssue}");
         }
 
         private void AutoResolve()

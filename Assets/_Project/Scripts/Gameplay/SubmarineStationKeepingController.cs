@@ -30,6 +30,7 @@ namespace Hecton8.Gameplay
 
         private SubmarineCoreDirector _submarineCore;
         private Rigidbody _hullRigidbody;
+        private IPhysicsService _physicsService;
         private bool _registeredFixedTick;
         private bool _hotSwapRegistered;
         private bool _stationKeepingEnabled;
@@ -87,10 +88,11 @@ namespace Hecton8.Gameplay
             if (offsetToTargetSq <= PositionHoldEpsilonMetersSq &&
                 IsRotationClose(currentRotation, _targetRotation))
             {
-                if (!_hullRigidbody.isKinematic)
+                IPhysicsService holdPhysicsService = _physicsService;
+                if (!_hullRigidbody.isKinematic && holdPhysicsService != null)
                 {
-                    Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(_hullRigidbody, Vector3.zero, wake: false);
-                    Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(_hullRigidbody, Vector3.zero, wake: false);
+                    holdPhysicsService.QueueLinearVelocitySet(_hullRigidbody, Vector3.zero, wake: false);
+                    holdPhysicsService.QueueAngularVelocitySet(_hullRigidbody, Vector3.zero, wake: false);
                 }
 
                 _stationKeepingSpeedMetersPerSecond = 0f;
@@ -125,10 +127,11 @@ namespace Hecton8.Gameplay
             if (!IsFinite(nextRuntimePosition))
                 return;
 
-            if (!_hullRigidbody.isKinematic)
+            IPhysicsService physicsService = _physicsService;
+            if (!_hullRigidbody.isKinematic && physicsService != null)
             {
-                Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(_hullRigidbody, impliedLinearVelocity);
-                Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(_hullRigidbody, impliedAngularVelocity);
+                physicsService.QueueLinearVelocitySet(_hullRigidbody, impliedLinearVelocity);
+                physicsService.QueueAngularVelocitySet(_hullRigidbody, impliedAngularVelocity);
             }
 
             _hullRigidbody.MovePosition(nextRuntimePosition);
@@ -231,6 +234,9 @@ namespace Hecton8.Gameplay
 
             if (_submarineCore != null)
                 _hullRigidbody = _submarineCore.HullRigidbody;
+
+            if (_physicsService == null)
+                _physicsService = GlobalRegistry.Physics;
         }
 
         private double ResolvePositionStepMeters(double3 offsetToTarget, float fixedDeltaTime)
@@ -279,6 +285,12 @@ namespace Hecton8.Gameplay
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Physics)
+            {
+                _physicsService = currentService as IPhysicsService;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
                 return;
 

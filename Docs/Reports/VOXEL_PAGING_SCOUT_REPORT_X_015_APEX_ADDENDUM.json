@@ -1,0 +1,87 @@
+{
+  "agentId": "X_015",
+  "scope": "APEX re-audit of voxel RLE packet layout, sector paging formulas, and SDF pool reuse",
+  "sourceCodeModified": false,
+  "artifacts": {
+    "markdown": "Docs/Reports/VOXEL_PAGING_SCOUT_REPORT_X_015_APEX_ADDENDUM.md",
+    "status": "Docs/Tasks/Status_X_015.md",
+    "rationale": "Docs/AgentLogs/Rationale_X_015.md",
+    "log": "Docs/AgentLogs/LOG_X_015.md"
+  },
+  "rlePacket": {
+    "outerPagerByteRle": {
+      "recordStrideBytes": 3,
+      "fields": [
+        { "offset": 0, "size": 1, "name": "Value", "type": "byte" },
+        { "offset": 1, "size": 2, "name": "RunLength", "type": "ushort little-endian" }
+      ],
+      "evidence": "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs:2153"
+    },
+    "voxelDeltaHeader": {
+      "strideBytes": 32,
+      "fields": [
+        { "offset": 0, "size": 8, "name": "SectorHash", "type": "ulong" },
+        { "offset": 8, "size": 4, "name": "CompressedSize", "type": "uint" },
+        { "offset": 12, "size": 4, "name": "UncompressedSize", "type": "uint" },
+        { "offset": 16, "size": 8, "name": "XXHash3Checksum", "type": "ulong" },
+        { "offset": 24, "size": 4, "name": "_pad0", "type": "uint" },
+        { "offset": 28, "size": 4, "name": "_pad1", "type": "uint" }
+      ],
+      "evidence": "Assets/_Project/Scripts/SaveSystem/VoxelDeltaCompressionArchitecture.cs:29"
+    },
+    "voxelDeltaRun": {
+      "strideBytes": 8,
+      "alignmentBytes": 8,
+      "fields": [
+        { "offset": 0, "size": 2, "name": "StartIndex", "type": "ushort" },
+        { "offset": 2, "size": 2, "name": "RunLength", "type": "ushort" },
+        { "offset": 4, "size": 1, "name": "SdfValue", "type": "sbyte" },
+        { "offset": 5, "size": 1, "name": "MaterialId", "type": "byte" },
+        { "offset": 6, "size": 1, "name": "Flags", "type": "byte" },
+        { "offset": 7, "size": 1, "name": "Reserved0", "type": "byte" }
+      ],
+      "evidence": "Assets/_Project/Scripts/SaveSystem/VoxelDeltaCompressionArchitecture.cs:17"
+    },
+    "rawVsLz4FlagPersistedInHeader": false
+  },
+  "sectorPaging": {
+    "sectorSizeBytes": 262144,
+    "sectorHeaderBytes": 64,
+    "sectorPayloadBytes": 262080,
+    "worldDirectoryBytes": 4096,
+    "maxSectors": 8192,
+    "sectorOffsetFormula": "4096 + (((ulong)sectorHash & 8191) * 262144)",
+    "payloadSplitting": false,
+    "directory": {
+      "headerBytes": 64,
+      "entryBytes": 16,
+      "slotCount": 252,
+      "slotFormula": "mixed & 251",
+      "reachableSlots": 128,
+      "readUsesDirectory": false
+    }
+  },
+  "vxrlCapacity": {
+    "headerBytes": 32,
+    "runBytes": 8,
+    "constantMaxRunsPerWalPayload": 32756,
+    "effectiveRawPackMaxRuns": 32752,
+    "worstCaseFullChunkRuns": 32768,
+    "worstCaseRleBytes": 262144,
+    "worstCasePayloadBytesWithHeader": 262176,
+    "worstCaseExceedsSectorPayloadByBytes": 96,
+    "singleSectorWorstCaseSafe": false
+  },
+  "chunkSdfReuse": {
+    "dirtyChunkStatePoolCapacity": 256,
+    "dirtyMaskWordsPerChunk": 1024,
+    "sdfValuesPerChunk": 32768,
+    "materialBytesPerChunk": 32768,
+    "flagBytesPerChunk": 32768,
+    "clearOnLease": true,
+    "clearOnRelease": false,
+    "normalWriteVersionGate": true,
+    "theoreticalRaceWindow": true,
+    "theoreticalLossPath": "_chunkWriteVersions.TrySet failure can leave version unchanged while compaction later removes a mutated dirty state"
+  }
+}

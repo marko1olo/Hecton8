@@ -351,7 +351,7 @@ namespace Hecton8.Interaction
                 if (!s_registrationSaturationLogged)
                 {
                     s_registrationSaturationLogged = true;
-                    Debug.LogWarning("[InteractableRegistry] Fixed spatial target registry saturated. Increase MaxRegisteredTargets.");
+                    Hecton8.Core.H8Debug.LogWarning("[InteractableRegistry] Fixed spatial target registry saturated. Increase MaxRegisteredTargets.");
                 }
 #endif
                 return;
@@ -498,7 +498,7 @@ namespace Hecton8.Interaction
             if (!s_cacheSaturationLogged)
             {
                 s_cacheSaturationLogged = true;
-                Debug.LogWarning("[InteractableRegistry] Fixed collider target cache saturated. Increase MaxCachedTargets.");
+                Hecton8.Core.H8Debug.LogWarning("[InteractableRegistry] Fixed collider target cache saturated. Increase MaxCachedTargets.");
             }
 #endif
         }

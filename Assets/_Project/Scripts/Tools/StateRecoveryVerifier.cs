@@ -154,7 +154,7 @@ namespace Hecton8.Tools
                 _testsFailed++;
                 LogVerification($"FAIL {testName}: exception {exception.Message}");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogException(exception, this);
+                Hecton8.Core.H8Debug.LogException(exception, this);
 #endif
             }
         }
@@ -465,7 +465,7 @@ namespace Hecton8.Tools
 
         private string ResolveExistingSaveSlot()
         {
-            SaveManager saveManager = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance as SaveManager;
+            SaveManager saveManager = Hecton8.Core.GlobalRegistry.Save as SaveManager;
             if (saveManager == null || _saveSlotProbeOrder == null)
                 return string.Empty;
 

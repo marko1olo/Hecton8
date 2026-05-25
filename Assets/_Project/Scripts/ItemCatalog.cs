@@ -305,7 +305,7 @@ namespace Hecton8.SaveSystem
 
             if (_worldPrefabRuntimeLookup.TryGetValue(hashId, out WorldPrefabRuntimeRecord runtimeRecord))
             {
-                runtimeRecord.LastAccessFrame = Time.frameCount;
+                runtimeRecord.LastAccessFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
                 CaptureCurrentPlayerAup(ref runtimeRecord);
                 _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
 
@@ -340,7 +340,7 @@ namespace Hecton8.SaveSystem
                 {
                     PrefabReference = prefabReference,
                     LoadState = WorldPrefabLoadState.Queued,
-                    LastAccessFrame = Time.frameCount,
+                    LastAccessFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex,
                     DispatchRequestId = requestId,
                     DispatchAssetKey = dispatchAssetKey
                 };
@@ -357,7 +357,7 @@ namespace Hecton8.SaveSystem
                 PrefabReference = prefabReference,
                 Handle = handle,
                 LoadState = WorldPrefabLoadState.Loading,
-                LastAccessFrame = Time.frameCount,
+                LastAccessFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex,
                 DispatchRequestId = 0,
                 DispatchAssetKey = dispatchAssetKey
             };
@@ -396,7 +396,7 @@ namespace Hecton8.SaveSystem
             if (_worldPrefabRuntimeLookup == null || !_worldPrefabRuntimeLookup.TryGetValue(hashId, out WorldPrefabRuntimeRecord runtimeRecord))
                 return TryGetDirectWorldPrefabFallback(hashId, out prefab);
 
-            runtimeRecord.LastAccessFrame = Time.frameCount;
+            runtimeRecord.LastAccessFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             CaptureCurrentPlayerAup(ref runtimeRecord);
 
             if (!runtimeRecord.Handle.IsValid())
@@ -581,7 +581,7 @@ namespace Hecton8.SaveSystem
             if (maxReleaseCount <= 0 || _worldPrefabRuntimeLookup == null || _worldPrefabRuntimeLookup.Count <= 0)
                 return 0;
 
-            int currentFrame = Time.frameCount;
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             int minimumIdleFrames = minUnusedFrames > 0 ? minUnusedFrames : DefaultWorldPrefabLruIdleFrames;
             int evictedCount = 0;
 
@@ -944,7 +944,7 @@ namespace Hecton8.SaveSystem
 
                 runtimeRecord.Handle = handle;
                 runtimeRecord.LoadState = WorldPrefabLoadState.Loading;
-                runtimeRecord.LastAccessFrame = Time.frameCount;
+                runtimeRecord.LastAccessFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
                 CaptureCurrentPlayerAup(ref runtimeRecord);
                 _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
             }
@@ -1187,7 +1187,7 @@ namespace Hecton8.SaveSystem
             if (_cachedAssetLoadDispatcher == null)
                 _cachedAssetLoadDispatcher = GlobalRegistry.AssetLoadDispatcher;
             if (_cachedPlayerContext == null)
-                _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _cachedPlayerContext = GlobalRegistry.Player;
 #endif
         }
 
@@ -1231,7 +1231,7 @@ namespace Hecton8.SaveSystem
                 if (!ReferenceEquals(existing, item))
                 {
                     RecordAmbiguity(id, existing, item);
-                    Debug.LogWarning("[ItemCatalog] Duplicate ID alias. Skipping duplicate entry.", item);
+                    Hecton8.Core.H8Debug.LogWarning("[ItemCatalog] Duplicate ID alias. Skipping duplicate entry.", item);
                 }
 
                 return;
@@ -1321,7 +1321,7 @@ namespace Hecton8.SaveSystem
                 if (!ReferenceEquals(existing, item))
                 {
                     RecordHashAmbiguity(hashId, existing, item);
-                    Debug.LogWarning("[ItemCatalog] Duplicate hash alias. Skipping duplicate entry.", item);
+                    Hecton8.Core.H8Debug.LogWarning("[ItemCatalog] Duplicate hash alias. Skipping duplicate entry.", item);
                 }
 
                 return;

@@ -459,7 +459,7 @@ namespace Hecton8.Construction
         {
             _toolDurabilitySystem = GlobalRegistry.ToolDurabilityService;
             _playerInventoryService = GlobalRegistry.PlayerInventory;
-            RebindPlayerToolManager(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+            RebindPlayerToolManager(GlobalRegistry.Player);
         }
 
         private void RebindPlayerToolManager(IPlayerRuntimeContext playerContext)

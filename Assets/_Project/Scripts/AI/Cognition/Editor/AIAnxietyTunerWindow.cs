@@ -316,7 +316,7 @@ namespace Hecton8.AI.Cognition.Editor
             }
 
             int cursor = buffers.TelemetryCursor.IsCreated && buffers.TelemetryCursor.Length > 0 ? buffers.TelemetryCursor[0] : 0;
-            _chart.SetTelemetry(buffers.TelemetryRing, cursor);
+            _chart.SetTelemetry(ResolveEditorVault(), in _anxietyHandles.TelemetryRing, cursor);
         }
 
         private void DrawSceneGizmos(SceneView sceneView)
@@ -331,6 +331,9 @@ namespace Hecton8.AI.Cognition.Editor
                 tuning = AnxietyDecayJobMath.SanitizeTuning(in source);
             }
             int count = math.min(256, math.min(cognitionBuffers.States.Length, cognitionBuffers.Aups.Length));
+            if (!TryResolveFiniteOriginAup(in cognitionBuffers, count, out double3 originAup))
+                return;
+
             for (int i = 0; i < count; i++)
             {
                 CognitionStateDTO state = cognitionBuffers.States[i];
@@ -339,11 +342,29 @@ namespace Hecton8.AI.Cognition.Editor
                 if (fear <= tuning.CalmingThreshold && aggression <= tuning.CalmingThreshold)
                     continue;
 
-                float3 local = AupPrecisionMath.DowncastLocalDeltaClamped(cognitionBuffers.Aups[i].AUP, 2048f, float3.zero);
+                double3 localDelta = AupPrecisionMath.LocalDeltaDouble(cognitionBuffers.Aups[i].AUP, originAup);
+                float3 local = AupPrecisionMath.DowncastLocalDeltaClamped(localDelta, 2048f, float3.zero);
                 Vector3 basePosition = new Vector3(local.x, local.y + 2.0f, local.z);
                 DrawBar(basePosition + Vector3.left * 0.7f, fear, new Color(1f, 0.82f, 0.12f, 0.9f));
                 DrawBar(basePosition + Vector3.right * 0.7f, aggression, new Color(1f, 0.22f, 0.12f, 0.9f));
             }
+        }
+
+        private static bool TryResolveFiniteOriginAup(in UtilityAICognitionVaultBuffers buffers, int count, out double3 originAup)
+        {
+            originAup = default;
+            int limit = math.min(count, buffers.Aups.IsCreated ? buffers.Aups.Length : 0);
+            for (int i = 0; i < limit; i++)
+            {
+                double3 candidate = buffers.Aups[i].AUP;
+                if (!math.all(math.isfinite(candidate)))
+                    continue;
+
+                originAup = candidate;
+                return true;
+            }
+
+            return false;
         }
 
         private static void DrawBar(Vector3 basePosition, float value, Color color)
@@ -362,7 +383,8 @@ namespace Hecton8.AI.Cognition.Editor
 
         private sealed class AnxietyTelemetryChartElement : VisualElement
         {
-            private NativeArray<AnxietyTelemetryEntry> _ring;
+            private IDataVault _vault;
+            private VaultGenerationHandle<AnxietyTelemetryEntry> _telemetryHandle;
             private int _cursor;
 
             public AnxietyTelemetryChartElement()
@@ -372,9 +394,10 @@ namespace Hecton8.AI.Cognition.Editor
                 generateVisualContent += DrawChart;
             }
 
-            public void SetTelemetry(NativeArray<AnxietyTelemetryEntry> ring, int cursor)
+            public void SetTelemetry(IDataVault vault, in VaultGenerationHandle<AnxietyTelemetryEntry> telemetryHandle, int cursor)
             {
-                _ring = ring;
+                _vault = vault;
+                _telemetryHandle = telemetryHandle;
                 _cursor = cursor;
                 MarkDirtyRepaint();
             }
@@ -391,23 +414,35 @@ namespace Hecton8.AI.Cognition.Editor
                 painter.LineTo(new Vector2(rect.xMax, rect.yMin));
                 painter.Stroke();
 
-                if (!_ring.IsCreated || _ring.Length <= 1)
+                if (_vault == null ||
+                    !IsHandleCreated(in _telemetryHandle) ||
+                    !_vault.TryResolveHandle(in _telemetryHandle, out NativeArray<AnxietyTelemetryEntry> ring) ||
+                    !ring.IsCreated ||
+                    ring.Length <= 1)
+                {
                     return;
+                }
 
-                DrawLine(painter, rect, true, new Color(1f, 0.82f, 0.12f, 1f));
-                DrawLine(painter, rect, false, new Color(1f, 0.22f, 0.12f, 1f));
+                DrawLine(painter, rect, ring, true, new Color(1f, 0.82f, 0.12f, 1f));
+                DrawLine(painter, rect, ring, false, new Color(1f, 0.22f, 0.12f, 1f));
             }
 
-            private void DrawLine(Painter2D painter, Rect rect, bool fear, Color color)
+            private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle)
+                where T : struct
+            {
+                return handle.BufferID != 0u && handle.Generation != 0u;
+            }
+
+            private void DrawLine(Painter2D painter, Rect rect, NativeArray<AnxietyTelemetryEntry> ring, bool fear, Color color)
             {
                 painter.strokeColor = color;
                 painter.lineWidth = 2f;
                 painter.BeginPath();
-                int length = math.min(_ring.Length, AnxietyDecayConstants.TelemetryFrames);
+                int length = math.min(ring.Length, AnxietyDecayConstants.TelemetryFrames);
                 for (int i = 0; i < length; i++)
                 {
                     int index = (_cursor + 1 + i) % length;
-                    AnxietyTelemetryEntry entry = _ring[index];
+                    AnxietyTelemetryEntry entry = ring[index];
                     float value = fear ? entry.AverageFear01 : entry.AverageAggression01;
                     float x = rect.xMin + (rect.width * (i * math.rcp(math.max(1f, length - 1))));
                     float y = rect.yMax - (rect.height * AnxietyDecayJobMath.Sanitize01(value));

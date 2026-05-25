@@ -410,7 +410,7 @@ namespace Hecton8.Input
             catch (Exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[UserOptionsPersistence] Failed to read options.h8cfg.");
+                Hecton8.Core.H8Debug.LogError("[UserOptionsPersistence] Failed to read options.h8cfg.");
 #endif
                 ApplyLoadedScalabilityTier(loadedScalabilityTier, hasLoadedScalabilityTier);
             }

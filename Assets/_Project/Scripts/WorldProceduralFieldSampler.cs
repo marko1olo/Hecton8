@@ -5455,7 +5455,7 @@ namespace Hecton8.World
                 return;
             }
 
-            float now = Time.realtimeSinceStartup;
+            float now = (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (!force && now < _nextAutoResolveAttemptTime)
                 return;
 

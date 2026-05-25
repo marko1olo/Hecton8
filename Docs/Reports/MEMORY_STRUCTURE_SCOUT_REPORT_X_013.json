@@ -1,0 +1,573 @@
+{
+  "agent_id": "X_013",
+  "role": "MEMORY_AND_LOCK_STRUCTURE_SCOUT",
+  "domain": "Echelon 1 Core Infrastructure / Memory Sovereignty",
+  "task_count": 4,
+  "source_mutation_policy": "C# read-only",
+  "evidence_class": "STATIC_SOURCE",
+  "source_files": [
+    {
+      "path": "C:/hades/Hecton8/Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+      "line_count": 4529,
+      "scope": "IDataVault contract, vault handles, vault metadata structs, write locks, alias pins, defrag/compaction, arena growth"
+    },
+    {
+      "path": "C:/hades/Hecton8/Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "line_count": 4065,
+      "scope": "SystemID/BufferID catalogs, sentinel descriptors, allocation records, native array/raw allocation, raw reallocation, alias views"
+    }
+  ],
+  "partial_definition_scan": {
+    "GlobalDataVault": "No partial definition found. Only live production declaration: GlobalDataVault.cs:412.",
+    "H8Memory": "No partial definition found. Only live production declaration: H8Memory.cs:2165.",
+    "IDataVault": "No partial definition found. Only live production declaration: GlobalDataVault.cs:29.",
+    "ignored_nonproduction_hit": "Tools/test_global_authority_gate.py contains a generated string stub and is not a C# source definition."
+  },
+  "pack_attribute_scan": {
+    "query": "StructLayout(... Pack=)",
+    "target_files_result": "no matches",
+    "arm64_rule_result": "PASS for audited metadata structs: no Pack=1 or Pack=4 in target files."
+  },
+  "declaration_inventory": {
+    "GlobalDataVault.cs": {
+      "enums": [
+        { "name": "MemoryDefragPhase", "line": 19, "backing": "byte", "values": ["Unspecified=0", "PreSimulation=1", "VisualSync=2"] }
+      ],
+      "interfaces": [
+        { "name": "IDataVault", "line": 29, "inherits": ["IDisposable", "IMacroDatabaseNativeCacheOwner"] }
+      ],
+      "classes": [
+        { "name": "GlobalDataVault", "line": 412, "declaration": "public sealed unsafe class GlobalDataVault : IDataVault" }
+      ],
+      "structs": [
+        "VaultGenerationHandle<T>:224",
+        "VaultBufferHandle<T>:238",
+        "VaultSliceHandle<T>:262",
+        "VaultRelocationRecord:278",
+        "VaultBufferMeta:295",
+        "VaultTelemetrySnapshot:315",
+        "VaultMemoryBudgetEntry:333",
+        "VaultMemoryBlockSnapshot:347",
+        "VaultArenaBlock:364",
+        "MemoryDefragTelemetryEntry:377",
+        "MacroDatabasePayloadCacheEntry:467",
+        "InitializeVaultMetadataJob:4391",
+        "InitializeVaultBudgetEntriesJob:4404",
+        "GenerateMockVaultRelocationJob:4415",
+        "SweepOrphanedHandlesJob:4445",
+        "VaultDefragmentationJob:4487"
+      ]
+    },
+    "H8Memory.cs": {
+      "enums": [
+        { "name": "SystemID", "line": 16, "backing": "ushort" },
+        { "name": "BufferID", "line": 89, "backing": "int", "range": "89-2005" },
+        { "name": "H8AllocationFlags", "line": 2008, "backing": "ushort" },
+        { "name": "H8BlockState", "line": 2019, "backing": "byte" },
+        { "name": "H8MemoryTelemetryFlags", "line": 2026, "backing": "ushort" }
+      ],
+      "classes": [
+        { "name": "FatalMemoryException", "line": 2100, "declaration": "public sealed class FatalMemoryException : InvalidOperationException" },
+        { "name": "H8Memory", "line": 2165, "declaration": "public static unsafe class H8Memory" }
+      ],
+      "structs": [
+        "BlockDescriptor:2044",
+        "H8AllocationRecord:2062",
+        "H8MemoryTelemetryEntry:2082"
+      ]
+    }
+  },
+  "metadata_struct_layouts": [
+    {
+      "type": "VaultGenerationHandle<T>",
+      "file": "GlobalDataVault.cs",
+      "line": 224,
+      "attribute": "[StructLayout(LayoutKind.Sequential, Size = 16)]",
+      "size_bytes": 16,
+      "fields": [
+        { "name": "BufferID", "type": "uint", "offset": 0, "size": 4 },
+        { "name": "SystemID", "type": "uint", "offset": 4, "size": 4 },
+        { "name": "Generation", "type": "uint", "offset": 8, "size": 4 },
+        { "name": "Flags", "type": "uint", "offset": 12, "size": 4 }
+      ],
+      "padding": "none beyond declared 16-byte size",
+      "arm64_alignment": "PASS: total size multiple of 8; no 8-byte field.",
+      "evidence_lines": ["223-230", "752-754", "787-791"]
+    },
+    {
+      "type": "VaultBufferHandle<T>",
+      "file": "GlobalDataVault.cs",
+      "line": 238,
+      "attribute": "[StructLayout(LayoutKind.Sequential, Size = 16)]",
+      "size_bytes": 16,
+      "fields": [
+        { "name": "BufferID", "type": "uint", "offset": 0, "size": 4 },
+        { "name": "SystemID", "type": "uint", "offset": 4, "size": 4 },
+        { "name": "Generation", "type": "uint", "offset": 8, "size": 4 },
+        { "name": "Flags", "type": "uint", "offset": 12, "size": 4 }
+      ],
+      "padding": "none beyond declared 16-byte size",
+      "arm64_alignment": "PASS: total size multiple of 8; no 8-byte field.",
+      "evidence_lines": ["237-244", "752-753", "792-795"]
+    },
+    {
+      "type": "VaultSliceHandle<T>",
+      "file": "GlobalDataVault.cs",
+      "line": 262,
+      "attribute": "[StructLayout(LayoutKind.Sequential, Size = 32)]",
+      "size_bytes": 32,
+      "fields": [
+        { "name": "BufferID", "type": "uint", "offset": 0, "size": 4 },
+        { "name": "SystemID", "type": "uint", "offset": 4, "size": 4 },
+        { "name": "Generation", "type": "uint", "offset": 8, "size": 4 },
+        { "name": "HandleFlags", "type": "uint", "offset": 12, "size": 4 },
+        { "name": "StartIndex", "type": "int", "offset": 16, "size": 4 },
+        { "name": "Length", "type": "int", "offset": 20, "size": 4 },
+        { "name": "Flags", "type": "uint", "offset": 24, "size": 4 },
+        { "name": "Reserved0", "type": "uint", "offset": 28, "size": 4 }
+      ],
+      "padding": "none beyond declared 32-byte size",
+      "arm64_alignment": "PASS: total size multiple of 8; no 8-byte field.",
+      "evidence_lines": ["261-272", "754", "796-803"]
+    },
+    {
+      "type": "VaultRelocationRecord",
+      "file": "GlobalDataVault.cs",
+      "line": 278,
+      "attribute": "[StructLayout(LayoutKind.Explicit, Size = 32)]",
+      "size_bytes": 32,
+      "fields": [
+        { "name": "OldOffsetBytes", "type": "long", "offset": 0, "size": 8 },
+        { "name": "NewOffsetBytes", "type": "long", "offset": 8, "size": 8 },
+        { "name": "BufferId", "type": "int", "offset": 16, "size": 4 },
+        { "name": "ByteLength", "type": "int", "offset": 20, "size": 4 },
+        { "name": "Generation", "type": "uint", "offset": 24, "size": 4 },
+        { "name": "Flags", "type": "byte", "offset": 28, "size": 1 },
+        { "name": "SystemId", "type": "byte", "offset": 29, "size": 1 },
+        { "name": "Reserved", "type": "ushort", "offset": 30, "size": 2 }
+      ],
+      "padding": "none; explicit tail ends at 32",
+      "arm64_alignment": "PASS: 8-byte fields at 0 and 8; total size multiple of 8.",
+      "evidence_lines": ["277-292", "755", "818-826"]
+    },
+    {
+      "type": "VaultBufferMeta",
+      "file": "GlobalDataVault.cs",
+      "line": 295,
+      "attribute": "[StructLayout(LayoutKind.Explicit, Size = 64)]",
+      "size_bytes": 64,
+      "fields": [
+        { "name": "OffsetBytes", "type": "long", "offset": 0, "size": 8 },
+        { "name": "Bytes", "type": "long", "offset": 8, "size": 8 },
+        { "name": "Length", "type": "int", "offset": 16, "size": 4 },
+        { "name": "Stride", "type": "int", "offset": 20, "size": 4 },
+        { "name": "Alignment", "type": "int", "offset": 24, "size": 4 },
+        { "name": "BlockIndex", "type": "int", "offset": 28, "size": 4 },
+        { "name": "Allocator", "type": "Allocator", "offset": 32, "size": 4 },
+        { "name": "Version", "type": "uint", "offset": 36, "size": 4 },
+        { "name": "Owner", "type": "SystemID", "offset": 40, "size": 2 },
+        { "name": "LastAliasRequester", "type": "SystemID", "offset": 42, "size": 2 },
+        { "name": "ActiveWriterSystemID", "type": "int", "offset": 44, "size": 4 },
+        { "name": "TypeHash", "type": "uint", "offset": 48, "size": 4 },
+        { "name": "RefCount", "type": "uint", "offset": 52, "size": 4 },
+        { "name": "Flags", "type": "uint", "offset": 56, "size": 4 },
+        { "name": "BufferKey", "type": "int", "offset": 60, "size": 4 }
+      ],
+      "padding": "none; explicit tail ends at 64",
+      "arm64_alignment": "PASS: 8-byte fields at 0 and 8; total size multiple of 8.",
+      "evidence_lines": ["294-312", "756", "869-884"]
+    },
+    {
+      "type": "VaultTelemetrySnapshot",
+      "file": "GlobalDataVault.cs",
+      "line": 315,
+      "attribute": "[StructLayout(LayoutKind.Explicit, Size = 64)]",
+      "size_bytes": 64,
+      "fields": [
+        { "name": "AllocatedBytes", "type": "long", "offset": 0, "size": 8 },
+        { "name": "ArenaBytes", "type": "long", "offset": 8, "size": 8 },
+        { "name": "LastMovedBytes", "type": "long", "offset": 16, "size": 8 },
+        { "name": "ResolutionTicks", "type": "long", "offset": 24, "size": 8 },
+        { "name": "VaultGenerationID", "type": "uint", "offset": 32, "size": 4 },
+        { "name": "GenerationMismatchCount", "type": "uint", "offset": 36, "size": 4 },
+        { "name": "LastFaultBufferID", "type": "int", "offset": 40, "size": 4 },
+        { "name": "LastFaultHandleGeneration", "type": "uint", "offset": 44, "size": 4 },
+        { "name": "LastFaultMetaGeneration", "type": "uint", "offset": 48, "size": 4 },
+        { "name": "LastDefragFlags", "type": "byte", "offset": 52, "size": 1 },
+        { "name": "Reserved0", "type": "byte", "offset": 53, "size": 1 },
+        { "name": "Reserved1", "type": "ushort", "offset": 54, "size": 2 },
+        { "name": "ResolvedHandleCount", "type": "long", "offset": 56, "size": 8 }
+      ],
+      "padding": "none; explicit tail ends at 64",
+      "arm64_alignment": "PASS: 8-byte fields at 0, 8, 16, 24, 56; total size multiple of 8.",
+      "evidence_lines": ["314-330", "760", "827-839"]
+    },
+    {
+      "type": "VaultMemoryBudgetEntry",
+      "file": "GlobalDataVault.cs",
+      "line": 333,
+      "attribute": "[StructLayout(LayoutKind.Explicit, Size = 32)]",
+      "size_bytes": 32,
+      "fields": [
+        { "name": "SystemHash", "type": "uint", "offset": 0, "size": 4 },
+        { "name": "BufferID", "type": "int", "offset": 4, "size": 4 },
+        { "name": "BudgetBytes", "type": "long", "offset": 8, "size": 8 },
+        { "name": "DefragThresholdBytes", "type": "long", "offset": 16, "size": 8 },
+        { "name": "Flags", "type": "uint", "offset": 24, "size": 4 },
+        { "name": "Reserved0", "type": "uint", "offset": 28, "size": 4 }
+      ],
+      "padding": "none; explicit tail ends at 32",
+      "arm64_alignment": "PASS: 8-byte fields at 8 and 16; total size multiple of 8.",
+      "evidence_lines": ["332-341", "761", "840-845"]
+    },
+    {
+      "type": "VaultMemoryBlockSnapshot",
+      "file": "GlobalDataVault.cs",
+      "line": 347,
+      "attribute": "[StructLayout(LayoutKind.Explicit, Size = 48)]",
+      "size_bytes": 48,
+      "fields": [
+        { "name": "OffsetBytes", "type": "long", "offset": 0, "size": 8 },
+        { "name": "Bytes", "type": "long", "offset": 8, "size": 8 },
+        { "name": "BufferKey", "type": "int", "offset": 16, "size": 4 },
+        { "name": "H8BlockIndex", "type": "int", "offset": 20, "size": 4 },
+        { "name": "Version", "type": "uint", "offset": 24, "size": 4 },
+        { "name": "Owner", "type": "ushort", "offset": 28, "size": 2 },
+        { "name": "LockCount", "type": "ushort", "offset": 30, "size": 2 },
+        { "name": "State", "type": "byte", "offset": 32, "size": 1 },
+        { "name": "Flags", "type": "byte", "offset": 33, "size": 1 },
+        { "name": "Reserved0", "type": "ushort", "offset": 34, "size": 2 },
+        { "name": "Reserved1", "type": "uint", "offset": 36, "size": 4 },
+        { "name": "Reserved2", "type": "long", "offset": 40, "size": 8 }
+      ],
+      "padding": "none; explicit tail ends at 48",
+      "arm64_alignment": "PASS: 8-byte fields at 0, 8, 40; total size multiple of 8.",
+      "evidence_lines": ["346-361", "757", "846-857"]
+    },
+    {
+      "type": "VaultArenaBlock",
+      "file": "GlobalDataVault.cs",
+      "line": 364,
+      "attribute": "[StructLayout(LayoutKind.Explicit, Size = 32)]",
+      "size_bytes": 32,
+      "fields": [
+        { "name": "OffsetBytes", "type": "long", "offset": 0, "size": 8 },
+        { "name": "Bytes", "type": "long", "offset": 8, "size": 8 },
+        { "name": "BufferKey", "type": "int", "offset": 16, "size": 4 },
+        { "name": "H8BlockIndex", "type": "int", "offset": 20, "size": 4 },
+        { "name": "Version", "type": "uint", "offset": 24, "size": 4 },
+        { "name": "State", "type": "byte", "offset": 28, "size": 1 },
+        { "name": "Reserved0", "type": "byte", "offset": 29, "size": 1 },
+        { "name": "Reserved1", "type": "ushort", "offset": 30, "size": 2 }
+      ],
+      "padding": "none; explicit tail ends at 32",
+      "arm64_alignment": "PASS: 8-byte fields at 0 and 8; total size multiple of 8.",
+      "evidence_lines": ["363-374", "758", "885-892"]
+    },
+    {
+      "type": "MemoryDefragTelemetryEntry",
+      "file": "GlobalDataVault.cs",
+      "line": 377,
+      "attribute": "[StructLayout(LayoutKind.Explicit, Size = 128)]",
+      "size_bytes": 128,
+      "fields": [
+        { "name": "TotalFreeSpaceBytes", "type": "long", "offset": 0, "size": 8 },
+        { "name": "LargestContiguousBlockBytes", "type": "long", "offset": 8, "size": 8 },
+        { "name": "LastMovedBytes", "type": "long", "offset": 16, "size": 8 },
+        { "name": "TotalMovedBytes", "type": "long", "offset": 24, "size": 8 },
+        { "name": "PendingMassiveMoveBytes", "type": "long", "offset": 32, "size": 8 },
+        { "name": "ActiveMutationGuardMask", "type": "ulong", "offset": 40, "size": 8 },
+        { "name": "Sequence", "type": "uint", "offset": 48, "size": 4 },
+        { "name": "Frame", "type": "uint", "offset": 52, "size": 4 },
+        { "name": "VaultGenerationID", "type": "uint", "offset": 56, "size": 4 },
+        { "name": "ActiveBurstLockMask", "type": "uint", "offset": 60, "size": 4 },
+        { "name": "BlockCount", "type": "int", "offset": 64, "size": 4 },
+        { "name": "ActiveBufferCount", "type": "int", "offset": 68, "size": 4 },
+        { "name": "WatchdogBreaches", "type": "int", "offset": 72, "size": 4 },
+        { "name": "ReservedCursorBytes", "type": "int", "offset": 76, "size": 4 },
+        { "name": "HeapFragmentationRatio", "type": "float", "offset": 80, "size": 4 },
+        { "name": "LastRelocatedSystemId", "type": "ushort", "offset": 84, "size": 2 },
+        { "name": "Reserved16", "type": "ushort", "offset": 86, "size": 2 },
+        { "name": "Flags", "type": "byte", "offset": 88, "size": 1 },
+        { "name": "IsFragmented", "type": "byte", "offset": 89, "size": 1 },
+        { "name": "WatchdogExceeded", "type": "byte", "offset": 90, "size": 1 },
+        { "name": "MemoryStarvationWarnings", "type": "byte", "offset": 91, "size": 1 },
+        { "name": "GenerationMismatchCount", "type": "uint", "offset": 92, "size": 4 },
+        { "name": "ResolutionTicks", "type": "long", "offset": 96, "size": 8 },
+        { "name": "ResolvedHandleCount", "type": "long", "offset": 104, "size": 8 },
+        { "name": "LastFaultBufferID", "type": "int", "offset": 112, "size": 4 },
+        { "name": "LastFaultHandleGeneration", "type": "uint", "offset": 116, "size": 4 },
+        { "name": "LastFaultMetaGeneration", "type": "uint", "offset": 120, "size": 4 },
+        { "name": "Reserved32", "type": "uint", "offset": 124, "size": 4 }
+      ],
+      "padding": "none; explicit tail ends at 128",
+      "arm64_alignment": "PASS: 8-byte fields at 0, 8, 16, 24, 32, 40, 96, 104; total size multiple of 8.",
+      "evidence_lines": ["376-407", "759", "893-920"]
+    },
+    {
+      "type": "MacroDatabasePayloadCacheEntry",
+      "file": "GlobalDataVault.cs",
+      "line": 467,
+      "attribute": "[StructLayout(LayoutKind.Explicit, Size = 48)]",
+      "size_bytes": 48,
+      "fields": [
+        { "name": "Handle", "type": "MacroDatabasePayloadHandle", "offset": 0, "size": 40 },
+        { "name": "Pointer", "type": "IntPtr", "offset": 40, "size": 8 }
+      ],
+      "padding": "nested handle has own explicit padding at MacroDatabaseContracts.cs:146",
+      "arm64_alignment": "PASS: IntPtr at 40; total size multiple of 8.",
+      "evidence_lines": ["466-471", "763", "939-940", "MacroDatabaseContracts.cs:135-147"]
+    },
+    {
+      "type": "BlockDescriptor",
+      "file": "H8Memory.cs",
+      "line": 2044,
+      "attribute": "[StructLayout(LayoutKind.Explicit, Size = 40)]",
+      "size_bytes": 40,
+      "fields": [
+        { "name": "BasePointer", "type": "IntPtr", "offset": 0, "size": 8 },
+        { "name": "OffsetBytes", "type": "long", "offset": 8, "size": 8 },
+        { "name": "Bytes", "type": "long", "offset": 16, "size": 8 },
+        { "name": "OwnerKey", "type": "int", "offset": 24, "size": 4 },
+        { "name": "Generation", "type": "int", "offset": 28, "size": 4 },
+        { "name": "Owner", "type": "SystemID", "offset": 32, "size": 2 },
+        { "name": "Flags", "type": "ushort", "offset": 34, "size": 2 },
+        { "name": "State", "type": "byte", "offset": 36, "size": 1 },
+        { "name": "Reserved", "type": "byte", "offset": 37, "size": 1 },
+        { "name": "Reserved2", "type": "ushort", "offset": 38, "size": 2 }
+      ],
+      "padding": "none; explicit tail ends at 40",
+      "arm64_alignment": "PASS on ARM64: IntPtr/long fields at 0, 8, 16; total size multiple of 8.",
+      "evidence_lines": ["2043-2056", "2177", "2378", "2396-2406"]
+    },
+    {
+      "type": "H8AllocationRecord",
+      "file": "H8Memory.cs",
+      "line": 2062,
+      "attribute": "[StructLayout(LayoutKind.Explicit, Size = 48)]",
+      "size_bytes": 48,
+      "fields": [
+        { "name": "Pointer", "type": "IntPtr", "offset": 0, "size": 8 },
+        { "name": "Bytes", "type": "long", "offset": 8, "size": 8 },
+        { "name": "Length", "type": "int", "offset": 16, "size": 4 },
+        { "name": "Stride", "type": "int", "offset": 20, "size": 4 },
+        { "name": "Alignment", "type": "int", "offset": 24, "size": 4 },
+        { "name": "AllocationIndex", "type": "int", "offset": 28, "size": 4 },
+        { "name": "Generation", "type": "int", "offset": 32, "size": 4 },
+        { "name": "Allocator", "type": "Allocator", "offset": 36, "size": 4 },
+        { "name": "Owner", "type": "SystemID", "offset": 40, "size": 2 },
+        { "name": "Flags", "type": "ushort", "offset": 42, "size": 2 },
+        { "name": "Reserved", "type": "ushort", "offset": 44, "size": 2 },
+        { "name": "Reserved2", "type": "ushort", "offset": 46, "size": 2 }
+      ],
+      "padding": "none; explicit tail ends at 48",
+      "arm64_alignment": "PASS: IntPtr/long fields at 0 and 8; total size multiple of 8.",
+      "evidence_lines": ["2061-2076", "2178", "2379", "2414-2426"]
+    },
+    {
+      "type": "H8MemoryTelemetryEntry",
+      "file": "H8Memory.cs",
+      "line": 2082,
+      "attribute": "[StructLayout(LayoutKind.Explicit, Size = 64)]",
+      "size_bytes": 64,
+      "fields": [
+        { "name": "TotalBytes", "type": "long", "offset": 0, "size": 8 },
+        { "name": "TransitionBaselineBytes", "type": "long", "offset": 8, "size": 8 },
+        { "name": "LastTransitionReleasedBytes", "type": "long", "offset": 16, "size": 8 },
+        { "name": "Sequence", "type": "uint", "offset": 24, "size": 4 },
+        { "name": "ActiveAllocationCount", "type": "int", "offset": 28, "size": 4 },
+        { "name": "BlockDescriptorCount", "type": "int", "offset": 32, "size": 4 },
+        { "name": "AllocationGeneration", "type": "int", "offset": 36, "size": 4 },
+        { "name": "TransitionCutoffGeneration", "type": "int", "offset": 40, "size": 4 },
+        { "name": "TransitionSequence", "type": "int", "offset": 44, "size": 4 },
+        { "name": "LastTransitionReleasedCount", "type": "int", "offset": 48, "size": 4 },
+        { "name": "FatalLeakPreventedCount", "type": "int", "offset": 52, "size": 4 },
+        { "name": "Owner", "type": "ushort", "offset": 56, "size": 2 },
+        { "name": "Flags", "type": "ushort", "offset": 58, "size": 2 },
+        { "name": "Frame", "type": "uint", "offset": 60, "size": 4 }
+      ],
+      "padding": "none; explicit tail ends at 64",
+      "arm64_alignment": "PASS: 8-byte fields at 0, 8, 16; total size multiple of 8.",
+      "evidence_lines": ["2081-2098", "2179", "2380", "2434-2448"]
+    }
+  ],
+  "lock_and_pin_methods": [
+    {
+      "name": "TryAcquireWriteLock<T>",
+      "signature": "public bool TryAcquireWriteLock<T>(in VaultGenerationHandle<T> handle, SystemID systemID, out NativeArray<T> buffer) where T : struct",
+      "signature_line": "GlobalDataVault.cs:1435",
+      "system_id_validation": [
+        "Rejects SystemID.Unknown at 1438-1439.",
+        "Rejects caller not equal to non-Unknown meta.Owner at 1451-1452.",
+        "Rejects handle.SystemID mismatch against meta.Owner at 1454-1455."
+      ],
+      "lock_storage": [
+        "Sets VaultBufferMeta.ActiveWriterSystemID via Interlocked.CompareExchange at 1464-1467.",
+        "Sets VaultArenaBlock.Reserved0 bit BlockFlagLocked at 1469.",
+        "Increments VaultArenaBlock.Reserved1 lock count at 1470.",
+        "Does not set ActiveBurstLockMask/_activeLocks."
+      ],
+      "unlock_pair": "ReleaseWriteLock<T> at GlobalDataVault.cs:1503; ReleaseWriterBlockLock at 1539 decrements Reserved1 and clears BlockFlagLocked when count reaches zero.",
+      "fence_check": "No _compactionFence check before metadata/block mutation. TryResolveHandle after lock acquisition rejects when _compactionFence != 0 at 1269, then failure path releases lock at 1495-1498.",
+      "evidence_lines": ["1435-1499", "1503-1536", "1539-1554"]
+    },
+    {
+      "name": "ReleaseWriteLock<T>",
+      "signature": "public bool ReleaseWriteLock<T>(in VaultGenerationHandle<T> handle, SystemID systemID) where T : struct",
+      "signature_line": "GlobalDataVault.cs:1503",
+      "system_id_validation": [
+        "Rejects SystemID.Unknown at 1505-1506.",
+        "Rejects handle generation mismatch at 1512-1516.",
+        "Rejects caller owner mismatch at 1518-1522.",
+        "Requires ActiveWriterSystemID == systemID at 1524-1527."
+      ],
+      "release_operations": [
+        "ReleaseWriterBlockLock decrements Reserved1 at 1548.",
+        "Clears Reserved0 BlockFlagLocked when Reserved1 == 0 at 1549-1550.",
+        "Clears ActiveWriterSystemID via Interlocked.CompareExchange at 1532."
+      ],
+      "evidence_lines": ["1503-1536", "1539-1554"]
+    },
+    {
+      "name": "TryLockBuffer",
+      "signatures": [
+        "public bool TryLockBuffer(BufferID bufferId)",
+        "public bool TryLockBuffer(BufferID bufferId, SystemID lockOwner)"
+      ],
+      "signature_lines": ["GlobalDataVault.cs:1797", "GlobalDataVault.cs:1803"],
+      "lock_storage": [
+        "Rejects uninitialized or BufferID.Unknown at 1805-1806.",
+        "Rejects ActiveWriterSystemID != 0 at 1815-1816.",
+        "Rejects Reserved1 == ushort.MaxValue at 1818-1820.",
+        "Increments Reserved1 at 1822.",
+        "Sets Reserved0 BlockFlagLocked at 1823.",
+        "Sets _activeLocks bit through SetActiveLockBit(ResolveActiveLockBit(bufferId)) at 1841."
+      ],
+      "active_burst_lock_mask_bit": "ResolveActiveLockBit computes 1 << ((uint)(int)bufferId & 31u) at 1915-1918.",
+      "owner_handling": "lockOwner parameter is not read or stored in method body.",
+      "fence_check": "No _compactionFence check before block lock mutation.",
+      "evidence_lines": ["1797-1842", "1915-1932"]
+    },
+    {
+      "name": "TryUnlockBuffer",
+      "signatures": [
+        "public bool TryUnlockBuffer(BufferID bufferId)",
+        "public bool TryUnlockBuffer(BufferID bufferId, SystemID lockOwner)"
+      ],
+      "signature_lines": ["GlobalDataVault.cs:1847", "GlobalDataVault.cs:1853"],
+      "release_operations": [
+        "Rejects Reserved1 == 0 at 1865-1867.",
+        "Decrements Reserved1 at 1869.",
+        "Clears Reserved0 BlockFlagLocked when Reserved1 == 0 at 1870-1871.",
+        "Calls ClearActiveLockBitIfUnused at 1874; that scans locked blocks with same 5-bit BufferID bit at 1952-1970."
+      ],
+      "owner_handling": "lockOwner parameter is not read or validated in method body.",
+      "evidence_lines": ["1847-1875", "1935-1970"]
+    },
+    {
+      "name": "PinReadOnlyAlias<T> / CreateAlias<T>",
+      "signatures": [
+        "public NativeArray<T>.ReadOnly PinReadOnlyAlias<T>(BufferID bufferId, SystemID requester) where T : struct",
+        "public NativeArray<T>.ReadOnly CreateAlias<T>(BufferID bufferId, SystemID requester) where T : struct"
+      ],
+      "signature_lines": ["GlobalDataVault.cs:1607", "GlobalDataVault.cs:1626"],
+      "pinning_logic": [
+        "TryOpenAliasBuffer rejects _compactionFence != 0 at 1195-1198.",
+        "Creates NativeArray view from vault pointer at 1237.",
+        "Marks block as external view through MarkExternalView at 1240.",
+        "MarkExternalView sets BlockFlagExternalView in Reserved0 at 3352 and writes LastAliasRequester."
+      ],
+      "evidence_lines": ["1192-1251", "1607-1629", "3327-3355"]
+    }
+  ],
+  "defragmentation_flow": {
+    "entry": "FrostTickDefrag(float elapsedSeconds, float systemStress01, MemoryDefragPhase phase, uint activeBurstLockMask) at GlobalDataVault.cs:2191",
+    "phase_gate": "Rejects every phase except MemoryDefragPhase.PreSimulation at 2210-2215.",
+    "stress_and_lock_gate": [
+      "HasActiveBurstLocks(activeBurstLockMask) at 2217.",
+      "systemStress01 > 0.9 sets stress halt at 2218-2223.",
+      "TryRunLiveCompactionSlice executes only when !stressHalted && !burstLocked at 2240-2242."
+    ],
+    "live_compaction_sequence": [
+      "TryRunLiveCompactionSlice rejects _memMoveBlockedByStress, _allocationLock, _compactionFence != 0, active locks, invalid block state at 3144-3155.",
+      "Sets _compactionFence with Interlocked.Exchange at 3161.",
+      "For each free block followed by occupied block, rechecks HasActiveBurstLocks at 3165-3170.",
+      "Skips occupied blocks where Reserved0 has BlockFlagLocked or Reserved1 != 0 at 3181-3185.",
+      "Skips occupied blocks where Reserved0 has BlockFlagExternalView at 3187-3190.",
+      "Skips block if slice move budget would exceed MaxLiveDefragMoveBytesPerSlice at 3193-3198.",
+      "Calls TryMoveOccupiedBlockLeft at 3201.",
+      "Clears _compactionFence in finally at 3213-3215.",
+      "If anything moved, records LastDefragMovedBytes, increments total, sets relocated flag, bumps vault generation at 3218-3224."
+    ],
+    "move_operation": [
+      "TryMoveOccupiedBlockLeft verifies free/occupied adjacency and offset arithmetic at 3241-3250.",
+      "Rechecks Reserved0 BlockFlagLocked, BlockFlagExternalView, and Reserved1 at 3254-3258.",
+      "Rejects unaligned offsets/sizes against 64-byte VaultBlockAlignment at 3261-3267.",
+      "Verifies metadata block index, offset, bytes, and expected old pointer at 3277-3290.",
+      "Executes UnsafeUtility.MemMove(newAddress, oldAddress, occupiedBlock.Bytes) at 3292-3293.",
+      "Writes moved block and new free block into _blocks at 3308-3309.",
+      "Updates H8 descriptors at 3310-3311.",
+      "Updates VaultBufferMeta BlockIndex, OffsetBytes, Version and writes metadata at 3313-3316.",
+      "Updates _buffers via PublishMovedBufferPointer at 3317 and 3840-3843.",
+      "Records relocation at 3318 and 3800-3827."
+    ],
+    "arena_growth_relocation": [
+      "TryGrowArenaForBytes rejects _allocationLock and _compactionFence but does not call HasActiveBurstLocks at 3642-3650.",
+      "TryGrowArena calls H8Memory.ReallocateRaw at 3690-3698.",
+      "H8Memory.ReallocateRaw allocates new pointer, UnsafeUtility.MemMove old to new at H8Memory.cs:2736-2741, unregisters and frees old pointer at 2752-2753.",
+      "RefreshBlocksAfterArenaRelocation bumps each occupied block version, writes metadata, publishes moved pointers, and records relocations at 3764-3797."
+    ]
+  },
+  "risk_vectors": [
+    {
+      "id": "RISK-GDV-001",
+      "severity": "RED_STATIC",
+      "claim": "TryAcquireWriteLock can mutate ActiveWriterSystemID and VaultArenaBlock lock fields while _compactionFence is active because it does not check _compactionFence before line 1464.",
+      "evidence": ["TryAcquireWriteLock body 1435-1499", "TryResolveHandle rejects _compactionFence only after lock mutation at 1269 and call site 1491-1497", "TryRunLiveCompactionSlice owns _compactionFence at 3161-3215"],
+      "failure_mode": "Concurrent writer-lock attempt can race against defrag block moves. The returned buffer is blocked by TryResolveHandle when fence is active, but _blocks and metadata lock fields are still transiently modified during compaction."
+    },
+    {
+      "id": "RISK-GDV-002",
+      "severity": "RED_STATIC",
+      "claim": "TryLockBuffer/TryUnlockBuffer expose owner-tagged signatures but do not read lockOwner and do not check _compactionFence.",
+      "evidence": ["TryLockBuffer(BufferID,SystemID) 1803-1842", "TryUnlockBuffer(BufferID,SystemID) 1853-1875"],
+      "failure_mode": "The lock is buffer-bit and block-count based only. It cannot prove which SystemID owns the external pointer, and it can change lock state during compaction."
+    },
+    {
+      "id": "RISK-GDV-003",
+      "severity": "RED_STATIC",
+      "claim": "Arena growth relocation can move the entire vault arena without checking _activeLocks or external activeBurstLockMask.",
+      "evidence": ["TryEnsureVaultBuffer may call TryGrowArenaForBytes at 1012, 1076, 1114", "TryGrowArenaForBytes gates _allocationLock and _compactionFence only at 3642-3650", "TryGrowArena calls H8Memory.ReallocateRaw at 3690-3698", "H8Memory.ReallocateRaw MemMove/free at 2741 and 2752-2753"],
+      "failure_mode": "A job that holds an external pointer protected by TryLockBuffer can keep a stale pointer if another owner triggers arena growth relocation while _compactionFence is 0."
+    },
+    {
+      "id": "RISK-GDV-004",
+      "severity": "YELLOW_STATIC",
+      "claim": "ActiveBurstLockMask has only 32 bits and hashes BufferID with bufferId & 31.",
+      "evidence": ["ResolveActiveLockBit 1915-1918", "SetActiveLockBit 1921-1932", "ClearActiveLockBitIfUnused scans colliding blocks at 1935-1970"],
+      "failure_mode": "Collision is conservative for defrag blocking but not owner-precise. A lock on one BufferID can block compaction for unrelated BufferIDs sharing the same low 5 bits."
+    },
+    {
+      "id": "RISK-GDV-005",
+      "severity": "YELLOW_STATIC",
+      "claim": "TryAcquireWriteLock writer locks are not represented in ActiveBurstLockMask.",
+      "evidence": ["TryAcquireWriteLock 1435-1499", "ActiveBurstLockMask property reads _activeLocks at 542", "SetActiveLockBit only called by TryLockBuffer at 1841"],
+      "failure_mode": "Defrag catches writer locks only via block.Reserved0/Reserved1, not via ActiveBurstLockMask telemetry or the FrostTickDefrag burstLocked pre-gate."
+    }
+  ],
+  "verification": {
+    "source_files_modified_by_X_013": [],
+    "target_source_git_status_after_audit": "dirty: git status reports GlobalDataVault.cs and H8Memory.cs modified in the shared worktree; X_013 used read-only commands only and did not write C# source.",
+    "docs_written": [
+      "Docs/Reports/MEMORY_STRUCTURE_SCOUT_REPORT_X_013.json",
+      "Docs/Reports/MEMORY_STRUCTURE_SCOUT_REPORT_X_013.md",
+      "Docs/Tasks/Status_X_013.md",
+      "Docs/AgentLogs/Rationale_X_013.md",
+      "Docs/AgentLogs/LOG_X_013.md"
+    ],
+    "compile_run": false,
+    "compile_reason": "Read-only static audit; no C# mutation. User requested evidence extraction, not build repair.",
+    "latest_prompt_reextract": "After Task 03 boundary from Docs/Tasks/CURRENT_BATCH.md.",
+    "archive_contamination_handling": "One broad search returned Docs/Archive hits; archive output was discarded and not used as evidence."
+  }
+}

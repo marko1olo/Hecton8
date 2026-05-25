@@ -14,7 +14,7 @@ namespace Hecton8.Rendering
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9209)]
-    public sealed unsafe class AbyssalDeferredCausticsRuntime : MonoBehaviour, ICausticsService, IUpdatable, ILateFrameTickable, IOriginShiftListener, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
+    public sealed unsafe class AbyssalDeferredCausticsRuntime : MonoBehaviour, ICausticsService, ILateFrameTickable, IOriginShiftListener, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private const SystemID OwnerSystemId = SystemID.GraphicsScalability;
         private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_232.bin";
@@ -50,7 +50,6 @@ namespace Hecton8.Rendering
         private uint _lastFaultFlags;
         private bool _isInitialized;
         private bool _ownsRegistrySlot;
-        private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _registeredOriginShift;
         private bool _registeredHotSwap;
@@ -111,7 +110,6 @@ namespace Hecton8.Rendering
                 _lastFaultFlags = layoutValid
                     ? AbyssalCausticsConstants.FaultConstantBufferUnavailable
                     : AbyssalCausticsConstants.FaultLayout;
-                TryUnregisterUpdate();
                 TryUnregisterLateFrame();
                 TryUnregisterOriginShift();
                 DumpBlackBox();
@@ -119,13 +117,12 @@ namespace Hecton8.Rendering
             }
 
             EnsureBurstKernelsCold();
-            TryRegisterUpdate();
             TryRegisterLateFrame();
             TryRegisterOriginShift();
             RunMockLightingKernel();
         }
 
-        public void Tick(float deltaTime)
+        private void AdvanceCausticsFrameState(float deltaTime)
         {
             _tickCount++;
             if (!_isInitialized || !_ownsRegistrySlot)
@@ -187,6 +184,8 @@ namespace Hecton8.Rendering
 
         public void LateFrameTick()
         {
+            AdvanceCausticsFrameState(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (!_isInitialized || !_ownsRegistrySlot)
                 return;
 
@@ -366,7 +365,6 @@ namespace Hecton8.Rendering
                 EnsureConstantBuffers();
             if (_isInitialized)
             {
-                TryRegisterUpdate();
                 TryRegisterLateFrame();
                 TryRegisterOriginShift();
             }
@@ -374,7 +372,6 @@ namespace Hecton8.Rendering
 
         private void OnDisable()
         {
-            TryUnregisterUpdate();
             TryUnregisterLateFrame();
             TryUnregisterOriginShift();
             TryUnregisterHotSwap();
@@ -1220,23 +1217,6 @@ namespace Hecton8.Rendering
         }
 #endif
 
-        private void TryRegisterUpdate()
-        {
-            if (_registeredUpdate || !Application.isPlaying)
-                return;
-
-            _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-        }
-
-        private void TryUnregisterUpdate()
-        {
-            if (!_registeredUpdate)
-                return;
-
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _registeredUpdate = false;
-        }
-
         private void TryRegisterLateFrame()
         {
             if (_registeredLateFrame || !Application.isPlaying)
@@ -1398,7 +1378,6 @@ namespace Hecton8.Rendering
 
         private void ShutdownServiceState()
         {
-            TryUnregisterUpdate();
             TryUnregisterLateFrame();
             TryUnregisterOriginShift();
             TryUnregisterHotSwap();

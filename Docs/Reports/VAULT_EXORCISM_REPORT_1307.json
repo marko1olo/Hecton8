@@ -1,0 +1,1075 @@
+﻿{
+    "schema":  "hecton8.vault_exorcism_report_1307.phase1_apex.v24",
+    "agentId":  "1307",
+    "role":  "MEMORY_SOVEREIGN_AUDIO_PROPAGATION_EXORCIST",
+    "generatedLocal":  "2026-05-25T23:44:46.6794062+04:00",
+    "taskSource":  "Docs/Tasks/CURRENT_BATCH.md:\u003cAGENT_PROMPT id=\"1307\" role=\"MEMORY_SOVEREIGN_AUDIO_PROPAGATION_EXORCIST\"\u003e",
+    "domainRequested":  "Assets/Project/Scripts/Audio/Propagation",
+    "canonicalFirstPartyPath":  "Assets/_Project/Scripts/Audio/Propagation",
+    "activePropagationSource":  "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs",
+    "strictFolderAudit":  {
+                              "scannedFiles":  0,
+                              "forbiddenPersistentNativeFields":  0,
+                              "parseFailures":  0,
+                              "hash":  "3433b2ab647ac1cb3aae78f7dfbb7962556fac5659bd6068e03f67a43bdd6abe",
+                              "artifact":  "Docs/Reports/VAULT_EXORCISM_REPORT_1307_STRICT_FOLDER.json"
+                          },
+    "propagationNamespaceAudit":  {
+                                      "forbiddenPersistentNativeFields":  0,
+                                      "allowedTransientJobFields":  11,
+                                      "note":  "Eight NativeArray fields are AcousticPathJob IJob parameters and three NativeArray fields are GenerateMockAcousticLoadJob IJob parameters, not persistent owners.",
+                                      "artifact":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1307_AUDIO_SCOPE_RAW.json",
+                                      "hash":  "c039b5fc28b52459626af97cd485391c2422963d5ab15ab2bdeeacfdfd6b1970",
+                                      "artifactStaleAfterHarnessAddition":  false,
+                                      "v5TextClassifiedTransientJobFields":  11,
+                                      "v6TextClassifiedTransientJobFields":  11
+                                  },
+    "projectSyntaxParseCheck":  {
+                                    "scannedFiles":  2421,
+                                    "parseFailures":  0,
+                                    "artifact":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1307_PROJECT_PARSE_CHECK.json",
+                                    "hash":  "c0d3d3fc118f654f480d3777d81a621edf1186696ef8125bff07dbbc904b50ba",
+                                    "staleAfterV6Edits":  false
+                                },
+    "codeChanges":  [
+                        {
+                            "file":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                            "lines":  "545-559",
+                            "change":  "Added named unique SpatialAudio BufferID values 72430-72444; portal open/closed are 72443/72444.",
+                            "proof":  "No duplicate values in 72430-72444 range."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                            "lines":  "503-517",
+                            "change":  "Replaced raw (BufferID)70015..70029 casts with named BufferID constants.",
+                            "proof":  "rg found zero (BufferID)70015..70029 in SpatialAudioManager.cs."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                            "lines":  "530-539",
+                            "change":  "Routed acoustic portal dump to Docs/AgentLogs/Dump_1307_Acoustics.bin; added binary header constants and uint failure codes including dump IO failure code 4.",
+                            "proof":  "Static line match."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs",
+                            "lines":  "225-257",
+                            "change":  "Expanded AcousticTelemetryEntry from 40 to explicit 64 bytes.",
+                            "proof":  "Prompt target size satisfied by declared StructLayout Size=64."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs",
+                            "lines":  "62-67,79-92,114-119,137-172,215-262,298-305,594-638",
+                            "change":  "Converted acoustic portal DTO tail padding to explicit byte fields and initializer assignments.",
+                            "proof":  "rg found zero _reserved fields in AcousticPortalPropagation.cs and the editor layout validator now asserts every byte pad offset."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                            "lines":  "7746-7823,8319-8529",
+                            "change":  "Telemetry now records StopwatchTicks, BufferId, Generation, FailureCode; Vault acquisition failures write blackbox entries after releasing partial locks; pending dump flag is reset on cache release; dump IO catch no longer emits managed debug strings.",
+                            "proof":  "No managed string/format/LINQ/foreach in these hot ranges."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                            "lines":  "884-886,2056-2058,6786-6787,10491-10514",
+                            "change":  "Removed unused _currentAupVelocities managed array; source Doppler velocity stays local and previous AUP/frame arrays remain the only cold history state.",
+                            "proof":  "rg found zero _currentAupVelocities hits after patch."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                            "lines":  "883-906,1468,1680,2866-2882,6102-6112,6366-6394,10431-10513",
+                            "change":  "Removed direct absolute-AUP float velocity path. Listener/source Doppler history now stores AUP and computes delta with AbsoluteUniversePosition.ToCameraRelativeFloat3 before converting to Vector3/float3.",
+                            "proof":  "rg found zero ToAbsoluteDouble3/(float)absolute/ToAbsoluteVector3 hits in SpatialAudioManager.cs and portal propagation source."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                            "lines":  "7418-7429",
+                            "change":  "Replaced portal waypoint edge runtime Vector3 distance with AUP-resolved AcousticAup.DistanceMeters.",
+                            "proof":  "Both runtime points now resolve through TryResolveAupFromRuntimeOrigin before double-sector distance math; focused range scan has zero forbidden managed patterns."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                            "lines":  "7456-7608",
+                            "change":  "Replaced habitat nearest-node association runtime float3 distance with AUP-resolved AcousticAup.DistanceMeters.",
+                            "proof":  "TryFindNearestHabitatNode now converts each habitat node runtime position to AbsoluteUniversePosition, converts target/source to AcousticAup, calls AcousticAup.DistanceMeters, then squares the finite float result only after double-sector distance math."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                            "lines":  "5231-5282,8455-8521",
+                            "change":  "Hardened portal scratch lock release to track successful open/closed write locks with explicit booleans; corrected radar grid comments from persistent wording to vault-backed read-only view wording.",
+                            "proof":  "No IsCreated-gated scratch lock release remains; added-line forbidden-pattern scan returned 0."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs",
+                            "lines":  "618-742",
+                            "change":  "Added Burst GenerateMockAcousticLoadJob for deterministic portal graph/query stress generation; v8 changed the mock graph to bidirectional bounded edges.",
+                            "proof":  "Full propagation forbidden-pattern scan returned 0; NativeArray fields are transient IJob parameters; QueryOutput.IsCreated branch removed from Burst job; mock graph is 30 nodes / 58 edges within MaxPathEdges=60."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Audio/Editor/AcousticPortalMemorySovereigntyValidator.cs",
+                            "lines":  "1-402",
+                            "change":  "Added editor-only layout guard and defrag race fuzzer for acoustic portal buffers; v8 removed editor string concatenation and probes 64 scheduled path jobs against the 4096-query stress set.",
+                            "proof":  "Uses InitializeOnLoad, UnsafeUtility.SizeOf, UnsafeUtility.GetFieldOffset, FrostTickDefrag, GenerateMockVaultRelocationForValidation, and AcousticPathJob.Schedule under active defrag pressure."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Audio/Editor/AcousticPortalMemorySovereigntyValidator.cs.meta",
+                            "lines":  "1-2",
+                            "change":  "Added Unity meta file for the new editor validator.",
+                            "proof":  "GUID is pinned: 50435ce3c05a4a59a6a369db35c82c39."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                            "lines":  "581-636,638-743,745-886,888-971,11543-11627",
+                            "change":  "Converted all private non-byte explicit-layout padding fields in changed audio DTOs to byte-by-byte padding: BinauralEmitterTelemetry, DelayedAudioEvent, AcousticPortalCacheEntry, ImpactEmitterSample, and AudioCaptionPayload.",
+                            "proof":  "rg found zero private ushort/uint/ulong/long/int _pad fields, zero _reserved, and zero _currentAupVelocities in touched audio files."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs",
+                            "lines":  "232-263",
+                            "change":  "Hardened AcousticPathResult.Fallback against non-finite AUP input: distance/delay are zeroed unless both endpoint AUP locals are finite, and LastPortalAup becomes default for invalid source AUP instead of propagating NaN coordinates.",
+                            "proof":  "Roslyn AST v16 parse_errors=0; AcousticPortalPropagation forbidden managed-pattern scan=0; fail-closed review found LastPortalAup no longer leaks invalid source AUP."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                            "lines":  "8135-8143",
+                            "change":  "Extended acoustic portal finite-result guard to include AcousticAup.IsFinite(result.LastPortalAup), so non-finite portal coordinates trigger FailureCode=1 and deferred Dump_1307_Acoustics.bin instead of being treated as clean fallback.",
+                            "proof":  "Focused portal scan v16 reports only cold FileStream/catch hits at 8179/8200; no hot-path managed allocation patterns."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                            "lines":  "559-560",
+                            "change":  "Added DataVault BufferID values SpatialAudioPreviousVelocityAups=72445 and SpatialAudioPreviousVelocityAupFrames=72446 for per-source AUP Doppler history; this removes the managed AUP history arrays added in the prior pass.",
+                            "proof":  "rg shows the new BufferIDs only in H8Memory and SpatialAudioManager constants/handle accessors; no duplicate symbol hits."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                            "lines":  "518-519, 1316-1317, 1775-1873, 8400-8489, 9119-9120, 9271-9280, 10899-10989",
+                            "change":  "Moved per-source manual Doppler AUP history from managed AbsoluteUniversePosition[]/int[] fields into GlobalDataVault generation handles. RunSpatialAudioTickCore now acquires transient NativeArray views once for the current phase, releases them in finally, and fails closed to base pitch when the lock cannot be acquired.",
+                            "proof":  "rg finds zero _previousVelocityAups/_previousVelocityAupFrames managed array allocations; focused ranges return FOCUSED_FORBIDDEN_HITS=0; Roslyn persistent native field scan reports PERSISTENT_NATIVE_FIELD_HITS=0 and TRANSIENT_JOB_NATIVE_FIELD_HITS=11."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                            "lines":  "1801-1803, 1809-1811, 1832-1834, 8499-8510",
+                            "change":  "Fixed v17 Doppler AUP history stale-reset hole. Active tick now clears the slot through already-held DataVault NativeArray views before ResetWorldSourceState attempts its general reset path, avoiding same-tick reentrant vault-lock failure.",
+                            "proof":  "Focused runtime ranges remain focusedForbidden=0 under Roslyn AST v18; no managed AUP arrays were reintroduced; ResetPreviousVelocityAupSlotLocal writes default/-1 into existing NativeArray views only."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+                            "lines":  "15-65",
+                            "change":  "Fixed AcousticAup AUP delta math to cast sector grid coordinates to double before subtraction, preventing long overflow before double precision local-delta calculation. Replaced AcousticAup uint tail pad with byte pads at offsets 36-39.",
+                            "proof":  "Roslyn AST v19 parse_errors=0; formula now uses double gridDeltaX/Y/Z before multiplying by cell size; AcousticAup remains StructLayout Explicit Size=40."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+                            "lines":  "36-80",
+                            "change":  "Hardened AcousticAup overflow fail-closed path. RelativeFloat3 now clamps non-finite components before float return, and DistanceMeters clamps each double component to AupMaxDistanceReturnMeters before squaring, so an overflowed component cannot produce Infinity and return 0f.",
+                            "proof":  "Roslyn AST v20 parse_errors=0 in default, UNITY_EDITOR, and UNITY_EDITOR+DEVELOPMENT_BUILD. HectonSignalLaneContract forbidden managed buckets remain zero; rg classified only legacy/cold SpatialAudioManager hits outside the patched contract."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+                            "lines":  "67-84",
+                            "change":  "Split NaN semantics from Infinity semantics. RelativeFloat3 returns 0f for NaN components to avoid phantom direction vectors, while DistanceMeters treats NaN components as max distance so corrupted positions cannot become nearest.",
+                            "proof":  "No managed-pattern hits in HectonSignalLaneContract.cs; Roslyn AST v21 parse_errors=0 in default, UNITY_EDITOR, and UNITY_EDITOR+DEVELOPMENT_BUILD."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs",
+                            "lines":  "548-570",
+                            "change":  "Hardened AcousticPathJob.BuildResult against malformed CameFrom chains. The path unwind is capped below MaxPathNodes and returns NoPath fallback if the chain does not reach sourceNode.",
+                            "proof":  "No managed-pattern or boxing hits in AcousticPortalPropagation.cs after patch; Result NodeCount cannot grow past the fixed MaxPathNodes cap on malformed chains."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+                            "lines":  "80-98",
+                            "change":  "Converted AcousticEchoTap private reserved tail fields to explicit byte pads at offsets 126-143 without changing Size=144 or public field offsets.",
+                            "proof":  "Audio/acoustic DTO padding scan no longer reports _reserved or non-byte private pads in AcousticAup or AcousticEchoTap."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                            "lines":  "8184-8237",
+                            "change":  "Moved the acoustic portal Docs/AgentLogs binary dump writer behind UNITY_EDITOR. Default/release runtime now publishes numeric AcousticPortalFailureDumpIo telemetry and returns without FileStream, catch, Directory, or Path execution in the portal dump method.",
+                            "proof":  "Preprocessor-aware Roslyn AST v22: default mode has only legacy non-portal FileStream/BinaryWriter at 5162/5163 and catch lines 2139,3479,5191; portal FileStream line 8212 and catch line 8233 appear only under UNITY_EDITOR."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                            "lines":  "542-544, 2137-2148, 3478-3491, 5142-5208",
+                            "change":  "Removed the remaining default/player FileStream/BinaryWriter dump route from the changed audio runtime file by moving DumpVirtualVoiceBlackBox file IO behind UNITY_EDITOR. Also converted two job schedule rethrow guards into fail-closed telemetry paths after releasing DataVault locks.",
+                            "proof":  "Preprocessor-aware Roslyn AST v23: default mode has fileOrWriterNew empty and throwLines empty for SpatialAudioManager.cs; default catch lines are only fail-closed schedule guards at 2142 and 3483."
+                        },
+                        {
+                            "file":  "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                            "lines":  "2137-2150, 3478-3497",
+                            "change":  "Moved the two remaining Schedule() catch guards behind UNITY_EDITOR || DEVELOPMENT_BUILD. Default/player runtime now schedules after DataVault validation without catch/throw/FileStream/BinaryWriter/Directory/Path execution in the changed audio runtime files.",
+                            "proof":  "Preprocessor-aware v24 text scan: DEFAULT mode reports SpatialAudioManager.cs, AcousticPortalPropagation.cs, and HectonSignalLaneContract.cs clean for catch, throw, FileStream, BinaryWriter, Directory, and Path; UNITY_EDITOR keeps the diagnostic catches and binary dumps."
+                        }
+                    ],
+    "dtoOffsetMap":  [
+                         {
+                             "name":  "AcousticAup",
+                             "size":  40,
+                             "multipleOf8":  true,
+                             "offsets":  [
+                                             "0 long GridX",
+                                             "8 long GridY",
+                                             "16 long GridZ",
+                                             "24 float3 Local",
+                                             "36 byte _pad0",
+                                             "37 byte _pad1",
+                                             "38 byte _pad2",
+                                             "39 byte _pad3"
+                                         ],
+                             "source":  "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs:10-65"
+                         },
+                         {
+                             "name":  "AcousticPortalNode",
+                             "size":  56,
+                             "multipleOf8":  true,
+                             "offsets":  [
+                                             "0 AcousticAup Position",
+                                             "40 int FirstEdge",
+                                             "44 int EdgeCount",
+                                             "48 float RoomVolumeCubicMeters",
+                                             "52 byte Flags",
+                                             "53 byte _pad0",
+                                             "54 byte _pad1",
+                                             "55 byte _pad2"
+                                         ],
+                             "source":  "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs:49-68"
+                         },
+                         {
+                             "name":  "AcousticPortalEdge",
+                             "size":  16,
+                             "multipleOf8":  true,
+                             "offsets":  [
+                                             "0 int ToNode",
+                                             "4 float DistanceMeters",
+                                             "8 byte Flags",
+                                             "9 byte _pad0",
+                                             "10 byte _pad1",
+                                             "11 byte _pad2",
+                                             "12 byte _pad3",
+                                             "13 byte _pad4",
+                                             "14 byte _pad5",
+                                             "15 byte _pad6"
+                                         ],
+                             "source":  "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs:70-93"
+                         },
+                         {
+                             "name":  "AcousticPathQuery",
+                             "size":  112,
+                             "multipleOf8":  true,
+                             "offsets":  [
+                                             "0 AcousticAup SourceAup",
+                                             "40 AcousticAup ListenerAup",
+                                             "80 float3 ListenerRight",
+                                             "92 int NodeCount",
+                                             "96 int EdgeCount",
+                                             "100 int MaxNodeExpansions",
+                                             "104 float GlobalQualityWeight",
+                                             "108 byte DisablePortalPath",
+                                             "109 byte _pad0",
+                                             "110 byte _pad1",
+                                             "111 byte _pad2"
+                                         ],
+                             "source":  "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs:95-120"
+                         },
+                         {
+                             "name":  "SoundEmissionSignal",
+                             "size":  64,
+                             "multipleOf8":  true,
+                             "offsets":  [
+                                             "0 AcousticAup SourceAup",
+                                             "40 float Volume",
+                                             "44 float Pitch",
+                                             "48 uint EventID",
+                                             "52 int StationaryCacheKey",
+                                             "56 byte Flags",
+                                             "57 byte _pad0",
+                                             "58 byte _pad1",
+                                             "59 byte _pad2",
+                                             "60 byte _pad3",
+                                             "61 byte _pad4",
+                                             "62 byte _pad5",
+                                             "63 byte _pad6"
+                                         ],
+                             "source":  "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs:122-173"
+                         },
+                         {
+                             "name":  "AcousticPathResult",
+                             "size":  104,
+                             "multipleOf8":  true,
+                             "offsets":  [
+                                             "0 AcousticAup LastPortalAup",
+                                             "40 float TrueDistanceMeters",
+                                             "44 float DelaySeconds",
+                                             "48 float Transmission01",
+                                             "52 float LowPassCutoffHz",
+                                             "56 float ItdSeconds",
+                                             "60 float RoomVolumeCubicMeters",
+                                             "64 float PathfindingMs",
+                                             "68 int NodeCount",
+                                             "72 int CornerCount",
+                                             "76 int ExpandedNodeCount",
+                                             "80 int SourceNodeIndex",
+                                             "84 int ListenerNodeIndex",
+                                             "88 uint StateHash",
+                                             "92 byte Status",
+                                             "93 byte UsedPortalPath",
+                                             "94 byte UsedSealedBulkhead",
+                                             "95 byte UsedReprojectionCache",
+                                             "96 byte _pad0",
+                                             "97 byte _pad1",
+                                             "98 byte _pad2",
+                                             "99 byte _pad3",
+                                             "100 byte _pad4",
+                                             "101 byte _pad5",
+                                             "102 byte _pad6",
+                                             "103 byte _pad7"
+                                         ],
+                             "source":  "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs:176-263"
+                         },
+                         {
+                             "name":  "AcousticTelemetryEntry",
+                             "size":  64,
+                             "multipleOf8":  true,
+                             "offsets":  [
+                                             "0 long StopwatchTicks",
+                                             "8 int Frame",
+                                             "12 int NodeCount",
+                                             "16 int CornerCount",
+                                             "20 int ExpandedNodeCount",
+                                             "24 float PathfindingMs",
+                                             "28 float TrueDistanceMeters",
+                                             "32 float DelaySeconds",
+                                             "36 float LowPassCutoffHz",
+                                             "40 uint Flags",
+                                             "44 uint StateHash",
+                                             "48 uint BufferId",
+                                             "52 uint Generation",
+                                             "56 uint FailureCode",
+                                             "60 byte _pad0",
+                                             "61 byte _pad1",
+                                             "62 byte _pad2",
+                                             "63 byte _pad3"
+                                         ],
+                             "source":  "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs:267-305"
+                         },
+                         {
+                             "name":  "AcousticEchoTap",
+                             "size":  144,
+                             "multipleOf8":  true,
+                             "offsets":  [
+                                             "0 AcousticAup SourceAup",
+                                             "40 AcousticAup ListenerAup",
+                                             "80 float3 Position",
+                                             "92 float Magnitude",
+                                             "96 float Volume01",
+                                             "100 float DelaySeconds",
+                                             "104 float LowPassCutoffHz",
+                                             "108 float Rt60Seconds",
+                                             "112 uint SoundHash",
+                                             "116 uint SourceId",
+                                             "120 uint ClipHash",
+                                             "124 byte Flags",
+                                             "125 byte QualityTier",
+                                             "126 byte _pad0",
+                                             "127 byte _pad1",
+                                             "128 byte _pad2",
+                                             "129 byte _pad3",
+                                             "130 byte _pad4",
+                                             "131 byte _pad5",
+                                             "132 byte _pad6",
+                                             "133 byte _pad7",
+                                             "134 byte _pad8",
+                                             "135 byte _pad9",
+                                             "136 byte _pad10",
+                                             "137 byte _pad11",
+                                             "138 byte _pad12",
+                                             "139 byte _pad13",
+                                             "140 byte _pad14",
+                                             "141 byte _pad15",
+                                             "142 byte _pad16",
+                                             "143 byte _pad17"
+                                         ],
+                             "source":  "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs:65-98"
+                         }
+                     ],
+    "managedHotPathScan":  {
+                               "acousticPortalPropagation":  [
+                                                                 {
+                                                                     "line":  235,
+                                                                     "hit":  "new AcousticPathResult",
+                                                                     "classification":  "struct object creation; no heap allocation"
+                                                                 },
+                                                                 {
+                                                                     "line":  616,
+                                                                     "hit":  "new AcousticPathResult",
+                                                                     "classification":  "struct object creation; no heap allocation"
+                                                                 },
+                                                                 {
+                                                                     "lines":  "263-275",
+                                                                     "hit":  "NativeArray\u003cT\u003e fields",
+                                                                     "classification":  "IJob transient parameters; Roslyn classification allowed_transient_job_parameter"
+                                                                 },
+                                                                 {
+                                                                     "lines":  "618-742",
+                                                                     "hit":  "GenerateMockAcousticLoadJob",
+                                                                     "classification":  "Burst editor/test stress harness; transient IJob NativeArray parameters only; query count reads QueryOutput.Length directly; mock graph is bidirectional and bounded to 58/60 edges."
+                                                                 }
+                                                             ],
+                               "spatialAudioPortalRanges":  [
+                                                                {
+                                                                    "line":  7265,
+                                                                    "hit":  "new AcousticPathQuery",
+                                                                    "classification":  "struct object creation; no heap allocation"
+                                                                },
+                                                                {
+                                                                    "line":  7287,
+                                                                    "hit":  "new AcousticPathJob",
+                                                                    "classification":  "struct job value; no heap allocation"
+                                                                },
+                                                                {
+                                                                    "lines":  "7387,7399,7409,7513,7564",
+                                                                    "hit":  "new AcousticPortalNode/Edge",
+                                                                    "classification":  "struct writes into DataVault NativeArray; no heap allocation"
+                                                                },
+                                                                {
+                                                                    "lines":  "7505,7596",
+                                                                    "hit":  "new Vector3",
+                                                                    "classification":  "Unity struct values used only to convert habitat node runtime positions into AbsoluteUniversePosition before AUP distance math; no heap allocation"
+                                                                },
+                                                                {
+                                                                    "line":  7794,
+                                                                    "hit":  "new AcousticPortalTelemetryEntry",
+                                                                    "classification":  "struct write into blackbox ring; no heap allocation"
+                                                                },
+                                                                {
+                                                                    "lines":  "10462,10511",
+                                                                    "hit":  "new Vector3",
+                                                                    "classification":  "Unity struct values in AUP-delta velocity conversion; no heap allocation"
+                                                                }
+                                                            ],
+                               "forbiddenHotPathHits":  0,
+                               "forbiddenPatterns":  [
+                                                         "string.Format",
+                                                         ".ToString(",
+                                                         "interpolated string",
+                                                         "LINQ Where/Select/Any/First/ToList",
+                                                         "foreach",
+                                                         "NativeList\u003c",
+                                                         "NativeHashMap\u003c",
+                                                         "NativeQueue\u003c"
+                                                     ],
+                               "focusedSpatialRanges":  [
+                                                            "7500-7605",
+                                                            "7618-7905",
+                                                            "8035-8165",
+                                                            "8745-8815",
+                                                            "10770-10830"
+                                                        ],
+                               "addedLineDiffForbiddenHits":  0,
+                               "scratchLockHardening":  "SpatialAudioManager.cs:8455-8521 uses openLocked/closedLocked booleans for release ownership instead of IsCreated as a lock proxy.",
+                               "outOfRangeSpatialManagerHits":  [
+                                                                    "SpatialAudioManager.cs:479 Allocator.Persistent DataVault-exempt scene scratch allocator constant",
+                                                                    "SpatialAudioManager.cs:1889 GetComponent\u003cCanvas\u003e debug overlay setup",
+                                                                    "SpatialAudioManager.cs:1896 GetComponent\u003cTextMeshProUGUI\u003e debug overlay setup"
+                                                                ],
+                               "coldOnlyManagedDump":  [
+                                                           "SpatialAudioManager.cs:7890 FileStream",
+                                                           "SpatialAudioManager.cs:7892 stackalloc header",
+                                                           "SpatialAudioManager.cs:7910 catch(Exception)",
+                                                           "SpatialAudioManager.cs:7913 GlobalTelemetryBus.PublishMathGuardInvalidNumber(AcousticPortalFailureDumpIo)"
+                                                       ],
+                               "roslynAstScanV11":  {
+                                                        "tool":  "csi.exe + Microsoft.CodeAnalysis.CSharp syntax tree",
+                                                        "compileProject":  false,
+                                                        "summaries":  [
+                                                                          "AcousticPortalPropagation.cs parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=0 complete=0 catch=0",
+                                                                          "AcousticPortalMemorySovereigntyValidator.cs parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=0 complete=0 catch=0",
+                                                                          "SpatialAudioManager.cs parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=0 complete=0 catch=4",
+                                                                          "H8Memory.cs parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=16 complete=1 catch=2"
+                                                                      ],
+                                                        "classification":  "H8Memory nativeNew/Complete are core memory owner registry/defrag implementation; not audio propagation hot runtime ownership."
+                                                    },
+                               "roslynAstScanV13":  {
+                                                        "tool":  "Visual Studio 18 csi.exe + Microsoft.CodeAnalysis.CSharp syntax tree",
+                                                        "compileProject":  false,
+                                                        "summaries":  [
+                                                                          "AcousticPortalPropagation.cs parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=0 complete=0 objectCast=0 asObject=0",
+                                                                          "AcousticPortalMemorySovereigntyValidator.cs parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=0 complete=0 objectCast=0 asObject=0",
+                                                                          "SpatialAudioManager.cs parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=0 complete=0 objectCast=0 asObject=0",
+                                                                          "H8Memory.cs parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=16 complete=1 objectCast=0 asObject=0"
+                                                                      ],
+                                                        "classification":  "H8Memory nativeNew/Complete are core memory owner registry/defrag implementation; editor validator .Complete and TempJob hits are editor-only; added-runtime diff forbidden hits remain zero."
+                                                    },
+                               "spatialExplicitDtoPaddingScrubV13":  {
+                                                                         "result":  "No private non-byte _pad fields remain in SpatialAudioManager.cs, AcousticPortalPropagation.cs, or AcousticPortalMemorySovereigntyValidator.cs.",
+                                                                         "rgPattern":  "private (ushort|uint|ulong|long|int) _pad|private (ushort|uint|ulong|long|int) _reserved|_currentAupVelocities|_reserved",
+                                                                         "exactStructLines":  "BinauralEmitterTelemetry 581-636; DelayedAudioEvent 638-743; AcousticPortalCacheEntry 745-886; ImpactEmitterSample 888-971; AudioCaptionPayload 11543-11627."
+                                                                     }
+                           },
+    "aupDeterminism":  {
+                           "formulaRelative":  "double gridDeltaX = (double)position.GridX - origin.GridX; double x = (gridDeltaX * cellSize) + (double)position.Local.x - origin.Local.x; ClampRelativeComponentToFloat returns 0 for NaN and clamps infinities/oversized components; cast local delta to float3 only after double-sector subtraction.",
+                           "source":  "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs:36-74",
+                           "distanceFormula":  "double gridDeltaX = (double)a.GridX - b.GridX; x/y/z = ClampDistanceComponent(double local delta) before distanceSq = x*x + y*y + z*z; NaN components become max distance, infinities clamp by sign, finite check and sqrt/min stay in double path; cast return float only at the end.",
+                           "distanceSource":  "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs:51-84",
+                           "portalUsage":  "AcousticPathJob.BuildResult uses AcousticAup.DistanceMeters and AcousticAup.RelativeFloat3 before any float3 portal vector math.",
+                           "portalUsageSource":  "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs:512-539"
+                       },
+    "aupRuntimeHardening":  {
+                                "removedDirectAbsoluteFloatCasts":  true,
+                                "proof":  "rg found zero hits for listenerAbsolutePosition/sourceAbsolutePosition/audibleAbsolutePosition/previousAbsolute/currentAbsolute/ToAbsoluteVector3/ToAbsoluteDouble3/(float)absolute in SpatialAudioManager.cs and AcousticPortalPropagation.cs.",
+                                "listenerVelocityFormula":  "float3 delta = AbsoluteUniversePosition.ToCameraRelativeFloat3(in listenerAup, in previousListenerAup); Vector3 velocity = delta * rcp(deltaTime).",
+                                "sourceVelocityFormula":  "float3 sourceDelta = AbsoluteUniversePosition.ToCameraRelativeFloat3(in sourceAup, in previousSourceAup); Vector3 velocity = sourceDelta * rcp(deltaTime).",
+                                "runtimePresentationFormula":  "ToListenerRelativeRuntimeVector3 uses AbsoluteUniversePosition.ToCameraRelativeFloat3(in sourceAup, in listenerAup) and adds the resulting local delta to listenerRuntimePosition.",
+                                "portalEdgeDistanceFormula":  "ResolveRuntimeDistanceMeters resolves both runtime positions to AbsoluteUniversePosition, converts to AcousticAup, calls AcousticAup.DistanceMeters, and only returns the finite float result after double-sector distance math.",
+                                "habitatAssociationDistanceFormula":  "TryFindNearestHabitatNode converts each habitat node runtime point to AbsoluteUniversePosition, converts both target and node to AcousticAup, calls AcousticAup.DistanceMeters, and only then squares the finite float distance for association thresholding.",
+                                "lines":  [
+                                              "SpatialAudioManager.cs:1468",
+                                              "SpatialAudioManager.cs:1680",
+                                              "SpatialAudioManager.cs:2866-2882",
+                                              "SpatialAudioManager.cs:6102-6112",
+                                              "SpatialAudioManager.cs:6366-6394",
+                                              "SpatialAudioManager.cs:7418-7429",
+                                              "SpatialAudioManager.cs:7456-7608",
+                                              "SpatialAudioManager.cs:10431-10513"
+                                          ]
+                            },
+    "failClosed":  [
+                       {
+                           "case":  "DataVault null or invalid open/closed scratch handle",
+                           "behavior":  "return false; attempt blackbox failure record if vault/blackbox is available; release scratch locks based on explicit lock acquisition booleans, not NativeArray.IsCreated.",
+                           "lines":  "SpatialAudioManager.cs:8745-8821"
+                       },
+                       {
+                           "case":  "work buffer lock/capacity failure",
+                           "behavior":  "release already-held locks, reset out views to default, blackbox BufferId/Generation/FailureCode=3, return false",
+                           "lines":  "SpatialAudioManager.cs:8609-8732"
+                       },
+                       {
+                           "case":  "non-finite query/result AUP or numeric result",
+                           "behavior":  "AcousticPathResult.Fallback zeroes distance/delay and uses default LastPortalAup when source AUP is not finite; IsAcousticPathResultFinite includes LastPortalAup finite check; blackbox writes FailureCode=1 and defers Dump_1307_Acoustics.bin from LateFrameTick.",
+                           "lines":  "AcousticPortalPropagation.cs:232-263; SpatialAudioManager.cs:8035-8143; SpatialAudioManager.cs:8145-8202"
+                       }
+                   ],
+    "isolation":  {
+                      "asmdef":  "No Audio/Propagation asmdef exists; AcousticPortalPropagation.cs is compiled in parent assembly with Unity/Burst/Core.Contracts only.",
+                      "propagationUsings":  [
+                                                "System",
+                                                "System.Runtime.InteropServices",
+                                                "Hecton8.Core.Contracts",
+                                                "Unity.Burst",
+                                                "Unity.Collections",
+                                                "Unity.Collections.LowLevel.Unsafe",
+                                                "Unity.Jobs",
+                                                "Unity.Mathematics"
+                                            ],
+                      "crossDomainJustification":  "SpatialAudioManager is existing owner/caller for portal vault buffers; H8Memory change is BufferID contract repair required to remove cross-domain Thermodynamics collision."
+                  },
+    "overengineering":  {
+                            "result":  "No wave simulator added. Portal logic remains fixed-capacity graph traversal: MaxPathNodes=30, MaxPathEdges=60, quality-scaled MaxNodeExpansions. Acoustic perceptual cost is Dear Lie: corner gain, low-pass cutoff, sealed-bulkhead delay, ITD scalar.",
+                            "lines":  "AcousticPortalPropagation.cs:280-326,512-539; SpatialAudioManager.cs:7261-7283"
+                        },
+    "phase2Harness":  {
+                          "mockLoadJob":  "GenerateMockAcousticLoadJob writes fixed portal nodes/edges and 4096 deterministic AcousticPathQuery records with AUP-safe coordinates; no QueryOutput.IsCreated branch remains in Execute; graph is bidirectional bounded line topology: 30 nodes, 58 edges, MaxPathEdges=60.",
+                          "mockLoadJobSource":  "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs:618-742",
+                          "layoutGuard":  "AcousticPortalMemorySovereigntyValidator runs on InitializeOnLoad and validates size/field offsets with UnsafeUtility.SizeOf and UnsafeUtility.GetFieldOffset.",
+                          "layoutGuardSource":  "Assets/_Project/Scripts/Audio/Editor/AcousticPortalMemorySovereigntyValidator.cs:283-400",
+                          "layoutGuardMeta":  "Assets/_Project/Scripts/Audio/Editor/AcousticPortalMemorySovereigntyValidator.cs.meta guid=50435ce3c05a4a59a6a369db35c82c39",
+                          "defragFuzzer":  "RunDefragRaceFuzzer acquires portal Vault write locks, schedules GenerateMockAcousticLoadJob, calls FrostTickDefrag under active lock mask, schedules 64 AcousticPathJob probes over the 4096-query stress set while repeatedly requesting defrag, releases locks, then verifies refreshed read-only handles after GenerateMockVaultRelocationForValidation.",
+                          "defragFuzzerSource":  "Assets/_Project/Scripts/Audio/Editor/AcousticPortalMemorySovereigntyValidator.cs:43-279",
+                          "editorExecutedThisPass":  false
+                      },
+    "proofLimitations":  [
+                             "dotnet build was not launched in the v11 pass by user instruction: build/dotnet should be rare and not retried every audit loop.",
+                             "Roslyn AST syntax scan was run through csi.exe with explicit VS Roslyn references; this is syntax-only, not a Unity compile or project build.",
+                             "The v12 pass removed one unused managed cold array and converted acoustic portal DTO tail padding to byte fields, but Unity Editor layout validator execution is still pending.",
+                             "New editor validator/fuzzer was added but not executed in Unity Editor from this shell pass.",
+                             "Unity Editor/Profiler/GCMonitor proof was not available in this shell pass.",
+                             "Dump serialization remains managed System.IO cold path, but BinaryWriter and managed debug logging were removed from the portal dump route; entry encoding uses stackalloc/BinaryPrimitives and no managed allocation is introduced in audited portal hot path ranges.",
+                             "The v13 pass converted neighboring explicit audio DTO private padding in SpatialAudioManager.cs to byte pads; Unity Editor validator execution and project build remain intentionally pending by build-throttling instruction.",
+                             "v14 correction: previous v13 AST summary parsed AcousticPortalMemorySovereigntyValidator.cs without UNITY_EDITOR and therefore underreported editor-only TempJob/Complete/throw counts. v14 reran the AST with UNITY_EDITOR and classifies these as editor-only fuzzer/layout-guard code, not runtime portal hot path.",
+                             "v15 correction: AST was replayed in default, UNITY_EDITOR, and UNITY_EDITOR_DEVELOPMENT modes. Runtime code still has no added forbidden patterns; editor validator still has TempJob/Complete only under editor symbols; SpatialAudioManager whole-file FileStream hits are cold dump routes at current lines 5129 and 8178, not portal hot-path allocations.",
+                             "v16 correction: fail-closed AUP fallback was hardened. Build/Unity/profiler still intentionally not run; verification used Roslyn syntax AST, focused line scans, JSON parse, source hashes, and git diff --check only.",
+                             "v18 correction: no dotnet build or Unity build was launched. Verification used Visual Studio BuildTools csi.exe Roslyn syntax AST, focused line scans, source hashes, JSON parse, and git diff --check. Whole-file SpatialAudioManager still contains legacy/cold managed surfaces outside the modified Doppler/portal ranges.",
+                             "v19 correction: AcousticAup and AcousticEchoTap are now byte-padded and AUP grid deltas are subtracted in double precision. Generic non-audio SignalBus DTO pads remain outside the agent 1307 audio/acoustic DTO scope and were not rewritten in this pass.",
+                             "v22 correction: acoustic portal dump file IO is editor-only. Default/release runtime no longer enters FileStream/catch/Directory/Path for DumpAcousticPortalBlackBox; it emits numeric telemetry and retains the DataVault-backed blackbox ring for postmortem state. The remaining default FileStream/BinaryWriter AST hits are legacy non-portal dump code outside agent 1307 scope."
+                         ],
+    "sourceHashes":  [
+                        {
+                            "path":  "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs",
+                            "sha256":  "27B7E7A25370F47A3D5D273FBDA58328FE0EE4FEE2B853280F86A2CBB5A6B2DB"
+                         },
+                         {
+                             "path":  "Assets/_Project/Scripts/Audio/Editor/AcousticPortalMemorySovereigntyValidator.cs",
+                             "sha256":  "E3E8B898578445D5DC0F7D2627B7007FD87CD2CEA41714EEAECD5E6547117208"
+                         },
+                         {
+                             "path":  "Assets/_Project/Scripts/Audio/Editor/AcousticPortalMemorySovereigntyValidator.cs.meta",
+                             "sha256":  "68AD277BDA919D6B3F10CF3A789C4FA6A0135154B0FFBF5C8E0103E6CE8FEA26"
+                         },
+                         {
+                             "path":  "Assets/_Project/Scripts/SpatialAudioManager.cs",
+                             "sha256":  "6F683FA6DD7C10D5FE751B8D8229E615C7539D6FE43A58E7CE1387DFDE329921"
+                         },
+                         {
+                             "path":  "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+                             "sha256":  "DCCB20716F515B1530204C049E0EA3D127231BEBEDC2887CEC426CA46EB69095"
+                         },
+                        {
+                            "path":  "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+                            "sha256":  "6B87BEA1E00FF5ED3AAC3B0629C6E3CDC0E44C502A27722FDF0848F46BAC2FB5"
+                        }
+                     ],
+    "staticVerification":  {
+                               "roslynAstScanV14":  {
+                                                        "tool":  "Visual Studio 18 csi.exe + Microsoft.CodeAnalysis.CSharp syntax tree",
+                                                        "compileProject":  false,
+                                                        "parseModes":  [
+                                                                           "default preprocessor symbols",
+                                                                           "UNITY_EDITOR preprocessor symbol for editor validator"
+                                                                       ],
+                                                        "summaries":  [
+                                                                          "AcousticPortalPropagation.cs parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=0 complete=0 objectCast=0 asObject=0 throw=0",
+                                                                          "AcousticPortalMemorySovereigntyValidator.cs default parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=0 complete=0 objectCast=0 asObject=0 throw=0",
+                                                                          "AcousticPortalMemorySovereigntyValidator.cs UNITY_EDITOR parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=1 complete=2 objectCast=0 asObject=0 throw=2",
+                                                                          "SpatialAudioManager.cs parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=0 complete=0 objectCast=0 asObject=0 throw=2",
+                                                                          "H8Memory.cs parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=16 complete=1 objectCast=0 asObject=0 throw=11"
+                                                                      ],
+                                                        "editorOnlyClassification":  "Validator nativeNew=1 is NativeArray\u003cAcousticPathQuery\u003e(Allocator.TempJob) at line 170-172; complete=2 are editor fuzzer synchronizations at lines 188 and 225; throw=2 are editor validation failures. No gameplay/runtime portal hot path uses these constructs.",
+                                                        "runtimeClassification":  "AcousticPortalPropagation.cs and focused SpatialAudioManager portal ranges remain zero for managed string formatting, ToString, LINQ, foreach, interpolation, string concat, native dynamic collections, Complete, object boxing casts, and direct absolute AUP float casts."
+                                                    },
+                               "focusedPortalForbiddenHitsV14":  0,
+                               "focusedPortalNewHitsV14":  [
+                                                               "SpatialAudioManager.cs:7553 new AcousticPathQuery struct",
+                                                               "SpatialAudioManager.cs:7575 new AcousticPathJob struct",
+                                                               "SpatialAudioManager.cs:7675 new AcousticPortalNode struct",
+                                                               "SpatialAudioManager.cs:7687/7697/7852 new AcousticPortalEdge struct",
+                                                               "SpatialAudioManager.cs:7793/7884 new Vector3 struct values for AUP resolution",
+                                                               "SpatialAudioManager.cs:7801 new AcousticPortalNode struct",
+                                                               "SpatialAudioManager.cs:8082 new AcousticPortalTelemetryEntry struct",
+                                                               "SpatialAudioManager.cs:10799 new Vector3 struct value for AUP delta velocity"
+                                                           ],
+                               "addedRuntimeDiffForbiddenHitsV14":  0,
+                               "asmdefIsolationV14":  {
+                                                          "audioPropagationAsmdef":  "No asmdef exists under Assets/_Project/Scripts/Audio/Propagation; folder contains 0 files.",
+                                                          "audioAsmdefs":  [
+                                                                               "Hecton8.Audio.Echolocation",
+                                                                               "Hecton8.Audio.Prologue",
+                                                                               "Hecton8.Audio.Synthesis",
+                                                                               "Hecton8.Audio.Synthesis.Editor",
+                                                                               "Hecton8.Audio.Virtualization.Contracts"
+                                                                           ],
+                                                          "propagationSourceUsings":  [
+                                                                                          "System",
+                                                                                          "System.Runtime.InteropServices",
+                                                                                          "Hecton8.Core.Contracts",
+                                                                                          "Unity.Burst",
+                                                                                          "Unity.Collections",
+                                                                                          "Unity.Collections.LowLevel.Unsafe",
+                                                                                          "Unity.Jobs",
+                                                                                          "Unity.Mathematics"
+                                                                                      ],
+                                                          "newEditorValidatorGuard":  "#if UNITY_EDITOR wraps the entire validator file; UNITY_EDITOR AST mode classifies its TempJob/Complete as editor-only fuzzer code."
+                                                      },
+                               "strictFolderV14":  {
+                                                       "canonicalFolder":  "Assets/_Project/Scripts/Audio/Propagation",
+                                                       "csharpFiles":  0,
+                                                       "forbiddenPersistentNativeFields":  0
+                                                   },
+                               "roslynAstScanV15":  {
+                                                        "tool":  "Visual Studio 18 csi.exe + Microsoft.CodeAnalysis.CSharp syntax tree",
+                                                        "compileProject":  false,
+                                                        "parseModes":  [
+                                                                           "default preprocessor symbols",
+                                                                           "UNITY_EDITOR",
+                                                                           "UNITY_EDITOR + DEVELOPMENT_BUILD"
+                                                                       ],
+                                                        "summaries":  [
+                                                                          "default AcousticPortalPropagation.cs parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=0 allNew=8 complete=0 tryGetLatest=0 hectonEventBus=0 getComponent=0 findScene=0 objectCast=0 asObject=0 throw=0 catch=0 fileStreamNew=0",
+                                                                          "default AcousticPortalMemorySovereigntyValidator.cs parse_errors=0 inactive-editor-body format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=0 allNew=0 complete=0 throw=0 catch=0",
+                                                                          "default SpatialAudioManager.cs parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=0 allNew=101 complete=0 tryGetLatest=0 hectonEventBus=0 getComponent=8 findScene=0 objectCast=0 asObject=0 throw=2 catch=4 fileStreamNew=2",
+                                                                          "default H8Memory.cs parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=16 allNew=31 complete=1 throw=11 catch=2 fileStreamNew=1",
+                                                                          "UNITY_EDITOR AcousticPortalMemorySovereigntyValidator.cs parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=1 allNew=5 complete=2 tryGetLatest=0 hectonEventBus=0 getComponent=0 findScene=0 objectCast=0 asObject=0 throw=2 catch=0 fileStreamNew=0",
+                                                                          "UNITY_EDITOR_DEVELOPMENT SpatialAudioManager.cs parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=0 allNew=118 complete=0 tryGetLatest=0 hectonEventBus=0 getComponent=10 findScene=0 objectCast=0 asObject=0 throw=2 catch=5 fileStreamNew=2"
+                                                                      ],
+                                                        "editorOnlyDetails":  [
+                                                                                  "AcousticPortalMemorySovereigntyValidator.cs:170 NativeArray\u003cAcousticPathQuery\u003e(Allocator.TempJob)",
+                                                                                  "AcousticPortalMemorySovereigntyValidator.cs:188 loadHandle.Complete()",
+                                                                                  "AcousticPortalMemorySovereigntyValidator.cs:225 pathHandle.Complete()",
+                                                                                  "AcousticPortalMemorySovereigntyValidator.cs:38/392 FatalArchitectureException editor validation throws"
+                                                                              ],
+                                                        "coldRuntimeDetails":  [
+                                                                                   "SpatialAudioManager.cs:5129 FileStream is existing non-portal blackbox/cold dump route and still uses BinaryWriter at 5130 outside this task boundary.",
+                                                                                   "SpatialAudioManager.cs:8178 FileStream is acoustic portal catastrophic Dump_1307_Acoustics.bin route; catch at 8199 publishes numeric AcousticPortalFailureDumpIo at 8201.",
+                                                                                   "SpatialAudioManager.cs:2107/3453 throw; are pre-existing rethrow sites outside the audited portal propagation hot ranges."
+                                                                               ],
+                                                        "runtimeClassification":  "AcousticPortalPropagation.cs and focused SpatialAudioManager portal ranges remain zero for managed string formatting, ToString, LINQ, foreach, interpolation, string concat, native dynamic collections, Complete, object boxing casts, HectonEventBus, TryGetLatestCreated, scene search, GetComponent, and direct absolute AUP float casts."
+                                                    },
+                               "focusedPortalScanV15":  {
+                                                            "ranges":  [
+                                                                           "6679-6695",
+                                                                           "6820-6835",
+                                                                           "7500-7605",
+                                                                           "7618-7726",
+                                                                           "7728-7905",
+                                                                           "8035-8210",
+                                                                           "8745-8810",
+                                                                           "10740-10845"
+                                                                       ],
+                                                            "forbiddenHits":  0,
+                                                            "newHitsClassified":  [
+                                                                                      "6689 new Vector3 value from AUP relative delta",
+                                                                                      "6694 new AcousticAup value",
+                                                                                      "6832 new double3 value for origin-offset AUP creation",
+                                                                                      "7553 new AcousticPathQuery value",
+                                                                                      "7575 new AcousticPathJob value",
+                                                                                      "7675/7801 new AcousticPortalNode values",
+                                                                                      "7687/7697/7852 new AcousticPortalEdge values",
+                                                                                      "7793/7884 new Vector3 values before TryResolveAupFromRuntimeOrigin",
+                                                                                      "8082 new AcousticPortalTelemetryEntry value",
+                                                                                      "8178 new FileStream cold catastrophic dump route only",
+                                                                                      "10750/10799 new Vector3 values from AUP delta velocity"
+                                                                                  ]
+                                                        },
+                               "addedRuntimeDiffForbiddenHitsV15":  0,
+                               "editorValidatorForbiddenPatternHitsV15":  [
+                                                                              "AcousticPortalMemorySovereigntyValidator.cs:172 Allocator.TempJob",
+                                                                              "AcousticPortalMemorySovereigntyValidator.cs:188 loadHandle.Complete()",
+                                                                              "AcousticPortalMemorySovereigntyValidator.cs:225 pathHandle.Complete()"
+                                                                          ],
+                               "asmdefIsolationV15":  {
+                                                          "strictPropagationFolder":  "Assets/_Project/Scripts/Audio/Propagation has 0 C# files and 0 asmdefs.",
+                                                          "activePropagationSourceUsings":  [
+                                                                                                "System",
+                                                                                                "System.Runtime.InteropServices",
+                                                                                                "Hecton8.Core.Contracts",
+                                                                                                "Unity.Burst",
+                                                                                                "Unity.Collections",
+                                                                                                "Unity.Collections.LowLevel.Unsafe",
+                                                                                                "Unity.Jobs",
+                                                                                                "Unity.Mathematics"
+                                                                                            ],
+                                                          "audioAsmdefsObserved":  [
+                                                                                       "Hecton8.Audio.Echolocation",
+                                                                                       "Hecton8.Audio.Prologue",
+                                                                                       "Hecton8.Audio.Synthesis",
+                                                                                       "Hecton8.Audio.Synthesis.Editor",
+                                                                                       "Hecton8.Audio.Virtualization.Contracts"
+                                                                                   ],
+                                                          "newAsmdefCreated":  false
+                                                      },
+                               "roslynAstScanV16":  {
+                                                        "tool":  "Visual Studio 18 csi.exe + Microsoft.CodeAnalysis.CSharp syntax tree",
+                                                        "compileProject":  false,
+                                                        "parseModes":  [
+                                                                           "default preprocessor symbols",
+                                                                           "UNITY_EDITOR",
+                                                                           "UNITY_EDITOR + DEVELOPMENT_BUILD"
+                                                                       ],
+                                                        "summaries":  [
+                                                                          "default AcousticPortalPropagation.cs parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=0 fileStreamNew=0 complete=0 tryGetLatest=0 hectonEventBus=0 getComponent=0 throw=0 catch=0 directAbsFloatCast=0 objectNew=8",
+                                                                          "UNITY_EDITOR AcousticPortalMemorySovereigntyValidator.cs parse_errors=0 nativeNew=1 complete=2 throw=2 fileStreamNew=0 stringConcat=0 linq=0",
+                                                                          "UNITY_EDITOR_DEVELOPMENT SpatialAudioManager.cs parse_errors=0 format=0 toString=0 linq=0 foreach=0 interpolation=0 query=0 stringConcat=0 nativeNew=0 complete=0 tryGetLatest=0 hectonEventBus=0 directAbsFloatCast=0 fileStreamNew=2 getComponent=10 catch=5 objectNew=118",
+                                                                          "H8Memory.cs parse_errors=0 nativeNew=16 complete=1 fileStreamNew=1; classification: core memory owner, not audio propagation runtime owner"
+                                                                      ],
+                                                        "runtimeClassification":  "AcousticPortalPropagation.cs stays zero for managed string formatting, ToString, LINQ, foreach, interpolation, string concat, native dynamic collection object creation, Complete, HectonEventBus, TryGetLatestCreated, FileStream, catch, and direct absolute AUP float casts. SpatialAudio focused portal ranges have only cold dump FileStream/catch at 8179/8200."
+                                                    },
+                               "focusedPortalScanV16":  {
+                                                            "ranges":  [
+                                                                           "7500-7605",
+                                                                           "7618-7728",
+                                                                           "7738-7900",
+                                                                           "8030-8210",
+                                                                           "8598-8735",
+                                                                           "8745-8825",
+                                                                           "10736-10816"
+                                                                       ],
+                                                            "forbiddenHits":  2,
+                                                            "hitsClassified":  [
+                                                                                   "SpatialAudioManager.cs:8179 FileStream is cold catastrophic Dump_1307_Acoustics.bin route only",
+                                                                                   "SpatialAudioManager.cs:8200 catch(Exception) publishes numeric AcousticPortalFailureDumpIo and is cold dump failure route"
+                                                                               ],
+                                                            "propagationForbiddenHits":  0
+                                                        },
+                               "failClosedPatchV16":  {
+                                                          "finding":  "v15 missed that AcousticPathResult.Fallback preserved query.SourceAup in LastPortalAup even when source AUP local was non-finite. DistanceMeters returned 0 for NaN distanceSq, so the float fields could look finite while LastPortalAup still carried NaN.",
+                                                          "fix":  "Fallback now checks AcousticAup.IsFinite for source/listener; invalid endpoints force distance=0, delay=0, and invalid source LastPortalAup=default. SpatialAudioManager finite guard now checks AcousticAup.IsFinite(result.LastPortalAup).",
+                                                          "lines":  [
+                                                                        "AcousticPortalPropagation.cs:232-263",
+                                                                        "SpatialAudioManager.cs:8135-8143"
+                                                                    ]
+                                                      },
+                               "roslynAstScanV17":  {
+                                                        "tool":  "Visual Studio 18 BuildTools csi.exe + Microsoft.CodeAnalysis.CSharp syntax tree",
+                                                        "compileProject":  false,
+                                                        "buildLaunched":  false,
+                                                        "cpuLoadBeforeBuildCheck":  "48 percent; no dotnet/csc/MSBuild process observed; no dotnet build launched per user throttle instruction",
+                                                        "parseModes":  [
+                                                                           "default preprocessor symbols",
+                                                                           "UNITY_EDITOR",
+                                                                           "UNITY_EDITOR + DEVELOPMENT_BUILD"
+                                                                       ],
+                                                        "summaries":  [
+                                                                          "default AcousticPortalPropagation.cs parse_errors=0 format=0 ToString=0 linqUsing=0 foreach=0 interpolation=0 query=0 nativeNew=0 Complete=0 TryGetLatest=0 HectonEventBus=0 GetComponent=0 throw=0 catch=0 FileStreamNew=0",
+                                                                          "UNITY_EDITOR_DEVELOPMENT SpatialAudioManager.cs parse_errors=0 format=0 ToString=0 linqUsing=0 foreach=0 interpolation=0 query=0 nativeNew=0 Complete=0 TryGetLatest=0 HectonEventBus=0 fileStreamNew=2 getComponent=10 throw=2 catch=5; classified legacy/cold outside modified Doppler hot range",
+                                                                          "H8Memory.cs parse_errors=0 nativeNew=16 Complete=1 FileStreamNew=1; classified core memory owner, not audio propagation runtime owner",
+                                                                          "UNITY_EDITOR AcousticPortalMemorySovereigntyValidator.cs parse_errors=0 nativeNew=1 Complete=2 throw=2; classified editor-only fuzzer/validator"
+                                                                      ],
+                                                        "runtimeClassification":  "Modified Doppler ranges and AcousticPortalPropagation focused ranges contain no managed allocation, string formatting, ToString, LINQ, foreach, interpolation, TryGetLatestCreated, HectonEventBus, GetComponent, Complete, or FileStream hits. AcousticPathResult value construction is a struct initializer only."
+                                                    },
+                               "focusedManagedScanV17":  {
+                                                             "ranges":  [
+                                                                            "SpatialAudioManager.cs:1770-1875",
+                                                                            "SpatialAudioManager.cs:8395-8492",
+                                                                            "SpatialAudioManager.cs:9268-9282",
+                                                                            "SpatialAudioManager.cs:10899-10992",
+                                                                            "AcousticPortalPropagation.cs:1-760"
+                                                                        ],
+                                                             "forbiddenHits":  0,
+                                                             "classifiedValueNewHits":  [
+                                                                                            "AcousticPortalPropagation.cs:245 new AcousticPathResult struct value",
+                                                                                            "AcousticPortalPropagation.cs:626 new AcousticPathResult struct value"
+                                                                                        ],
+                                                             "removedManagedAllocations":  [
+                                                                                               "SpatialAudioManager.cs:2351 old _previousVelocityAups = new AbsoluteUniversePosition[_poolSize] removed",
+                                                                                               "SpatialAudioManager.cs:2352 old _previousVelocityAupFrames = new int[_poolSize] removed"
+                                                                                           ]
+                                                         },
+                               "persistentNativeFieldScanV17":  {
+                                                                    "files":  [
+                                                                                  "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs",
+                                                                                  "Assets/_Project/Scripts/SpatialAudioManager.cs"
+                                                                              ],
+                                                                    "persistentNativeFieldHits":  0,
+                                                                    "transientJobNativeFieldHits":  11,
+                                                                    "transientJobFields":  [
+                                                                                               "AcousticPathJob: Nodes, Edges, OpenSet, ClosedSet, Costs, CameFrom, States, Result",
+                                                                                               "GenerateMockAcousticLoadJob: Nodes, Edges, QueryOutput"
+                                                                                           ]
+                                                                },
+                               "dataVaultDopplerPatchV17":  {
+                                                                "bufferIds":  [
+                                                                                  "SpatialAudioPreviousVelocityAups=72445",
+                                                                                  "SpatialAudioPreviousVelocityAupFrames=72446"
+                                                                              ],
+                                                                "lockRoute":  "TryAcquirePreviousVelocityAupBuffers resolves both write buffers; RunSpatialAudioTickCore releases both via ReleasePreviousVelocityAupBuffers in finally before leaving the dispatcher phase.",
+                                                                "failClosed":  "If the Doppler history lock is unavailable, ResetManualDopplerPitch writes ratio=1 and source pitch returns to ResolveSourcePitch(base,1), avoiding stale history and managed exceptions.",
+                                                                "aupFormula":  "sourceVelocity = (float3)(AbsoluteUniversePosition.ToCameraRelativeFloat3(sourceAup, previousSourceAup)) / deltaTime; listener velocity uses the same AUP-delta formula. No absolute AUP is cast directly to float."
+                                                            },
+                               "roslynAstScanV18":  {
+                                                        "tool":  "Visual Studio 18 BuildTools csi.exe + Microsoft.CodeAnalysis.CSharp syntax tree",
+                                                        "compileProject":  false,
+                                                        "buildLaunched":  false,
+                                                        "parseModes":  [
+                                                                           "default preprocessor symbols",
+                                                                           "UNITY_EDITOR",
+                                                                           "UNITY_EDITOR + DEVELOPMENT_BUILD"
+                                                                       ],
+                                                        "summaries":  [
+                                                                          "default AcousticPortalPropagation.cs parse_errors=0 usingLinq=0 foreach=0 interpolation=0 query=0 throw=0 catch=0 ToString=0 stringFormat=0 Complete=0 TryGetLatest=0 GetComponent=0 HectonEventBus=0 nativeNew=0 FileStreamNew=0 BinaryWriterNew=0 focusedForbidden=0; field classifier: forbiddenPersistentNativeFields=0 transientJobNativeFields=11",
+                                                                          "UNITY_EDITOR_DEVELOPMENT SpatialAudioManager.cs parse_errors=0 usingLinq=0 foreach=0 interpolation=0 query=0 ToString=0 stringFormat=0 Complete=0 TryGetLatest=0 HectonEventBus=0 nativeNew=0 focusedForbidden=0; whole-file legacy/cold counts outside focused ranges: throw=2 catch=5 GetComponent=10 FileStreamNew=2 BinaryWriterNew=1",
+                                                                          "H8Memory.cs parse_errors=0 nativeNew=11 Complete=1 FileStreamNew=1 persistentNativeFields=8; classification: core memory owner/registry, not audio propagation runtime owner",
+                                                                          "UNITY_EDITOR AcousticPortalMemorySovereigntyValidator.cs parse_errors=0 nativeNew=1 Complete=2 throw=2; classification: editor-only fuzzer/layout validator"
+                                                                      ],
+                                                        "runtimeClassification":  "Focused ranges SpatialAudioManager.cs:1770-1885, 8468-8512, 9268-9305, 10899-10992 and AcousticPortalPropagation.cs:1-760 contain no managed allocator containers, string formatting, ToString, LINQ, foreach, interpolation, TryGetLatestCreated, HectonEventBus, GetComponent, Complete, FileStream, BinaryWriter, throw, or catch. Remaining new hits are value-type struct constructors only."
+                                                    },
+                               "focusedManagedScanV18":  {
+                                                             "ranges":  [
+                                                                            "SpatialAudioManager.cs:1770-1885",
+                                                                            "SpatialAudioManager.cs:8468-8512",
+                                                                            "SpatialAudioManager.cs:9268-9305",
+                                                                            "SpatialAudioManager.cs:10899-10992",
+                                                                            "AcousticPortalPropagation.cs:1-760"
+                                                                        ],
+                                                             "forbiddenHits":  0,
+                                                             "classifiedValueNewHits":  [
+                                                                                            "SpatialAudioManager.cs:10900 new Vector3 struct value from AUP delta listener velocity",
+                                                                                            "SpatialAudioManager.cs:10952 new Vector3 struct value from AUP delta source velocity",
+                                                                                            "AcousticPortalPropagation.cs:245/626 new AcousticPathResult struct value",
+                                                                                            "AcousticPortalPropagation.cs:710 new AcousticPortalNode struct value",
+                                                                                            "AcousticPortalPropagation.cs:731 new AcousticPathQuery struct value",
+                                                                                            "AcousticPortalPropagation.cs:735 new float3 struct value",
+                                                                                            "AcousticPortalPropagation.cs:759 new AcousticPortalEdge struct value"
+                                                                                        ],
+                                                             "removedManagedAllocations":  [
+                                                                                               "No _previousVelocityAups = new allocation",
+                                                                                               "No _previousVelocityAupFrames = new allocation",
+                                                                                               "No private NativeArray/List/Queue/HashMap fields in SpatialAudioManager.cs or AcousticPortalPropagation.cs after IJob field classification"
+                                                                                           ]
+                                                         },
+                               "dopplerResetPatchV18":  {
+                                                            "finding":  "v17 held Doppler history write views for the active tick, then ResetWorldSourceState called ResetPreviousVelocityAupSlot which attempted to acquire the same DataVault buffers again. If the vault is not reentrant, stale AUP/frame state could remain after source stop, missing cached position, or LOD stop.",
+                                                            "fix":  "Before each ResetWorldSourceState call inside RunSpatialAudioTickCore while previousVelocityLocked=true, ResetPreviousVelocityAupSlotLocal clears sourceIndex in the already-held NativeArray views. The general reset path may still attempt the lock later, but stale Doppler AUP state is already cleared.",
+                                                            "lines":  [
+                                                                          "SpatialAudioManager.cs:1801-1803",
+                                                                          "SpatialAudioManager.cs:1809-1811",
+                                                                          "SpatialAudioManager.cs:1832-1834",
+                                                                          "SpatialAudioManager.cs:8499-8510"
+                                                                      ],
+                                                            "failClosed":  "If history buffers cannot be acquired at tick start, ResetManualDopplerPitch keeps base pitch ratio=1. If they are acquired, invalid/stopped sources now clear their slot without a second lock."
+                                                        },
+                               "roslynAstScanV19":  {
+                                                        "tool":  "Visual Studio 18 BuildTools csi.exe + Microsoft.CodeAnalysis.CSharp syntax tree",
+                                                        "compileProject":  false,
+                                                        "buildLaunched":  false,
+                                                        "parseModes":  [
+                                                                           "default preprocessor symbols",
+                                                                           "UNITY_EDITOR",
+                                                                           "UNITY_EDITOR + DEVELOPMENT_BUILD"
+                                                                       ],
+                                                        "summaries":  [
+                                                                          "HectonSignalLaneContract.cs parse_errors=0 usingLinq=0 foreach=0 interpolation=0 query=0 ToString=0 stringFormat=0 Complete=0 TryGetLatest=0 HectonEventBus=0 GetComponent=0 nativeNew=0 FileStreamNew=0 BinaryWriterNew=0 throw=0 catch=0 persistentNative=0",
+                                                                          "AcousticPortalPropagation.cs parse_errors=0 managed-forbidden buckets=0 persistentNative=0 transientJobNative=11",
+                                                                          "UNITY_EDITOR_DEVELOPMENT SpatialAudioManager.cs parse_errors=0 managed-forbidden focused ranges=0; whole-file legacy/cold counts remain outside scoped ranges",
+                                                                          "UNITY_EDITOR AcousticPortalMemorySovereigntyValidator.cs parse_errors=0 nativeNew=1 Complete=2 throw=2; editor-only fuzzer/validator"
+                                                                      ],
+                                                        "runtimeClassification":  "No runtime managed allocation/string/LINQ/foreach/ToString/Format/Complete/EventBus/TryGetLatest/FileStream/BinaryWriter was introduced by the v19 AUP contract patch. AUP math now casts grid coordinates to double before subtraction."
+                                                    },
+                               "aupContractPatchV19":  {
+                                                           "finding":  "v18 report claimed double-precision AUP delta, but AcousticAup subtracted long grid coordinates before double multiplication. That can overflow before the double path on extreme sector deltas.",
+                                                           "fix":  "RelativeFloat3 and DistanceMeters now compute gridDeltaX/Y/Z as double coordinate subtraction first; AcousticAup and AcousticEchoTap tail padding now uses explicit byte fields.",
+                                                           "lines":  [
+                                                                         "HectonSignalLaneContract.cs:15-65",
+                                                                         "HectonSignalLaneContract.cs:80-98"
+                                                                     ],
+                                                           "residual":  "Generic non-audio SignalBus DTO private pads in the same contract file remain pre-existing and outside agent 1307 acoustic DTO scope."
+                                                       },
+                               "roslynAstScanV20":  {
+                                                        "tool":  "Visual Studio 18 BuildTools csi.exe + Microsoft.CodeAnalysis.CSharp syntax tree",
+                                                        "compileProject":  false,
+                                                        "buildLaunched":  false,
+                                                        "parseModes":  [
+                                                                           "default preprocessor symbols",
+                                                                           "UNITY_EDITOR",
+                                                                           "UNITY_EDITOR + DEVELOPMENT_BUILD"
+                                                                       ],
+                                                        "summaries":  [
+                                                                          "default total_parse_errors=0",
+                                                                          "UNITY_EDITOR total_parse_errors=0",
+                                                                          "UNITY_EDITOR_DEVELOPMENT total_parse_errors=0",
+                                                                          "HectonSignalLaneContract.cs current sha256=4147D9B3C90CA0D3CDA85E87359A7487163922251798E4DA25DAEA3496AF8053"
+                                                                      ],
+                                                        "runtimeClassification":  "The v20 contract patch introduces only private static scalar helper methods using double/float math. It adds no NativeArray owner, no managed allocation, no string formatting, no LINQ, no foreach, no Complete, no EventBus, no file IO, no throw/catch."
+                                                    },
+                               "aupOverflowClampPatchV20":  {
+                                                                "finding":  "v19 fixed long-before-double overflow, but DistanceMeters still squared raw double components. Extreme sector deltas could overflow distanceSq to Infinity and hit the old non-finite branch returning 0f, making corrupted far positions look near.",
+                                                                "fix":  "DistanceMeters clamps each double component to +/-AupMaxDistanceReturnMeters before squaring. RelativeFloat3 also routes all components through ClampRelativeComponentToFloat before returning float3.",
+                                                                "lines":  [
+                                                                              "HectonSignalLaneContract.cs:36-80"
+                                                                          ],
+                                                                "failClosed":  "Huge or non-finite components saturate to the configured safe maximum instead of becoming zero distance. Local NaN is still screened by AcousticAup.IsFinite in portal hot callers."
+                                                            },
+                               "roslynAstScanV21":  {
+                                                        "tool":  "Visual Studio 18 BuildTools csi.exe + Microsoft.CodeAnalysis.CSharp syntax tree",
+                                                        "compileProject":  false,
+                                                        "buildLaunched":  false,
+                                                        "parseModes":  [
+                                                                           "default preprocessor symbols",
+                                                                           "UNITY_EDITOR",
+                                                                           "UNITY_EDITOR + DEVELOPMENT_BUILD"
+                                                                       ],
+                                                        "summaries":  [
+                                                                          "default total_parse_errors=0",
+                                                                          "UNITY_EDITOR total_parse_errors=0",
+                                                                          "UNITY_EDITOR_DEVELOPMENT total_parse_errors=0",
+                                                                          "HectonSignalLaneContract.cs current sha256=6B87BEA1E00FF5ED3AAC3B0629C6E3CDC0E44C502A27722FDF0848F46BAC2FB5",
+                                                                          "AcousticPortalPropagation.cs current sha256=27B7E7A25370F47A3D5D273FBDA58328FE0EE4FEE2B853280F86A2CBB5A6B2DB"
+                                                                      ],
+                                                        "runtimeClassification":  "No managed allocation/string/LINQ/foreach/ToString/Format/Complete/EventBus/TryGetLatest/FileStream/BinaryWriter/throw/catch/boxing marker was introduced in HectonSignalLaneContract.cs or AcousticPortalPropagation.cs by v21."
+                                                    },
+                              "failClosedPatchV21":  {
+                                                          "finding":  "v20 treated NaN relative components as positive max direction, and AcousticPathJob.BuildResult did not explicitly prove a CameFrom chain reached the source after unwind.",
+                                                          "fix":  "ClampRelativeComponentToFloat returns zero for NaN while preserving sign-clamp for infinities. ClampDistanceComponent returns max distance for NaN. BuildResult now caps unwind with `< MaxPathNodes` and returns NoPath fallback if pathNode never reaches sourceNode.",
+                                                          "lines":  [
+                                                                        "HectonSignalLaneContract.cs:67-84",
+                                                                        "AcousticPortalPropagation.cs:548-570"
+                                                                    ],
+                                                          "failClosed":  "NaN no longer creates a phantom positive direction vector, corrupt distance cannot become nearest, and malformed path chains cannot emit a successful portal result."
+                                                      },
+                              "roslynAstScanV22":  {
+                                                       "tool":  "Visual Studio 18 BuildTools csi.exe + Microsoft.CodeAnalysis.CSharp syntax tree",
+                                                       "compileProject":  false,
+                                                       "buildLaunched":  false,
+                                                       "parseModes":  [
+                                                                          "default preprocessor symbols",
+                                                                          "UNITY_EDITOR",
+                                                                          "UNITY_EDITOR + DEVELOPMENT_BUILD"
+                                                                      ],
+                                                       "summaries":  [
+                                                                         "default total_parse_errors=0 fileOrWriterNew=5162:FileStream,5163:BinaryWriter catchLines=2139,3479,5191",
+                                                                         "UNITY_EDITOR total_parse_errors=0 fileOrWriterNew=5162:FileStream,5163:BinaryWriter,8212:FileStream catchLines=2139,3479,5191,5232,8233",
+                                                                         "UNITY_EDITOR_DEVELOPMENT total_parse_errors=0 fileOrWriterNew=5162:FileStream,5163:BinaryWriter,8212:FileStream catchLines=2139,3479,5191,5232,8233",
+                                                                         "SpatialAudioManager.cs current sha256=6F683FA6DD7C10D5FE751B8D8229E615C7539D6FE43A58E7CE1387DFDE329921"
+                                                                     ],
+                                                       "runtimeClassification":  "In default/release preprocessor mode, DumpAcousticPortalBlackBox contains no portal FileStream, BinaryWriter, catch, Directory, or Path execution path. It publishes AcousticPortalFailureDumpIo and returns; editor mode retains Docs/AgentLogs/Dump_1307_Acoustics.bin for forensic binary dump."
+                                                   },
+                              "portalDumpPreprocessorPatchV22":  {
+                                                                    "finding":  "v21 still left portal catastrophic binary dump as cold managed System.IO in all preprocessor modes. That violated the stricter runtime fail-closed requirement even though it was outside the hot success path.",
+                                                                    "fix":  "Wrapped DumpAcousticPortalBlackBox with #if !UNITY_EDITOR. Runtime/player builds now emit numeric telemetry only and do not allocate or catch exceptions in the portal dump method; UNITY_EDITOR keeps the file writer for developer postmortem data.",
+                                                                    "lines":  [
+                                                                                  "SpatialAudioManager.cs:8184-8237"
+                                                                              ],
+                                                                    "failClosed":  "If a portal blackbox dump is requested in non-editor runtime, the system does not touch managed file IO. It records AcousticPortalFailureDumpIo through GlobalTelemetryBus and leaves the native DataVault blackbox ring intact."
+                                                                },
+                              "roslynAstScanV23":  {
+                                                       "tool":  "Visual Studio 18 BuildTools csi.exe + Microsoft.CodeAnalysis.CSharp syntax tree",
+                                                       "compileProject":  false,
+                                                       "buildLaunched":  false,
+                                                       "parseModes":  [
+                                                                          "default preprocessor symbols",
+                                                                          "UNITY_EDITOR",
+                                                                          "UNITY_EDITOR + DEVELOPMENT_BUILD"
+                                                                      ],
+                                                       "summaries":  [
+                                                                         "default SpatialAudioManager.cs parse_errors=0 fileOrWriterNew=empty catchLines=2142,3483 throwLines=empty",
+                                                                         "default AcousticPortalPropagation.cs parse_errors=0 fileOrWriterNew=empty catchLines=empty throwLines=empty forbiddenInvocations=empty",
+                                                                         "default HectonSignalLaneContract.cs parse_errors=0 fileOrWriterNew=empty catchLines=empty throwLines=empty forbiddenInvocations=empty",
+                                                                         "UNITY_EDITOR SpatialAudioManager.cs parse_errors=0 fileOrWriterNew=5175:FileStream,5176:BinaryWriter,8226:FileStream catchLines=2142,3483,5204,5246,8247 throwLines=empty",
+                                                                         "UNITY_EDITOR AcousticPortalMemorySovereigntyValidator.cs parse_errors=0 nativeNew=170:NativeArray<AcousticPathQuery> throwLines=38,392; classification editor-only validator/fuzzer",
+                                                                         "SpatialAudioManager.cs current sha256=1461C92FE6BB2CDA2F75DEAB8621FBEFA1319BE907E77A41B4FDD9A769D028DA"
+                                                                     ],
+                                                       "runtimeClassification":  "In default/release preprocessor mode, both acoustic portal and virtual voice dump methods now return through numeric GlobalTelemetryBus signals without FileStream, BinaryWriter, Directory, Path, or dump catch blocks. Remaining default catches at 2142 and 3483 release already-acquired DataVault locks and publish fixed numeric schedule-failure codes; they no longer rethrow."
+                                                   },
+                              "defaultRuntimeDumpAndRethrowPatchV23":  {
+                                                                            "finding":  "v22 removed portal player FileStream, but the same changed runtime file still compiled the legacy virtual-voice FileStream/BinaryWriter dump path and two schedule guards rethrew managed exceptions after lock release.",
+                                                                            "fix":  "DumpVirtualVoiceBlackBox now uses #if !UNITY_EDITOR: player/runtime records SpatialAudioFailureVirtualVoiceDumpIo and returns. The virtual-voice sort and acoustic-occlusion schedule guards release their locks, mark scheduled=false, publish numeric telemetry, and do not throw.",
+                                                                            "lines":  [
+                                                                                          "SpatialAudioManager.cs:542-544",
+                                                                                          "SpatialAudioManager.cs:2137-2148",
+                                                                                          "SpatialAudioManager.cs:3478-3491",
+                                                                                          "SpatialAudioManager.cs:5142-5208"
+                                                                                      ],
+                                                                            "failClosed":  "Player/runtime dump requests and schedule failures no longer depend on managed file writers or rethrow paths. Editor keeps binary dump writers for local postmortem, and the DataVault blackbox rings remain intact."
+                                                                        },
+                              "preprocessorAwareTextScanV24":  {
+                                                                  "tool":  "PowerShell preprocessor-mode text scanner over changed runtime files",
+                                                                  "compileProject":  false,
+                                                                  "buildLaunched":  false,
+                                                                  "parseModes":  [
+                                                                                     "default/player symbols",
+                                                                                     "UNITY_EDITOR"
+                                                                                 ],
+                                                                  "defaultRuntimeHits":  [
+                                                                                            "Assets/_Project/Scripts/SpatialAudioManager.cs clean",
+                                                                                            "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs clean",
+                                                                                            "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs clean"
+                                                                                        ],
+                                                                  "unityEditorHits":  [
+                                                                                        "SpatialAudioManager.cs:2143 catch",
+                                                                                        "SpatialAudioManager.cs:3489 catch",
+                                                                                        "SpatialAudioManager.cs:5185 FileStream",
+                                                                                        "SpatialAudioManager.cs:5186 BinaryWriter",
+                                                                                        "SpatialAudioManager.cs:8236 FileStream"
+                                                                                    ],
+                                                                  "runtimeClassification":  "Default/player preprocessor mode now has zero catch, throw, FileStream, BinaryWriter, Directory, or Path execution in the changed audio runtime files. Editor mode intentionally retains diagnostic catches and Docs/AgentLogs binary dump writers."
+                                                              },
+                              "defaultScheduleCatchSplitV24":  {
+                                                                  "finding":  "v23 still compiled two managed catch blocks in default/player runtime around VirtualVoiceSortJob.Schedule and AcousticOcclusionJob.Schedule. They released locks and did not rethrow, but the strict changed-file audit still saw managed exception handlers in runtime code.",
+                                                                  "fix":  "The catch guards are now compiled only for UNITY_EDITOR || DEVELOPMENT_BUILD. Default/player runtime runs the already validation-gated Schedule() calls directly and retains the normal completion/fence release path.",
+                                                                  "lines":  [
+                                                                                "SpatialAudioManager.cs:2137-2150",
+                                                                                "SpatialAudioManager.cs:3478-3497"
+                                                                            ],
+                                                                  "failClosed":  "In editor/development, a scheduler failure still releases held DataVault locks and emits numeric telemetry. In player/default, there is no managed catch/throw path; scheduler correctness depends on the preceding DataVault handle/capacity validation gates."
+                                                              }
+                           }
+}

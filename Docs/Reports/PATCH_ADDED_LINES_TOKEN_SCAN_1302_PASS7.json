@@ -1,0 +1,24 @@
+{
+    "agent":  "1302",
+    "generatedUtc":  "2026-05-25T18:01:43.4621068Z",
+    "dotnetBuildLaunched":  false,
+    "scannedTouchedFileCount":  18,
+    "scanMode":  "git diff added lines only, case-sensitive for LINQ/member tokens",
+    "addedForbiddenTokenHitCount":  0,
+    "addedForbiddenTokenHits":  [
+
+                                ],
+    "safeUnityMathematicsFalsePositiveCount":  2,
+    "safeUnityMathematicsFalsePositives":  [
+                                               {
+                                                   "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                                                   "line":  3475,
+                                                   "text":  "            float quality = math.saturate(math.select(1f, qualityWeight01, math.isfinite(qualityWeight01)));"
+                                               },
+                                               {
+                                                   "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                                                   "line":  1033,
+                                                   "text":  "            if (!math.all(math.isfinite(rootAup)))"
+                                               }
+                                           ]
+}

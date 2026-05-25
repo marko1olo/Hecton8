@@ -1,0 +1,188 @@
+{
+  "schema": "hecton8.forbidden_native_burndown_rate_quality.unknown.v1",
+  "generatedLocal": "2026-05-25T23:24:46+04:00",
+  "updatedLocal": "2026-05-26T00:55:25+04:00",
+  "agentId": "UNKNOWN",
+  "evidenceClass": "STATIC_SOURCE_AND_REPORT_ONLY",
+  "buildOrProfilerRun": false,
+  "latestFullLedger": {
+    "artifact": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_UNKNOWN_CURRENT_20260526_0052.json",
+    "modifiedLocal": "2026-05-26 00:55:25",
+    "scannedFiles": 2421,
+    "parseFailures": 0,
+    "forbiddenPersistentCandidates": 1770,
+    "forbiddenMonoBehaviourCandidates": 358,
+    "totalNativeFieldDeclarations": 7324,
+    "allowedTransientJobFields": 5490,
+    "allowedCoreMemoryAuthorityFields": 45,
+    "allowedStackOnlyRefStructViews": 19,
+    "rawPointerFields": 865,
+    "auditHashSha256": "68217d9f155aeb5233cbb3cc004518df4a1eb2c1d0d222bd810ca241008bbe31"
+  },
+  "excludedArtifacts": [
+    {
+      "artifact": "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_X_000.json",
+      "modifiedLocal": "2026-05-26 00:47:20",
+      "reportedForbiddenPersistentCandidates": 2138,
+      "reportedForbiddenMonoBehaviourCandidates": 581,
+      "reason": "Contradicts current source line checks; reports old TerrainChunkPagerRuntime pointer fields and old DroneFleetManager NativeArray fields that are no longer present."
+    }
+  ],
+  "rateWindows": [
+    {
+      "window": "2026-05-25 07:46:40 -> 2026-05-25 23:16:10",
+      "hours": 15.492,
+      "persistentDelta": -258,
+      "persistentPerHour": -16.65,
+      "monoBehaviourDelta": -146,
+      "monoBehaviourPerHour": -9.42
+    },
+    {
+      "window": "2026-05-25 17:04:25 -> 2026-05-25 23:16:10",
+      "hours": 6.196,
+      "persistentDelta": -163,
+      "persistentPerHour": -26.31,
+      "monoBehaviourDelta": -68,
+      "monoBehaviourPerHour": -10.97
+    },
+    {
+      "window": "2026-05-25 21:32:49 -> 2026-05-25 23:16:10",
+      "hours": 1.723,
+      "persistentDelta": -69,
+      "persistentPerHour": -40.05,
+      "monoBehaviourDelta": -39,
+      "monoBehaviourPerHour": -22.64
+    },
+    {
+      "window": "2026-05-25 23:05:15 -> 2026-05-25 23:16:10",
+      "hours": 0.182,
+      "persistentDelta": -7,
+      "persistentPerHour": -38.44,
+      "monoBehaviourDelta": -2,
+      "monoBehaviourPerHour": -10.98
+    },
+    {
+      "window": "2026-05-25 23:16:10 -> 2026-05-26 00:55:25",
+      "hours": 1.654,
+      "persistentDelta": -14,
+      "persistentPerHour": -8.46,
+      "monoBehaviourDelta": -6,
+      "monoBehaviourPerHour": -3.63
+    },
+    {
+      "window": "2026-05-25 23:46:40 -> 2026-05-26 00:55:25",
+      "hours": 1.146,
+      "persistentDelta": -8,
+      "persistentPerHour": -6.98,
+      "monoBehaviourDelta": 0,
+      "monoBehaviourPerHour": 0.0
+    }
+  ],
+  "qualityVerdict": {
+    "direction": "correct",
+    "staticImplementationQuality": "mixed_medium_to_good_in_scoped_domains",
+    "releaseQuality": "not_reached",
+    "mainReason": "Most proof remains static-only; compile, Unity player, profiler, live fuzzer, and runtime GC proof are absent in key reports.",
+    "notGarbageBecause": [
+      "Full-ledger counts are dropping across comparable snapshots.",
+      "Construction and world streaming show source-visible handle migrations.",
+      "Several scopes classify transient job NativeArray fields instead of deleting valid Burst data."
+    ],
+    "stillUnsafeBecause": [
+      "Latest full ledger still has 1770 forbidden persistent candidates.",
+      "Latest full ledger still has 358 forbidden MonoBehaviour candidates.",
+      "TerrainChunkPagerRuntime has zero forbidden fields but still uses full-lifetime Vault locks and cached unsafe aliases.",
+      "Large residual owners remain in HectonVoxelEngine, VegetationMemoryPool, PlayerInventory, DestructibleOrganicManager, and LogisticsNetworkGraph."
+    ]
+  },
+  "largestPersistentResiduals": [
+    { "count": 124, "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs" },
+    { "count": 75, "path": "Assets/_Project/Scripts/World/VegetationMemoryPool.cs" },
+    { "count": 63, "path": "Assets/_Project/Scripts/PlayerInventory.cs" },
+    { "count": 50, "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs" },
+    { "count": 50, "path": "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs" },
+    { "count": 45, "path": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs" },
+    { "count": 42, "path": "Assets/_Project/Scripts/PDA/CartographyGridJobs.cs" },
+    { "count": 39, "path": "Assets/_Project/Scripts/HectonFluidEngine.cs" },
+    { "count": 37, "path": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs" },
+    { "count": 31, "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs" }
+  ],
+  "largestMonoBehaviourResiduals": [
+    { "count": 50, "path": "Assets/_Project/Scripts/World/DestructibleOrganicManager.cs" },
+    { "count": 49, "path": "Assets/_Project/Scripts/PlayerInventory.cs" },
+    { "count": 39, "path": "Assets/_Project/Scripts/HectonFluidEngine.cs" },
+    { "count": 33, "path": "Assets/_Project/Scripts/SubmarineAtmosphereSystem.cs" },
+    { "count": 31, "path": "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs" },
+    { "count": 19, "path": "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs" },
+    { "count": 15, "path": "Assets/_Project/Scripts/SubmarineStructuralGrid.cs" },
+    { "count": 14, "path": "Assets/_Project/Scripts/World/FloraInteractionManager.cs" },
+    { "count": 13, "path": "Assets/_Project/Scripts/World/ProceduralWreckGenerator.cs" },
+    { "count": 13, "path": "Assets/_Project/Scripts/Fabricator.cs" }
+  ],
+  "scopedQualityEvidence": {
+    "1305": {
+      "artifact": "Docs/Reports/VAULT_EXORCISM_REPORT_1305.json",
+      "status": "PENDING_PHASE1_REFACTOR_DEEP_AUDIT_PATCH_PASS13_COMPLETE",
+      "streamingAdjacentCandidatesBefore": 44,
+      "streamingAdjacentCandidatesAfter": 6,
+      "remainingWorldResidencyPersistentNativeFields": 0,
+      "compileLaunched": false,
+      "sourceResidual": "No current field-level forbidden persistent candidates in WorldChunkResidencyManager.cs or TerrainChunkPagerRuntime.cs; TerrainChunkPagerRuntime lifetime lock/alias strategy still needs proof."
+    },
+    "1306": {
+      "artifact": "Docs/Reports/VAULT_EXORCISM_PHASE0_1306.md",
+      "quality": "real staged source-visible migration; no build proof",
+      "ledgerDeltas": {
+        "DroneFleetManager.cs": "36 -> 0",
+        "FluidPipeGraphRuntime.cs": "19 -> 0",
+        "LogisticsPipeTransportScheduler.cs": "10 -> 0",
+        "LogisticsRouteScratchMemory.cs": "7 -> 0",
+        "DroneFleetManager_Transactions.cs": "8 -> 0",
+        "HabitatGraphManager.cs": "21 -> 13"
+      }
+    },
+    "1307": {
+      "artifact": "Docs/Reports/VAULT_EXORCISM_REPORT_1307.json",
+      "propagationForbiddenPersistentFields": 0,
+      "propagationTransientJobFields": 11,
+      "compileProject": false
+    },
+    "1313": {
+      "artifact": "Docs/Reports/DATA_MONOLITH_APEX_PARANOID_PASS7_1313.json",
+      "strictValidatorStatus": "PASS",
+      "textStreamingAssetsArtifacts": 0,
+      "runtimeTextStreamingAssetsLoaders": 0,
+      "overall": "REJECTED_PENDING_PLATFORM_PAL_AND_PLAYER_PROOF"
+    },
+    "1314": {
+      "artifact": "Docs/Reports/AUDIO_BRIDGE_OPTIMIZATION_REPORT_1314.json",
+      "status": "PASS_STATIC_APEX_TEAR_RESISTANT_RAW_TELEMETRY_NATIVE_DUMP_ASYNC_QUEUE_COMPILE_NOT_RUN",
+      "failedChecks": 0,
+      "runtimeTokenHits": 0,
+      "compileProof": "BLOCKED_BY_EXTERNAL_BUILD_GATE_PENDING_CPU_AND_COMPILER_RECHECK",
+      "liveFuzzerProof": "NOT_RUN_OUTSIDE_UNITY_EDITOR_DATAVAULT_CONTEXT"
+    }
+  },
+  "removePolicy": {
+    "answer": "Do not remove every native container. Remove or reclassify every forbidden persistent native alias candidate.",
+    "mustRemoveOrMigrate": [
+      "Runtime MonoBehaviour native collection fields.",
+      "Long-lived cached DataVault physical views across frames.",
+      "Direct NativeQueue hot event lanes where SignalBus or bounded Vault ring is the first-party route.",
+      "Managed IO/string/catch dump paths in player failure routes.",
+      "Hidden Complete or schedule/readback loops without profiler proof."
+    ],
+    "mayStayWithProof": [
+      "Transient NativeArray fields in IJob/Burst job structs.",
+      "Method-local DataVault views released in finally.",
+      "Stack-only ref struct views.",
+      "Core memory authority fields.",
+      "Fixed black-box rings with correct owner and dump route.",
+      "Editor-only validators/fuzzers excluded from player runtime."
+    ],
+    "needsArchitectureDecision": [
+      "Subsystem native containers that are actual truth owners.",
+      "TerrainChunkPagerRuntime full-lifetime Vault lock and unsafe alias strategy."
+    ]
+  }
+}

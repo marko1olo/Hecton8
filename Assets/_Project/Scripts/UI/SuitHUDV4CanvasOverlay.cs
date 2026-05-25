@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Bootstrap;
@@ -7,6 +6,7 @@ using Hecton8.Audio;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Inventory;
@@ -21,7 +21,6 @@ using UnityEngine;
 using Unity.Mathematics;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;
 using NASAPunk.Visor;
 using Stopwatch = System.Diagnostics.Stopwatch;
 #if UNITY_EDITOR
@@ -33,19 +32,18 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Suit HUD V4 Canvas Overlay")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IUIService, IScannerInterferenceUiSink, IGameBootstrapperEventListener, IPlayerSignalEventListener, ILocalizationLanguageChangedListener, ILocalizationCorruptionVisualStateListener, ISaveEventListener, IGlobalRegistryHotSwapListener
+    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IUIService, IScannerInterferenceUiSink, IGameBootstrapperEventListener, IPlayerSignalEventListener, ILocalizationLanguageChangedListener, ILocalizationCorruptionVisualStateListener, ISaveEventListener, IGlobalRegistryHotSwapListener
     {
-        // COLD ALLOC: List<SuitHUDV4CanvasOverlay>[4] — active HUD overlay registry — owner: SuitHUDV4CanvasOverlay
-        private static readonly List<SuitHUDV4CanvasOverlay> s_activeOverlays = new List<SuitHUDV4CanvasOverlay>(4);
+        // Fixed-slot active HUD overlay registry. Overflow fails closed; no managed registry container.
+        private const int MaxActiveOverlays = 4;
+        private static SuitHUDV4CanvasOverlay s_activeOverlay0;
+        private static SuitHUDV4CanvasOverlay s_activeOverlay1;
+        private static SuitHUDV4CanvasOverlay s_activeOverlay2;
+        private static SuitHUDV4CanvasOverlay s_activeOverlay3;
+        private static int s_activeOverlayCount;
         private const int MaxHudDynamicTextBufferChars = 4096;
         private static readonly char[] s_sharedOversizedHudTextBuffer = new char[MaxHudDynamicTextBufferChars]; // COLD ALLOC: char[4096] - editor/no-GC fallback for oversized HUD text staging - owner: SuitHUDV4CanvasOverlay
         private static bool s_stencilRenderGraphRuntimeActive;
-        // COLD ALLOC: List<VisorHUDController>[2] — controller resolve scratch — owner: SuitHUDV4CanvasOverlay
-        private static readonly List<VisorHUDController> s_controllerResolveBuffer = new List<VisorHUDController>(2);
-        // COLD ALLOC: List<GameObject>[16] — scene root resolve scratch — owner: SuitHUDV4CanvasOverlay
-        private static readonly List<GameObject> s_sceneRootResolveBuffer = new List<GameObject>(16);
-        // COLD ALLOC: List<Image>[32] — image resolve scratch — owner: SuitHUDV4CanvasOverlay
-        private static readonly List<Image> s_imageResolveBuffer = new List<Image>(32);
         // COLD ALLOC: Vector3[8] — threat chevron mesh build scratch — owner: SuitHUDV4CanvasOverlay
         private static readonly Vector3[] s_threatChevronMeshVertices = new Vector3[8];
         // COLD ALLOC: Vector2[8] — threat chevron mesh UV scratch — owner: SuitHUDV4CanvasOverlay
@@ -255,7 +253,7 @@ namespace Hecton8.UI
             uint resolvedCode = errorCode != 0u ? errorCode : 0x4D454D30u;
             s_memorySubsystemBreachCode = resolvedCode;
             WriteMemorySubsystemBreachHex(resolvedCode);
-            s_memorySubsystemBreachUntilTime = Time.unscaledTimeAsDouble + MemorySubsystemBreachHoldSeconds;
+            s_memorySubsystemBreachUntilTime = SystemDispatcher.CurrentUnscaledTimeSeconds + MemorySubsystemBreachHoldSeconds;
             unchecked
             {
                 s_memorySubsystemBreachVersion++;
@@ -268,9 +266,9 @@ namespace Hecton8.UI
                 return;
 
             s_stencilRenderGraphRuntimeActive = active;
-            for (int i = 0; i < s_activeOverlays.Count; i++)
+            for (int i = 0; i < s_activeOverlayCount; i++)
             {
-                SuitHUDV4CanvasOverlay overlay = s_activeOverlays[i];
+                SuitHUDV4CanvasOverlay overlay = GetActiveOverlay(i);
                 if (overlay == null)
                     continue;
 
@@ -289,7 +287,7 @@ namespace Hecton8.UI
         private static bool TryResolveMemorySubsystemBreach(out char[] buffer, out int length, out int version)
         {
             version = s_memorySubsystemBreachVersion;
-            if (s_memorySubsystemBreachCode == 0u || Time.unscaledTimeAsDouble > s_memorySubsystemBreachUntilTime)
+            if (s_memorySubsystemBreachCode == 0u || SystemDispatcher.CurrentUnscaledTimeSeconds > s_memorySubsystemBreachUntilTime)
             {
                 buffer = null;
                 length = 0;
@@ -617,9 +615,7 @@ namespace Hecton8.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            s_activeOverlays.Clear();
-            s_controllerResolveBuffer.Clear();
-            s_sceneRootResolveBuffer.Clear();
+            ClearActiveOverlays();
             s_memorySubsystemBreachUntilTime = 0d;
             s_memorySubsystemBreachCode = 0u;
             s_memorySubsystemBreachVersion = 0;
@@ -678,7 +674,6 @@ namespace Hecton8.UI
         private bool _layoutBuilt;
         [SerializeField, HideInInspector] private int _appliedLayoutRevision;
         private float _nextAutoResolveAt;
-        private bool _tickRegistered;
         private bool _slowTickRegistered;
         private bool _lateFrameTickRegistered;
         private bool _pendingRuntimeCanvasRefresh = true;
@@ -889,7 +884,9 @@ namespace Hecton8.UI
         public Camera ProjectionCamera => projectionCamera;
         internal static SuitHUDV4CanvasOverlay ActiveRuntimeInstance { get; private set; }
 
-        public static void CopyActiveOverlaysTo(List<SuitHUDV4CanvasOverlay> results)
+        internal static int ActiveOverlayCount => s_activeOverlayCount;
+
+        public static void CopyActiveOverlaysTo(System.Collections.Generic.List<SuitHUDV4CanvasOverlay> results)
         {
             if (results == null)
                 return;
@@ -899,16 +896,16 @@ namespace Hecton8.UI
             if (resultCapacity <= 0)
                 return;
 
-            for (int i = 0; i < s_activeOverlays.Count; i++)
+            for (int i = 0; i < s_activeOverlayCount; i++)
             {
-                SuitHUDV4CanvasOverlay overlay = s_activeOverlays[i];
-                if (overlay != null && overlay.isActiveAndEnabled)
-                {
-                    if (results.Count >= resultCapacity)
-                        return;
+                SuitHUDV4CanvasOverlay overlay = GetActiveOverlay(i);
+                if (overlay == null || !overlay.isActiveAndEnabled)
+                    continue;
 
-                    results.Add(overlay);
-                }
+                if (results.Count >= resultCapacity)
+                    return;
+
+                results.Add(overlay);
             }
         }
 
@@ -1352,23 +1349,7 @@ namespace Hecton8.UI
                 _hasAppliedRootVisibility = true;
             }
 
-            s_imageResolveBuffer.Clear();
-            root.GetComponentsInChildren<Image>(true, s_imageResolveBuffer);
-            for (int imageIndex = 0; imageIndex < s_imageResolveBuffer.Count; imageIndex++)
-            {
-                Image image = s_imageResolveBuffer[imageIndex];
-                if (image == null || image.name != "AcousticRadarOverlay")
-                    continue;
-
-                image.enabled = false;
-                if (_acousticRadarMaterial != null && image.material == _acousticRadarMaterial)
-                    image.material = null;
-                if (_ditheredUiBackgroundMaterial != null && image.material == _ditheredUiBackgroundMaterial)
-                    image.material = null;
-                break;
-            }
-
-            s_imageResolveBuffer.Clear();
+            DisableAcousticRadarOverlayImage(root);
         }
 
         private void TryRegisterUiService()
@@ -1533,7 +1514,7 @@ namespace Hecton8.UI
         }
 #endif
 
-        public void Tick(float deltaTime)
+        private void QueueSuitHudReactiveTick(float deltaTime)
         {
             if (IsStencilRenderGraphSuppressedRuntime())
             {
@@ -1664,6 +1645,9 @@ namespace Hecton8.UI
             if (!Application.isPlaying || _root == null)
                 return;
 
+            if (!_reactiveLateFrameSolveRequested)
+                QueueSuitHudReactiveTick(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
+
             ConsumeDepthChangedSignals();
             float reactiveDeltaTime = _reactiveLateFrameSolveRequested
                 ? _queuedReactiveDeltaTime
@@ -1742,13 +1726,13 @@ namespace Hecton8.UI
         {
             _savingProgressTargetAlpha = 1f;
             _savingProgressHidePending = false;
-            _savingProgressHideNotBeforeTime = Time.unscaledTime + SavingProgressMinimumVisibleSeconds;
+            _savingProgressHideNotBeforeTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds + SavingProgressMinimumVisibleSeconds;
             EmitSavingProgressHapticPulse();
         }
 
         private void EmitSavingProgressHapticPulse()
         {
-            float now = Time.unscaledTime;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (now < _nextSavingProgressHapticTime)
                 return;
 
@@ -1764,7 +1748,7 @@ namespace Hecton8.UI
 
         private void RequestSavingProgressHide()
         {
-            if (Time.unscaledTime < _savingProgressHideNotBeforeTime)
+            if ((float)SystemDispatcher.CurrentUnscaledTimeSeconds < _savingProgressHideNotBeforeTime)
             {
                 _savingProgressHidePending = true;
                 return;
@@ -1939,11 +1923,10 @@ namespace Hecton8.UI
 
             if (projectionCamera == null)
             {
-                VisorHUDController.CopyActiveControllersTo(s_controllerResolveBuffer);
                 Transform root = transform.root;
-                for (int i = 0; i < s_controllerResolveBuffer.Count; i++)
+                for (int i = 0; i < VisorHUDController.ActiveControllerCount; i++)
                 {
-                    VisorHUDController controller = s_controllerResolveBuffer[i];
+                    VisorHUDController controller = VisorHUDController.GetActiveController(i);
                     if (controller == null || controller.HudCamera == null)
                         continue;
 
@@ -1956,9 +1939,9 @@ namespace Hecton8.UI
 
                 if (projectionCamera == null)
                 {
-                    for (int i = 0; i < s_controllerResolveBuffer.Count; i++)
+                    for (int i = 0; i < VisorHUDController.ActiveControllerCount; i++)
                     {
-                        VisorHUDController controller = s_controllerResolveBuffer[i];
+                        VisorHUDController controller = VisorHUDController.GetActiveController(i);
                         if (controller != null && controller.HudCamera != null)
                         {
                             projectionCamera = controller.HudCamera;
@@ -1967,7 +1950,6 @@ namespace Hecton8.UI
                     }
                 }
 
-                s_controllerResolveBuffer.Clear();
             }
 
             TryResolveProjectionCameraFromPlayer(playerRoot, hasPlayerRoot);
@@ -2043,7 +2025,7 @@ namespace Hecton8.UI
             ILocalizationStressPresentationReadModel localizationRuntime = GlobalRegistry.LocalizationStressPresentation;
             bool localizationChanged = !ReferenceEquals(_localizationRuntime, localizationRuntime);
             _localizationRuntime = localizationRuntime;
-            _spatialAudioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _spatialAudioManager = GlobalRegistry.Audio;
             _playerRuntimeContext = GlobalRegistry.Player;
             if (_vegetationBridge == null)
                 _vegetationBridge = GlobalRegistry.MapMagicVegetation;
@@ -2241,7 +2223,7 @@ namespace Hecton8.UI
             _glitchTableHandleReady = false;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
         {
             return handle.BufferID != 0u && handle.Generation != 0u;
         }
@@ -2275,7 +2257,14 @@ namespace Hecton8.UI
 
         private static float GetAutoResolveNow()
         {
-            return Application.isPlaying ? Time.unscaledTime : Time.realtimeSinceStartup;
+            return Application.isPlaying
+                ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds
+                : ResolveEditorPreviewClockSeconds();
+        }
+
+        private static float ResolveEditorPreviewClockSeconds()
+        {
+            return (float)(System.Diagnostics.Stopwatch.GetTimestamp() / (double)System.Diagnostics.Stopwatch.Frequency);
         }
 
         private void NormalizeCanvas(bool allowUiScalerCreation = true)
@@ -2967,7 +2956,10 @@ namespace Hecton8.UI
             if (!TryResolveRuntimeAup(gridCenter, out AbsoluteUniversePosition gridCenterAup))
                 return;
 
-            float3 gridCenterRelativeToCamera = AbsoluteUniversePosition.ToCameraRelativeFloat3(in gridCenterAup, in cameraAup);
+            float3 gridCenterRelativeToCamera = AupPrecisionMath.LocalDeltaFloat3(
+                gridCenterAup.ToAbsoluteDouble3(),
+                cameraAup.ToAbsoluteDouble3(),
+                float3.zero);
             float radius = math.max(1f, threatChevronRadiusMeters);
             float radiusSq = radius * radius;
             float safeCellSize = math.max(0.001f, cellSize);
@@ -3371,7 +3363,10 @@ namespace Hecton8.UI
             if (!TryResolveRuntimeAup(cameraPosition, out AbsoluteUniversePosition cameraAup))
                 return false;
 
-            float3 threatRelative = AbsoluteUniversePosition.ToCameraRelativeFloat3(in threatState.PositionAup, in cameraAup);
+            float3 threatRelative = AupPrecisionMath.LocalDeltaFloat3(
+                threatState.PositionAup.ToAbsoluteDouble3(),
+                cameraAup.ToAbsoluteDouble3(),
+                float3.zero);
             float3 cameraForwardF3 = math.float3(cameraTransform.forward.x, cameraTransform.forward.y, cameraTransform.forward.z);
             float3 cameraRightF3 = math.float3(cameraTransform.right.x, cameraTransform.right.y, cameraTransform.right.z);
             float3 cameraUpF3 = math.float3(cameraTransform.up.x, cameraTransform.up.y, cameraTransform.up.z);
@@ -4115,7 +4110,7 @@ namespace Hecton8.UI
             if (_savingProgressCanvasGroup == null)
                 return;
 
-            if (_savingProgressHidePending && Time.unscaledTime >= _savingProgressHideNotBeforeTime)
+            if (_savingProgressHidePending && (float)SystemDispatcher.CurrentUnscaledTimeSeconds >= _savingProgressHideNotBeforeTime)
                 RequestSavingProgressHide();
 
             float safeDeltaTime = math.max(0f, deltaTime);
@@ -4340,14 +4335,14 @@ namespace Hecton8.UI
             Color statusColor = PickAccent(oxygen, power, health, safeDepthNormalized, pulsedPrimary, pulsedWarning);
             if (_biosRecoveryMode)
             {
-                float criticalAlpha = IsBlinkVisible(Time.unscaledTime, 12f) ? 1f : 0.2f;
+                float criticalAlpha = IsBlinkVisible((float)SystemDispatcher.CurrentUnscaledTimeSeconds, 12f) ? 1f : 0.2f;
                 LocNumericBuffer.Write(DefaultCriticalLabel.AsSpan(), out char[] criticalBuffer, out int criticalLength);
                 SetDisplayBufferIfChanged(_statusLabel, criticalBuffer, criticalLength, false, Alpha(primary, criticalAlpha), 1, false, 0f, 0, 0, ref _appliedStatusWhisperVersion, ref _appliedStatusLabelColor);
                 _hasAppliedStatusKeyHash = false;
             }
             else if (memorySubsystemBreachActive)
             {
-                float breachAlpha = IsBlinkVisible(Time.unscaledTime, 18f) ? 1f : 0.28f;
+                float breachAlpha = IsBlinkVisible((float)SystemDispatcher.CurrentUnscaledTimeSeconds, 18f) ? 1f : 0.28f;
                 SetDisplayBufferIfChanged(
                     _statusLabel,
                     memorySubsystemBreachBuffer,
@@ -4365,7 +4360,7 @@ namespace Hecton8.UI
             }
             else if (toolDepletedWarningActive)
             {
-                float depletedAlpha = IsBlinkVisible(Time.unscaledTime, 16f) ? 1f : 0.22f;
+                float depletedAlpha = IsBlinkVisible((float)SystemDispatcher.CurrentUnscaledTimeSeconds, 16f) ? 1f : 0.22f;
                 LocNumericBuffer.Write(DefaultToolDepletedLabel.AsSpan(), out char[] depletedBuffer, out int depletedLength);
                 SetDisplayBufferIfChanged(_statusLabel, depletedBuffer, depletedLength, false, Alpha(pulsedWarning, depletedAlpha), _toolDepletedVersion ^ _toolDepletedHashId, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 307, ref _appliedStatusWhisperVersion, ref _appliedStatusLabelColor);
                 _hasAppliedStatusKeyHash = false;
@@ -4558,7 +4553,7 @@ namespace Hecton8.UI
             if (!UIStateStore.TryReadValue(UIValueSlotId.RoomOxygen01, out UIValueSlot valueSlot))
                 return fallback;
 
-            float age = Time.unscaledTime - valueSlot.LastWriteUnscaledTime;
+            float age = (float)SystemDispatcher.CurrentUnscaledTimeSeconds - valueSlot.LastWriteUnscaledTime;
             if (!float.IsFinite(age) || age < 0f || age > AtmosphereRoomOxygenFreshSeconds)
                 return fallback;
 
@@ -4581,7 +4576,7 @@ namespace Hecton8.UI
             if (hapticMask == 0)
                 return;
 
-            float now = Time.unscaledTime;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (now < _nextCriticalHapticTime)
                 return;
 
@@ -4688,7 +4683,7 @@ namespace Hecton8.UI
 
             if (load01 > 0.8f)
             {
-                _loadMassPulsePhase = Time.unscaledTime * 10f;
+                _loadMassPulsePhase = (float)SystemDispatcher.CurrentUnscaledTimeSeconds * 10f;
                 ApplyLoadMassVertexColor(ResolveLoadMassPulseColor(warning, _loadMassPulsePhase));
                 return;
             }
@@ -4903,7 +4898,7 @@ namespace Hecton8.UI
 
         private static float ResolveOxygenWarningBlinkAlpha()
         {
-            float blink01 = EvaluateCheapPulse01(Time.unscaledTime * 5f);
+            float blink01 = EvaluateCheapPulse01((float)SystemDispatcher.CurrentUnscaledTimeSeconds * 5f);
             return math.lerp(0.18f, 1f, blink01);
         }
 
@@ -6140,7 +6135,7 @@ namespace Hecton8.UI
                 return false;
 
             float flickerFrequency = 14f + _systemHealthPressureLevel * 2f;
-            float flickerAlpha = IsBlinkVisible(Time.unscaledTime, flickerFrequency) ? 1f : 0.18f;
+            float flickerAlpha = IsBlinkVisible((float)SystemDispatcher.CurrentUnscaledTimeSeconds, flickerFrequency) ? 1f : 0.18f;
             Color color = Alpha(warningColor, math.max(0.18f, warningColor.a * flickerAlpha));
             int version = unchecked((int)(0x484F0000u |
                 ((uint)_systemHealthPressureLevel << 8) |
@@ -6818,7 +6813,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            float now = Time.unscaledTime;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             ProxyLightData lightData = ProxyLightData.CreateUiPanel(
                 in aup,
                 runtimePosition,
@@ -7212,40 +7207,36 @@ namespace Hecton8.UI
                    Mathf.Approximately(a.y, b.y);
         }
 
-        private static Canvas FindSceneCanvasByName(string canvasName)
-        {
-            for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
-            {
-                Scene scene = SceneManager.GetSceneAt(sceneIndex);
-                if (!scene.isLoaded)
-                    continue;
-
-                s_sceneRootResolveBuffer.Clear();
-                scene.GetRootGameObjects(s_sceneRootResolveBuffer);
-                for (int i = 0; i < s_sceneRootResolveBuffer.Count; i++)
-                {
-                    Canvas canvas = FindCanvasInHierarchy(s_sceneRootResolveBuffer[i].transform, canvasName);
-                    if (canvas != null)
-                        return canvas;
-                }
-            }
-
-            return null;
-        }
-
-        private static Canvas FindCanvasInHierarchy(Transform root, string canvasName)
+        private void DisableAcousticRadarOverlayImage(Transform root)
         {
             if (root == null)
-                return null;
+                return;
 
-            if (root.name == canvasName && root.TryGetComponent(out Canvas canvas))
-                return canvas;
+            if (root.TryGetComponent(out Image image) && image.name == "AcousticRadarOverlay")
+            {
+                image.enabled = false;
+                if (_acousticRadarMaterial != null && image.material == _acousticRadarMaterial)
+                    image.material = null;
+                if (_ditheredUiBackgroundMaterial != null && image.material == _ditheredUiBackgroundMaterial)
+                    image.material = null;
+                return;
+            }
 
             for (int i = 0; i < root.childCount; i++)
+                DisableAcousticRadarOverlayImage(root.GetChild(i));
+        }
+
+        private static Canvas FindSceneCanvasByName(string canvasName)
+        {
+            for (int i = 0; i < s_activeOverlayCount; i++)
             {
-                Canvas nested = FindCanvasInHierarchy(root.GetChild(i), canvasName);
-                if (nested != null)
-                    return nested;
+                SuitHUDV4CanvasOverlay overlay = GetActiveOverlay(i);
+                if (overlay == null)
+                    continue;
+
+                Canvas canvas = overlay.TargetCanvas;
+                if (canvas != null && canvas.name == canvasName)
+                    return canvas;
             }
 
             return null;
@@ -7368,17 +7359,11 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (!_tickRegistered && _lateFrameTickRegistered && _slowTickRegistered)
+            if (_lateFrameTickRegistered && _slowTickRegistered)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
-
-            if (_tickRegistered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _tickRegistered = false;
-            }
 
             if (!_lateFrameTickRegistered)
             {
@@ -7412,12 +7397,6 @@ namespace Hecton8.UI
 
         private void UnregisterRuntimeTick()
         {
-            if (_tickRegistered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _tickRegistered = false;
-            }
-
             if (_lateFrameTickRegistered)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
@@ -7433,16 +7412,34 @@ namespace Hecton8.UI
 
         private void RegisterActiveOverlay()
         {
-            if (s_activeOverlays.Contains(this))
+            for (int i = 0; i < s_activeOverlayCount; i++)
+            {
+                if (ReferenceEquals(GetActiveOverlay(i), this))
+                    return;
+            }
+
+            if (s_activeOverlayCount >= MaxActiveOverlays)
                 return;
 
-            s_activeOverlays.Add(this);
+            SetActiveOverlaySlot(s_activeOverlayCount, this);
+            s_activeOverlayCount++;
             RefreshActiveRuntimeInstance();
         }
 
         private void UnregisterActiveOverlay()
         {
-            s_activeOverlays.Remove(this);
+            for (int i = 0; i < s_activeOverlayCount; i++)
+            {
+                if (!ReferenceEquals(GetActiveOverlay(i), this))
+                    continue;
+
+                int lastIndex = s_activeOverlayCount - 1;
+                SetActiveOverlaySlot(i, GetActiveOverlay(lastIndex));
+                SetActiveOverlaySlot(lastIndex, null);
+                s_activeOverlayCount = lastIndex;
+                break;
+            }
+
             RefreshActiveRuntimeInstance();
         }
 
@@ -7451,9 +7448,9 @@ namespace Hecton8.UI
             ActiveRuntimeInstance = null;
 
 #if UNITY_EDITOR
-            for (int i = 0; i < s_activeOverlays.Count; i++)
+            for (int i = 0; i < s_activeOverlayCount; i++)
             {
-                SuitHUDV4CanvasOverlay overlay = s_activeOverlays[i];
+                SuitHUDV4CanvasOverlay overlay = GetActiveOverlay(i);
                 if (overlay != null &&
                     overlay.isActiveAndEnabled &&
                     overlay.renderPath == RenderPath.ScreenOverlay)
@@ -7464,15 +7461,56 @@ namespace Hecton8.UI
             }
 #endif
 
-            for (int i = 0; i < s_activeOverlays.Count; i++)
+            for (int i = 0; i < s_activeOverlayCount; i++)
             {
-                SuitHUDV4CanvasOverlay overlay = s_activeOverlays[i];
+                SuitHUDV4CanvasOverlay overlay = GetActiveOverlay(i);
                 if (overlay != null && overlay.isActiveAndEnabled)
                 {
                     ActiveRuntimeInstance = overlay;
                     return;
                 }
             }
+        }
+
+        internal static SuitHUDV4CanvasOverlay GetActiveOverlay(int index)
+        {
+            switch (index)
+            {
+                case 0: return s_activeOverlay0;
+                case 1: return s_activeOverlay1;
+                case 2: return s_activeOverlay2;
+                case 3: return s_activeOverlay3;
+                default: return null;
+            }
+        }
+
+        private static void SetActiveOverlaySlot(int index, SuitHUDV4CanvasOverlay overlay)
+        {
+            switch (index)
+            {
+                case 0:
+                    s_activeOverlay0 = overlay;
+                    break;
+                case 1:
+                    s_activeOverlay1 = overlay;
+                    break;
+                case 2:
+                    s_activeOverlay2 = overlay;
+                    break;
+                case 3:
+                    s_activeOverlay3 = overlay;
+                    break;
+            }
+        }
+
+        private static void ClearActiveOverlays()
+        {
+            s_activeOverlay0 = null;
+            s_activeOverlay1 = null;
+            s_activeOverlay2 = null;
+            s_activeOverlay3 = null;
+            s_activeOverlayCount = 0;
+            ActiveRuntimeInstance = null;
         }
     }
 
@@ -7483,7 +7521,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Hecton UI Scaler")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class HectonUIScaler : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public sealed class HectonUIScaler : MonoBehaviour, ILateFrameTickable, ISlowTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const string ContentRootName = "HectonUI_ScaledRoot";
 
@@ -7548,7 +7586,7 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float dt)
+        public void LateFrameTick()
         {
             if (_pendingContentRootBootstrap)
                 return;
@@ -7808,7 +7846,7 @@ namespace Hecton8.UI
 
             if (!_registeredToTickManager && GlobalRegistry.Dispatcher != null)
             {
-                _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+                _registeredToTickManager = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
             }
 
             if (_registeredToSlowTickManager || GlobalRegistry.Dispatcher == null)
@@ -7854,7 +7892,7 @@ namespace Hecton8.UI
         {
             if (_registeredToTickManager)
             {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredToTickManager = false;
             }
 

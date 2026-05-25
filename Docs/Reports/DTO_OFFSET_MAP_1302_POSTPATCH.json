@@ -1,0 +1,23 @@
+{
+    "schema":  "hecton8.dto_layout_postpatch_scan_1302.v1",
+    "generatedAt":  "2026-05-25",
+    "scopedRuntimeFileCount":  46,
+    "explicitStructCount":  87,
+    "nonMultipleOf8SizeCount":  0,
+    "sequentialOrAutoStructLayoutCount":  0,
+    "pack1Or4Count":  0,
+    "fieldOffsetBoolCount":  0,
+    "violationCount":  0,
+    "nonMultipleOf8Sizes":  [
+
+                            ],
+    "sequentialOrAuto":  [
+
+                         ],
+    "pack1Or4":  [
+
+                 ],
+    "fieldOffsetBool":  [
+
+                        ]
+}

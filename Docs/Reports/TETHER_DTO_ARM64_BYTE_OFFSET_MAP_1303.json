@@ -1,0 +1,1887 @@
+﻿{
+    "generatedAtUtc":  "2026-05-25T19:45:38.3627677Z",
+    "agent":  "1303",
+    "scope":  "explicit DTO layouts in modified tether files",
+    "structs":  [
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                        "struct":  "TetherVerletTelemetryEntry",
+                        "line":  31,
+                        "sizeExpression":  "TetherVerletJobLayout.TelemetryEntryStrideBytes",
+                        "sizeBytes":  64,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "uint",
+                                           "name":  "FrameIndex",
+                                           "access":  "public",
+                                           "line":  33
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "type":  "int",
+                                           "name":  "NodeCount",
+                                           "access":  "public",
+                                           "line":  34
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "type":  "int",
+                                           "name":  "IterationCount",
+                                           "access":  "public",
+                                           "line":  35
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "float",
+                                           "name":  "PeakConstraintDelta",
+                                           "access":  "public",
+                                           "line":  36
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "float",
+                                           "name":  "PeakCableTension",
+                                           "access":  "public",
+                                           "line":  37
+                                       },
+                                       {
+                                           "offset":  20,
+                                           "type":  "float3",
+                                           "name":  "AnchorPosition",
+                                           "access":  "public",
+                                           "line":  38
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "float3",
+                                           "name":  "PayloadPosition",
+                                           "access":  "public",
+                                           "line":  39
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "access":  "public",
+                                           "line":  40
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "uint",
+                                           "name":  "BufferId",
+                                           "access":  "public",
+                                           "line":  41
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "uint",
+                                           "name":  "Generation",
+                                           "access":  "public",
+                                           "line":  42
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "uint",
+                                           "name":  "FailureCode",
+                                           "access":  "public",
+                                           "line":  43
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "uint",
+                                           "name":  "Reserved0",
+                                           "access":  "public",
+                                           "line":  44
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "VerletNodeDTO",
+                        "line":  199,
+                        "sizeExpression":  "32",
+                        "sizeBytes":  32,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "float3",
+                                           "name":  "Position",
+                                           "access":  "public",
+                                           "line":  201
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "float",
+                                           "name":  "InvMass",
+                                           "access":  "public",
+                                           "line":  202
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "float3",
+                                           "name":  "OldPosition",
+                                           "access":  "public",
+                                           "line":  203
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "float",
+                                           "name":  "_pad0",
+                                           "access":  "public",
+                                           "line":  204
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "TetherNodeDTO",
+                        "line":  208,
+                        "sizeExpression":  "64",
+                        "sizeBytes":  64,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "double3",
+                                           "name":  "CurrentAUP",
+                                           "access":  "public",
+                                           "line":  210
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "double3",
+                                           "name":  "PreviousAUP",
+                                           "access":  "public",
+                                           "line":  211
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "float",
+                                           "name":  "InverseMass",
+                                           "access":  "public",
+                                           "line":  212
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "access":  "public",
+                                           "line":  213
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "byte",
+                                           "name":  "_pad0",
+                                           "access":  "private",
+                                           "line":  214
+                                       },
+                                       {
+                                           "offset":  57,
+                                           "type":  "byte",
+                                           "name":  "_pad1",
+                                           "access":  "private",
+                                           "line":  215
+                                       },
+                                       {
+                                           "offset":  58,
+                                           "type":  "byte",
+                                           "name":  "_pad2",
+                                           "access":  "private",
+                                           "line":  216
+                                       },
+                                       {
+                                           "offset":  59,
+                                           "type":  "byte",
+                                           "name":  "_pad3",
+                                           "access":  "private",
+                                           "line":  217
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "byte",
+                                           "name":  "_pad4",
+                                           "access":  "private",
+                                           "line":  218
+                                       },
+                                       {
+                                           "offset":  61,
+                                           "type":  "byte",
+                                           "name":  "_pad5",
+                                           "access":  "private",
+                                           "line":  219
+                                       },
+                                       {
+                                           "offset":  62,
+                                           "type":  "byte",
+                                           "name":  "_pad6",
+                                           "access":  "private",
+                                           "line":  220
+                                       },
+                                       {
+                                           "offset":  63,
+                                           "type":  "byte",
+                                           "name":  "_pad7",
+                                           "access":  "private",
+                                           "line":  221
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "CableNodeDTO",
+                        "line":  225,
+                        "sizeExpression":  "64",
+                        "sizeBytes":  64,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "double3",
+                                           "name":  "CurrentAUP",
+                                           "access":  "public",
+                                           "line":  227
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "double3",
+                                           "name":  "PreviousAUP",
+                                           "access":  "public",
+                                           "line":  228
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "float",
+                                           "name":  "InverseMass",
+                                           "access":  "public",
+                                           "line":  229
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "access":  "public",
+                                           "line":  230
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "byte",
+                                           "name":  "_pad0",
+                                           "access":  "public",
+                                           "line":  231
+                                       },
+                                       {
+                                           "offset":  57,
+                                           "type":  "byte",
+                                           "name":  "_pad1",
+                                           "access":  "public",
+                                           "line":  232
+                                       },
+                                       {
+                                           "offset":  58,
+                                           "type":  "byte",
+                                           "name":  "_pad2",
+                                           "access":  "public",
+                                           "line":  233
+                                       },
+                                       {
+                                           "offset":  59,
+                                           "type":  "byte",
+                                           "name":  "_pad3",
+                                           "access":  "public",
+                                           "line":  234
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "byte",
+                                           "name":  "_pad4",
+                                           "access":  "public",
+                                           "line":  235
+                                       },
+                                       {
+                                           "offset":  61,
+                                           "type":  "byte",
+                                           "name":  "_pad5",
+                                           "access":  "public",
+                                           "line":  236
+                                       },
+                                       {
+                                           "offset":  62,
+                                           "type":  "byte",
+                                           "name":  "_pad6",
+                                           "access":  "public",
+                                           "line":  237
+                                       },
+                                       {
+                                           "offset":  63,
+                                           "type":  "byte",
+                                           "name":  "_pad7",
+                                           "access":  "public",
+                                           "line":  238
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "TetherConstraintDTO",
+                        "line":  242,
+                        "sizeExpression":  "32",
+                        "sizeBytes":  32,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "int",
+                                           "name":  "NodeA",
+                                           "access":  "public",
+                                           "line":  244
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "type":  "int",
+                                           "name":  "NodeB",
+                                           "access":  "public",
+                                           "line":  245
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "type":  "float",
+                                           "name":  "RestLength",
+                                           "access":  "public",
+                                           "line":  246
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "float",
+                                           "name":  "Stiffness",
+                                           "access":  "public",
+                                           "line":  247
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "access":  "public",
+                                           "line":  248
+                                       },
+                                       {
+                                           "offset":  20,
+                                           "type":  "uint",
+                                           "name":  "CableId",
+                                           "access":  "public",
+                                           "line":  249
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "byte",
+                                           "name":  "_pad0",
+                                           "access":  "private",
+                                           "line":  250
+                                       },
+                                       {
+                                           "offset":  25,
+                                           "type":  "byte",
+                                           "name":  "_pad1",
+                                           "access":  "private",
+                                           "line":  251
+                                       },
+                                       {
+                                           "offset":  26,
+                                           "type":  "byte",
+                                           "name":  "_pad2",
+                                           "access":  "private",
+                                           "line":  252
+                                       },
+                                       {
+                                           "offset":  27,
+                                           "type":  "byte",
+                                           "name":  "_pad3",
+                                           "access":  "private",
+                                           "line":  253
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "byte",
+                                           "name":  "_pad4",
+                                           "access":  "private",
+                                           "line":  254
+                                       },
+                                       {
+                                           "offset":  29,
+                                           "type":  "byte",
+                                           "name":  "_pad5",
+                                           "access":  "private",
+                                           "line":  255
+                                       },
+                                       {
+                                           "offset":  30,
+                                           "type":  "byte",
+                                           "name":  "_pad6",
+                                           "access":  "private",
+                                           "line":  256
+                                       },
+                                       {
+                                           "offset":  31,
+                                           "type":  "byte",
+                                           "name":  "_pad7",
+                                           "access":  "private",
+                                           "line":  257
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "TetherEndpointAupDTO",
+                        "line":  261,
+                        "sizeExpression":  "64",
+                        "sizeBytes":  64,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "double3",
+                                           "name":  "AnchorAUP",
+                                           "access":  "public",
+                                           "line":  263
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "double3",
+                                           "name":  "PayloadAUP",
+                                           "access":  "public",
+                                           "line":  264
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "float3",
+                                           "name":  "AbyssalCurrentAcceleration",
+                                           "access":  "public",
+                                           "line":  265
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "float",
+                                           "name":  "GlobalQualityWeight",
+                                           "access":  "public",
+                                           "line":  266
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "TetherForcePacketDTO",
+                        "line":  270,
+                        "sizeExpression":  "64",
+                        "sizeBytes":  64,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "double3",
+                                           "name":  "ApplicationAUP",
+                                           "access":  "public",
+                                           "line":  272
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "float3",
+                                           "name":  "Force",
+                                           "access":  "public",
+                                           "line":  273
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "float",
+                                           "name":  "Tension",
+                                           "access":  "public",
+                                           "line":  274
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "int",
+                                           "name":  "CableId",
+                                           "access":  "public",
+                                           "line":  275
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "int",
+                                           "name":  "BodySlot",
+                                           "access":  "public",
+                                           "line":  276
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "access":  "public",
+                                           "line":  277
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "uint",
+                                           "name":  "FrameIndex",
+                                           "access":  "public",
+                                           "line":  278
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "byte",
+                                           "name":  "_pad0",
+                                           "access":  "private",
+                                           "line":  279
+                                       },
+                                       {
+                                           "offset":  57,
+                                           "type":  "byte",
+                                           "name":  "_pad1",
+                                           "access":  "private",
+                                           "line":  280
+                                       },
+                                       {
+                                           "offset":  58,
+                                           "type":  "byte",
+                                           "name":  "_pad2",
+                                           "access":  "private",
+                                           "line":  281
+                                       },
+                                       {
+                                           "offset":  59,
+                                           "type":  "byte",
+                                           "name":  "_pad3",
+                                           "access":  "private",
+                                           "line":  282
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "byte",
+                                           "name":  "_pad4",
+                                           "access":  "private",
+                                           "line":  283
+                                       },
+                                       {
+                                           "offset":  61,
+                                           "type":  "byte",
+                                           "name":  "_pad5",
+                                           "access":  "private",
+                                           "line":  284
+                                       },
+                                       {
+                                           "offset":  62,
+                                           "type":  "byte",
+                                           "name":  "_pad6",
+                                           "access":  "private",
+                                           "line":  285
+                                       },
+                                       {
+                                           "offset":  63,
+                                           "type":  "byte",
+                                           "name":  "_pad7",
+                                           "access":  "private",
+                                           "line":  286
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "TetherSplineVertexDTO",
+                        "line":  290,
+                        "sizeExpression":  "32",
+                        "sizeBytes":  32,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "float3",
+                                           "name":  "Position",
+                                           "access":  "public",
+                                           "line":  292
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "float",
+                                           "name":  "U",
+                                           "access":  "public",
+                                           "line":  293
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "float3",
+                                           "name":  "Tangent",
+                                           "access":  "public",
+                                           "line":  294
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "float",
+                                           "name":  "Tension01",
+                                           "access":  "public",
+                                           "line":  295
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "TetherSplineIndirectArgsDTO",
+                        "line":  299,
+                        "sizeExpression":  "16",
+                        "sizeBytes":  16,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "uint",
+                                           "name":  "VertexCountPerInstance",
+                                           "access":  "public",
+                                           "line":  301
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "type":  "uint",
+                                           "name":  "InstanceCount",
+                                           "access":  "public",
+                                           "line":  302
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "type":  "uint",
+                                           "name":  "StartVertex",
+                                           "access":  "public",
+                                           "line":  303
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "uint",
+                                           "name":  "StartInstance",
+                                           "access":  "public",
+                                           "line":  304
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "TetherAupTelemetryEntry",
+                        "line":  308,
+                        "sizeExpression":  "64",
+                        "sizeBytes":  64,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "double3",
+                                           "name":  "AnchorAUP",
+                                           "access":  "public",
+                                           "line":  310
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "uint",
+                                           "name":  "FrameIndex",
+                                           "access":  "public",
+                                           "line":  311
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "int",
+                                           "name":  "NodeCount",
+                                           "access":  "public",
+                                           "line":  312
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "int",
+                                           "name":  "IterationCount",
+                                           "access":  "public",
+                                           "line":  313
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "float",
+                                           "name":  "MaxTension",
+                                           "access":  "public",
+                                           "line":  314
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "uint",
+                                           "name":  "StateHash",
+                                           "access":  "public",
+                                           "line":  315
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "access":  "public",
+                                           "line":  316
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "float",
+                                           "name":  "CpuMicroseconds",
+                                           "access":  "public",
+                                           "line":  317
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "float",
+                                           "name":  "GlobalQualityWeight",
+                                           "access":  "public",
+                                           "line":  318
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "byte",
+                                           "name":  "_pad0",
+                                           "access":  "private",
+                                           "line":  319
+                                       },
+                                       {
+                                           "offset":  57,
+                                           "type":  "byte",
+                                           "name":  "_pad1",
+                                           "access":  "private",
+                                           "line":  320
+                                       },
+                                       {
+                                           "offset":  58,
+                                           "type":  "byte",
+                                           "name":  "_pad2",
+                                           "access":  "private",
+                                           "line":  321
+                                       },
+                                       {
+                                           "offset":  59,
+                                           "type":  "byte",
+                                           "name":  "_pad3",
+                                           "access":  "private",
+                                           "line":  322
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "byte",
+                                           "name":  "_pad4",
+                                           "access":  "private",
+                                           "line":  323
+                                       },
+                                       {
+                                           "offset":  61,
+                                           "type":  "byte",
+                                           "name":  "_pad5",
+                                           "access":  "private",
+                                           "line":  324
+                                       },
+                                       {
+                                           "offset":  62,
+                                           "type":  "byte",
+                                           "name":  "_pad6",
+                                           "access":  "private",
+                                           "line":  325
+                                       },
+                                       {
+                                           "offset":  63,
+                                           "type":  "byte",
+                                           "name":  "_pad7",
+                                           "access":  "private",
+                                           "line":  326
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "TetherTelemetryEntry",
+                        "line":  330,
+                        "sizeExpression":  "64",
+                        "sizeBytes":  64,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "double3",
+                                           "name":  "AnchorAUP",
+                                           "access":  "public",
+                                           "line":  332
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "uint",
+                                           "name":  "FrameIndex",
+                                           "access":  "public",
+                                           "line":  333
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "int",
+                                           "name":  "NodeCount",
+                                           "access":  "public",
+                                           "line":  334
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "int",
+                                           "name":  "IterationCount",
+                                           "access":  "public",
+                                           "line":  335
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "float",
+                                           "name":  "MaxTension",
+                                           "access":  "public",
+                                           "line":  336
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "uint",
+                                           "name":  "StateHash",
+                                           "access":  "public",
+                                           "line":  337
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "access":  "public",
+                                           "line":  338
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "float",
+                                           "name":  "CpuMicroseconds",
+                                           "access":  "public",
+                                           "line":  339
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "float",
+                                           "name":  "GlobalQualityWeight",
+                                           "access":  "public",
+                                           "line":  340
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "byte",
+                                           "name":  "_pad0",
+                                           "access":  "private",
+                                           "line":  341
+                                       },
+                                       {
+                                           "offset":  57,
+                                           "type":  "byte",
+                                           "name":  "_pad1",
+                                           "access":  "private",
+                                           "line":  342
+                                       },
+                                       {
+                                           "offset":  58,
+                                           "type":  "byte",
+                                           "name":  "_pad2",
+                                           "access":  "private",
+                                           "line":  343
+                                       },
+                                       {
+                                           "offset":  59,
+                                           "type":  "byte",
+                                           "name":  "_pad3",
+                                           "access":  "private",
+                                           "line":  344
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "byte",
+                                           "name":  "_pad4",
+                                           "access":  "private",
+                                           "line":  345
+                                       },
+                                       {
+                                           "offset":  61,
+                                           "type":  "byte",
+                                           "name":  "_pad5",
+                                           "access":  "private",
+                                           "line":  346
+                                       },
+                                       {
+                                           "offset":  62,
+                                           "type":  "byte",
+                                           "name":  "_pad6",
+                                           "access":  "private",
+                                           "line":  347
+                                       },
+                                       {
+                                           "offset":  63,
+                                           "type":  "byte",
+                                           "name":  "_pad7",
+                                           "access":  "private",
+                                           "line":  348
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "VerletConstraintDTO",
+                        "line":  352,
+                        "sizeExpression":  "16",
+                        "sizeBytes":  16,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "int",
+                                           "name":  "NodeA",
+                                           "access":  "public",
+                                           "line":  354
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "type":  "int",
+                                           "name":  "NodeB",
+                                           "access":  "public",
+                                           "line":  355
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "type":  "float",
+                                           "name":  "RestLength",
+                                           "access":  "public",
+                                           "line":  356
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "float",
+                                           "name":  "Stiffness",
+                                           "access":  "public",
+                                           "line":  357
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "CableSystemDTO",
+                        "line":  361,
+                        "sizeExpression":  "64",
+                        "sizeBytes":  64,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "int",
+                                           "name":  "NodeOffset",
+                                           "access":  "public",
+                                           "line":  363
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "type":  "int",
+                                           "name":  "NodeCount",
+                                           "access":  "public",
+                                           "line":  364
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "type":  "int",
+                                           "name":  "ConstraintOffset",
+                                           "access":  "public",
+                                           "line":  365
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "int",
+                                           "name":  "ConstraintCount",
+                                           "access":  "public",
+                                           "line":  366
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "int",
+                                           "name":  "ActiveNodeCount",
+                                           "access":  "public",
+                                           "line":  367
+                                       },
+                                       {
+                                           "offset":  20,
+                                           "type":  "int",
+                                           "name":  "MaterialIndex",
+                                           "access":  "public",
+                                           "line":  368
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "int",
+                                           "name":  "Flags",
+                                           "access":  "public",
+                                           "line":  369
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "int",
+                                           "name":  "CableId",
+                                           "access":  "public",
+                                           "line":  370
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "float",
+                                           "name":  "NodeRadius",
+                                           "access":  "public",
+                                           "line":  371
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "float",
+                                           "name":  "TargetLength",
+                                           "access":  "public",
+                                           "line":  372
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "float",
+                                           "name":  "ReelingSpeedMetersPerSecond",
+                                           "access":  "public",
+                                           "line":  373
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "float",
+                                           "name":  "MaxTension",
+                                           "access":  "public",
+                                           "line":  374
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "float3",
+                                           "name":  "LocalOrigin",
+                                           "access":  "public",
+                                           "line":  375
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "float",
+                                           "name":  "VisualQualityWeight",
+                                           "access":  "public",
+                                           "line":  376
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "VerletCableTuningDTO",
+                        "line":  380,
+                        "sizeExpression":  "64",
+                        "sizeBytes":  64,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "float3",
+                                           "name":  "Gravity",
+                                           "access":  "public",
+                                           "line":  382
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "float",
+                                           "name":  "FluidFriction",
+                                           "access":  "public",
+                                           "line":  383
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "int",
+                                           "name":  "ConstraintIterations",
+                                           "access":  "public",
+                                           "line":  384
+                                       },
+                                       {
+                                           "offset":  20,
+                                           "type":  "float",
+                                           "name":  "StretchThreshold01",
+                                           "access":  "public",
+                                           "line":  385
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "float",
+                                           "name":  "BreakForce",
+                                           "access":  "public",
+                                           "line":  386
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "float",
+                                           "name":  "RockFriction01",
+                                           "access":  "public",
+                                           "line":  387
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "float",
+                                           "name":  "ReelSpeedMetersPerSecond",
+                                           "access":  "public",
+                                           "line":  388
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "float",
+                                           "name":  "Reserved0",
+                                           "access":  "public",
+                                           "line":  389
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "float",
+                                           "name":  "Reserved1",
+                                           "access":  "public",
+                                           "line":  390
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "float",
+                                           "name":  "Reserved2",
+                                           "access":  "public",
+                                           "line":  391
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "float",
+                                           "name":  "Reserved3",
+                                           "access":  "public",
+                                           "line":  392
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "float",
+                                           "name":  "Reserved4",
+                                           "access":  "public",
+                                           "line":  393
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "float",
+                                           "name":  "Reserved5",
+                                           "access":  "public",
+                                           "line":  394
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "float",
+                                           "name":  "Reserved6",
+                                           "access":  "public",
+                                           "line":  395
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "CableMaterialDTO",
+                        "line":  399,
+                        "sizeExpression":  "64",
+                        "sizeBytes":  64,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "uint",
+                                           "name":  "MaterialHash",
+                                           "access":  "public",
+                                           "line":  401
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "type":  "float",
+                                           "name":  "LinearDensity",
+                                           "access":  "public",
+                                           "line":  402
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "type":  "float",
+                                           "name":  "YieldStretch01",
+                                           "access":  "public",
+                                           "line":  403
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "float",
+                                           "name":  "SnapStretch01",
+                                           "access":  "public",
+                                           "line":  404
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "float4",
+                                           "name":  "SolverTuning",
+                                           "access":  "public",
+                                           "line":  405
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "float4",
+                                           "name":  "VisualTuning",
+                                           "access":  "public",
+                                           "line":  406
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "float4",
+                                           "name":  "LoadTuning",
+                                           "access":  "public",
+                                           "line":  407
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "SdfSampleDTO",
+                        "line":  430,
+                        "sizeExpression":  "16",
+                        "sizeBytes":  16,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "float3",
+                                           "name":  "Normal",
+                                           "access":  "public",
+                                           "line":  432
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "float",
+                                           "name":  "Distance",
+                                           "access":  "public",
+                                           "line":  433
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "MockSDFSampler",
+                        "line":  437,
+                        "sizeExpression":  "64",
+                        "sizeBytes":  64,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "float3",
+                                           "name":  "SphereCenter",
+                                           "access":  "public",
+                                           "line":  439
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "float",
+                                           "name":  "SphereRadius",
+                                           "access":  "public",
+                                           "line":  440
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "float3",
+                                           "name":  "SecondarySphereCenter",
+                                           "access":  "public",
+                                           "line":  441
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "float",
+                                           "name":  "SecondarySphereRadius",
+                                           "access":  "public",
+                                           "line":  442
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "float",
+                                           "name":  "PlaneY",
+                                           "access":  "public",
+                                           "line":  443
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "float",
+                                           "name":  "Padding0",
+                                           "access":  "public",
+                                           "line":  444
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "float",
+                                           "name":  "Padding1",
+                                           "access":  "public",
+                                           "line":  445
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "float",
+                                           "name":  "Padding2",
+                                           "access":  "public",
+                                           "line":  446
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "float",
+                                           "name":  "Padding3",
+                                           "access":  "public",
+                                           "line":  447
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "float",
+                                           "name":  "Padding4",
+                                           "access":  "public",
+                                           "line":  448
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "float",
+                                           "name":  "Padding5",
+                                           "access":  "public",
+                                           "line":  449
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "float",
+                                           "name":  "Padding6",
+                                           "access":  "public",
+                                           "line":  450
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "MockWorldSampler",
+                        "line":  523,
+                        "sizeExpression":  "80",
+                        "sizeBytes":  80,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "MockSDFSampler",
+                                           "name":  "Sdf",
+                                           "access":  "public",
+                                           "line":  525
+                                       },
+                                       {
+                                           "offset":  64,
+                                           "type":  "float3",
+                                           "name":  "FlowVelocity",
+                                           "access":  "public",
+                                           "line":  526
+                                       },
+                                       {
+                                           "offset":  76,
+                                           "type":  "float",
+                                           "name":  "FlowAccelerationScale",
+                                           "access":  "public",
+                                           "line":  527
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "MockWinchSignal",
+                        "line":  558,
+                        "sizeExpression":  "32",
+                        "sizeBytes":  32,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "int",
+                                           "name":  "SystemIndex",
+                                           "access":  "public",
+                                           "line":  560
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "type":  "int",
+                                           "name":  "Flags",
+                                           "access":  "public",
+                                           "line":  561
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "type":  "float",
+                                           "name":  "DeltaMeters",
+                                           "access":  "public",
+                                           "line":  562
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "float",
+                                           "name":  "SpeedMetersPerSecond",
+                                           "access":  "public",
+                                           "line":  563
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "float",
+                                           "name":  "MinRestLength",
+                                           "access":  "public",
+                                           "line":  564
+                                       },
+                                       {
+                                           "offset":  20,
+                                           "type":  "uint",
+                                           "name":  "Sequence",
+                                           "access":  "public",
+                                           "line":  565
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "uint",
+                                           "name":  "FrameIndex",
+                                           "access":  "public",
+                                           "line":  566
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "uint",
+                                           "name":  "Reserved",
+                                           "access":  "public",
+                                           "line":  567
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "MockSubmarineAnchor",
+                        "line":  571,
+                        "sizeExpression":  "32",
+                        "sizeBytes":  32,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "float3",
+                                           "name":  "Position",
+                                           "access":  "public",
+                                           "line":  573
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "uint",
+                                           "name":  "EntityId",
+                                           "access":  "public",
+                                           "line":  574
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "float3",
+                                           "name":  "Velocity",
+                                           "access":  "public",
+                                           "line":  575
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "float",
+                                           "name":  "InvMass",
+                                           "access":  "public",
+                                           "line":  576
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "CableSnappedSignal",
+                        "line":  580,
+                        "sizeExpression":  "64",
+                        "sizeBytes":  64,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "float3",
+                                           "name":  "Position",
+                                           "access":  "public",
+                                           "line":  582
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "float",
+                                           "name":  "PeakTension",
+                                           "access":  "public",
+                                           "line":  583
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "int",
+                                           "name":  "CableId",
+                                           "access":  "public",
+                                           "line":  584
+                                       },
+                                       {
+                                           "offset":  20,
+                                           "type":  "int",
+                                           "name":  "ConstraintIndex",
+                                           "access":  "public",
+                                           "line":  585
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "uint",
+                                           "name":  "FrameIndex",
+                                           "access":  "public",
+                                           "line":  586
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "float",
+                                           "name":  "SnapThreshold",
+                                           "access":  "public",
+                                           "line":  587
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "float",
+                                           "name":  "Severity01",
+                                           "access":  "public",
+                                           "line":  588
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "uint",
+                                           "name":  "Reserved",
+                                           "access":  "public",
+                                           "line":  589
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "uint",
+                                           "name":  "Reserved1",
+                                           "access":  "public",
+                                           "line":  590
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "uint",
+                                           "name":  "Reserved2",
+                                           "access":  "public",
+                                           "line":  591
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "uint",
+                                           "name":  "Reserved3",
+                                           "access":  "public",
+                                           "line":  592
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "uint",
+                                           "name":  "Reserved4",
+                                           "access":  "public",
+                                           "line":  593
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "uint",
+                                           "name":  "Reserved5",
+                                           "access":  "public",
+                                           "line":  594
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "ushort",
+                                           "name":  "NodeCount",
+                                           "access":  "public",
+                                           "line":  595
+                                       },
+                                       {
+                                           "offset":  62,
+                                           "type":  "byte",
+                                           "name":  "Reason",
+                                           "access":  "public",
+                                           "line":  596
+                                       },
+                                       {
+                                           "offset":  63,
+                                           "type":  "byte",
+                                           "name":  "Flags",
+                                           "access":  "public",
+                                           "line":  597
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "CableTensionForceDTO",
+                        "line":  601,
+                        "sizeExpression":  "32",
+                        "sizeBytes":  32,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "float3",
+                                           "name":  "Force",
+                                           "access":  "public",
+                                           "line":  603
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "int",
+                                           "name":  "CableId",
+                                           "access":  "public",
+                                           "line":  604
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "float3",
+                                           "name":  "ApplicationPoint",
+                                           "access":  "public",
+                                           "line":  605
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "float",
+                                           "name":  "Tension",
+                                           "access":  "public",
+                                           "line":  606
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "CableAabbDTO",
+                        "line":  610,
+                        "sizeExpression":  "32",
+                        "sizeBytes":  32,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "float3",
+                                           "name":  "Min",
+                                           "access":  "public",
+                                           "line":  612
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "int",
+                                           "name":  "Visible",
+                                           "access":  "public",
+                                           "line":  613
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "float3",
+                                           "name":  "Max",
+                                           "access":  "public",
+                                           "line":  614
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "int",
+                                           "name":  "Dirty",
+                                           "access":  "public",
+                                           "line":  615
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                        "struct":  "VerletCableBlackBoxEntry",
+                        "line":  619,
+                        "sizeExpression":  "64",
+                        "sizeBytes":  64,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "uint",
+                                           "name":  "FrameIndex",
+                                           "access":  "public",
+                                           "line":  621
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "type":  "int",
+                                           "name":  "CableId",
+                                           "access":  "public",
+                                           "line":  622
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "type":  "int",
+                                           "name":  "ActiveNodeCount",
+                                           "access":  "public",
+                                           "line":  623
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "int",
+                                           "name":  "ConstraintCount",
+                                           "access":  "public",
+                                           "line":  624
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "float3",
+                                           "name":  "FirstPosition",
+                                           "access":  "public",
+                                           "line":  625
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "float",
+                                           "name":  "MaxTension",
+                                           "access":  "public",
+                                           "line":  626
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "float3",
+                                           "name":  "LastPosition",
+                                           "access":  "public",
+                                           "line":  627
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "float",
+                                           "name":  "AverageError",
+                                           "access":  "public",
+                                           "line":  628
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "access":  "public",
+                                           "line":  629
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "uint",
+                                           "name":  "StateHash",
+                                           "access":  "public",
+                                           "line":  630
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "uint",
+                                           "name":  "Reserved0",
+                                           "access":  "public",
+                                           "line":  631
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "uint",
+                                           "name":  "Reserved1",
+                                           "access":  "public",
+                                           "line":  632
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Core/Contracts/Physics/CableGpuContracts.cs",
+                        "struct":  "GpuCableSplinePointDTO",
+                        "line":  13,
+                        "sizeExpression":  "CableGpuContractLayout.GpuSplinePointStrideBytes",
+                        "sizeBytes":  16,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "float3",
+                                           "name":  "Position",
+                                           "access":  "public",
+                                           "line":  15
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "float",
+                                           "name":  "Tension01",
+                                           "access":  "public",
+                                           "line":  16
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Core/Contracts/Physics/CableGpuContracts.cs",
+                        "struct":  "GpuCableDrawParamsDTO",
+                        "line":  20,
+                        "sizeExpression":  "CableGpuContractLayout.GpuDrawParamsStrideBytes",
+                        "sizeBytes":  80,
+                        "multipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "float4",
+                                           "name":  "Color",
+                                           "access":  "public",
+                                           "line":  22
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "float4",
+                                           "name":  "StressColor",
+                                           "access":  "public",
+                                           "line":  23
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "float4",
+                                           "name":  "Params0",
+                                           "access":  "public",
+                                           "line":  24
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "float4",
+                                           "name":  "Params1",
+                                           "access":  "public",
+                                           "line":  25
+                                       },
+                                       {
+                                           "offset":  64,
+                                           "type":  "float4",
+                                           "name":  "Params2",
+                                           "access":  "public",
+                                           "line":  26
+                                       }
+                                   ],
+                        "fieldOrderHighToLowBytes":  true
+                    }
+                ],
+    "explicitStructCount":  26,
+    "numericSizeStructCount":  26,
+    "numericSizeMultipleOf8Failures":  [
+
+                                       ],
+    "highToLowFieldOrderFailures":  [
+
+                                    ],
+    "legacyAbiOrderExceptions":  [
+
+                                 ],
+    "validatorSource":  "VerletCableLayout.Validate() includes ValidateTetherAupLayouts() and ValidateTetherVerletTelemetryLayout(); telemetry offsets asserted at VerletCableDTOs.cs:99-121."
+}

@@ -41,7 +41,7 @@ namespace Hecton8.AtlasSignal
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-120)]
-    public sealed class AtlasSignalSystem : MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, IAtlasSignalReadModel, IGlobalRegistryHotSwapListener
+    public sealed class AtlasSignalSystem : MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, IAtlasSignalReadModel, IAtlasSignalDecodeSink, IGlobalRegistryHotSwapListener
     {
         // ----------------------------------------------------------
         //  INSPECTOR
@@ -591,7 +591,7 @@ namespace Hecton8.AtlasSignal
             _narrativeDiscoveryReadModel = GlobalRegistry.NarrativeDiscoveryReadModel;
             _audioLogs = GlobalRegistry.AudioLogRuntime;
             _localization = Hecton8.Core.GlobalRegistry.LocalizationText;
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = Hecton8.Core.GlobalRegistry.Save;
         }
 
         private void ClearRuntimeDependencies()
@@ -672,7 +672,7 @@ namespace Hecton8.AtlasSignal
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = Hecton8.Core.GlobalRegistry.Save;
             if (_saveService == null)
                 return;
 
@@ -878,10 +878,11 @@ namespace Hecton8.AtlasSignal
         private static void LogSignalPulse()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (Time.time < _nextSignalLogTime)
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (now < _nextSignalLogTime)
                 return;
 
-            _nextSignalLogTime = Time.time + 5f;
+            _nextSignalLogTime = now + 5f;
             H8Debug.Log(SignalPulseLog);
 #endif
         }

@@ -478,7 +478,7 @@ namespace Hecton8.Power
                     Config = safeConfig,
                     EdgeCount = graphCounts[1]
                 }.Schedule();
-                solverHandle.Complete();
+                DispatcherJobFence.TryComplete(ref solverHandle, true);
                 long solverTicks = Stopwatch.GetTimestamp() - solverStart;
                 float solverMicroseconds = TicksToMicroseconds(solverTicks, 1);
 
@@ -494,7 +494,7 @@ namespace Hecton8.Power
                     ExplicitGenerationDrainPresent = safeConfig.ExplicitGenerationDrainPresent,
                     AverageSolverMicroseconds = solverMicroseconds
                 }.Schedule();
-                conservationHandle.Complete();
+                DispatcherJobFence.TryComplete(ref conservationHandle, true);
 
                 long loopTicks = Stopwatch.GetTimestamp() - loopTicksStart;
                 long allocatedAfter = GC.GetAllocatedBytesForCurrentThread();
@@ -659,7 +659,7 @@ namespace Hecton8.Power
                 }
 
                 long allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
-                _finalHandle.Complete();
+                DispatcherJobFence.TryComplete(ref _finalHandle, true);
                 long solverTicks = Stopwatch.GetTimestamp() - _solverTicksStart;
                 long loopTicks = Stopwatch.GetTimestamp() - _loopTicksStart;
                 long allocatedAfter = GC.GetAllocatedBytesForCurrentThread();
@@ -700,7 +700,7 @@ namespace Hecton8.Power
                     return;
 
                 if (_scheduled && !_completed)
-                    _finalHandle.Complete();
+                    DispatcherJobFence.TryComplete(ref _finalHandle, true);
                 DisposeVaultOnly();
             }
 
@@ -990,7 +990,7 @@ namespace Hecton8.Power
         {
             InitializeScenario(nodes, nodeAup, offsets, destinations, conductance, edgeFlow, potentialFront, potentialBack, demandRate, batteryRemainder, resultBuffer, telemetry, graphCounts, in config, in profile);
 
-            new ValidateSolverConvergenceJob
+            JobHandle validationWarmHandle = new ValidateSolverConvergenceJob
             {
                 NodesPtr = (JacobiFuzzPowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(nodes),
                 NodeAup = nodeAup,
@@ -1007,7 +1007,8 @@ namespace Hecton8.Power
                 AverageSolverMicroseconds = 0f,
                 PerformanceLimitMicroseconds = config.PerformanceLimitMicroseconds,
                 ExplicitGenerationDrainPresent = config.ExplicitGenerationDrainPresent
-            }.Schedule().Complete();
+            }.Schedule();
+            DispatcherJobFence.TryComplete(ref validationWarmHandle, true);
 
             InitializeScenario(nodes, nodeAup, offsets, destinations, conductance, edgeFlow, potentialFront, potentialBack, demandRate, batteryRemainder, resultBuffer, telemetry, graphCounts, in config, in profile);
         }
@@ -1030,7 +1031,7 @@ namespace Hecton8.Power
             in PowerJacobiStressTopologyProfile profile)
         {
             // UNINITIALIZED PROOF: these three jobs fully write graph, scalar, result, and telemetry buffers before the solver reads them.
-            new GenerateHostileCsrGraphJob
+            JobHandle graphHandle = new GenerateHostileCsrGraphJob
             {
                 Nodes = nodes,
                 NodeAup = nodeAup,
@@ -1043,9 +1044,10 @@ namespace Hecton8.Power
                 BaseOriginAup = config.BaseOriginAup,
                 NodeCount = config.NodeCount,
                 EdgeCapacity = config.EdgeCapacity
-            }.Schedule().Complete();
+            }.Schedule();
+            DispatcherJobFence.TryComplete(ref graphHandle, true);
 
-            new InjectRandomPotentialsJob
+            JobHandle potentialsHandle = new InjectRandomPotentialsJob
             {
                 NodesPtr = (JacobiFuzzPowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(nodes),
                 PotentialFront = potentialFront,
@@ -1055,9 +1057,10 @@ namespace Hecton8.Power
                 NodeCount = config.NodeCount,
                 FrameIndex = 0,
                 ProfileFlags = profile.Flags
-            }.Schedule().Complete();
+            }.Schedule();
+            DispatcherJobFence.TryComplete(ref potentialsHandle, true);
 
-            new InitializeFuzzerResultJob
+            JobHandle resultHandle = new InitializeFuzzerResultJob
             {
                 NodesPtr = (JacobiFuzzPowerNodeDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(nodes),
                 LatestPotential = potentialFront,
@@ -1067,7 +1070,8 @@ namespace Hecton8.Power
                 EdgeCount = graphCounts[1],
                 GraphCounts = graphCounts,
                 ExplicitGenerationDrainPresent = config.ExplicitGenerationDrainPresent
-            }.Schedule().Complete();
+            }.Schedule();
+            DispatcherJobFence.TryComplete(ref resultHandle, true);
         }
 
         private static float TicksToMicroseconds(long ticks, int divisor)

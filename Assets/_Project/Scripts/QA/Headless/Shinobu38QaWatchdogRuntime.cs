@@ -6,7 +6,6 @@ using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
-using Hecton8.Physics;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -1268,10 +1267,10 @@ namespace Hecton8.QA.Headless
         private static bool TryResolveLatestKccAup(out double3 actualAup)
         {
             actualAup = double3.zero;
-            if (!PhysicsDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal))
+            if (!CoreDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal))
                 return false;
 
-            uint engineFrame = unchecked((uint)Time.frameCount);
+            uint engineFrame = SystemDispatcher.CurrentFrameId;
             if (signal.Frame > engineFrame || engineFrame - signal.Frame > KccAupMaxFrameAge)
                 return false;
 
@@ -1857,7 +1856,7 @@ namespace Hecton8.QA.Headless
             state.ActionsBitmask = input.ButtonMask;
             state.PlatformInputFlags = InputMaskAutomation;
             state.CurrentInputSchemeHash = SourceHash;
-            PhysicsDeterminismSignals.TryPublishInputOverride(in state, unchecked((uint)Time.frameCount));
+            CoreDeterminismSignals.TryPublishInputOverride(in state, SystemDispatcher.CurrentFrameId);
         }
 
         private float ApplyQualityWeightModulation(float testDurationSeconds)

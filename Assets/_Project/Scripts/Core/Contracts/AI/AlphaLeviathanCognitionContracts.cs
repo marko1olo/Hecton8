@@ -64,48 +64,48 @@ namespace Hecton8.Core.Contracts.AI.Cognition
         [FieldOffset(0)]
         public uint Frame;
 
-        /// <summary>Dense Alpha Leviathan slot index.</summary>
-        [FieldOffset(4)]
-        public ushort Slot;
-
-        /// <summary>Current phase byte from <see cref="AlphaLeviathanPhase"/>.</summary>
-        [FieldOffset(6)]
-        public byte Phase;
-
-        /// <summary>Bitmask from <see cref="AlphaLeviathanTelemetryFlags"/>.</summary>
-        [FieldOffset(7)]
-        public byte Flags;
-
         /// <summary>Distance from Leviathan to the active anchor in meters.</summary>
-        [FieldOffset(8)]
+        [FieldOffset(4)]
         public float DistanceToPlayerMeters;
 
         /// <summary>Target fog-edge orbit ring in meters.</summary>
-        [FieldOffset(12)]
+        [FieldOffset(8)]
         public float FogRingDistanceMeters;
 
-        /// <summary>Sanitized Leviathan absolute position sample.</summary>
-        [FieldOffset(16)]
+        /// <summary>Leviathan-local telemetry reference sample.</summary>
+        [FieldOffset(12)]
         public float3 Position;
 
-        /// <summary>Sanitized active anchor absolute position sample.</summary>
-        [FieldOffset(28)]
+        /// <summary>Active anchor delta after subtracting Leviathan AUP in double precision.</summary>
+        [FieldOffset(24)]
         public float3 PlayerPosition;
 
         /// <summary>Sanitized desired steering direction.</summary>
-        [FieldOffset(40)]
+        [FieldOffset(36)]
         public float3 DesiredDirection;
 
         /// <summary>Deterministic state hash for crash triage.</summary>
-        [FieldOffset(52)]
+        [FieldOffset(48)]
         public uint StateHash;
 
         /// <summary>Reported aggression scalar clamped to 0..1.</summary>
-        [FieldOffset(56)]
+        [FieldOffset(52)]
         public float LeviathanAgressivity01;
 
         /// <summary>Observed AUP shift frame ID that produced this row.</summary>
-        [FieldOffset(60)]
+        [FieldOffset(56)]
         public uint Reserved1;
+
+        /// <summary>Dense Alpha Leviathan slot index.</summary>
+        [FieldOffset(60)]
+        public ushort Slot;
+
+        /// <summary>Current phase byte from <see cref="AlphaLeviathanPhase"/>.</summary>
+        [FieldOffset(62)]
+        public byte Phase;
+
+        /// <summary>Bitmask from <see cref="AlphaLeviathanTelemetryFlags"/>.</summary>
+        [FieldOffset(63)]
+        public byte Flags;
     }
 }

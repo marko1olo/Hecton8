@@ -3156,7 +3156,7 @@ namespace Hecton8.World
 
             int count = math.min(_debrisRecordCount, _debrisRecords.Length);
             int sliceCount = math.min(count, ResolveDebrisGravitySlice(ResolveWreckQualityWeight01()));
-            int frameBucket = Time.frameCount & 4095;
+            int frameBucket = Hecton8.Core.SystemDispatcher.CurrentFrameIndex & 4095;
             for (int processed = 0; processed < sliceCount; processed++)
             {
                 int i = (_debrisGravityCursor + processed) % count;
@@ -3303,7 +3303,7 @@ namespace Hecton8.World
             catch (Exception exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError($"[ProceduralWreckGenerator] Black-box dump failed: {exception.Message}", this);
+                Hecton8.Core.H8Debug.LogError($"[ProceduralWreckGenerator] Black-box dump failed: {exception.Message}", this);
 #endif
             }
         }
@@ -3430,7 +3430,7 @@ namespace Hecton8.World
             if (waitedFrames >= AsyncMeshBuildYieldWatchdogFrames)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError($"[ProceduralWreckGenerator] Async mesh-build yield watchdog tripped in {context} after {waitedFrames} frames. Aborting generated mesh stage.");
+                Hecton8.Core.H8Debug.LogError($"[ProceduralWreckGenerator] Async mesh-build yield watchdog tripped in {context} after {waitedFrames} frames. Aborting generated mesh stage.");
 #endif
                 return false;
             }
@@ -3458,7 +3458,7 @@ namespace Hecton8.World
                 if (waitFrames >= AsyncJobWaitWatchdogFrames)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError($"[ProceduralWreckGenerator] Async job wait timeout in {context} after {waitFrames} frames. Forcing cleanup completion and aborting stage.");
+                    Hecton8.Core.H8Debug.LogError($"[ProceduralWreckGenerator] Async job wait timeout in {context} after {waitFrames} frames. Forcing cleanup completion and aborting stage.");
 #endif
                     DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
                     return false;
@@ -3791,7 +3791,7 @@ namespace Hecton8.World
             int forcedFallbackCellCount)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError(
+            Hecton8.Core.H8Debug.LogError(
                 $"[ProceduralWreckGenerator] WFC fallback engaged. reason={termination} cells={cellCount} collapseIterations={collapseIterations} propagationIterations={propagationIterations} contradictions={contradictionCount} forcedFallbackCells={forcedFallbackCellCount}",
                 this);
 #endif
@@ -4481,7 +4481,7 @@ namespace Hecton8.World
         private static void LogPropagationQueueClearWatchdog(int maxIterations)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[ProceduralWreckGenerator] Propagation queue clear watchdog triggered at {maxIterations} iterations.");
+            Hecton8.Core.H8Debug.LogError($"[ProceduralWreckGenerator] Propagation queue clear watchdog triggered at {maxIterations} iterations.");
 #endif
         }
 

@@ -643,11 +643,12 @@ namespace Hecton8.Core
             if (totalMs <= warningThresholdMs)
                 return;
 
-            if (Time.unscaledTime < _nextSlowTickTelemetryTime)
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (now < _nextSlowTickTelemetryTime)
                 return;
 
             _debugLastSlowTickReport = "Telemetry";
-            _nextSlowTickTelemetryTime = Time.unscaledTime + Mathf.Max(0.1f, slowTickReportCooldownSeconds);
+            _nextSlowTickTelemetryTime = now + Mathf.Max(0.1f, slowTickReportCooldownSeconds);
             GlobalTelemetryBus.PublishPerformanceWarning(
                 _SlowTickBudgetWarningHash,
                 _GameTickManagerContextHash,

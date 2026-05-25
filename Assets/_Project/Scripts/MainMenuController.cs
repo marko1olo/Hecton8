@@ -141,14 +141,14 @@ namespace Hecton.UI.MainMenu
 
         private void Start()
         {
-            _saveManager = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance as SaveManager;
+            _saveManager = Hecton8.Core.GlobalRegistry.Save as SaveManager;
             TryRegisterToTickManager();
 
 #if UNITY_EDITOR
             if (_saveManager == null)
             {
-                Debug.LogWarning(
-                    "[MainMenuController] Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance is null. " +
+                Hecton8.Core.H8Debug.LogWarning(
+                    "[MainMenuController] Hecton8.Core.GlobalRegistry.Save is null. " +
                     "Save/Load features will be unavailable. " +
                     "Ensure SaveManager exists in scene or is DontDestroyOnLoad.");
             }
@@ -161,7 +161,7 @@ namespace Hecton.UI.MainMenu
             TryRegisterHotSwapListener();
             CacheInputManagerCold(GlobalRegistry.NativeInputRuntime);
             TryRegisterToTickManager();
-            _lastUnscaledTickTime = Time.unscaledTime;
+            _lastUnscaledTickTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             BlockCancelInputBriefly();
             MainMenuInputRoutingGuard.EnsureInputSystemEventRouting();
             BindMenuInput();
@@ -514,7 +514,7 @@ namespace Hecton.UI.MainMenu
                 return group;
 
 #if UNITY_EDITOR
-            Debug.LogError(
+            Hecton8.Core.H8Debug.LogError(
                 "[MainMenuController] Required CanvasGroup missing. Author the component in 01_MAIN_MENU instead of patching it at runtime.");
 #endif
             return null;
@@ -610,13 +610,13 @@ namespace Hecton.UI.MainMenu
             EnsureSlotInstances();
 
             if (_saveManager == null)
-                _saveManager = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance as SaveManager;
+                _saveManager = Hecton8.Core.GlobalRegistry.Save as SaveManager;
 
             // TASK 31: Comprehensive null check for SaveManager
             if (_saveManager == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[MainMenuController] Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance is null. Save/Load features unavailable.");
+                Hecton8.Core.H8Debug.LogWarning("[MainMenuController] Hecton8.Core.GlobalRegistry.Save is null. Save/Load features unavailable.");
 #endif
                 // Display error message to user
                 int messageLength = CopyLocalizedModalMessage(
@@ -665,7 +665,7 @@ namespace Hecton.UI.MainMenu
             else
             {
 #if UNITY_EDITOR
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     "[MainMenuController] Save shell is missing or incomplete. " +
                     "Opening save/load in fallback state so the player can still back out.");
 #endif
@@ -683,7 +683,7 @@ namespace Hecton.UI.MainMenu
                 return;
 
 #if UNITY_EDITOR
-            Debug.LogError("[MainMenuController] Save shell requires three scene-owned SaveSlotUI entries.");
+            Hecton8.Core.H8Debug.LogError("[MainMenuController] Save shell requires three scene-owned SaveSlotUI entries.");
 #endif
         }
 
@@ -715,7 +715,7 @@ namespace Hecton.UI.MainMenu
 #if UNITY_EDITOR
             if (found < SlotCount)
             {
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     "[MainMenuController] Save shell bound fewer slot instances than required. Fallback focus/back handling remains active.");
             }
 #endif
@@ -731,7 +731,7 @@ namespace Hecton.UI.MainMenu
             if (string.IsNullOrEmpty(slotName))
             {
 #if UNITY_EDITOR
-                Debug.LogWarning("[MainMenuController] Ignored empty slot click.");
+                Hecton8.Core.H8Debug.LogWarning("[MainMenuController] Ignored empty slot click.");
 #endif
                 return;
             }
@@ -762,12 +762,12 @@ namespace Hecton.UI.MainMenu
             {
                 // TASK 31: Null check for SaveManager before save validation
                 if (_saveManager == null)
-                    _saveManager = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance as SaveManager;
+                    _saveManager = Hecton8.Core.GlobalRegistry.Save as SaveManager;
 
                 if (_saveManager == null)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError("[MainMenuController] Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance is null. Cannot validate save file.");
+                    Hecton8.Core.H8Debug.LogError("[MainMenuController] Hecton8.Core.GlobalRegistry.Save is null. Cannot validate save file.");
 #endif
                     int messageLength = CopyLocalizedModalMessage(
                         LocalizationKeys.ERROR_SAVE_SYSTEM_UNAVAILABLE_MESSAGE,
@@ -855,7 +855,7 @@ namespace Hecton.UI.MainMenu
                 _isSceneLoadInFlight = false;
 
 #if UNITY_EDITOR
-                Debug.LogError(
+                Hecton8.Core.H8Debug.LogError(
                     "[MainMenuController] Failed to load scene. SceneRuntimeService is unavailable or bootstrap is incomplete.");
 #endif
 
@@ -985,7 +985,7 @@ namespace Hecton.UI.MainMenu
             if (_isTransitioning ||
                 _isSceneLoadInFlight ||
                 _isSaveLoadBusy ||
-                Time.unscaledTime < _cancelInputBlockedUntil ||
+                (float)SystemDispatcher.CurrentUnscaledTimeSeconds < _cancelInputBlockedUntil ||
                 !_cancelRequested)
                 return;
 
@@ -1035,7 +1035,7 @@ namespace Hecton.UI.MainMenu
 
         private void BlockCancelInputBriefly()
         {
-            _cancelInputBlockedUntil = Time.unscaledTime + CancelInputDebounceSeconds;
+            _cancelInputBlockedUntil = (float)SystemDispatcher.CurrentUnscaledTimeSeconds + CancelInputDebounceSeconds;
             _cancelRequested = false;
         }
 
@@ -1357,7 +1357,7 @@ namespace Hecton.UI.MainMenu
                 null);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[MainMenuController] Save failed.");
+            Hecton8.Core.H8Debug.LogError("[MainMenuController] Save failed.");
 #endif
 
             RequestSelectionRefresh();
@@ -1450,7 +1450,7 @@ namespace Hecton.UI.MainMenu
                 "Return to Menu");
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[MainMenuController] Load failed.");
+            Hecton8.Core.H8Debug.LogError("[MainMenuController] Load failed.");
 #endif
 
             RequestSelectionRefresh();
@@ -1485,7 +1485,7 @@ namespace Hecton.UI.MainMenu
 
         private float GetUnscaledDeltaTime()
         {
-            float currentTime = Time.unscaledTime;
+            float currentTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (_lastUnscaledTickTime <= 0f)
             {
                 _lastUnscaledTickTime = currentTime;

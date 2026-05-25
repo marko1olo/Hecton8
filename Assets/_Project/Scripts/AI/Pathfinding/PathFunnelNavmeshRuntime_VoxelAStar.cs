@@ -766,8 +766,9 @@ namespace Hecton8.AI.Pathfinding
 
         private static float ResolveVoxelAStarQualityWeight(NativeArray<VoxelAStarTuningDTO> tuning)
         {
-            float global = HomeostasisBrain.GlobalQualityWeight;
-            global = math.saturate(math.select(1f, global, math.isfinite(global)));
+            float global = MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config)
+                ? MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f)
+                : MathLodApproximation.SaturateFinite(HomeostasisBrain.GlobalQualityWeight, 1f);
             if (tuning.IsCreated && tuning.Length > 0 && math.isfinite(tuning[0].GlobalQualityWeight))
                 global = math.min(global, math.saturate(tuning[0].GlobalQualityWeight));
             return global;

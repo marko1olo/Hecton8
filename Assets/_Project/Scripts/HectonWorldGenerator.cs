@@ -991,7 +991,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         if (viewer == null)
         {
 #if UNITY_EDITOR
-            UnityEngine.Debug.LogWarning("[Hecton] No viewer assigned.");
+            Hecton8.Core.H8Debug.LogWarning("[Hecton] No viewer assigned.");
 #endif
             return;
         }

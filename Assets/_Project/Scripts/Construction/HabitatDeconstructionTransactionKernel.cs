@@ -44,9 +44,75 @@ namespace Hecton8.Construction
                    UnsafeUtility.SizeOf<LootCacheDTO>() == 64 &&
                    UnsafeUtility.SizeOf<TeardownTelemetryEntry>() == 64 &&
                    UnsafeUtility.SizeOf<RefundProfileDTO>() == 32 &&
-                   Marshal.OffsetOf<DeconstructionTransactionDTO>(nameof(DeconstructionTransactionDTO.TargetModuleHash)).ToInt32() == 0 &&
-                   Marshal.OffsetOf<DeconstructionTransactionDTO>(nameof(DeconstructionTransactionDTO.InitiatorEntityHash)).ToInt32() == 4 &&
-                   Marshal.OffsetOf<DeconstructionTransactionDTO>(nameof(DeconstructionTransactionDTO.OriginalAUP)).ToInt32() == 8;
+                   Marshal.OffsetOf<DeconstructionTransactionDTO>(nameof(DeconstructionTransactionDTO.OriginalAUP)).ToInt32() == 0 &&
+                   Marshal.OffsetOf<DeconstructionTransactionDTO>(nameof(DeconstructionTransactionDTO.TargetModuleHash)).ToInt32() == 24 &&
+                   Marshal.OffsetOf<DeconstructionTransactionDTO>(nameof(DeconstructionTransactionDTO.InitiatorEntityHash)).ToInt32() == 28 &&
+                   Marshal.OffsetOf<RefundCommandDTO>(nameof(RefundCommandDTO.ItemHash)).ToInt32() == 0 &&
+                   Marshal.OffsetOf<RefundCommandDTO>(nameof(RefundCommandDTO.Quantity)).ToInt32() == 4 &&
+                   Marshal.OffsetOf<RefundCommandDTO>(nameof(RefundCommandDTO.TargetModuleHash)).ToInt32() == 8 &&
+                   Marshal.OffsetOf<RefundCommandDTO>(nameof(RefundCommandDTO.Sequence)).ToInt32() == 12 &&
+                   Marshal.OffsetOf<RefundCommandDTO>(nameof(RefundCommandDTO.Status)).ToInt32() == 16 &&
+                   Marshal.OffsetOf<RefundCommandDTO>(nameof(RefundCommandDTO.PairIndex)).ToInt32() == 17 &&
+                   Marshal.OffsetOf<RefundCommandDTO>(nameof(RefundCommandDTO.Reserved0)).ToInt32() == 18 &&
+                   Marshal.OffsetOf<RefundCommandDTO>(nameof(RefundCommandDTO.StateHash)).ToInt32() == 20 &&
+                   Marshal.OffsetOf<RefundCommandDTO>("_pad0").ToInt32() == 24 &&
+                   Marshal.OffsetOf<RefundCommandDTO>("_pad1").ToInt32() == 25 &&
+                   Marshal.OffsetOf<RefundCommandDTO>("_pad2").ToInt32() == 26 &&
+                   Marshal.OffsetOf<RefundCommandDTO>("_pad3").ToInt32() == 27 &&
+                   Marshal.OffsetOf<RefundCommandDTO>("_pad4").ToInt32() == 28 &&
+                   Marshal.OffsetOf<RefundCommandDTO>("_pad5").ToInt32() == 29 &&
+                   Marshal.OffsetOf<RefundCommandDTO>("_pad6").ToInt32() == 30 &&
+                   Marshal.OffsetOf<RefundCommandDTO>("_pad7").ToInt32() == 31 &&
+                   Marshal.OffsetOf<LootCacheDTO>(nameof(LootCacheDTO.PositionAup)).ToInt32() == 0 &&
+                   Marshal.OffsetOf<LootCacheDTO>(nameof(LootCacheDTO.LocalOffset)).ToInt32() == 24 &&
+                   Marshal.OffsetOf<LootCacheDTO>(nameof(LootCacheDTO.ItemHash)).ToInt32() == 36 &&
+                   Marshal.OffsetOf<LootCacheDTO>(nameof(LootCacheDTO.Quantity)).ToInt32() == 40 &&
+                   Marshal.OffsetOf<LootCacheDTO>(nameof(LootCacheDTO.SourceModuleHash)).ToInt32() == 44 &&
+                   Marshal.OffsetOf<LootCacheDTO>(nameof(LootCacheDTO.Sequence)).ToInt32() == 48 &&
+                   Marshal.OffsetOf<LootCacheDTO>(nameof(LootCacheDTO.Flags)).ToInt32() == 52 &&
+                   Marshal.OffsetOf<LootCacheDTO>("_pad0").ToInt32() == 56 &&
+                   Marshal.OffsetOf<LootCacheDTO>("_pad1").ToInt32() == 57 &&
+                   Marshal.OffsetOf<LootCacheDTO>("_pad2").ToInt32() == 58 &&
+                   Marshal.OffsetOf<LootCacheDTO>("_pad3").ToInt32() == 59 &&
+                   Marshal.OffsetOf<LootCacheDTO>("_pad4").ToInt32() == 60 &&
+                   Marshal.OffsetOf<LootCacheDTO>("_pad5").ToInt32() == 61 &&
+                   Marshal.OffsetOf<LootCacheDTO>("_pad6").ToInt32() == 62 &&
+                   Marshal.OffsetOf<LootCacheDTO>("_pad7").ToInt32() == 63 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>(nameof(TeardownTelemetryEntry.AupLocalMagnitude)).ToInt32() == 0 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>(nameof(TeardownTelemetryEntry.Frame)).ToInt32() == 8 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>(nameof(TeardownTelemetryEntry.TargetModuleHash)).ToInt32() == 12 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>(nameof(TeardownTelemetryEntry.InitiatorEntityHash)).ToInt32() == 16 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>(nameof(TeardownTelemetryEntry.StateHash)).ToInt32() == 20 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>(nameof(TeardownTelemetryEntry.ModulesProcessed)).ToInt32() == 24 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>(nameof(TeardownTelemetryEntry.ResourcesRefunded)).ToInt32() == 28 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>(nameof(TeardownTelemetryEntry.OverflowLootCaches)).ToInt32() == 32 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>(nameof(TeardownTelemetryEntry.EdgesSevered)).ToInt32() == 36 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>(nameof(TeardownTelemetryEntry.BurstMicroseconds)).ToInt32() == 40 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>(nameof(TeardownTelemetryEntry.GlobalQualityWeight)).ToInt32() == 44 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>(nameof(TeardownTelemetryEntry.FaultFlags)).ToInt32() == 48 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>(nameof(TeardownTelemetryEntry.TargetNodeIndex)).ToInt32() == 52 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>("_pad0").ToInt32() == 56 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>("_pad1").ToInt32() == 57 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>("_pad2").ToInt32() == 58 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>("_pad3").ToInt32() == 59 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>("_pad4").ToInt32() == 60 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>("_pad5").ToInt32() == 61 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>("_pad6").ToInt32() == 62 &&
+                   Marshal.OffsetOf<TeardownTelemetryEntry>("_pad7").ToInt32() == 63 &&
+                   Marshal.OffsetOf<RefundProfileDTO>(nameof(RefundProfileDTO.ProfileHash)).ToInt32() == 0 &&
+                   Marshal.OffsetOf<RefundProfileDTO>(nameof(RefundProfileDTO.RefundScalar01)).ToInt32() == 4 &&
+                   Marshal.OffsetOf<RefundProfileDTO>(nameof(RefundProfileDTO.OverflowOffsetMeters)).ToInt32() == 8 &&
+                   Marshal.OffsetOf<RefundProfileDTO>(nameof(RefundProfileDTO.GlobalQualityWeight)).ToInt32() == 12 &&
+                   Marshal.OffsetOf<RefundProfileDTO>(nameof(RefundProfileDTO.Flags)).ToInt32() == 16 &&
+                   Marshal.OffsetOf<RefundProfileDTO>(nameof(RefundProfileDTO.RowHash)).ToInt32() == 20 &&
+                   Marshal.OffsetOf<RefundProfileDTO>("_pad0").ToInt32() == 24 &&
+                   Marshal.OffsetOf<RefundProfileDTO>("_pad1").ToInt32() == 25 &&
+                   Marshal.OffsetOf<RefundProfileDTO>("_pad2").ToInt32() == 26 &&
+                   Marshal.OffsetOf<RefundProfileDTO>("_pad3").ToInt32() == 27 &&
+                   Marshal.OffsetOf<RefundProfileDTO>("_pad4").ToInt32() == 28 &&
+                   Marshal.OffsetOf<RefundProfileDTO>("_pad5").ToInt32() == 29 &&
+                   Marshal.OffsetOf<RefundProfileDTO>("_pad6").ToInt32() == 30 &&
+                   Marshal.OffsetOf<RefundProfileDTO>("_pad7").ToInt32() == 31;
         }
 
         public static uint HashTransaction(in DeconstructionTransactionDTO transaction, int nodeIndex, uint frame)
@@ -58,10 +124,21 @@ namespace Hecton8.Construction
                 hash = (hash ^ transaction.InitiatorEntityHash) * 16777619u;
                 hash = (hash ^ (uint)nodeIndex) * 16777619u;
                 hash = (hash ^ frame) * 16777619u;
-                hash = (hash ^ math.asuint((float)transaction.OriginalAUP.x)) * 16777619u;
-                hash = (hash ^ math.asuint((float)transaction.OriginalAUP.y)) * 16777619u;
-                hash = (hash ^ math.asuint((float)transaction.OriginalAUP.z)) * 16777619u;
+                hash = HashDouble(transaction.OriginalAUP.x, hash);
+                hash = HashDouble(transaction.OriginalAUP.y, hash);
+                hash = HashDouble(transaction.OriginalAUP.z, hash);
                 return hash;
+            }
+        }
+
+        private static uint HashDouble(double value, uint state)
+        {
+            unchecked
+            {
+                ulong bits = (ulong)math.aslong(value);
+                state = (state ^ (uint)bits) * 16777619u;
+                state = (state ^ (uint)(bits >> 32)) * 16777619u;
+                return state;
             }
         }
 
@@ -93,9 +170,9 @@ namespace Hecton8.Construction
     [StructLayout(LayoutKind.Explicit, Size = 32)]
     public struct DeconstructionTransactionDTO
     {
-        [FieldOffset(0)] public uint TargetModuleHash;
-        [FieldOffset(4)] public uint InitiatorEntityHash;
-        [FieldOffset(8)] public double3 OriginalAUP;
+        [FieldOffset(0)] public double3 OriginalAUP;
+        [FieldOffset(24)] public uint TargetModuleHash;
+        [FieldOffset(28)] public uint InitiatorEntityHash;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -109,7 +186,14 @@ namespace Hecton8.Construction
         [FieldOffset(17)] public byte PairIndex;
         [FieldOffset(18)] public ushort Reserved0;
         [FieldOffset(20)] public uint StateHash;
-        [FieldOffset(24)] private ulong _pad0;
+        [FieldOffset(24)] private byte _pad0;
+        [FieldOffset(25)] private byte _pad1;
+        [FieldOffset(26)] private byte _pad2;
+        [FieldOffset(27)] private byte _pad3;
+        [FieldOffset(28)] private byte _pad4;
+        [FieldOffset(29)] private byte _pad5;
+        [FieldOffset(30)] private byte _pad6;
+        [FieldOffset(31)] private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -122,26 +206,40 @@ namespace Hecton8.Construction
         [FieldOffset(44)] public uint SourceModuleHash;
         [FieldOffset(48)] public uint Sequence;
         [FieldOffset(52)] public uint Flags;
-        [FieldOffset(56)] private ulong _pad0;
+        [FieldOffset(56)] private byte _pad0;
+        [FieldOffset(57)] private byte _pad1;
+        [FieldOffset(58)] private byte _pad2;
+        [FieldOffset(59)] private byte _pad3;
+        [FieldOffset(60)] private byte _pad4;
+        [FieldOffset(61)] private byte _pad5;
+        [FieldOffset(62)] private byte _pad6;
+        [FieldOffset(63)] private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct TeardownTelemetryEntry
     {
-        [FieldOffset(0)] public uint Frame;
-        [FieldOffset(4)] public uint TargetModuleHash;
-        [FieldOffset(8)] public uint InitiatorEntityHash;
-        [FieldOffset(12)] public uint StateHash;
-        [FieldOffset(16)] public int ModulesProcessed;
-        [FieldOffset(20)] public int ResourcesRefunded;
-        [FieldOffset(24)] public int OverflowLootCaches;
-        [FieldOffset(28)] public int EdgesSevered;
-        [FieldOffset(32)] public float BurstMicroseconds;
-        [FieldOffset(36)] public float GlobalQualityWeight;
-        [FieldOffset(40)] public uint FaultFlags;
-        [FieldOffset(44)] public int TargetNodeIndex;
-        [FieldOffset(48)] public double AupLocalMagnitude;
-        [FieldOffset(56)] private ulong _pad0;
+        [FieldOffset(0)] public double AupLocalMagnitude;
+        [FieldOffset(8)] public uint Frame;
+        [FieldOffset(12)] public uint TargetModuleHash;
+        [FieldOffset(16)] public uint InitiatorEntityHash;
+        [FieldOffset(20)] public uint StateHash;
+        [FieldOffset(24)] public int ModulesProcessed;
+        [FieldOffset(28)] public int ResourcesRefunded;
+        [FieldOffset(32)] public int OverflowLootCaches;
+        [FieldOffset(36)] public int EdgesSevered;
+        [FieldOffset(40)] public float BurstMicroseconds;
+        [FieldOffset(44)] public float GlobalQualityWeight;
+        [FieldOffset(48)] public uint FaultFlags;
+        [FieldOffset(52)] public int TargetNodeIndex;
+        [FieldOffset(56)] private byte _pad0;
+        [FieldOffset(57)] private byte _pad1;
+        [FieldOffset(58)] private byte _pad2;
+        [FieldOffset(59)] private byte _pad3;
+        [FieldOffset(60)] private byte _pad4;
+        [FieldOffset(61)] private byte _pad5;
+        [FieldOffset(62)] private byte _pad6;
+        [FieldOffset(63)] private byte _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -153,7 +251,14 @@ namespace Hecton8.Construction
         [FieldOffset(12)] public float GlobalQualityWeight;
         [FieldOffset(16)] public uint Flags;
         [FieldOffset(20)] public uint RowHash;
-        [FieldOffset(24)] private ulong _pad0;
+        [FieldOffset(24)] private byte _pad0;
+        [FieldOffset(25)] private byte _pad1;
+        [FieldOffset(26)] private byte _pad2;
+        [FieldOffset(27)] private byte _pad3;
+        [FieldOffset(28)] private byte _pad4;
+        [FieldOffset(29)] private byte _pad5;
+        [FieldOffset(30)] private byte _pad6;
+        [FieldOffset(31)] private byte _pad7;
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]

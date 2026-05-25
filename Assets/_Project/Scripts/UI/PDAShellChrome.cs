@@ -439,7 +439,7 @@ namespace Hecton8.UI
             return true;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
         {
             return handle.BufferID != 0u && handle.Generation != 0u;
         }
@@ -455,7 +455,7 @@ namespace Hecton8.UI
         {
             _localization = GlobalRegistry.LocalizationStressPresentation;
             _nativeInputManager = GlobalRegistry.NativeInputRuntime;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private void Unsubscribe()
@@ -1456,7 +1456,7 @@ namespace Hecton8.UI
                 : NativeInputDisplayStyle.KeyboardMouse;
 
             if (_cachedRebootBindingLength > 0 && _cachedRebootBindingStyleCode == displayStyleCode)
-                return new ReadOnlySpan<char>(_rebootBindingBuffer, 0, _cachedRebootBindingLength);
+                return _rebootBindingBuffer.AsSpan(0, _cachedRebootBindingLength);
 
             _cachedRebootBindingLength = 0;
             _cachedRebootBindingStyleCode = displayStyleCode;
@@ -1471,14 +1471,14 @@ namespace Hecton8.UI
                 bindingLength > 0)
             {
                 _cachedRebootBindingLength = bindingLength;
-                return new ReadOnlySpan<char>(_rebootBindingBuffer, 0, _cachedRebootBindingLength);
+                return _rebootBindingBuffer.AsSpan(0, _cachedRebootBindingLength);
             }
 
             ReadOnlySpan<char> fallback = "SUBMIT".AsSpan();
             fallback.CopyTo(_rebootBindingBuffer);
             _cachedRebootBindingLength = fallback.Length;
 
-            return new ReadOnlySpan<char>(_rebootBindingBuffer, 0, _cachedRebootBindingLength);
+            return _rebootBindingBuffer.AsSpan(0, _cachedRebootBindingLength);
         }
 
         private void EvaluateTickRegistration()

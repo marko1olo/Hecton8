@@ -126,8 +126,11 @@ namespace Hecton8.Physics
         private int _fixedFrameIndex;
         private bool _telemetryDumped;
         private HectonQualityTier _cachedQualityTier = HectonQualityTier.Unknown;
+        private float _cachedQualityWeight01 = 1f;
         private HectonMapMagicVegetationBridge _cachedVegetationBridge;
         private HectonFluidEngine _cachedFluidEngine;
+        private HectonVoxelEngine _cachedVoxelEngineRuntime;
+        private IVoxelSonarSdfReadModel _cachedVoxelSdfReadModel;
         private IWeatherService _cachedWeatherService;
         private Camera _cachedPlayerCamera;
         private HectonPlayerMovement _cachedPlayerMovement;
@@ -137,6 +140,8 @@ namespace Hecton8.Physics
         internal IDataVault CachedDataVault => _dataVault;
         internal HectonMapMagicVegetationBridge CachedVegetationBridge => _cachedVegetationBridge;
         internal HectonFluidEngine CachedFluidEngine => _cachedFluidEngine;
+        internal HectonVoxelEngine CachedVoxelEngineRuntime => _cachedVoxelEngineRuntime;
+        internal IVoxelSonarSdfReadModel CachedVoxelSdfReadModel => _cachedVoxelSdfReadModel;
         internal IWeatherService CachedWeatherService => _cachedWeatherService;
 
         [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
@@ -168,7 +173,7 @@ namespace Hecton8.Physics
         {
             if (!VerletCableLayout.Validate())
             {
-                Debug.LogError("[TETHER] Verlet DTO layout validation failed. Tether manager disabled.", this);
+                Hecton8.Core.H8Debug.LogError("[TETHER] Verlet DTO layout validation failed. Tether manager disabled.", this);
                 enabled = false;
                 return;
             }
@@ -328,6 +333,8 @@ namespace Hecton8.Physics
             _dataVault = null;
             _cachedVegetationBridge = null;
             _cachedFluidEngine = null;
+            _cachedVoxelEngineRuntime = null;
+            _cachedVoxelSdfReadModel = null;
             _cachedWeatherService = null;
         }
 
@@ -370,12 +377,26 @@ namespace Hecton8.Physics
         public TetherInstance AttachTowCable(
             HeavyTowWinch owner,
             HectonPlayerMotor playerMotor,
-            Rigidbody playerBody,
+            Rigidbody legacyAnchorBody,
             Rigidbody payloadBody,
             Collider payloadCollider,
             float initialDistance)
         {
-            if (owner == null || playerBody == null || payloadBody == null || payloadCollider == null)
+            _ = legacyAnchorBody;
+            return AttachTowCable(owner, playerMotor, payloadBody, payloadCollider, initialDistance);
+        }
+
+        /// <summary>
+        /// Creates or reuses a tow-cable runtime instance anchored to the player motor route.
+        /// </summary>
+        public TetherInstance AttachTowCable(
+            HeavyTowWinch owner,
+            HectonPlayerMotor playerMotor,
+            Rigidbody payloadBody,
+            Collider payloadCollider,
+            float initialDistance)
+        {
+            if (owner == null || playerMotor == null || payloadBody == null || payloadCollider == null)
                 return null;
 
             TetherInstance instance = RentInstance();
@@ -383,7 +404,7 @@ namespace Hecton8.Physics
                 return null;
 
             RefreshColdDependencyCache();
-            instance.Configure(owner, playerMotor, playerBody, payloadBody, payloadCollider, initialDistance, _cachedQualityTier);
+            instance.Configure(owner, playerMotor, payloadBody, payloadCollider, initialDistance, _cachedQualityTier);
             if (!_activeInstances.Contains(instance))
             {
                 if (_activeInstances.Count >= MaxManagedTetherInstances)
@@ -402,13 +423,12 @@ namespace Hecton8.Physics
         internal bool ExecuteFireRequest(
             HeavyTowWinch owner,
             HectonPlayerMotor playerMotor,
-            Rigidbody playerBody,
             Rigidbody payloadBody,
             Collider payloadCollider,
             float initialDistance)
         {
             if (owner == null ||
-                playerBody == null ||
+                playerMotor == null ||
                 payloadBody == null ||
                 payloadCollider == null)
             {
@@ -421,7 +441,6 @@ namespace Hecton8.Physics
             TetherInstance instance = AttachTowCable(
                 owner,
                 playerMotor,
-                playerBody,
                 payloadBody,
                 payloadCollider,
                 initialDistance);
@@ -564,9 +583,11 @@ namespace Hecton8.Physics
 
             float deltaTime = SystemDispatcher.CurrentFrameDeltaTime;
             HectonQualityTier qualityTier = _cachedQualityTier;
-            int visualTier = ResolveTetherVisualTier(qualityTier);
-            float crystalDensity = visualTier >= 3 ? 1f : (visualTier >= 2 ? 0.62f : 0f);
-            float siltIntensity = visualTier >= 3 ? 0.55f : (visualTier >= 2 ? 0.28f : 0f);
+            float qualityWeight01 = _cachedQualityWeight01;
+            int visualTier = ResolveTetherVisualTier(qualityWeight01);
+            float visualOverkill01 = Smooth01(math.saturate((qualityWeight01 - 0.55f) * 2.2222223f));
+            float crystalDensity = math.lerp(0f, 1f, visualOverkill01);
+            float siltIntensity = math.lerp(0f, 0.55f, visualOverkill01);
             float visualClock = math.isfinite(_fixedStepClockSeconds) ? _fixedStepClockSeconds : 0f;
             bool hasFrustum = renderCamera != null;
             if (hasFrustum)
@@ -585,7 +606,7 @@ namespace Hecton8.Physics
                 if (segmentCount <= 0)
                     continue;
 
-                bool useIndirect = ShouldUseIndirectTetherRendering(qualityTier);
+                bool useIndirect = ShouldUseIndirectTetherRendering(qualityWeight01);
                 if (!instance.UploadVisualDrawParams(
                         tetherRenderColor,
                         tetherStressColor,
@@ -629,22 +650,15 @@ namespace Hecton8.Physics
             }
         }
 
-        private static bool ShouldUseIndirectTetherRendering(HectonQualityTier tier)
+        private static bool ShouldUseIndirectTetherRendering(float qualityWeight01)
         {
-            return tier == HectonQualityTier.High || tier == HectonQualityTier.Ultra;
+            return Smooth01(qualityWeight01) >= 0.62f;
         }
 
-        private static int ResolveTetherVisualTier(HectonQualityTier tier)
+        private static int ResolveTetherVisualTier(float qualityWeight01)
         {
-            switch (tier)
-            {
-                case HectonQualityTier.High:
-                    return 2;
-                case HectonQualityTier.Ultra:
-                    return 3;
-                default:
-                    return 0;
-            }
+            float quality = Smooth01(qualityWeight01);
+            return math.clamp((int)math.round(quality * 3f), 0, 3);
         }
 
         private bool TryRenderIndirectTether(RenderParams renderParams, int segmentCount)
@@ -706,15 +720,21 @@ namespace Hecton8.Physics
 
             NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
                 _indirectTetherArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            try
             {
-                indexCountPerInstance = mesh.GetIndexCount(0),
-                instanceCount = (uint)segmentCount,
-                startIndex = mesh.GetIndexStart(0),
-                baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
-                startInstance = 0u
-            };
-            _indirectTetherArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+                argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+                {
+                    indexCountPerInstance = mesh.GetIndexCount(0),
+                    instanceCount = (uint)segmentCount,
+                    startIndex = mesh.GetIndexStart(0),
+                    baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
+                    startInstance = 0u
+                };
+            }
+            finally
+            {
+                _indirectTetherArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            }
             _indirectArgsMesh = mesh;
             _indirectArgsSegmentCount = segmentCount;
         }
@@ -809,9 +829,12 @@ namespace Hecton8.Physics
 
         private void RefreshColdDependencyCache()
         {
-            _cachedQualityTier = ResolveQualityTierFromGlobalWeight();
+            _cachedQualityWeight01 = ResolveGlobalQualityWeight01();
+            _cachedQualityTier = ResolveQualityTierFromGlobalWeight(_cachedQualityWeight01);
             _cachedVegetationBridge = GlobalRegistry.MapMagicVegetation;
             _cachedFluidEngine = GlobalRegistry.Fluid;
+            _cachedVoxelEngineRuntime = GlobalRegistry.VoxelEngine;
+            _cachedVoxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
             _cachedWeatherService = GlobalRegistry.Weather;
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
@@ -1308,12 +1331,17 @@ namespace Hecton8.Physics
             }
         }
 
-        private static HectonQualityTier ResolveQualityTierFromGlobalWeight()
+        private static float ResolveGlobalQualityWeight01()
         {
             float qualityWeight = HomeostasisBrain.GlobalQualityWeight;
             if (!math.isfinite(qualityWeight))
                 qualityWeight = 1f;
 
+            return math.saturate(qualityWeight);
+        }
+
+        private static HectonQualityTier ResolveQualityTierFromGlobalWeight(float qualityWeight)
+        {
             qualityWeight = math.saturate(qualityWeight);
             if (qualityWeight < 0.18f)
                 return HectonQualityTier.Low;

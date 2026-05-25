@@ -1,13 +1,13 @@
 // ============================================================================
-// HECTON-8 — Fabricator.cs
+// HECTON-8 â€” Fabricator.cs
 // Mashina-verstak dlya krafta predmetov.
 //
-// REFAKTORING v3 — DINAMIChESKOE PITANIE:
-//   • Realizuet IPowerComponent dlya integratsii s PowerGrid.
-//   • Pri otsutstvii pitaniya kraft vstaet na PAUZU (ne otmenyaetsya).
-//   • PowerRating: 0 v idle, -craftPowerDraw pri krafte.
-//   • Pri vosstanovlenii pitaniya kraft prodolzhaetsya s togo zhe mesta.
-//   • Pri StartCraft/CompleteCraft/CancelCraft ? PowerGrid.UpdateBalance()
+// REFAKTORING v3 â€” DINAMIChESKOE PITANIE:
+//   â€¢ Realizuet IPowerComponent dlya integratsii s PowerGrid.
+//   â€¢ Pri otsutstvii pitaniya kraft vstaet na PAUZU (ne otmenyaetsya).
+//   â€¢ PowerRating: 0 v idle, -craftPowerDraw pri krafte.
+//   â€¢ Pri vosstanovlenii pitaniya kraft prodolzhaetsya s togo zhe mesta.
+//   â€¢ Pri StartCraft/CompleteCraft/CancelCraft ? PowerGrid.UpdateBalance()
 //     dlya mgnovennogo perescheta balansa seti.
 //
 // ZhIZNENNYY TsIKL KRAFTA:
@@ -15,19 +15,19 @@
 //   2. [E] ? Interact ? CraftingEvents.TryRaiseFabricatorOpened
 //   3. UI vyzyvaet StartCraft(recipe) ? CanCraft proverka
 //   4. Resursy spisyvayutsya SRAZU -> Vault FabricationJobDTO zapuskaetsya
-//      ? NotifyGridBalanceChanged() — set pereschityvaet s -100W
+//      ? NotifyGridBalanceChanged() â€” set pereschityvaet s -100W
 //   5. SIMULATION: esli HasPower -> Vault Progress01 prodvigaetsya Burst job
 //               esli !HasPower -> PAUZA (Vault Progress01 ne tikaet)
 //   6. Zavershenie ? rezultat v inventar ? OnCraftCompleted
-//      ? NotifyGridBalanceChanged() — set pereschityvaet bez -100W
+//      ? NotifyGridBalanceChanged() â€” set pereschityvaet bez -100W
 //   7. Otmena ? resursy vozvraschayutsya ? OnCraftCancelled
-//      ? NotifyGridBalanceChanged() — set pereschityvaet bez -100W
+//      ? NotifyGridBalanceChanged() â€” set pereschityvaet bez -100W
 //
 // ZERO GC:
-//   • Tick: float arifmetika, delegate?.Invoke (no boxing)
-//   • CanCraft: for-tsikly s ReferenceEquals, no LINQ
-//   • IPowerComponent svoystva: value types only
-//   • PowerNode keshirovan v Awake — zero TryGetComponent v goryachem puti
+//   â€¢ Tick: float arifmetika, delegate?.Invoke (no boxing)
+//   â€¢ CanCraft: for-tsikly s ReferenceEquals, no LINQ
+//   â€¢ IPowerComponent svoystva: value types only
+//   â€¢ PowerNode keshirovan v Awake â€” zero TryGetComponent v goryachem puti
 // ============================================================================
 
 using System;
@@ -86,7 +86,7 @@ namespace Hecton8.Crafting
 
         [Header("-- Settings ----------------------------------")]
         [Tooltip("Maksimalnaya distantsiya ispolzovaniya (metry). " +
-                 "Esli igrok otoydet dalshe — kraft otmenyaetsya.")]
+                 "Esli igrok otoydet dalshe â€” kraft otmenyaetsya.")]
         [SerializeField] private float maxUseDistance = 3.5f;
 
         [Tooltip("When enabled, a completed recipe immediately queues again if unlocks, ingredients, capacity, and power still pass.")]
@@ -201,11 +201,11 @@ namespace Hecton8.Crafting
         /// Keshirovannyy PowerNode na etom zhe GameObject.
         /// Ispolzuetsya dlya mgnovennogo uvedomleniya PowerGrid
         /// pri izmenenii sostoyaniya krafta (PowerRating menyaetsya).
-        /// Null-safe: esli PowerNode otsutstvuet — uvedomlenie ne otpravlyaetsya.
+        /// Null-safe: esli PowerNode otsutstvuet â€” uvedomlenie ne otpravlyaetsya.
         /// </summary>
         private PowerNode _powerNode;
         private IScanLogService _scanLogSystem;
-        private ResourceScarcityDirector _resourceScarcityDirector;
+        private IResourceScarcityReadModel _resourceScarcityDirector;
         private IPowerGridService _powerGridService;
         private PersistentWorldRegistry _persistentWorldRegistry;
         private IAudioService _audioService;
@@ -324,7 +324,7 @@ namespace Hecton8.Crafting
         private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
 
         // ----------------------------------------------------------
-        //  PUBLIC API — QUERIES
+        //  PUBLIC API â€” QUERIES
         // ----------------------------------------------------------
 
         /// <summary>Idet li seychas protsess krafta.</summary>
@@ -391,7 +391,7 @@ namespace Hecton8.Crafting
         internal PowerGrid CurrentPowerGrid => _powerNode != null ? _powerNode.Grid : null;
 
         // ----------------------------------------------------------
-        //  IPowerComponent — ENERGOSISTEMA
+        //  IPowerComponent â€” ENERGOSISTEMA
         // ----------------------------------------------------------
 
         /// <summary>
@@ -422,12 +422,12 @@ namespace Hecton8.Crafting
         /// Uvedomlenie ot PowerGrid ob izmenenii pitaniya.
         ///
         /// Pri potere pitaniya:
-        ///   • Kraft ZAMORAZhIVAETSYa (Vault Progress01 ne prodvigaetsya).
-        ///   • Kraft NE otmenyaetsya — resursy uzhe spisany.
-        ///   • Pri vosstanovlenii — kraft prodolzhitsya.
+        ///   â€¢ Kraft ZAMORAZhIVAETSYa (Vault Progress01 ne prodvigaetsya).
+        ///   â€¢ Kraft NE otmenyaetsya â€” resursy uzhe spisany.
+        ///   â€¢ Pri vosstanovlenii â€” kraft prodolzhitsya.
         ///
         /// Pri vosstanovlenii:
-        ///   • Kraft prodolzhaetsya s togo zhe mesta.
+        ///   â€¢ Kraft prodolzhaetsya s togo zhe mesta.
         /// </summary>
         public void OnPowerStatusChanged(bool hasPower)
         {
@@ -598,7 +598,7 @@ namespace Hecton8.Crafting
         }
 
         // ----------------------------------------------------------
-        //  PUBLIC API — CRAFTING
+        //  PUBLIC API â€” CRAFTING
         // ----------------------------------------------------------
 
         /// <summary>
@@ -686,7 +686,7 @@ namespace Hecton8.Crafting
                 return 0;
 
             int itemHashId = ComputeItemHash(cost.item);
-            ResourceScarcityDirector scarcityDirector = _resourceScarcityDirector;
+            IResourceScarcityReadModel scarcityDirector = _resourceScarcityDirector;
             CacheFabricatorAup();
             return scarcityDirector != null
                 ? scarcityDirector.ResolveInflatedIngredientAmount(itemHashId, cost.amount, in _fabricatorAup, CountAccessibleItem(cost.item))
@@ -813,17 +813,17 @@ namespace Hecton8.Crafting
         }
 
         // ----------------------------------------------------------
-        //  ITickable — TAYMER KRAFTA
+        //  ITickable â€” TAYMER KRAFTA
         // ----------------------------------------------------------
 
         /// <summary>
         /// Vyzyvaetsya GameTickManager kazhdyy kadr.
         ///
         /// ENERGOPAUZA: esli _hasPower == false i idet kraft:
-        ///   • Taymer NE prodvigaetsya.
-        ///   • Progress NE publikuetsya (UI pokazyvaet pauzu).
-        ///   • Kraft NE otmenyaetsya.
-        ///   • Proverka distantsii prodolzhaetsya (igrok mozhet otoyti).
+        ///   â€¢ Taymer NE prodvigaetsya.
+        ///   â€¢ Progress NE publikuetsya (UI pokazyvaet pauzu).
+        ///   â€¢ Kraft NE otmenyaetsya.
+        ///   â€¢ Proverka distantsii prodolzhaetsya (igrok mozhet otoyti).
         /// </summary>
         public void Tick(float deltaTime)
         {
@@ -1030,7 +1030,7 @@ namespace Hecton8.Crafting
         }
 
         // ----------------------------------------------------------
-        //  PRIVATE — CRAFT COMPLETION
+        //  PRIVATE â€” CRAFT COMPLETION
         // ----------------------------------------------------------
 
         /// <summary>
@@ -1192,7 +1192,7 @@ namespace Hecton8.Crafting
                         RaiseStorageCapacityExceededBark();
                         TriggerCraftFailureFeedback();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                        Debug.LogWarning("[Fabricator] Craft output overflow; routed to diegetic bark/drop fallback.");
+                        Hecton8.Core.H8Debug.LogWarning("[Fabricator] Craft output overflow; routed to diegetic bark/drop fallback.");
 #endif
                     }
                 }
@@ -1223,22 +1223,22 @@ namespace Hecton8.Crafting
         }
 
         // ----------------------------------------------------------
-        //  PRIVATE — POWER GRID NOTIFICATION
+        //  PRIVATE â€” POWER GRID NOTIFICATION
         // ----------------------------------------------------------
 
         /// <summary>
         /// Uvedomlyaet PowerGrid o neobhodimosti perescheta balansa.
         ///
         /// Vyzyvaetsya pri kazhdom izmenenii PowerRating:
-        ///   • StartCraft:    0 ? -craftPowerDraw (nachalo potrebleniya)
-        ///   • CompleteCraft: -craftPowerDraw ? 0 (konets potrebleniya)
-        ///   • CancelCraft:   -craftPowerDraw ? 0 (otmena potrebleniya)
+        ///   â€¢ StartCraft:    0 ? -craftPowerDraw (nachalo potrebleniya)
+        ///   â€¢ CompleteCraft: -craftPowerDraw ? 0 (konets potrebleniya)
+        ///   â€¢ CancelCraft:   -craftPowerDraw ? 0 (otmena potrebleniya)
         ///
         /// Bez etogo vyzova PowerGrid uznal by ob izmenenii tolko
-        /// pri sleduyuschem SlowTick (~0.5-1s zaderzhka). S vyzovom —
+        /// pri sleduyuschem SlowTick (~0.5-1s zaderzhka). S vyzovom â€”
         /// balans pereschityvaetsya mgnovenno.
         ///
-        /// Null-safe: esli PowerNode ili Grid otsutstvuyut — no-op.
+        /// Null-safe: esli PowerNode ili Grid otsutstvuyut â€” no-op.
         /// </summary>
         private void NotifyGridBalanceChanged()
         {
@@ -1262,7 +1262,7 @@ namespace Hecton8.Crafting
         }
 
         // ----------------------------------------------------------
-        //  PRIVATE — INGREDIENT MANAGEMENT
+        //  PRIVATE â€” INGREDIENT MANAGEMENT
         // ----------------------------------------------------------
 
         private void CacheThermalHostModule()
@@ -1417,35 +1417,35 @@ namespace Hecton8.Crafting
         {
             if (!_craftInventoryCounts.IsCreated)
             {
-                // COLD ALLOC: NativeParallelHashMap<Int32,Int32>[128] — temporary per-craft accessible item counts — owner: Fabricator
+                // COLD ALLOC: NativeParallelHashMap<Int32,Int32>[128] â€” temporary per-craft accessible item counts â€” owner: Fabricator
                 _craftInventoryCounts = new NativeParallelHashMap<int, int>(128, DataVaultExemptSceneScratchAllocator);
                 NativeMemorySentinel.RegisterNativeParallelHashMap(_craftInventoryCounts, NativeMemoryOwner, nameof(_craftInventoryCounts), NativeMemoryLifetime);
             }
 
             if (!_craftRecipeCosts.IsCreated)
             {
-                // COLD ALLOC: NativeArray<int2>[32] — flattened recipe ingredient cost buffer — owner: Fabricator
+                // COLD ALLOC: NativeArray<int2>[32] â€” flattened recipe ingredient cost buffer â€” owner: Fabricator
                 _craftRecipeCosts = new NativeArray<int2>(CraftingSystem.MaxRecipeIngredientCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 RegisterTrackedNativeArray(_craftRecipeCosts, nameof(_craftRecipeCosts));
             }
 
             if (!_craftRecipeEvaluationResult.IsCreated)
             {
-                // COLD ALLOC: NativeArray<byte>[1] — Burst crafting-availability result cell — owner: Fabricator
+                // COLD ALLOC: NativeArray<byte>[1] â€” Burst crafting-availability result cell â€” owner: Fabricator
                 _craftRecipeEvaluationResult = new NativeArray<byte>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 RegisterTrackedNativeArray(_craftRecipeEvaluationResult, nameof(_craftRecipeEvaluationResult));
             }
 
             if (!_deconstructionRecipeOutputs.IsCreated)
             {
-                // COLD ALLOC: NativeArray<int2>[32] — deconstruction output yield scratch — owner: Fabricator
+                // COLD ALLOC: NativeArray<int2>[32] â€” deconstruction output yield scratch â€” owner: Fabricator
                 _deconstructionRecipeOutputs = new NativeArray<int2>(CraftingSystem.MaxDeconstructionOutputCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 RegisterTrackedNativeArray(_deconstructionRecipeOutputs, nameof(_deconstructionRecipeOutputs));
             }
 
             if (!_deconstructionOutputCount.IsCreated)
             {
-                // COLD ALLOC: NativeArray<int>[1] — deconstruction output count cell — owner: Fabricator
+                // COLD ALLOC: NativeArray<int>[1] â€” deconstruction output count cell â€” owner: Fabricator
                 _deconstructionOutputCount = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 RegisterTrackedNativeArray(_deconstructionOutputCount, nameof(_deconstructionOutputCount));
             }
@@ -1881,7 +1881,7 @@ namespace Hecton8.Crafting
         }
 
         // ----------------------------------------------------------
-        //  PRIVATE — DISTANCE CHECK
+        //  PRIVATE â€” DISTANCE CHECK
         // ----------------------------------------------------------
 
         private bool IsPlayerInRange()
@@ -1978,7 +1978,7 @@ namespace Hecton8.Crafting
         }
 
         // ----------------------------------------------------------
-        //  PRIVATE — AUDIO
+        //  PRIVATE â€” AUDIO
         // ----------------------------------------------------------
 
         private void PlaySound(AudioClip clip)
@@ -2087,7 +2087,7 @@ namespace Hecton8.Crafting
                 sparkProxyLightColor.linear,
                 sparkProxyLightRangeMeters,
                 intensity,
-                Time.unscaledTime);
+                (float)SystemDispatcher.CurrentUnscaledTimeSeconds);
 
             _sparkProxyLightRegistered = ProxyLightRegistry.RegisterOrUpdate(_sparkProxyLightKey, in lightData) || _sparkProxyLightRegistered;
         }
@@ -2590,7 +2590,7 @@ namespace Hecton8.Crafting
             source.loop = true;
             source.volume = math.saturate(intensity * 0.18f) * math.saturate(fabricationWeldingLoopMaxVolume);
 
-            float now = Time.unscaledTime;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (now >= _weldingLoopNextPitchUpdateTime)
             {
                 _weldingLoopPitchSeed = (_weldingLoopPitchSeed * 1664525u) + 1013904223u;
@@ -2983,7 +2983,7 @@ namespace Hecton8.Crafting
         {
             return owner != null
                 ? Mathf.Max(1f, owner.GetRecipeInflationMultiplier(recipe))
-                : Mathf.Max(1f, ResourceScarcityDirector.ResolveCraftPowerMultiplier(recipe));
+                : Mathf.Max(1f, GlobalRegistry.ResourceScarcityReadModel?.GetCraftPowerMultiplier(recipe) ?? 1f);
         }
 
         private float ResolveCraftPowerCost(RecipeData recipe)
@@ -3063,7 +3063,7 @@ namespace Hecton8.Crafting
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.ResourceScarcityRuntime:
-                    _resourceScarcityDirector = currentService as ResourceScarcityDirector;
+                    _resourceScarcityDirector = currentService as IResourceScarcityReadModel;
                     break;
                 case GlobalRegistryServiceSlot.PowerGrid:
                     _powerGridService = currentService as IPowerGridService;
@@ -3086,10 +3086,10 @@ namespace Hecton8.Crafting
 
         private void CacheRegistryServicesCold()
         {
-            _resourceScarcityDirector = GlobalRegistry.ResourceScarcity;
+            _resourceScarcityDirector = GlobalRegistry.ResourceScarcityReadModel;
             _powerGridService = GlobalRegistry.PowerGrid;
             _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _localizationManager = Hecton8.Core.GlobalRegistry.LocalizationText;
             CacheScanLogSystem(Hecton8.Core.GlobalRegistry.ScanLogService);
         }

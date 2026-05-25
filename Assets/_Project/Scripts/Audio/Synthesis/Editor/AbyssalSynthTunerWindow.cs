@@ -322,19 +322,23 @@ namespace Hecton8.Audio.Synthesis.Editor
                 OffsetOf<SynthVoiceDTO>(nameof(SynthVoiceDTO.SoundHash)) == 12 &&
                 OffsetOf<SynthVoiceDTO>(nameof(SynthVoiceDTO.TargetPitch)) == 16 &&
                 OffsetOf<SynthVoiceDTO>(nameof(SynthVoiceDTO.TargetVolume)) == 20 &&
-                OffsetOf<SynthVoiceDTO>(nameof(SynthVoiceDTO._pad0)) == 24 &&
-                OffsetOf<SynthVoiceDTO>(nameof(SynthVoiceDTO._pad9)) == 60;
+                OffsetOf<SynthVoiceDTO>("_pad0") == 24 &&
+                OffsetOf<SynthVoiceDTO>("_pad9") == 60;
 
             if (!valid)
-                Debug.LogError("[SHINOBU_135] SynthVoiceDTO layout violation. Expected explicit 64 bytes with hot fields at offsets 0,4,8,12,16,20 and padding 24-63.");
+                Hecton8.Core.H8Debug.LogError("[1308] SynthVoiceDTO layout violation. Expected explicit 64 bytes with hot fields at offsets 0,4,8,12,16,20 and padding 24-63.");
             else if (!silent)
-                Debug.Log("[SHINOBU_135] SynthVoiceDTO layout verified: 64 bytes.");
+                Hecton8.Core.H8Debug.Log("[1308] SynthVoiceDTO layout verified: 64 bytes.");
         }
 
         private static int OffsetOf<T>(string fieldName)
             where T : struct
         {
-            System.Reflection.FieldInfo field = typeof(T).GetField(fieldName);
+            System.Reflection.FieldInfo field = typeof(T).GetField(
+                fieldName,
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.Public |
+                System.Reflection.BindingFlags.NonPublic);
             return field != null ? UnsafeUtility.GetFieldOffset(field) : -1;
         }
     }

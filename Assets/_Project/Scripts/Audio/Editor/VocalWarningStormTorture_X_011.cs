@@ -19,7 +19,7 @@ namespace Hecton8.Audio.Editor
             StormResult result = ExecuteStorm();
             WriteReport(result);
             AssetDatabase.Refresh();
-            Debug.Log("X_011 VWS storm torture " + (result.Pass ? "PASS" : "FAIL") + " wrote " + ReportPath + ".");
+            Hecton8.Core.H8Debug.Log("X_011 VWS storm torture " + (result.Pass ? "PASS" : "FAIL") + " wrote " + ReportPath + ".");
         }
 
         internal static StormResult ExecuteStorm()

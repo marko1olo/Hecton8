@@ -75,7 +75,7 @@ namespace Hecton8.Core
             get
             {
                 int snapshotCount = global::Hecton8.Core.Contracts.Signals.SignalBus<ScalabilityChangedEvent>.SnapshotCount;
-                return _dispatchedSnapshotFrame == Time.frameCount
+                return _dispatchedSnapshotFrame == SystemDispatcher.CurrentFrameIndex
                     ? Math.Max(0, snapshotCount - _dispatchedSnapshotIndex)
                     : snapshotCount;
             }
@@ -152,7 +152,7 @@ namespace Hecton8.Core
             if (count <= 0)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_dispatchedSnapshotFrame != frame)
             {
                 _dispatchedSnapshotFrame = frame;

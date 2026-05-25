@@ -1,0 +1,9 @@
+﻿{
+    "schema":  "OVERENGINEERING_ADDED_LINE_SCAN_1302_PASS10_V1",
+    "generatedUtc":  "2026-05-25T18:47:11.0453901Z",
+    "inScopeAddedSolverLoopHitCount":  0,
+    "hits":  [
+
+             ],
+    "verdict":  "No new in-scope player solver loop, job schedule, Complete, or simulation iteration added by Pass 10/previous 1302 player diff."
+}

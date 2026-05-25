@@ -9,7 +9,7 @@ using Unity.Mathematics;
 namespace Hecton8.AI.Cognition
 {
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public struct GenerateMockCognitionDataJob : IJobParallelFor
+    public struct GenerateMockCognitionLoadJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<CognitionStateDTO> States;
         [NoAlias] public NativeArray<CognitionAupDTO> Aups;
@@ -571,9 +571,16 @@ namespace Hecton8.AI.Cognition
             float safeCell = SanitizePositive(cellSize, 48f);
             int safeBuckets = math.max(1, bucketCount);
             double invCell = math.rcp((double)safeCell);
-            long x = (long)math.floor(aup.x * invCell);
-            long y = (long)math.floor(aup.y * invCell);
-            long z = (long)math.floor(aup.z * invCell);
+            double3 scaled = aup * invCell;
+            if (!math.all(math.isfinite(scaled)))
+                return 0u;
+
+            const double maxSafeLongCell = 9000000000000000000.0;
+            const double minSafeLongCell = -9000000000000000000.0;
+            scaled = math.clamp(scaled, new double3(minSafeLongCell), new double3(maxSafeLongCell));
+            long x = (long)math.floor(scaled.x);
+            long y = (long)math.floor(scaled.y);
+            long z = (long)math.floor(scaled.z);
             uint hash = 2166136261u;
             hash = Fnv(hash, (uint)x);
             hash = Fnv(hash, (uint)(x >> 32));

@@ -153,7 +153,7 @@ namespace Hecton8.Dev
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogTimeoutFailure()
         {
-            Debug.LogError("[BaseStressSmoke] FAIL Jacobi evaluation did not complete inside wait window.");
+            Hecton8.Core.H8Debug.LogError("[BaseStressSmoke] FAIL Jacobi evaluation did not complete inside wait window.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -163,7 +163,7 @@ namespace Hecton8.Dev
             bool nearLoadPowered,
             bool farLoadPowered)
         {
-            Debug.LogError(
+            Hecton8.Core.H8Debug.LogError(
                 "[BaseStressSmoke] FAIL Jacobi voltage relaxation did not isolate the high-resistance load. " +
                 "gen=" + summary.TotalGeneration.ToString("0.###", CultureInfo.InvariantCulture) +
                 " demand=" + summary.TotalConsumption.ToString("0.###", CultureInfo.InvariantCulture) +

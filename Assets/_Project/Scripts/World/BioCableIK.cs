@@ -686,7 +686,7 @@ namespace Hecton8.World
             if (!_loggedMissingCableMaterial)
             {
                 _loggedMissingCableMaterial = true;
-                Debug.LogError("[BioCableIK] Missing cableMaterial asset. Runtime material creation is forbidden for cable rendering.", this);
+                Hecton8.Core.H8Debug.LogError("[BioCableIK] Missing cableMaterial asset. Runtime material creation is forbidden for cable rendering.", this);
             }
 #endif
 

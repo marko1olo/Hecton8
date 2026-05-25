@@ -378,7 +378,7 @@ namespace Hecton8.Gameplay
         private float _nextMmfFlushTime = float.PositiveInfinity;
         private bool _disposed;
         private bool _hotSwapListenerRegistered;
-        private LoreDatabaseManager _cachedLoreDatabase;
+        private ILoreUnlockSink _cachedLoreDatabase;
         private ISaveService _saveService;
 
         /// <inheritdoc />
@@ -500,7 +500,7 @@ namespace Hecton8.Gameplay
                 SetScanState(entityHash, ScanStateScanned);
                 SetNativeLoreBit(DataArchaeologyDiscoveryBitMask.ResolveBitIndex(entityHash));
                 RegisterFragmentPosition(entityHash, hitPosition);
-                LoreDatabaseManager loreDatabase = _cachedLoreDatabase;
+                ILoreUnlockSink loreDatabase = _cachedLoreDatabase;
                 if (loreDatabase != null)
                     loreDatabase.TryUnlockByHash(entityHash);
 
@@ -761,7 +761,7 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            if (_mmfDirty && Time.unscaledTime >= _nextMmfFlushTime)
+            if (_mmfDirty && (float)SystemDispatcher.CurrentUnscaledTimeSeconds >= _nextMmfFlushTime)
                 PersistMmfCold();
         }
 
@@ -858,7 +858,7 @@ namespace Hecton8.Gameplay
         {
             if (serviceSlot == GlobalRegistryServiceSlot.LoreDatabaseRuntime)
             {
-                _cachedLoreDatabase = currentService as LoreDatabaseManager;
+                _cachedLoreDatabase = currentService as ILoreUnlockSink;
                 return;
             }
 
@@ -904,9 +904,9 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _cachedLoreDatabase = GlobalRegistry.LoreDatabase;
+            _cachedLoreDatabase = GlobalRegistry.LoreUnlockSink;
             _dataVault = GlobalRegistry.DataVault;
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
         }
 
         private void TryRegisterRuntime()
@@ -923,7 +923,7 @@ namespace Hecton8.Gameplay
             if (!_registeredSave)
             {
                 if (_saveService == null)
-                    _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                    _saveService = GlobalRegistry.Save;
 
                 if (_saveService == null)
                     return;
@@ -1520,7 +1520,7 @@ namespace Hecton8.Gameplay
         private void MarkMmfDirty(bool urgent)
         {
             _mmfDirty = true;
-            float now = Application.isPlaying ? Time.unscaledTime : 0f;
+            float now = Application.isPlaying ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
             float delay = urgent ? MmfUrgentFlushDelaySeconds : MmfPartialFlushCadenceSeconds;
             float target = now + delay;
             if (!math.isfinite(_nextMmfFlushTime) || target < _nextMmfFlushTime)
@@ -1566,7 +1566,8 @@ namespace Hecton8.Gameplay
 
         private void EmitSensoryFeedback(in DataArchaeologyFrequencyResult result)
         {
-            if (result.Match01 <= 0.01f || Time.time < _nextSensoryFeedbackTime)
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (result.Match01 <= 0.01f || now < _nextSensoryFeedbackTime)
                 return;
 
             float intensity = math.saturate(result.Match01);
@@ -1582,7 +1583,7 @@ namespace Hecton8.Gameplay
                 28f + (result.Match01 * 42f),
                 2,
                 0x03);
-            _nextSensoryFeedbackTime = Time.time + 0.1f;
+            _nextSensoryFeedbackTime = now + 0.1f;
         }
 
         private static ushort ToPermille(float progress01)

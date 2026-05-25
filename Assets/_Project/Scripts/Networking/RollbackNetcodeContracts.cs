@@ -1305,7 +1305,7 @@ namespace Hecton8.Networking
         // the external SignalBus ownership relationship for a method-local ParallelWriter. It does not relax safety on Vault
         // arrays; all data inputs remain explicit NativeArray fields with NoAlias annotations.
         [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction]
-        public NativeQueue<RollbackRequiredSignal>.ParallelWriter RollbackSignals;
+        public global::Hecton8.Core.MpscSignalRingBuffer<RollbackRequiredSignal>.ParallelWriter RollbackSignals;
         [NativeDisableParallelForRestriction] public NativeArray<int> RollbackSignalsBudget;
         public uint CurrentFrame;
         public uint PreviousFrame;
@@ -1759,7 +1759,7 @@ namespace Hecton8.Networking
         // prove the cold SignalBus lifetime through a method-local ParallelWriter value. The surrounding NativeArray fields retain
         // normal safety metadata plus NoAlias proof for Burst vectorization and static review.
         [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction]
-        public NativeQueue<RollbackRequiredSignal>.ParallelWriter RollbackSignals;
+        public global::Hecton8.Core.MpscSignalRingBuffer<RollbackRequiredSignal>.ParallelWriter RollbackSignals;
         [NativeDisableParallelForRestriction] public NativeArray<int> RollbackSignalsBudget;
         public uint RollbackSignalsEnabled;
 

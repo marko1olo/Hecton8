@@ -1986,7 +1986,7 @@ namespace Hecton8.Environment
         private static void ValidateCelestialLayoutsEditor()
         {
             if (!ValidateSeismicLayouts())
-                Debug.LogError("[SHINOBU_345] Celestial/seismic DTO layout validation failed.");
+                Hecton8.Core.H8Debug.LogError("[SHINOBU_345] Celestial/seismic DTO layout validation failed.");
         }
 #endif
 
@@ -3792,7 +3792,7 @@ namespace Hecton8.Environment
             catch (Exception)
             {
 #if UNITY_EDITOR
-                Debug.LogError("[HectonSeismicTideDirector] telemetry dump failed.");
+                Hecton8.Core.H8Debug.LogError("[HectonSeismicTideDirector] telemetry dump failed.");
 #endif
             }
         }
@@ -3802,7 +3802,7 @@ namespace Hecton8.Environment
             _tickDispatcher = GlobalRegistry.TickDispatcher;
             _dataVault = GlobalRegistry.DataVault;
             _worldSeedProvider = GlobalRegistry.WorldSeedProvider;
-            _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntime = GlobalRegistry.Player;
             _fallbackAbsoluteUniverseTime = (_celestialSnapshot.Flags & (uint)CelestialRuntimeFlags.Valid) != 0u
                 ? _celestialSnapshot.AbsoluteUniverseTime
                 : Time.timeAsDouble;
@@ -4558,7 +4558,7 @@ namespace Hecton8.Environment
             // Rejected main-thread seismic emission because it would force a synchronous scan after seismic solve. Rejected a NativeList handoff because it adds allocator ownership and a second compaction pass.
             // SAFETY_JUSTIFICATION_PARAGRAPH_3:
             // The scheduled handle is registered through H8Memory immediately after Schedule(), and LateFrame finalization uses DispatcherJobFence so consumers observe queued seismic packets only after the owner fence resolves.
-            [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<SeismicSignal>.ParallelWriter SeismicWriter;
+            [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<SeismicSignal>.ParallelWriter SeismicWriter;
             [NativeDisableParallelForRestriction] public NativeArray<int> SeismicWriterBudget;
             // SAFETY_JUSTIFICATION_PARAGRAPH_1:
             // ShockwaveWriter is producer-only; this job writes compatibility shockwave packets and never reads queue state or aliases the typed seismic lane.
@@ -4566,7 +4566,7 @@ namespace Hecton8.Environment
             // Rejected direct legacy bridge publication on the main thread because it would duplicate the event scan. Rejected a shared catch-all queue because it would erase lane ownership and overflow telemetry.
             // SAFETY_JUSTIFICATION_PARAGRAPH_3:
             // The same registered job handle gates this writer. Legacy consumers drain only after dispatcher/owner completion, so no second producer or same-frame readback exists in the SHINOBU_346 route.
-            [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<SeismicShockwaveSignal>.ParallelWriter ShockwaveWriter;
+            [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<SeismicShockwaveSignal>.ParallelWriter ShockwaveWriter;
             [NativeDisableParallelForRestriction] public NativeArray<int> ShockwaveWriterBudget;
             public int EventCapacity;
             public int TelemetryIndex;

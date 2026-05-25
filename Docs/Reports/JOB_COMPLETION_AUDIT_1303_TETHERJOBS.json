@@ -1,0 +1,16 @@
+{
+  "byClassification": {},
+  "byDomain": {},
+  "bySurface": {},
+  "csFileCount": 1,
+  "findingCount": 0,
+  "findings": [],
+  "framePathBlockerCount": 0,
+  "framePathBlockers": [],
+  "pluginSyncCompleteCount": 0,
+  "pluginSyncCompletes": [],
+  "rawRuntimeBlockerCount": 0,
+  "rawRuntimeBlockers": [],
+  "schema": "hecton8.job_completion_audit.v1",
+  "sourceRoot": "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs"
+}

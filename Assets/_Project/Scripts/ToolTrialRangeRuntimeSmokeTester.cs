@@ -939,14 +939,14 @@ namespace Hecton8.Gameplay
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogSmokeWarning(string message)
         {
-            Debug.LogWarning(message);
+            Hecton8.Core.H8Debug.LogWarning(message);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogSmokeError(string message)
         {
-            Debug.LogError(message);
+            Hecton8.Core.H8Debug.LogError(message);
         }
 
         private static T FindSceneObjectIncludingInactive<T>() where T : Component

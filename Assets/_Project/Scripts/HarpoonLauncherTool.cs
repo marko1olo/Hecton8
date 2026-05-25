@@ -1,7 +1,7 @@
 using System;
 using Hecton.Localization;
 using Hecton8.Core;
-using Hecton8.Physics;
+using Hecton8.Core.Contracts.Physics;
 using Hecton8.Tools;
 using Unity.Mathematics;
 using Unity.Collections;
@@ -166,7 +166,6 @@ namespace Hecton8.Gameplay
         private Collider _tetheredCollider;
         private HeavyTowWinch _heavyTowWinch;
         private HectonPlayerMovement _playerMovement;
-        private Rigidbody _playerRigidbody;
         private string _tetheredName;
         private string _tetheredNameUpper;
         private Collider _grappleAnchorCollider;
@@ -180,6 +179,7 @@ namespace Hecton8.Gameplay
         private HarpoonAssessment _cachedAssessment;
         private float _tetherRemaining;
         private ILocalizationTextReadModel _localization;
+        private IPhysicsService _physicsService;
         private FixedCharBuffer _hudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - harpoon HUD staging buffer - owner: HarpoonLauncherTool
         private FixedCharBuffer _logTitleBuffer = new FixedCharBuffer(256); // COLD ALLOC: char[256] - harpoon operation log title staging buffer - owner: HarpoonLauncherTool
         private FixedCharBuffer _logSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - harpoon operation log summary staging buffer - owner: HarpoonLauncherTool
@@ -201,6 +201,7 @@ namespace Hecton8.Gameplay
         {
             base.OnSpawn();
             _localization = GlobalRegistry.LocalizationText;
+            _physicsService = GlobalRegistry.Physics;
             ResolveHeavyTowWinch();
             ResolvePlayerMovement();
             _feedbackCooldownRemaining = 0f;
@@ -212,6 +213,7 @@ namespace Hecton8.Gameplay
         {
             base.OnEquip();
             _localization = GlobalRegistry.LocalizationText;
+            _physicsService = GlobalRegistry.Physics;
             ResolveHeavyTowWinch();
             ResolvePlayerMovement();
             InvalidateAssessmentCache();
@@ -222,6 +224,7 @@ namespace Hecton8.Gameplay
             TryUnregisterLateFrameTick();
             base.OnDespawn();
             _localization = null;
+            _physicsService = null;
             _feedbackCooldownRemaining = 0f;
             ClearTether();
         }
@@ -243,6 +246,9 @@ namespace Hecton8.Gameplay
                     break;
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _localization = currentService as ILocalizationTextReadModel;
+                    break;
+                case GlobalRegistryServiceSlot.Physics:
+                    _physicsService = currentService as IPhysicsService;
                     break;
             }
         }
@@ -393,7 +399,7 @@ namespace Hecton8.Gameplay
             }
 
             Vector3 direction = ResolveSafeDirection(toolOrigin - body.worldCenterOfMass, toolForward);
-            PhysicsForceRouter.QueueForce(body, direction * reelImpulse, ForceMode.Impulse);
+            _physicsService?.QueueForce(body, direction * reelImpulse, ForceMode.Impulse);
             ToolHitUtility.TryApplyRelativeCarrierImpulse(direction, reelImpulse);
 
             if (IsFeedbackReady())
@@ -674,33 +680,51 @@ namespace Hecton8.Gameplay
         private void UploadTracerGpuData(Vector3 start, Vector3 end)
         {
             NativeArray<GpuCableSplinePointDTO> points = _tracerPositionBuffer.LockBufferForWrite<GpuCableSplinePointDTO>(0, 2);
-            points[0] = new GpuCableSplinePointDTO
+            try
             {
-                Position = new float3(start.x, start.y, start.z),
-                Tension01 = 0f
-            };
-            points[1] = new GpuCableSplinePointDTO
+                points[0] = new GpuCableSplinePointDTO
+                {
+                    Position = new float3(start.x, start.y, start.z),
+                    Tension01 = 0f
+                };
+                points[1] = new GpuCableSplinePointDTO
+                {
+                    Position = new float3(end.x, end.y, end.z),
+                    Tension01 = 0f
+                };
+            }
+            finally
             {
-                Position = new float3(end.x, end.y, end.z),
-                Tension01 = 0f
-            };
-            _tracerPositionBuffer.UnlockBufferAfterWrite<GpuCableSplinePointDTO>(2);
+                _tracerPositionBuffer.UnlockBufferAfterWrite<GpuCableSplinePointDTO>(2);
+            }
 
             NativeArray<float> tensions = _tracerTensionBuffer.LockBufferForWrite<float>(0, 1);
-            tensions[0] = 0f;
-            _tracerTensionBuffer.UnlockBufferAfterWrite<float>(1);
+            try
+            {
+                tensions[0] = 0f;
+            }
+            finally
+            {
+                _tracerTensionBuffer.UnlockBufferAfterWrite<float>(1);
+            }
 
             Color safeColor = tracerColor;
             NativeArray<GpuCableDrawParamsDTO> drawParams = _tracerDrawParamsBuffer.LockBufferForWrite<GpuCableDrawParamsDTO>(0, 1);
-            drawParams[0] = new GpuCableDrawParamsDTO
+            try
             {
-                Color = new float4(safeColor.r, safeColor.g, safeColor.b, safeColor.a),
-                StressColor = new float4(1f, 0.55f, 0.18f, 0.95f),
-                Params0 = new float4(0f, 1f, 2f, Mathf.Max(0.002f, tracerRadius)),
-                Params1 = new float4(0f, 0f, 0f, 0f),
-                Params2 = new float4(_tracerShaderTime, 0f, 0f, 0f)
-            };
-            _tracerDrawParamsBuffer.UnlockBufferAfterWrite<GpuCableDrawParamsDTO>(1);
+                drawParams[0] = new GpuCableDrawParamsDTO
+                {
+                    Color = new float4(safeColor.r, safeColor.g, safeColor.b, safeColor.a),
+                    StressColor = new float4(1f, 0.55f, 0.18f, 0.95f),
+                    Params0 = new float4(0f, 1f, 2f, Mathf.Max(0.002f, tracerRadius)),
+                    Params1 = new float4(0f, 0f, 0f, 0f),
+                    Params2 = new float4(_tracerShaderTime, 0f, 0f, 0f)
+                };
+            }
+            finally
+            {
+                _tracerDrawParamsBuffer.UnlockBufferAfterWrite<GpuCableDrawParamsDTO>(1);
+            }
         }
 
         private void OnDestroy()
@@ -758,12 +782,10 @@ namespace Hecton8.Gameplay
             if (TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext))
             {
                 _playerMovement = playerContext.PlayerMovement;
-                _playerRigidbody = playerContext.PlayerRigidbody;
                 return;
             }
 
             _playerMovement = null;
-            _playerRigidbody = null;
         }
 
         private void WarnReel(string message)
@@ -864,7 +886,7 @@ namespace Hecton8.Gameplay
 
             Vector3 direction = ResolveSafeDirection(toolOrigin - _tetheredBody.worldCenterOfMass, toolForward);
             float impulseAmount = reelImpulse * tetherPullBonus;
-            PhysicsForceRouter.QueueForce(_tetheredBody, direction * impulseAmount, ForceMode.Impulse);
+            _physicsService?.QueueForce(_tetheredBody, direction * impulseAmount, ForceMode.Impulse);
             ToolHitUtility.TryApplyRelativeCarrierImpulse(direction, impulseAmount);
 
             if (IsFeedbackReady())

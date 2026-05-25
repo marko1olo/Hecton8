@@ -1,5 +1,7 @@
 using System;
+#if UNITY_EDITOR
 using System.IO;
+#endif
 using System.Runtime.CompilerServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -21,7 +23,8 @@ namespace Hecton8.Physics.Vehicles
         private const int MaxGridHeight = 16;
         private const int MaxGridDepth = 24;
         private const uint HazardLaneHash = 0x565A4844u; // VZHD
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_VEHICLE_SURGEON.bin";
+        private const uint VehicleFaultEventHash = 0x56444654u; // VDFT
+        private const uint VehicleFaultDumpHash = 0x56534654u; // VSFT
 
         [Header("Damage Grid")]
         [SerializeField, Range(2, MaxGridWidth)] private int gridWidth = VehicleDamageConstants.DefaultGridWidth;
@@ -64,7 +67,9 @@ namespace Hecton8.Physics.Vehicles
         private VaultGenerationHandle<VehicleDamageTuningDTO> _tuningHandle;
         private VaultGenerationHandle<VehicleDamageTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<uint> _telemetryCursorHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
         private VaultGenerationHandle<SubmarineKinematicConfig> _kinematicConfigHandle;
         private JobHandle _damageHandle;
         private bool _damagePending;
@@ -77,6 +82,7 @@ namespace Hecton8.Physics.Vehicles
         private bool _registeredHotSwapListener;
         private bool _dumpWritten;
         private bool _csvLoaded;
+        private bool _coreBlackboxWarmed;
         private int _cellCount;
         private uint _frameCounter;
         private uint _resolvedVehicleHash;
@@ -84,24 +90,27 @@ namespace Hecton8.Physics.Vehicles
         private double3 _cachedRootAup;
         private quaternion _cachedRootRotation;
         private bool _hasRootPoseSnapshot;
+#if UNITY_EDITOR
         private string _projectRoot;
         private string _csvPath;
-        private string _dumpPath;
+#endif
 
         private void OnEnable()
         {
 #if UNITY_EDITOR
             if (!VehicleDamageLayoutValidator.ValidateVehicleGridCellLayout(out string layoutError))
-                Debug.LogError(layoutError, this);
+                Hecton8.Core.H8Debug.LogError(layoutError, this);
 #endif
 
+#if UNITY_EDITOR
             _projectRoot = ResolveProjectRoot();
             _csvPath = Path.Combine(_projectRoot, "vehicle_component_layouts.csv");
-            _dumpPath = Path.Combine(_projectRoot, DumpRelativePath);
+#endif
             _resolvedVehicleHash = ResolveVehicleHash();
             EnsureSignalLanes();
             EnsureDataVault();
             EnsureVaultBuffers(forceReinitialize: false);
+            WarmCoreBlackboxRoute();
             TryRefreshRootPoseSnapshot(transform, allowPresentationFallback: true);
 
             TryRegisterHotSwapListener();
@@ -119,6 +128,7 @@ namespace Hecton8.Physics.Vehicles
 
             TryUnregisterHotSwapListener();
             TryUnregisterRuntimeLanes();
+            _coreBlackboxWarmed = false;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -148,7 +158,10 @@ namespace Hecton8.Physics.Vehicles
             ClearVaultHandles();
             _buffersReady = false;
             if (isActiveAndEnabled && _dataVault != null)
+            {
                 EnsureVaultBuffers(forceReinitialize: false);
+                WarmCoreBlackboxRoute();
+            }
         }
 
         public void FixedTick(float fixedDeltaTime)
@@ -393,7 +406,9 @@ namespace Hecton8.Physics.Vehicles
             _tuningHandle = default;
             _telemetryHandle = default;
             _telemetryCursorHandle = default;
+#if UNITY_EDITOR
             _csvScratchHandle = default;
+#endif
             _kinematicConfigHandle = default;
             _cellCount = 0;
             _csvLoaded = false;
@@ -460,12 +475,17 @@ namespace Hecton8.Physics.Vehicles
             _tuningHandle = _dataVault.EnsureGenerationHandle<VehicleDamageTuningDTO>(VehicleDamageConstants.TuningBuffer, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
             _telemetryHandle = _dataVault.EnsureGenerationHandle<VehicleDamageTelemetryEntry>(VehicleDamageConstants.TelemetryRingBuffer, VehicleDamageConstants.TelemetryCapacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
             _telemetryCursorHandle = _dataVault.EnsureGenerationHandle<uint>(VehicleDamageConstants.TelemetryCursorBuffer, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+#if UNITY_EDITOR
             _csvScratchHandle = _dataVault.EnsureGenerationHandle<byte>(VehicleDamageConstants.CsvScratchBuffer, VehicleDamageConstants.CsvScratchBytes, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
+#endif
 
             if (!IsHandleValid(in _gridWriteHandle) || !IsHandleValid(in _gridReadHandle) || !IsHandleValid(in _signalHandle) ||
                 !IsHandleValid(in _mockSignalHandle) || !IsHandleValid(in _stateWriteHandle) || !IsHandleValid(in _stateReadHandle) ||
-                !IsHandleValid(in _tuningHandle) || !IsHandleValid(in _telemetryHandle) || !IsHandleValid(in _telemetryCursorHandle) ||
-                !IsHandleValid(in _csvScratchHandle))
+                !IsHandleValid(in _tuningHandle) || !IsHandleValid(in _telemetryHandle) || !IsHandleValid(in _telemetryCursorHandle)
+#if UNITY_EDITOR
+                || !IsHandleValid(in _csvScratchHandle)
+#endif
+                )
             {
                 _buffersReady = false;
                 return false;
@@ -876,6 +896,9 @@ namespace Hecton8.Physics.Vehicles
             if (_dumpWritten || _dataVault == null || !IsHandleValid(in _stateReadHandle) || !IsHandleValid(in _telemetryHandle))
                 return false;
 
+            if (!_coreBlackboxWarmed || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
+                return false;
+
             bool stateLocked = false;
             bool telemetryLocked = false;
             try
@@ -901,7 +924,8 @@ namespace Hecton8.Physics.Vehicles
                 if (!telemetry.IsCreated)
                     return false;
 
-                bool written = TryWriteBlackBoxDump(_dumpPath, telemetry);
+                GlobalTelemetryBus.PushEvent(VehicleFaultEventHash, state.StructuralIntegrity01, state.StateHash);
+                bool written = GlobalTelemetryBus.TryDumpBlackboxNow(VehicleFaultDumpHash);
                 _dumpWritten |= written;
                 return written;
             }
@@ -914,32 +938,13 @@ namespace Hecton8.Physics.Vehicles
             }
         }
 
-        private static bool TryWriteBlackBoxDump(string path, NativeArray<VehicleDamageTelemetryEntry> telemetry)
+        private void WarmCoreBlackboxRoute()
         {
-            try
-            {
-                string directory = Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(directory))
-                    Directory.CreateDirectory(directory);
+            if (_coreBlackboxWarmed || !Application.isPlaying)
+                return;
 
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    int bytes = telemetry.Length * UnsafeUtility.SizeOf<VehicleDamageTelemetryEntry>();
-                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                    ReadOnlySpan<byte> payload = new ReadOnlySpan<byte>(ptr, bytes);
-                    stream.Write(payload);
-                }
-
-                return true;
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
+            GlobalTelemetryBus.Initialize();
+            _coreBlackboxWarmed = GlobalTelemetryBus.BlackboxActiveFrameCount > 0;
         }
 
         private static void EnsureSignalLanes()
@@ -1040,18 +1045,25 @@ namespace Hecton8.Physics.Vehicles
 
         private static float ResolveDepthMeters(double3 rootAup)
         {
-            if (math.all(math.isfinite(rootAup)) && rootAup.y > -1000000d && rootAup.y < 1000000d)
-                return math.max(0f, (float)-rootAup.y);
+            if (!math.all(math.isfinite(rootAup)))
+                return 0f;
 
-            return 0f;
+            const double seaLevelAupY = 0d;
+            double depthMeters = seaLevelAupY - rootAup.y;
+            if (!math.isfinite(depthMeters))
+                return 0f;
+
+            return (float)math.min(1000000d, math.max(0d, depthMeters));
         }
 
+#if UNITY_EDITOR
         private static string ResolveProjectRoot()
         {
             string dataPath = Application.dataPath;
             DirectoryInfo parent = Directory.GetParent(dataPath);
             return parent != null ? parent.FullName : dataPath;
         }
+#endif
 
 #if UNITY_EDITOR
         /// <summary>

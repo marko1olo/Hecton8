@@ -599,7 +599,7 @@ namespace Hecton8.Lighting
         private void CacheDependencies()
         {
             _vault = GlobalRegistry.DataVault;
-            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerContext = GlobalRegistry.Player;
         }
 
         private bool EnsureNativeStorage(bool allowMockGeneration = true)

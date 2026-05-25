@@ -460,7 +460,7 @@ namespace Hecton8.Progression
                 TryGetComponent(out _survivalSystem);
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
             _logbookManager = GlobalRegistry.PDALogbook;
             _localization = Hecton8.Core.GlobalRegistry.LocalizationText;
 
@@ -835,7 +835,7 @@ namespace Hecton8.Progression
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;

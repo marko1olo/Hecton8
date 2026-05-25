@@ -11,7 +11,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6750)]
-    public sealed class HectonCaveVoxelAmbientOcclusionController : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class HectonCaveVoxelAmbientOcclusionController : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float BaselineEpsilon = 0.0005f;
         private const float ViewerFallbackRetryIntervalSeconds = 2f;
@@ -40,7 +40,6 @@ namespace Hecton8.World
         [SerializeField] private float _debugAppliedOcclusion;
         [SerializeField] private Vector3 _debugViewerPositionWS;
 
-        private bool _registeredUpdatable;
         private bool _registeredSlowTickable;
         private bool _registeredLateFrame;
         private bool _registeredHotSwapListener;
@@ -103,7 +102,6 @@ namespace Hecton8.World
                 _cachedPlayerContext = currentService as IPlayerRuntimeContext;
             else if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registeredUpdatable = false;
                 _registeredSlowTickable = false;
                 _registeredLateFrame = false;
                 if (currentService != null && isActiveAndEnabled)
@@ -114,7 +112,7 @@ namespace Hecton8.World
         /// <summary>
         /// Blends the cave ambient/reflection occlusion against the current upstream render-settings owner.
         /// </summary>
-        public void Tick(float deltaTime)
+        private void AdvanceOcclusionBlend(float deltaTime)
         {
             float nextOcclusion = MoveTowardsFast(
                 _appliedOcclusion,
@@ -132,6 +130,7 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
+            AdvanceOcclusionBlend(SystemDispatcher.CurrentFrameDeltaTime);
             RebaseIfUpstreamChanged();
             if (!_occlusionVisualDirty)
                 return;
@@ -165,11 +164,6 @@ namespace Hecton8.World
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_registeredUpdatable)
-            {
-                _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-            }
-
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
 
@@ -179,12 +173,6 @@ namespace Hecton8.World
 
         private void TryUnregister()
         {
-            if (_registeredUpdatable)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registeredUpdatable = false;
-            }
-
             if (_registeredSlowTickable)
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
@@ -221,7 +209,7 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
         }
 
         private void TryRegisterHotSwapListener()
@@ -252,13 +240,14 @@ namespace Hecton8.World
             }
 
             _volumeBuffer.Clear();
-            if (Time.unscaledTime < _nextVolumeFallbackRefreshTime)
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (now < _nextVolumeFallbackRefreshTime)
             {
                 _debugVolumeCount = 0;
                 return;
             }
 
-            _nextVolumeFallbackRefreshTime = Time.unscaledTime + VolumeFallbackRefreshIntervalSeconds;
+            _nextVolumeFallbackRefreshTime = now + VolumeFallbackRefreshIntervalSeconds;
             _debugVolumeCount = 0;
         }
 

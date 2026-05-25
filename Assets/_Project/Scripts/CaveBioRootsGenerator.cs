@@ -1,5 +1,4 @@
 using Hecton8.Core;
-using Hecton8.Physics;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -7,10 +6,10 @@ namespace Hecton8.Caves
 {
     /// <summary>
     /// Runtime owner for hanging bioluminescent cave roots attached to voxel cave ceilings.
-    /// Anchors use deterministic local-bounds sampling; root motion stays on the tick path.
+    /// Anchors use deterministic local-bounds sampling; root motion stays on the VISUAL_SYNC path.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class CaveBioRootsGenerator : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class CaveBioRootsGenerator : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxRootCount = 32;
         private const string LegacyRootNamePrefix = "_BioRoot_";
@@ -34,7 +33,6 @@ namespace Hecton8.Caves
 
         private Transform _volumeTransform;
         private Transform _playerTransform;
-        private Rigidbody _playerRigidbody;
         private CavePreset _preset;
         private int _rootCount;
         private int _segmentsPerRoot;
@@ -48,7 +46,7 @@ namespace Hecton8.Caves
         private float _tipWidth;
         private Color _glowColor;
         private float _swayTime;
-        private bool _registeredTick;
+        private bool _registeredLateFrameTick;
         private bool _hotSwapRegistered;
         private IConnectionSplineBatchRendererService _splineRenderer;
         private long[] _rootLinkIds;
@@ -103,18 +101,19 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
-        /// Updates root sway in sync with the runtime tick loop.
+        /// Updates root sway in VISUAL_SYNC so simulation never depends on spline presentation.
         /// </summary>
-        public void Tick(float dt)
+        public void LateFrameTick()
         {
             if (_rootCount <= 0 || _volumeTransform == null)
                 return;
 
+            float dt = SystemDispatcher.CurrentFrameDeltaTime;
             ResolvePlayerContext();
             _swayTime += math.max(0f, dt);
 
             Vector3 playerPosition = ResolvePlayerRuntimePosition();
-            Vector3 playerVelocity = PhysicsDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityMaxAgeFrames, out Vector3 kccVelocity)
+            Vector3 playerVelocity = CoreDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityMaxAgeFrames, out Vector3 kccVelocity)
                 ? kccVelocity
                 : Vector3.zero;
             float playerSpeedSq = playerVelocity.sqrMagnitude;
@@ -306,7 +305,7 @@ namespace Hecton8.Caves
             {
                 if (currentService == null)
                 {
-                    _registeredTick = false;
+                    _registeredLateFrameTick = false;
                     return;
                 }
 
@@ -380,8 +379,6 @@ namespace Hecton8.Caves
         {
             Transform runtimePlayer = BootstrapState.CurrentPlayerTransform;
             _playerTransform = runtimePlayer != null ? runtimePlayer : playerTransformOverride;
-            if (_playerTransform != null && (_playerRigidbody == null || _playerRigidbody.transform != _playerTransform))
-                _playerTransform.TryGetComponent(out _playerRigidbody);
         }
 
         private Vector3 ResolvePlayerRuntimePosition()
@@ -438,22 +435,22 @@ namespace Hecton8.Caves
 
         private void TryRegister()
         {
-            if (_registeredTick || !Application.isPlaying)
+            if (_registeredLateFrameTick || !Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
         {
-            if (!_registeredTick)
+            if (!_registeredLateFrameTick)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _registeredTick = false;
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrameTick = false;
         }
 
         private static float Hash01(int index, int salt)

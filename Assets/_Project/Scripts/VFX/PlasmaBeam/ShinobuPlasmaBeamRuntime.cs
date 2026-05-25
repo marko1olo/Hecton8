@@ -210,8 +210,12 @@ namespace Hecton8.VFX.PlasmaBeam
         private PostSimulationPhaseSystem _postSimulationPhase;
         private VisualSyncPhaseSystem _visualSyncPhase;
 
-        private GraphicsBuffer _vertexGpuBuffer;
-        private GraphicsBuffer _indirectArgsGpuBuffer;
+        private GraphicsBuffer _vertexGpuBufferA;
+        private GraphicsBuffer _vertexGpuBufferB;
+        private GraphicsBuffer _activeVertexGpuBuffer;
+        private GraphicsBuffer _indirectArgsGpuBufferA;
+        private GraphicsBuffer _indirectArgsGpuBufferB;
+        private GraphicsBuffer _activeIndirectArgsGpuBuffer;
         private Material _material;
         private Bounds _drawBounds;
         private string _csvPath;
@@ -219,6 +223,8 @@ namespace Hecton8.VFX.PlasmaBeam
         private long _csvLastWriteTicks;
         private long _jobScheduleTimestamp;
         private int _lockedBufferMask;
+        private int _vertexGpuUploadBufferIndex;
+        private int _indirectArgsGpuUploadBufferIndex;
         private int _lastVertexCount;
         private int _lastActiveBeamCount;
         private float _lastDeterministicTimeSeconds;
@@ -647,11 +653,29 @@ namespace Hecton8.VFX.PlasmaBeam
             if (vertexCount <= 0)
                 return;
 
-            UploadNativeArray(_vertexGpuBuffer, vertices, vertexCount);
-            UploadNativeArray(_indirectArgsGpuBuffer, args, 1);
+            GraphicsBuffer vertexWriteBuffer = (_vertexGpuUploadBufferIndex & 1) == 0
+                ? _vertexGpuBufferA
+                : _vertexGpuBufferB;
+            GraphicsBuffer argsWriteBuffer = (_indirectArgsGpuUploadBufferIndex & 1) == 0
+                ? _indirectArgsGpuBufferA
+                : _indirectArgsGpuBufferB;
+            if (vertexWriteBuffer == null ||
+                !vertexWriteBuffer.IsValid() ||
+                argsWriteBuffer == null ||
+                !argsWriteBuffer.IsValid())
+            {
+                return;
+            }
+
+            UploadNativeArray(vertexWriteBuffer, vertices, vertexCount);
+            UploadNativeArray(argsWriteBuffer, args, 1);
+            _activeVertexGpuBuffer = vertexWriteBuffer;
+            _activeIndirectArgsGpuBuffer = argsWriteBuffer;
+            _vertexGpuUploadBufferIndex ^= 1;
+            _indirectArgsGpuUploadBufferIndex ^= 1;
 
             PlasmaBeamRuntimeScalarsDTO scalar = scalars[0];
-            _material.SetBuffer(VerticesBufferId, _vertexGpuBuffer);
+            _material.SetBuffer(VerticesBufferId, _activeVertexGpuBuffer);
             _material.SetFloat(UvScrollId, scalar.UvScrollSpeed);
             _material.SetFloat(IntensityId, math.lerp(1.15f, 4.0f, SmoothStep01(scalar.GlobalQualityWeight)));
             _material.SetFloat(QualityId, scalar.GlobalQualityWeight);
@@ -662,7 +686,7 @@ namespace Hecton8.VFX.PlasmaBeam
                 _material,
                 _drawBounds,
                 MeshTopology.Triangles,
-                _indirectArgsGpuBuffer,
+                _activeIndirectArgsGpuBuffer,
                 0,
                 null,
                 null,
@@ -844,30 +868,68 @@ namespace Hecton8.VFX.PlasmaBeam
 
         private bool EnsureGraphicsResources(bool allowAllocation)
         {
-            if (_vertexGpuBuffer == null || !_vertexGpuBuffer.IsValid())
+            if (_vertexGpuBufferA == null ||
+                !_vertexGpuBufferA.IsValid() ||
+                _vertexGpuBufferB == null ||
+                !_vertexGpuBufferB.IsValid())
             {
                 if (!allowAllocation)
                     return false;
 
-                // COLD ALLOC: GraphicsBuffer[19200] - persistent procedural beam vertex stream - owner: SHINOBU_69
-                _vertexGpuBuffer = new GraphicsBuffer(
+                ReleaseGraphicsBuffer(ref _vertexGpuBufferA);
+                ReleaseGraphicsBuffer(ref _vertexGpuBufferB);
+                // COLD ALLOC: GraphicsBuffer[19200] - persistent procedural beam vertex stream A - owner: SHINOBU_69
+                _vertexGpuBufferA = new GraphicsBuffer(
                     GraphicsBuffer.Target.Structured,
                     GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     MaxVertexCount,
                     UnsafeUtility.SizeOf<BeamVertexDTO>());
+                // COLD ALLOC: GraphicsBuffer[19200] - persistent procedural beam vertex stream B - owner: SHINOBU_69
+                _vertexGpuBufferB = new GraphicsBuffer(
+                    GraphicsBuffer.Target.Structured,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    MaxVertexCount,
+                    UnsafeUtility.SizeOf<BeamVertexDTO>());
+                _activeVertexGpuBuffer = _vertexGpuBufferA;
+                _vertexGpuUploadBufferIndex = 1;
             }
 
-            if (_indirectArgsGpuBuffer == null || !_indirectArgsGpuBuffer.IsValid())
+            if (_indirectArgsGpuBufferA == null ||
+                !_indirectArgsGpuBufferA.IsValid() ||
+                _indirectArgsGpuBufferB == null ||
+                !_indirectArgsGpuBufferB.IsValid())
             {
                 if (!allowAllocation)
                     return false;
 
-                // COLD ALLOC: GraphicsBuffer[1] - persistent DrawProceduralIndirect args - owner: SHINOBU_69
-                _indirectArgsGpuBuffer = new GraphicsBuffer(
+                ReleaseGraphicsBuffer(ref _indirectArgsGpuBufferA);
+                ReleaseGraphicsBuffer(ref _indirectArgsGpuBufferB);
+                // COLD ALLOC: GraphicsBuffer[1] - persistent DrawProceduralIndirect args A - owner: SHINOBU_69
+                _indirectArgsGpuBufferA = new GraphicsBuffer(
                     GraphicsBuffer.Target.IndirectArguments,
                     GraphicsBuffer.UsageFlags.LockBufferForWrite,
                     1,
                     UnsafeUtility.SizeOf<PlasmaBeamIndirectArgsDTO>());
+                // COLD ALLOC: GraphicsBuffer[1] - persistent DrawProceduralIndirect args B - owner: SHINOBU_69
+                _indirectArgsGpuBufferB = new GraphicsBuffer(
+                    GraphicsBuffer.Target.IndirectArguments,
+                    GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                    1,
+                    UnsafeUtility.SizeOf<PlasmaBeamIndirectArgsDTO>());
+                _activeIndirectArgsGpuBuffer = _indirectArgsGpuBufferA;
+                _indirectArgsGpuUploadBufferIndex = 1;
+            }
+
+            if (_activeVertexGpuBuffer == null || !_activeVertexGpuBuffer.IsValid())
+                _activeVertexGpuBuffer = _vertexGpuBufferA;
+            if (_activeIndirectArgsGpuBuffer == null || !_activeIndirectArgsGpuBuffer.IsValid())
+                _activeIndirectArgsGpuBuffer = _indirectArgsGpuBufferA;
+            if (_activeVertexGpuBuffer == null ||
+                !_activeVertexGpuBuffer.IsValid() ||
+                _activeIndirectArgsGpuBuffer == null ||
+                !_activeIndirectArgsGpuBuffer.IsValid())
+            {
+                return false;
             }
 
             if (_material == null)
@@ -885,7 +947,7 @@ namespace Hecton8.VFX.PlasmaBeam
                 // COLD ALLOC: Material[1] - single shared procedural indirect beam material - owner: SHINOBU_69
                 _material = new Material(shader);
                 _material.hideFlags = HideFlags.DontSave;
-                _material.SetBuffer(VerticesBufferId, _vertexGpuBuffer);
+                _material.SetBuffer(VerticesBufferId, _activeVertexGpuBuffer);
             }
 
             return true;
@@ -893,23 +955,30 @@ namespace Hecton8.VFX.PlasmaBeam
 
         private void ReleaseGraphicsResources()
         {
-            if (_vertexGpuBuffer != null)
-            {
-                _vertexGpuBuffer.Release();
-                _vertexGpuBuffer = null;
-            }
+            ReleaseGraphicsBuffer(ref _vertexGpuBufferA);
+            ReleaseGraphicsBuffer(ref _vertexGpuBufferB);
+            _activeVertexGpuBuffer = null;
+            _vertexGpuUploadBufferIndex = 0;
 
-            if (_indirectArgsGpuBuffer != null)
-            {
-                _indirectArgsGpuBuffer.Release();
-                _indirectArgsGpuBuffer = null;
-            }
+            ReleaseGraphicsBuffer(ref _indirectArgsGpuBufferA);
+            ReleaseGraphicsBuffer(ref _indirectArgsGpuBufferB);
+            _activeIndirectArgsGpuBuffer = null;
+            _indirectArgsGpuUploadBufferIndex = 0;
 
             if (_material != null)
             {
                 UnityEngine.Object.Destroy(_material);
                 _material = null;
             }
+        }
+
+        private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Release();
+            buffer = null;
         }
 
         private bool TryLockJobBuffers(IDataVault vault)
@@ -1131,10 +1200,16 @@ namespace Hecton8.VFX.PlasmaBeam
                 return;
 
             NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
-            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
-            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-            UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)UnsafeUtility.SizeOf<T>() * safeCount);
-            destination.UnlockBufferAfterWrite<T>(safeCount);
+            try
+            {
+                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)UnsafeUtility.SizeOf<T>() * safeCount);
+            }
+            finally
+            {
+                destination.UnlockBufferAfterWrite<T>(safeCount);
+            }
         }
 
         private void DumpTelemetry(IDataVault vault, NativeArray<PlasmaBeamTelemetryEntry> telemetry)
@@ -1518,7 +1593,9 @@ namespace Hecton8.VFX.PlasmaBeam
             {
                 float seed = (state.NoiseSeed & 1023u) * (1.0f / 1023.0f);
                 float phase = lengthRatio * math.max(0.01f, state.NoiseFrequency) + state.TimeSeconds * 2.1f + seed * 19.0f;
-                offset = noise.snoise(new float3(phase, seed, radial * 0.173f)) * state.NoiseAmplitude * noiseWeight;
+                float wave = math.frac(phase + seed + radial * 0.173f);
+                float signedTriangle = (math.abs(wave * 2.0f - 1.0f) * 2.0f) - 1.0f;
+                offset = signedTriangle * state.NoiseAmplitude * noiseWeight;
             }
 
             float radius = math.max(0.001f, baseRadius * flare + offset);

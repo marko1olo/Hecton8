@@ -10,7 +10,6 @@ using Hecton8.Core.Memory;
 using Hecton8.Core.Memory.Layout;
 using Hecton8.Items;
 using Hecton8.Meta;
-using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Hecton8.Tools;
 using Hecton8.UI;
@@ -288,6 +287,7 @@ namespace Hecton8.Gameplay
         private int _combatTargetId;
         private HectonMapMagicVegetationBridge _vegetationBridge;
         private IAtmosphereReadModel _atmosphereRuntime;
+        private IPhysicsService _physicsService;
         private ISaveService _saveService;
         private bool _saveRegistered;
         private IDataVault _survivalDataVault;
@@ -561,7 +561,7 @@ namespace Hecton8.Gameplay
             if (stats == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[HectonSurvival] SurvivalStats not assigned. Disabling.", this);
+                Hecton8.Core.H8Debug.LogError("[HectonSurvival] SurvivalStats not assigned. Disabling.", this);
 #endif
                 enabled = false;
                 return;
@@ -649,7 +649,8 @@ namespace Hecton8.Gameplay
         private void RefreshColdRegistryReferences()
         {
             _atmosphereRuntime = GlobalRegistry.AtmosphereReadModel;
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _physicsService = GlobalRegistry.Physics;
+            _saveService = GlobalRegistry.Save;
             _survivalDataVault = GlobalRegistry.DataVault;
         }
 
@@ -659,7 +660,7 @@ namespace Hecton8.Gameplay
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;
@@ -726,6 +727,9 @@ namespace Hecton8.Gameplay
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.Physics:
+                    _physicsService = currentService as IPhysicsService;
                     break;
                 case GlobalRegistryServiceSlot.Save:
                     if (ReferenceEquals(_saveService, currentService))
@@ -835,6 +839,7 @@ namespace Hecton8.Gameplay
             float maxEnergy = stats != null ? math.max(0.01f, stats.MaxEnergy) : 100f;
             float maxIntegrity = stats != null ? math.max(0.01f, stats.MaxIntegrity) : 100f;
             float carryCapacityKg = stats != null ? math.max(0.01f, stats.CarryCapacityKg) : 200f;
+            float uiTimestamp = (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds;
 
             UIStateStore.WriteHUDSurvivalState(
                 math.saturate(oxygen / maxOxygen),
@@ -849,11 +854,11 @@ namespace Hecton8.Gameplay
                 math.max(0f, weight),
                 carryCapacityKg,
                 math.saturate(weight / carryCapacityKg),
-                Time.unscaledTime);
+                uiTimestamp);
             UIStateStore.WriteFrostIntensity(
                 ResolveHypothermiaFrostIntensity01(_internalTemperature),
-                Time.unscaledTime);
-            UIStateStore.WriteSurvivalStatusMask(_statusMask, Time.unscaledTime);
+                uiTimestamp);
+            UIStateStore.WriteSurvivalStatusMask(_statusMask, uiTimestamp);
         }
 
         // ---------------------------------------------------------
@@ -2051,7 +2056,7 @@ namespace Hecton8.Gameplay
         private static bool TryResolveKccVelocity(out Vector3 velocity)
         {
             velocity = Vector3.zero;
-            if (!PhysicsDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal) || signal.Sequence == 0u)
+            if (!CoreDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal) || signal.Sequence == 0u)
                 return false;
 
             uint currentFrame = SystemDispatcher.CurrentFrameId;
@@ -3014,9 +3019,10 @@ namespace Hecton8.Gameplay
                 Vector3 restoredVelocity = ResolveSafeSavedVelocity(dto.GetVelocity());
                 HectonPlayerMotor playerMotor = null;
                 if (_playerRigidbody.TryGetComponent(out playerMotor))
+                {
                     playerMotor.SetLinearVelocity(restoredVelocity);
-                if (playerMotor == null || !playerMotor.HydrodynamicKccOwnsCollisionAuthority)
-                    Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(_playerRigidbody, Vector3.zero, wake: false);
+                    playerMotor.SetAngularVelocity(Vector3.zero, wake: false);
+                }
             }
 
             ApplyInjuryMovementPenalty();
@@ -3389,7 +3395,7 @@ namespace Hecton8.Gameplay
             if (!TryInjectSurvivalDatabase(survivalDatabaseSource))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[HectonSurvival] Failed to parse injected survival database source. Item parameter lookup disabled.");
+                Hecton8.Core.H8Debug.LogError("[HectonSurvival] Failed to parse injected survival database source. Item parameter lookup disabled.");
 #endif
             }
         }

@@ -1533,10 +1533,18 @@ namespace Hecton8.Power
             conditions.WaterTurbidity = 1f;
             conditions.TurbidityMultiplier = SolarPowerGenerationConstants.DefaultTurbidityMultiplier;
             conditions.InitialIntensityWatts = SolarPowerGenerationConstants.DefaultSolarIrradianceWatts;
-            conditions.GlobalQualityWeight = 1f;
+            conditions.GlobalQualityWeight = ResolveSolarQualityWeight();
             conditions.VoxelSdfCellSize = new float3(1f);
             conditions.VoxelSdfRangeMeters = SolarPowerGenerationConstants.DefaultSdfRangeMeters;
             return conditions;
+        }
+
+        private static float ResolveSolarQualityWeight()
+        {
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f);
+
+            return MathLodApproximation.SaturateFinite(HomeostasisBrain.GlobalQualityWeight, 1f);
         }
 
         private static SolarConditionsDTO SanitizeConditions(in SolarConditionsDTO source)
@@ -1556,7 +1564,7 @@ namespace Hecton8.Power
             result.WaterTurbidity = math.max(0f, math.isfinite(result.WaterTurbidity) ? result.WaterTurbidity : 1f);
             result.TurbidityMultiplier = math.max(0f, math.isfinite(result.TurbidityMultiplier) ? result.TurbidityMultiplier : SolarPowerGenerationConstants.DefaultTurbidityMultiplier);
             result.InitialIntensityWatts = math.max(0f, math.isfinite(result.InitialIntensityWatts) ? result.InitialIntensityWatts : SolarPowerGenerationConstants.DefaultSolarIrradianceWatts);
-            result.GlobalQualityWeight = math.saturate(math.isfinite(result.GlobalQualityWeight) ? result.GlobalQualityWeight : 1f);
+            result.GlobalQualityWeight = MathLodApproximation.SaturateFinite(result.GlobalQualityWeight, ResolveSolarQualityWeight());
             result.SimulationTimeSeconds = math.isfinite(result.SimulationTimeSeconds) ? result.SimulationTimeSeconds : 0f;
             result.DeltaTimeSeconds = math.max(0f, math.isfinite(result.DeltaTimeSeconds) ? result.DeltaTimeSeconds : 0f);
             result.BaseEfficiencyScalar = math.max(0f, math.isfinite(result.BaseEfficiencyScalar) ? result.BaseEfficiencyScalar : 0f);

@@ -186,7 +186,7 @@ namespace Hecton8.Visor
                    OffsetOf<ARWaypointOverlay.StencilTargetSourceDTO>(nameof(ARWaypointOverlay.StencilTargetSourceDTO.Reserved1)) == 76;
         }
 
-        private static int OffsetOf<T>(string fieldName) where T : struct
+        private static int OffsetOf<T>(string fieldName) where T : unmanaged
         {
             FieldInfo field = typeof(T).GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             return field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
@@ -196,7 +196,10 @@ namespace Hecton8.Visor
         private static void ValidateLayoutsMenu()
         {
             if (!ValidateLayouts())
-                throw new InvalidOperationException("VISOR_AR_STENCIL DTO layout validation failed.");
+            {
+                Hecton8.Core.H8Debug.LogError("VISOR_AR_STENCIL DTO layout validation failed.");
+                return;
+            }
 
             Hecton8.Core.H8Debug.Log("VISOR_AR_STENCIL DTO layouts valid: Hud=64, Source=80, Target=64, Digits=64, Telemetry=64, Profile=64.");
         }
@@ -215,7 +218,7 @@ namespace Hecton8.Visor
         private const uint TelemetryFlagMockData = 1u << 4;
         private const uint DumpMagic = 0x56534152u; // VSAR
         private const uint DumpVersion = 1u;
-        private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_270.bin";
+        private const string DumpRelativePath = "Docs/AgentLogs/Dump_1309_VisorARStencil.bin";
 
 #if UNITY_EDITOR
         private const string ArShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VisorAR.shader";
@@ -409,16 +412,34 @@ namespace Hecton8.Visor
                 GraphicsBuffer targetWrite = _bufferWriteIndex == 0 ? _targetBufferA : _targetBufferB;
 
                 NativeArray<VisorHudParamsDTO> mappedHud = hudWrite.LockBufferForWrite<VisorHudParamsDTO>(0, 1);
-                CopyHudParamsToMappedBuffer(hudParamsSource, mappedHud);
-                hudWrite.UnlockBufferAfterWrite<VisorHudParamsDTO>(1);
+                try
+                {
+                    CopyHudParamsToMappedBuffer(hudParamsSource, mappedHud);
+                }
+                finally
+                {
+                    hudWrite.UnlockBufferAfterWrite<VisorHudParamsDTO>(1);
+                }
 
                 NativeArray<VisorHudDigitParamsDTO> mappedDigits = digitWrite.LockBufferForWrite<VisorHudDigitParamsDTO>(0, 1);
-                CopyDigitParamsToMappedBuffer(digitParamsSource, mappedDigits);
-                digitWrite.UnlockBufferAfterWrite<VisorHudDigitParamsDTO>(1);
+                try
+                {
+                    CopyDigitParamsToMappedBuffer(digitParamsSource, mappedDigits);
+                }
+                finally
+                {
+                    digitWrite.UnlockBufferAfterWrite<VisorHudDigitParamsDTO>(1);
+                }
 
                 NativeArray<VisorArTargetDTO> mappedTargets = targetWrite.LockBufferForWrite<VisorArTargetDTO>(0, VisorARStencilContracts.MaxTargets);
-                CopyTargetsToMappedBuffer(targets, mappedTargets);
-                targetWrite.UnlockBufferAfterWrite<VisorArTargetDTO>(VisorARStencilContracts.MaxTargets);
+                try
+                {
+                    CopyTargetsToMappedBuffer(targets, mappedTargets);
+                }
+                finally
+                {
+                    targetWrite.UnlockBufferAfterWrite<VisorArTargetDTO>(VisorARStencilContracts.MaxTargets);
+                }
 
                 _activeHudBuffer = hudWrite;
                 _activeDigitBuffer = digitWrite;
@@ -609,7 +630,7 @@ namespace Hecton8.Visor
                 settings.stencilShader = AssetDatabase.LoadAssetAtPath<Shader>(StencilShaderAssetPath);
 #endif
             if (!VisorARStencilContracts.ValidateLayouts())
-                Debug.LogError("VISOR_AR_STENCIL DTO layout validation failed.");
+                Hecton8.Core.H8Debug.LogError("VISOR_AR_STENCIL DTO layout validation failed.");
 
             _stencilPass ??= new StencilPass(this);
             _arPass ??= new ArPass(this);
@@ -619,7 +640,7 @@ namespace Hecton8.Visor
             EnsureFallbackMaskMeshCold();
             TryRegisterHotSwapListener();
             TryRegisterRenderWatchdog();
-            CacheColdServices(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext, GlobalRegistry.DataVault);
+            CacheColdServices(GlobalRegistry.Player, GlobalRegistry.DataVault);
             TryEnsureVaultBuffers();
 #if UNITY_EDITOR
             LoadCsvProfilesCold();
@@ -668,7 +689,7 @@ namespace Hecton8.Visor
 
             _stencilPass.Setup(settings, _stencilMaterial, maskMesh, maskMatrix);
             _arPass.Setup(settings, _arMaterial);
-            _pendingStencilPresentationFrame = Time.frameCount;
+            _pendingStencilPresentationFrame = SystemDispatcher.CurrentFrameIndex;
             renderer.EnqueuePass(_stencilPass);
             renderer.EnqueuePass(_arPass);
 
@@ -709,14 +730,14 @@ namespace Hecton8.Visor
 
         private void ClearStencilPresentationIfFrameUnclaimed()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastStencilPresentationFrame != frame && _pendingStencilPresentationFrame != frame)
                 SetStencilPresentationActive(false);
         }
 
         private void MarkStencilResolveRecorded()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             _lastStencilPresentationFrame = frame;
             _pendingStencilPresentationFrame = -1;
             SetStencilPresentationActive(true);
@@ -745,7 +766,7 @@ namespace Hecton8.Visor
             if (!IsAuthorizedPlayerRenderCamera(camera))
                 return;
 
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastStencilPresentationFrame != frame)
                 ClearStencilPresentationForRenderGraphAbort();
         }
@@ -809,7 +830,7 @@ namespace Hecton8.Visor
             float health01 = math.saturate(ReadUIValue(UIValueSlotId.Health01, 1f));
             float stress01 = ResolvePlayerStress01(oxygen01, co201);
             float fog01 = math.saturate(settings.fogEdgeStrength * (0.35f + stress01 * 0.65f));
-            float timeSeconds = Time.unscaledTime;
+            float timeSeconds = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
 
             VisorHudParamsDTO hudParams = new VisorHudParamsDTO
             {
@@ -949,7 +970,7 @@ namespace Hecton8.Visor
                     unsafe
                     {
                         byte* scratchPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
-                        read = stream.Read(new Span<byte>(scratchPtr, length));
+                        read = stream.Read(MemoryMarshal.CreateSpan(ref UnsafeUtility.AsRef<byte>(scratchPtr), length));
                     }
 
                     ParseProfilesCsv(scratch, read, profiles);
@@ -1080,7 +1101,7 @@ namespace Hecton8.Visor
             if (!telemetry.IsCreated || telemetryLength <= 0)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             int index = frame % telemetryLength;
             if (index < 0)
                 index += telemetryLength;
@@ -1123,7 +1144,7 @@ namespace Hecton8.Visor
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
                     int count = math.min(telemetryLength, telemetry.Length);
-                    int frame = Time.frameCount;
+                    int frame = SystemDispatcher.CurrentFrameIndex;
                     uint frameIndex = frame >= 0 ? (uint)frame : 0u;
                     int cursor = count > 0 ? frame % count : 0;
                     if (cursor < 0)
@@ -1148,7 +1169,9 @@ namespace Hecton8.Visor
                         for (int i = 0; i < count; i++)
                         {
                             int row = (start + i) % count;
-                            stream.Write(new ReadOnlySpan<byte>(telemetryPtr + (row * stride), stride));
+                            stream.Write(MemoryMarshal.CreateReadOnlySpan(
+                                ref UnsafeUtility.AsRef<byte>(telemetryPtr + (row * stride)),
+                                stride));
                         }
                     }
                 }
@@ -1411,7 +1434,7 @@ namespace Hecton8.Visor
             _telemetryDescriptorGeneration = 0u;
         }
 
-        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : unmanaged
         {
             if (vault != null && IsHandleCreated(in handle))
                 vault.ReleaseBuffer(in handle);
@@ -1436,7 +1459,7 @@ namespace Hecton8.Visor
             _hotSwapRegistered = false;
         }
 
-        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
         {
             return handle.BufferID != 0u && handle.Generation != 0u;
         }

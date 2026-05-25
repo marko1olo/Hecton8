@@ -456,7 +456,7 @@ namespace Hecton8.AI.GPU
             //     Ð¿Ñ€Ð¸ AddComponent Ð½Ð° ÑƒÐ¶Ðµ ÑÑƒÑ‰ÐµÑÑ‚Ð²ÑƒÑŽÑ‰Ð¸Ð¹ GO)
             if (_initialized)
             {
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     "[HectonBoidController] Awake() called while already initialized. " +
                     "Releasing old GPU resources before re-init.",
                     this);
@@ -466,7 +466,7 @@ namespace Hecton8.AI.GPU
 
             if (boidShader == null || fishMesh == null || fishMaterial == null)
             {
-                Debug.LogError("[HectonBoidController] Missing required references!");
+                Hecton8.Core.H8Debug.LogError("[HectonBoidController] Missing required references!");
                 enabled = false;
                 return;
             }
@@ -578,7 +578,7 @@ namespace Hecton8.AI.GPU
 
         public void LateFrameTick()
         {
-            RunBoidVisualSync(Time.deltaTime);
+            RunBoidVisualSync(SystemDispatcher.CurrentFrameDeltaTime);
         }
 
         private void RunBoidVisualSync(float deltaTime)
@@ -614,7 +614,7 @@ namespace Hecton8.AI.GPU
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 #if UNITY_EDITOR
-            float t0 = Time.realtimeSinceStartup;
+            long t0 = System.Diagnostics.Stopwatch.GetTimestamp();
 #endif
 
             if (simulateBoids)
@@ -624,7 +624,9 @@ namespace Hecton8.AI.GPU
             }
 
 #if UNITY_EDITOR
-            _debugComputeMs = simulateBoids ? (Time.realtimeSinceStartup - t0) * 1000f : 0f;
+            _debugComputeMs = simulateBoids
+                ? (float)((System.Diagnostics.Stopwatch.GetTimestamp() - t0) * 1000.0 / System.Diagnostics.Stopwatch.Frequency)
+                : 0f;
 #endif
 
             // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -945,8 +947,14 @@ namespace Hecton8.AI.GPU
                 return;
 
             var mapped = _fallbackFlowFieldBuffer.LockBufferForWrite<Vector4>(0, 1);
-            mapped[0] = Vector4.zero;
-            _fallbackFlowFieldBuffer.UnlockBufferAfterWrite<Vector4>(1);
+            try
+            {
+                mapped[0] = Vector4.zero;
+            }
+            finally
+            {
+                _fallbackFlowFieldBuffer.UnlockBufferAfterWrite<Vector4>(1);
+            }
         }
 
         private void UploadIndirectArgsStaticMeshData()
@@ -956,15 +964,21 @@ namespace Hecton8.AI.GPU
 
             var mapped =
                 _visibleIndirectArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            mapped[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            try
             {
-                indexCountPerInstance = fishMesh.GetIndexCount(0),
-                instanceCount = 0u,
-                startIndex = fishMesh.GetIndexStart(0),
-                baseVertexIndex = (uint)Mathf.Max(0, fishMesh.GetBaseVertex(0)),
-                startInstance = 0u
-            };
-            _visibleIndirectArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+                mapped[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+                {
+                    indexCountPerInstance = fishMesh.GetIndexCount(0),
+                    instanceCount = 0u,
+                    startIndex = fishMesh.GetIndexStart(0),
+                    baseVertexIndex = (uint)Mathf.Max(0, fishMesh.GetBaseVertex(0)),
+                    startInstance = 0u
+                };
+            }
+            finally
+            {
+                _visibleIndirectArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            }
             _indirectArgsMesh = fishMesh;
         }
 
@@ -978,31 +992,42 @@ namespace Hecton8.AI.GPU
                 return;
 
             var writeA = _boidsBufferA.LockBufferForWrite<BoidData>(0, safeCount);
-            var writeB = _boidsBufferB.LockBufferForWrite<BoidData>(0, safeCount);
-            float spawnSpeed = useMinimumVelocity ? minSpeed : (minSpeed + maxSpeed) * 0.5f;
-            for (int i = 0; i < safeCount; i++)
+            try
             {
-                Vector3 position = center + ResolveDeterministicScatterVector(i, center, positionSeed) * spawnRadius;
-                position.y = Mathf.Clamp(position.y, center.y - boundsSize.y, waterSurfaceY - 2f);
-
-                Vector3 velocity = ResolveDeterministicScatterVector(i, center, velocitySeed) * spawnSpeed;
-                float minimumSpeedSq = minSpeed * minSpeed;
-                if (velocity.sqrMagnitude < minimumSpeedSq)
-                    velocity = ResolveDeterministicCardinalAxis(i, velocitySeed) * minSpeed;
-
-                BoidData boid = new BoidData
+                var writeB = _boidsBufferB.LockBufferForWrite<BoidData>(0, safeCount);
+                try
                 {
-                    position = position,
-                    velocity = velocity,
-                    panic = 0f,
-                    stateFlags = 0u
-                };
-                writeA[i] = boid;
-                writeB[i] = boid;
-            }
+                    float spawnSpeed = useMinimumVelocity ? minSpeed : (minSpeed + maxSpeed) * 0.5f;
+                    for (int i = 0; i < safeCount; i++)
+                    {
+                        Vector3 position = center + ResolveDeterministicScatterVector(i, center, positionSeed) * spawnRadius;
+                        position.y = Mathf.Clamp(position.y, center.y - boundsSize.y, waterSurfaceY - 2f);
 
-            _boidsBufferA.UnlockBufferAfterWrite<BoidData>(safeCount);
-            _boidsBufferB.UnlockBufferAfterWrite<BoidData>(safeCount);
+                        Vector3 velocity = ResolveDeterministicScatterVector(i, center, velocitySeed) * spawnSpeed;
+                        float minimumSpeedSq = minSpeed * minSpeed;
+                        if (velocity.sqrMagnitude < minimumSpeedSq)
+                            velocity = ResolveDeterministicCardinalAxis(i, velocitySeed) * minSpeed;
+
+                        BoidData boid = new BoidData
+                        {
+                            position = position,
+                            velocity = velocity,
+                            panic = 0f,
+                            stateFlags = 0u
+                        };
+                        writeA[i] = boid;
+                        writeB[i] = boid;
+                    }
+                }
+                finally
+                {
+                    _boidsBufferB.UnlockBufferAfterWrite<BoidData>(safeCount);
+                }
+            }
+            finally
+            {
+                _boidsBufferA.UnlockBufferAfterWrite<BoidData>(safeCount);
+            }
         }
 
         /// <summary>

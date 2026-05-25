@@ -1,10 +1,8 @@
 using Hecton8.Core;
-using Hecton8.Physics;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
-
 namespace Hecton8.Visor
 {
     /// <summary>
@@ -18,14 +16,15 @@ namespace Hecton8.Visor
 
             private sealed class PassData
             {
-                internal HectonFluidEngine.FluidAdvectionRenderGraphPayload Payload;
+                internal FluidAdvectionRenderGraphPayload Payload;
+                internal IFluidAdvectionRenderGraphReadModel ReadModel;
                 internal TextureHandle FlowTexture;
                 internal TextureHandle SdfTexture;
                 internal TextureHandle EmptyTexture;
             }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Fluid Advection");
-            private HectonFluidEngine _engine;
+            private IFluidAdvectionRenderGraphReadModel _engine;
 
             public FluidAdvectionPass()
             {
@@ -33,7 +32,7 @@ namespace Hecton8.Visor
                 renderPassEvent = VisualSyncRenderPassEvent;
             }
 
-            public void Setup(HectonFluidEngine engine)
+            public void Setup(IFluidAdvectionRenderGraphReadModel engine)
             {
                 _engine = engine;
             }
@@ -45,9 +44,9 @@ namespace Hecton8.Visor
                 if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)
                     return;
 
-                HectonFluidEngine engine = _engine;
+                IFluidAdvectionRenderGraphReadModel engine = _engine;
                 if (engine == null ||
-                    !engine.TryBuildFluidAdvectionRenderGraphPayload(out HectonFluidEngine.FluidAdvectionRenderGraphPayload payload) ||
+                    !engine.TryBuildFluidAdvectionRenderGraphPayload(out FluidAdvectionRenderGraphPayload payload) ||
                     payload.Compute == null ||
                     payload.Kernel < 0 ||
                     payload.DispatchGroups <= 0)
@@ -69,6 +68,7 @@ namespace Hecton8.Visor
                 using (var builder = renderGraph.AddComputePass("Hecton Fluid Advection", out PassData passData, _profilingSampler))
                 {
                     passData.Payload = payload;
+                    passData.ReadModel = engine;
                     passData.FlowTexture = flowTexture;
                     passData.SdfTexture = sdfTexture;
                     passData.EmptyTexture = emptyTexture;
@@ -87,21 +87,21 @@ namespace Hecton8.Visor
 
                     builder.SetRenderFunc((PassData data, ComputeGraphContext context) =>
                     {
-                        HectonFluidEngine.BindFluidAdvectionCompute(context.cmd, in data.Payload, data.FlowTexture, data.SdfTexture);
+                        data.ReadModel.BindFluidAdvectionCompute(context.cmd, in data.Payload, data.FlowTexture, data.SdfTexture);
                         context.cmd.DispatchCompute(
                             data.Payload.Compute,
                             data.Payload.Kernel,
                             data.Payload.DispatchGroups,
                             1,
                             1);
-                        HectonFluidEngine.UnbindFluidAdvectionCompute(context.cmd, in data.Payload, data.EmptyTexture);
+                        data.ReadModel.UnbindFluidAdvectionCompute(context.cmd, in data.Payload, data.EmptyTexture);
                     });
                 }
             }
         }
 
         private FluidAdvectionPass _pass;
-        private HectonFluidEngine _cachedFluidEngine;
+        private IFluidAdvectionRenderGraphReadModel _cachedFluidEngine;
         private bool _hotSwapRegistered;
 
         public override void Create()
@@ -110,7 +110,7 @@ namespace Hecton8.Visor
                 _pass = new FluidAdvectionPass();
 
             TryRegisterHotSwapListener();
-            _cachedFluidEngine = GlobalRegistry.Fluid;
+            _cachedFluidEngine = GlobalRegistry.FluidAdvectionRenderGraph;
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
@@ -138,7 +138,7 @@ namespace Hecton8.Visor
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime)
-                _cachedFluidEngine = currentService as HectonFluidEngine;
+                _cachedFluidEngine = currentService as IFluidAdvectionRenderGraphReadModel;
         }
 
         private void OnDisable()

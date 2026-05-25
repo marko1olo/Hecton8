@@ -1,0 +1,19 @@
+{
+  "agent": "1313",
+  "date": "2026-05-25",
+  "evidenceClass": "STATIC_SOURCE",
+  "patch": {
+    "file": "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithBatchAudit.cs",
+    "releaseGateCallLines": "19-23",
+    "releaseGateCleanLine": 24,
+    "blockerLogLines": "35-39",
+    "batchExitLine": 42
+  },
+  "verification": {
+    "ifEndif": "1/1",
+    "braceCount": "3/3",
+    "gitDiffCheck": "PASS_CRLF_WARNINGS_ONLY",
+    "dotnetOrUnityBuild": "NOT_RUN_USER_RESTRICTED"
+  },
+  "verdict": "BATCH_AUDIT_NOW_REQUIRES_RELEASE_GATE_CLEAN"
+}

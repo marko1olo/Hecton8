@@ -1,11 +1,11 @@
 // ============================================================================
-// HECTON-8 — SaveManager.cs
+// HECTON-8 â€” SaveManager.cs
 // Save persistence service. Runtime owner is injected through the core registry.
 //
 // ARHITEKTURA:
-//   • Reestr ISaveable cherez explicit registration (zero GC pri save/load).
-//   • XXHash3 checksums for header/payload integrity.
-//   • Unity 6 Awaitable API: BackgroundThreadAsync / MainThreadAsync.
+//   â€¢ Reestr ISaveable cherez explicit registration (zero GC pri save/load).
+//   â€¢ XXHash3 checksums for header/payload integrity.
+//   â€¢ Unity 6 Awaitable API: BackgroundThreadAsync / MainThreadAsync.
 // ============================================================================
 
 using System;
@@ -41,7 +41,6 @@ namespace Hecton8.SaveSystem
     public sealed class SaveManager : MonoBehaviour, IAsyncPersistenceService, IUpdatable, ISlowTickable, IFrostTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private static int _signalPushDropCount;
-        public static SaveManager ActiveRuntimeInstance { get; private set; }
         private const long MainThreadSnapshotBudgetMs = 5L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
         private static readonly long LoadApplyFrameBudgetTicks = HydrationScheduler.FrameBudgetTicks;
@@ -139,9 +138,9 @@ namespace Hecton8.SaveSystem
         [SerializeField] private bool verboseLogging;
         [SerializeField] private int _debugRegisteredCount;
 
-        // COLD ALLOC: ISaveable[256] — fixed persistence registry prevents List resize during scene registration — owner: SaveManager
+        // COLD ALLOC: ISaveable[256] â€” fixed persistence registry prevents List resize during scene registration â€” owner: SaveManager
         private readonly ISaveable[] _saveables = new ISaveable[MaxRegisteredSaveables];
-        // COLD ALLOC: List<IndexedSectorEntryInfo>[128] — reusable indexed-save directory probe scratch — owner: SaveManager
+        // COLD ALLOC: List<IndexedSectorEntryInfo>[128] â€” reusable indexed-save directory probe scratch â€” owner: SaveManager
         private readonly SaveBinaryStorage.IndexedSectorEntryInfo[] _indexedSectorDirectoryScratch = new SaveBinaryStorage.IndexedSectorEntryInfo[128];
         // COLD ALLOC: List<SaveSlotInfo>[8] - instance-owned metadata projection scratch - owner: SaveManager
         private readonly SaveSlotInfo[] _saveSlotInfoScratch = new SaveSlotInfo[SaveSlotScratchCapacity];
@@ -570,9 +569,6 @@ namespace Hecton8.SaveSystem
             if (_serviceRegistered && ReferenceEquals(GlobalRegistry.Save, this))
                 GlobalRegistry.UnregisterSaveService(this);
 
-            if (ReferenceEquals(ActiveRuntimeInstance, this))
-                ActiveRuntimeInstance = null;
-
             _serviceRegistered = false;
             _isBusy = false;
             _compressionThrottleLateFrameArmed = false;
@@ -641,8 +637,6 @@ namespace Hecton8.SaveSystem
 
             GlobalRegistry.RegisterAsyncPersistenceService(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.SaveRuntime, this);
-            if (_serviceRegistered)
-                ActiveRuntimeInstance = this;
 
             TryRegisterHotSwapListener();
             if (isActiveAndEnabled && Application.isPlaying && GlobalRegistry.Dispatcher != null)
@@ -1014,7 +1008,7 @@ namespace Hecton8.SaveSystem
         {
             if (!_savePayloadBuffer.IsCreated)
             {
-                // COLD ALLOC: NativeArray<byte>[67108864] — raw binary save staging buffer for save payload assembly — owner: SaveManager
+                // COLD ALLOC: NativeArray<byte>[67108864] â€” raw binary save staging buffer for save payload assembly â€” owner: SaveManager
                 _savePayloadBuffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 NativeMemorySentinel.RegisterNativeArray(_savePayloadBuffer, NativeMemoryOwner, nameof(_savePayloadBuffer), NativeMemoryLifetime);
             }
@@ -1024,7 +1018,7 @@ namespace Hecton8.SaveSystem
         {
             if (!_compressedSaveBuffer.IsCreated)
             {
-                // COLD ALLOC: NativeArray<byte>[71303168] — protected 16KB LZ4 block-compressed save payload buffer for 64MB raw save budget — owner: SaveManager
+                // COLD ALLOC: NativeArray<byte>[71303168] â€” protected 16KB LZ4 block-compressed save payload buffer for 64MB raw save budget â€” owner: SaveManager
                 _compressedSaveBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 NativeMemorySentinel.RegisterNativeArray(_compressedSaveBuffer, NativeMemoryOwner, nameof(_compressedSaveBuffer), NativeMemoryLifetime);
             }
@@ -1276,7 +1270,7 @@ namespace Hecton8.SaveSystem
 
         public void LateFrameTick()
         {
-            if (!_compressionThrottleLateFrameArmed || Time.frameCount < _compressionThrottleReleaseFrame)
+            if (!_compressionThrottleLateFrameArmed || SystemDispatcher.CurrentFrameIndex < _compressionThrottleReleaseFrame)
                 return;
 
             _compressionThrottleLateFrameArmed = false;
@@ -2653,7 +2647,7 @@ namespace Hecton8.SaveSystem
         private void RequestVramAbortGcIfNeeded()
         {
             long usedVramBytes = 0L;
-            VRAMMonitor monitor = GlobalRegistry.VRAMMonitor;
+            IVramBudgetReadModel monitor = GlobalRegistry.VRAMBudgetReadModel;
             if (monitor != null)
                 usedVramBytes = monitor.TotalVRAMBytes;
             else
@@ -2726,7 +2720,7 @@ namespace Hecton8.SaveSystem
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (!_saveableCapacityWarningLogged)
                 {
-                    Debug.LogError("[SaveManager] Saveable registry capacity exceeded. Increase MaxRegisteredSaveables or split save ownership.");
+                    Hecton8.Core.H8Debug.LogError("[SaveManager] Saveable registry capacity exceeded. Increase MaxRegisteredSaveables or split save ownership.");
                     _saveableCapacityWarningLogged = true;
                 }
 #endif
@@ -2841,7 +2835,7 @@ namespace Hecton8.SaveSystem
         private static void LogWarning(string message)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning(message);
+            Hecton8.Core.H8Debug.LogWarning(message);
 #endif
         }
 
@@ -2849,7 +2843,7 @@ namespace Hecton8.SaveSystem
         private static void LogError(string message)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError(message);
+            Hecton8.Core.H8Debug.LogError(message);
 #endif
         }
 
@@ -3161,7 +3155,7 @@ namespace Hecton8.SaveSystem
 
             public static SaveContextFrameData CaptureMainThread()
             {
-                return new SaveContextFrameData(Time.frameCount);
+                return new SaveContextFrameData(SystemDispatcher.CurrentFrameIndex);
             }
         }
 
@@ -3443,7 +3437,11 @@ namespace Hecton8.SaveSystem
                 if (body.TryGetComponent(out playerMotor))
                     playerMotor.SetLinearVelocity(HectonPlayerMotor.SafeVelocity(velocity));
                 if (playerMotor == null || !playerMotor.HydrodynamicKccOwnsCollisionAuthority)
-                    Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
+                {
+                    IPhysicsService physicsService = GlobalRegistry.Physics;
+                    if (physicsService != null)
+                        physicsService.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
+                }
                 if (wasSleeping)
                     body.Sleep();
                 else
@@ -5051,7 +5049,7 @@ namespace Hecton8.SaveSystem
                 {
                     if (persistentWorldItems != null && persistentWorldItems.Length > 0)
                     {
-                        // COLD ALLOC: NativeArray<PersistentWorldDeltaRecord>[persistentWorldItems.Length] — static save assembly staging buffer — owner: SaveManager
+                        // COLD ALLOC: NativeArray<PersistentWorldDeltaRecord>[persistentWorldItems.Length] â€” static save assembly staging buffer â€” owner: SaveManager
                         persistentWorldItemBuffer = new NativeArray<PersistentWorldDeltaRecord>(
                             persistentWorldItems.Length,
                             Allocator.Temp,
@@ -5062,7 +5060,7 @@ namespace Hecton8.SaveSystem
 
                     if (ecosystemSectorStates != null && ecosystemSectorStates.Length > 0)
                     {
-                        // COLD ALLOC: NativeArray<EcosystemSectorSaveRecord>[ecosystemSectorStates.Length] — static save assembly staging buffer — owner: SaveManager
+                        // COLD ALLOC: NativeArray<EcosystemSectorSaveRecord>[ecosystemSectorStates.Length] â€” static save assembly staging buffer â€” owner: SaveManager
                         ecosystemSectorBuffer = new NativeArray<EcosystemSectorSaveRecord>(
                             ecosystemSectorStates.Length,
                             Allocator.Temp,
@@ -5073,7 +5071,7 @@ namespace Hecton8.SaveSystem
 
                     if (packedQuestStateWords != null && packedQuestStateWords.Length > 0)
                     {
-                        // COLD ALLOC: NativeArray<UInt32>[packedQuestStateWords.Length] — static save assembly staging buffer — owner: SaveManager
+                        // COLD ALLOC: NativeArray<UInt32>[packedQuestStateWords.Length] â€” static save assembly staging buffer â€” owner: SaveManager
                         packedQuestStateBuffer = new NativeArray<uint>(
                             packedQuestStateWords.Length,
                             Allocator.Temp,
@@ -5156,7 +5154,7 @@ namespace Hecton8.SaveSystem
                 return;
             }
 
-            // COLD ALLOC: NativeArray<byte>[67108864] — fallback raw save read buffer when SaveManager instance is unavailable — owner: SaveManager
+            // COLD ALLOC: NativeArray<byte>[67108864] â€” fallback raw save read buffer when SaveManager instance is unavailable â€” owner: SaveManager
             buffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, "fallbackReadBuffer", NativeMemoryLifetime);
             ownsBuffer = true;
@@ -5183,9 +5181,9 @@ namespace Hecton8.SaveSystem
                 return;
             }
 
-            // COLD ALLOC: NativeArray<byte>[67108864] — fallback raw save write buffer when SaveManager instance is unavailable — owner: SaveManager
+            // COLD ALLOC: NativeArray<byte>[67108864] â€” fallback raw save write buffer when SaveManager instance is unavailable â€” owner: SaveManager
             rawBuffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            // COLD ALLOC: NativeArray<byte>[67378176] — fallback compressed save write buffer when SaveManager instance is unavailable — owner: SaveManager
+            // COLD ALLOC: NativeArray<byte>[67378176] â€” fallback compressed save write buffer when SaveManager instance is unavailable â€” owner: SaveManager
             compressedBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             NativeMemorySentinel.RegisterNativeArray(rawBuffer, NativeMemoryOwner, "fallbackRawWriteBuffer", NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(compressedBuffer, NativeMemoryOwner, "fallbackCompressedWriteBuffer", NativeMemoryLifetime);

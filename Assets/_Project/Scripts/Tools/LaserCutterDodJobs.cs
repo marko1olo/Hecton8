@@ -164,10 +164,12 @@ namespace Hecton8.Tools
             double3 localDelta = AupPrecisionMath.LocalDeltaDouble(request.RayOriginAUP, PresentationOriginAUP);
             float3 localOrigin = AupPrecisionMath.DowncastLocalDelta(localDelta, float3.zero);
             float3 direction = SafeNormalize(request.RayDirection, new float3(0f, 0f, 1f));
-            float maxDistance = math.max(0.01f, request.MaximumDistance);
-            float step = math.max(0.025f, math.isfinite(StepMeters) ? StepMeters : 0.1f);
+            float maxDistance = ResolveBoundedSdfDistance(math.max(0.01f, request.MaximumDistance), localOrigin);
+            float requestedStep = math.max(0.025f, math.isfinite(StepMeters) ? StepMeters : 0.1f);
             int maxSteps = math.clamp(MaxSteps, 1, 128);
+            float step = ResolveBoundedStep(maxDistance, requestedStep, maxSteps);
             float previousDensity = 0f;
+            float previousDistance = 0f;
             float3 previousPosition = localOrigin;
             bool hasPrevious = false;
 
@@ -178,13 +180,25 @@ namespace Hecton8.Tools
                 if (!TrySampleSdf(position, out float density))
                     continue;
 
-                if ((density >= 0f && (!hasPrevious || previousDensity < 0f)) ||
-                    (hasPrevious && previousDensity < 0f && density >= 0f))
+                bool nearSurface = math.abs(density) <= 0.0001f;
+                bool crossedSurface =
+                    hasPrevious &&
+                    ((previousDensity < -0.0001f && density >= 0.0001f) ||
+                     (previousDensity > 0.0001f && density <= -0.0001f));
+
+                if (nearSurface || crossedSurface)
                 {
-                    float denom = math.max(0.0001f, density - previousDensity);
-                    float t = hasPrevious ? math.saturate(-previousDensity / denom) : 0f;
-                    float resolvedDistance = hasPrevious ? math.max(0f, distance - step + step * t) : distance;
-                    float3 resolvedPoint = math.lerp(previousPosition, position, t);
+                    float resolvedDistance = distance;
+                    float3 resolvedPoint = position;
+                    if (crossedSurface)
+                    {
+                        float previousAbsDensity = math.abs(previousDensity);
+                        float currentAbsDensity = math.abs(density);
+                        float t = math.saturate(previousAbsDensity * math.rcp(math.max(0.0001f, previousAbsDensity + currentAbsDensity)));
+                        resolvedDistance = math.lerp(previousDistance, distance, t);
+                        resolvedPoint = math.lerp(previousPosition, position, t);
+                    }
+
                     float3 normal = ResolveSdfGradient(resolvedPoint);
                     if (math.dot(normal, direction) > 0f)
                         normal = -normal;
@@ -194,8 +208,8 @@ namespace Hecton8.Tools
                         Point = resolvedPoint,
                         Normal = normal,
                         Distance = math.max(0f, resolvedDistance),
-                        Density = density,
-                        Density01 = math.saturate(math.max(0f, density) * math.rcp(math.max(0.0001f, SdfRange))),
+                        Density = 0f,
+                        Density01 = 0f,
                         SdfRange = SdfRange,
                         Version = 0,
                         Flags = VoxelSonarSdfRaycastHit.FlagHit
@@ -204,6 +218,7 @@ namespace Hecton8.Tools
                 }
 
                 previousDensity = density;
+                previousDistance = distance;
                 previousPosition = position;
                 hasPrevious = true;
                 if (distance >= maxDistance)
@@ -215,6 +230,22 @@ namespace Hecton8.Tools
         {
             if (SdfHits.IsCreated && index < SdfHits.Length)
                 SdfHits[index] = default;
+        }
+
+        private float ResolveBoundedSdfDistance(float maxDistance, float3 localOrigin)
+        {
+            float3 safeCell = math.max(math.abs(CellSize), new float3(0.0001f));
+            float3 gridSpan = safeCell * math.max((float3)(GridDimensions - new int3(1)), new float3(1f));
+            float payloadDistance = math.length(localOrigin - VolumeOrigin) + math.length(gridSpan) + math.cmax(safeCell) * 2f;
+            return math.isfinite(payloadDistance) && payloadDistance > 0.01f
+                ? math.min(maxDistance, payloadDistance)
+                : maxDistance;
+        }
+
+        private static float ResolveBoundedStep(float maxDistance, float requestedStep, int maxSteps)
+        {
+            float capStep = maxDistance * math.rcp(math.max(1, maxSteps));
+            return math.max(requestedStep, math.isfinite(capStep) ? capStep : requestedStep);
         }
 
         private bool SdfIsValid()

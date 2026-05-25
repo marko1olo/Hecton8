@@ -1,0 +1,371 @@
+{
+    "schema":  "hecton8.own_source_forbidden_token_postpatch_1302.v1",
+    "generatedAt":  "2026-05-25",
+    "files":  [
+                  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs"
+              ],
+    "hitCount":  60,
+    "hits":  [
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  31,
+                     "pattern":  "new ",
+                     "text":  "[SerializeField] private Vector3 gridSizeLocal = new Vector3(5.5f, 2.4f, 9.5f);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  95,
+                     "pattern":  "Debug\\.Log",
+                     "text":  "Hecton8.Core.H8Debug.LogError(layoutError, this);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  182,
+                     "pattern":  "\\+",
+                     "text":  "int totalSignalCount = math.min(realSignalCount + mockCount, VehicleDamageConstants.MaxDamageSignals);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  192,
+                     "pattern":  "\\+",
+                     "text":  "uint frame = ++_frameCounter;"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  200,
+                     "pattern":  "new ",
+                     "text":  "GenerateMockVehicleDamageJob mockJob = new GenerateMockVehicleDamageJob"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  212,
+                     "pattern":  "new ",
+                     "text":  "CopyVehicleDamageSignalsJob copyJob = new CopyVehicleDamageSignalsJob"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  225,
+                     "pattern":  "new ",
+                     "text":  "MapImpactToGridJob mapJob = new MapImpactToGridJob"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  242,
+                     "pattern":  "new ",
+                     "text":  "ApplyVehicleDamageReductionJob reductionJob = new ApplyVehicleDamageReductionJob"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  260,
+                     "pattern":  "new ",
+                     "text":  "EvaluateVehicleSystemsJob evaluateJob = new EvaluateVehicleSystemsJob"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  282,
+                     "pattern":  "new ",
+                     "text":  "PublishVehicleDamageStateJob publishJob = new PublishVehicleDamageStateJob"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  502,
+                     "pattern":  "new ",
+                     "text":  "InitializeVehicleGridJob initWrite = new InitializeVehicleGridJob"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  537,
+                     "pattern":  "new ",
+                     "text":  "Vector3 safeSize = new Vector3("
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  546,
+                     "pattern":  "new ",
+                     "text":  "tuning.CellSizeMeters = math.cmin(new float3(safeSize.x / tuning.GridWidth, safeSize.y / tuning.GridHeight, safeSize.z / tuning.GridDepth));"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  547,
+                     "pattern":  "new ",
+                     "text":  "tuning.GridCenterLocal = new float3(gridCenterLocal.x, gridCenterLocal.y, gridCenterLocal.z);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  548,
+                     "pattern":  "new ",
+                     "text":  "tuning.GridSizeLocal = new float3(safeSize.x, safeSize.y, safeSize.z);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  595,
+                     "pattern":  "\\.Select\\s*\\(",
+                     "text":  "current.FireChance01 = math.saturate(math.select(serialized.FireChance01, current.FireChance01, math.isfinite(current.FireChance01)));"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  599,
+                     "pattern":  "\\.Select\\s*\\(",
+                     "text":  "current.EngineMinimumScalar = math.saturate(math.select(serialized.EngineMinimumScalar, current.EngineMinimumScalar, math.isfinite(current.EngineMinimumScalar)));"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  600,
+                     "pattern":  "\\.Select\\s*\\(",
+                     "text":  "current.BallastMinimumScalar = math.saturate(math.select(serialized.BallastMinimumScalar, current.BallastMinimumScalar, math.isfinite(current.BallastMinimumScalar)));"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  601,
+                     "pattern":  "\\.Select\\s*\\(",
+                     "text":  "current.SensorMinimumScalar = math.saturate(math.select(serialized.SensorMinimumScalar, current.SensorMinimumScalar, math.isfinite(current.SensorMinimumScalar)));"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  635,
+                     "pattern":  "\\+",
+                     "text":  "for (int i = 0; i \u003c signals.Length \u0026\u0026 count \u003c capacity; i++)"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  660,
+                     "pattern":  "\\+",
+                     "text":  "dto.RadiusMeters = math.max(0.05f, tuning.ExplosiveRadiusMeters + (dto.Magnitude * 0.000006f));"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  668,
+                     "pattern":  "\\+",
+                     "text":  "target[count++] = dto;"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  691,
+                     "pattern":  "\\.Select\\s*\\(",
+                     "text":  "return math.saturate(math.select(1f, quality, math.isfinite(quality)));"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  697,
+                     "pattern":  "\\.Select\\s*\\(",
+                     "text":  "return math.select(fallback, acceptedTargetHash, acceptedTargetHash != 0u);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  801,
+                     "pattern":  "new ",
+                     "text":  "FileInfo info = new FileInfo(_csvPath);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  830,
+                     "pattern":  "new ",
+                     "text":  "Span\u003cbyte\u003e bytes = new Span\u003cbyte\u003e(scratchPtr, (int)info.Length);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  831,
+                     "pattern":  "new ",
+                     "text":  "using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.Read))"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  840,
+                     "pattern":  "\\+",
+                     "text":  "for (int i = 0; i \u003c math.min(gridWrite.Length, gridRead.Length); i++)"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  925,
+                     "pattern":  "new ",
+                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  929,
+                     "pattern":  "new ",
+                     "text":  "ReadOnlySpan\u003cbyte\u003e payload = new ReadOnlySpan\u003cbyte\u003e(ptr, bytes);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  966,
+                     "pattern":  "new ",
+                     "text":  "rootAup = new double3(position.x, position.y, position.z);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  967,
+                     "pattern":  "new ",
+                     "text":  "rootRotation = NormalizeOrIdentity(new quaternion(rotation.x, rotation.y, rotation.z, rotation.w));"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  995,
+                     "pattern":  "new ",
+                     "text":  "double3 resolvedAup = origin + new double3(localPosition.x, localPosition.y, localPosition.z);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  995,
+                     "pattern":  "\\+",
+                     "text":  "double3 resolvedAup = origin + new double3(localPosition.x, localPosition.y, localPosition.z);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  996,
+                     "pattern":  "new ",
+                     "text":  "quaternion resolvedRotation = NormalizeOrIdentity(new quaternion(localRotation.x, localRotation.y, localRotation.z, localRotation.w));"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  1019,
+                     "pattern":  "new ",
+                     "text":  "double3 fallbackAup = new double3(position.x, position.y, position.z);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  1024,
+                     "pattern":  "new ",
+                     "text":  "_cachedRootRotation = NormalizeOrIdentity(new quaternion(rotation.x, rotation.y, rotation.z, rotation.w));"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  1038,
+                     "pattern":  "new ",
+                     "text":  "return new quaternion(value.value * math.rsqrt(math.max(lengthSq, 0.0001f)));"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  1242,
+                     "pattern":  "new ",
+                     "text":  "Vector3 size = new Vector3("
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  1251,
+                     "pattern":  "\\+",
+                     "text":  "for (int i = 0; i \u003c cells.Length; i += stride)"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  1264,
+                     "pattern":  "new ",
+                     "text":  "? new Color(1f, 0.25f, 0.05f, 0.55f)"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  1265,
+                     "pattern":  "new ",
+                     "text":  ": new Color(1f - integrity, integrity, 0.05f, 0.45f);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  1266,
+                     "pattern":  "new ",
+                     "text":  "Vector3 center = min + Vector3.Scale(new Vector3(x + 0.5f, y + 0.5f, z + 0.5f), size);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  1266,
+                     "pattern":  "\\+",
+                     "text":  "Vector3 center = min + Vector3.Scale(new Vector3(x + 0.5f, y + 0.5f, z + 0.5f), size);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  26,
+                     "pattern":  "\\+",
+                     "text":  "// MockRing writes use [writeBase, writeBase + writable); CompletedRequests writes use [0, readable);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  54,
+                     "pattern":  "\\+",
+                     "text":  "for (int i = 0; i \u003c writable; i++)"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  62,
+                     "pattern":  "\\+",
+                     "text":  "ref ReadbackRequestDTO ringRef = ref UnsafeUtility.AsRef\u003cReadbackRequestDTO\u003e(ringPtr + writeBase + i);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  72,
+                     "pattern":  "\\+",
+                     "text":  "readSlot += RingSize;"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  77,
+                     "pattern":  "\\+",
+                     "text":  "for (int i = 0; i \u003c readable; i++)"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  79,
+                     "pattern":  "\\+",
+                     "text":  "ReadbackRequestDTO delayed = UnsafeUtility.AsRef\u003cReadbackRequestDTO\u003e(ringPtr + readBase + i);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  80,
+                     "pattern":  "\\+",
+                     "text":  "ref ReadbackRequestDTO completedRef = ref UnsafeUtility.AsRef\u003cReadbackRequestDTO\u003e(completedPtr + i);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  145,
+                     "pattern":  "\\+",
+                     "text":  "ref ReadbackResultStateDTO state = ref UnsafeUtility.AsRef\u003cReadbackResultStateDTO\u003e(statePtr + index);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  146,
+                     "pattern":  "\\+",
+                     "text":  "ref ReadbackResolvedHeightDTO resolved = ref UnsafeUtility.AsRef\u003cReadbackResolvedHeightDTO\u003e(resolvedPtr + index);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  157,
+                     "pattern":  "\\+",
+                     "text":  "float predicted = previous + (state.VelocityY * dt);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  176,
+                     "pattern":  "\\+",
+                     "text":  "int stale = math.max(0, state.StaleFrames + 1);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  178,
+                     "pattern":  "\\+",
+                     "text":  "float predicted = state.SmoothedLocalHeight + (state.VelocityY * dt * math.min(stale, math.max(1, MaxFreshAgeFrames)));"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  189,
+                     "pattern":  "\\+",
+                     "text":  "double heightAupY = CameraAupY + localHeight;"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  242,
+                     "pattern":  "\\+",
+                     "text":  "float coarse = TriangleSigned((localXz.x * 0.013671875f) + (frameIndex * 0.0078125f));"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  244,
+                     "pattern":  "\\+",
+                     "text":  "float ripple = TriangleSigned(((localXz.x + localXz.y) * 0.03125f) + (frameIndex * 0.01953125f));"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                     "line":  245,
+                     "pattern":  "\\+",
+                     "text":  "return (coarse * 0.62f) + (cross * 0.31f) + (ripple * math.lerp(0.03f, 0.18f, q));"
+                 }
+             ]
+}

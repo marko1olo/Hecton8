@@ -4,6 +4,7 @@
     "references": [
         "Hecton8.Core",
         "Hecton8.Core.Contracts",
+        "Hecton8.Core.Memory",
         "Hecton8.Logistics.Grid.Contracts",
         "Hecton8.World.Contracts",
         "Unity.Burst",

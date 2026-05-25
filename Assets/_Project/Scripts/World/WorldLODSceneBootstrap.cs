@@ -80,7 +80,7 @@ namespace Hecton8.World
         {
             if (_lodSystemManager == null && !TryGetComponent(out _lodSystemManager))
             {
-                Debug.LogError("[WorldLODSceneBootstrap] LODSystemManager missing. Bootstrap disabled.");
+                Hecton8.Core.H8Debug.LogError("[WorldLODSceneBootstrap] LODSystemManager missing. Bootstrap disabled.");
                 enabled = false;
                 return;
             }
@@ -90,7 +90,7 @@ namespace Hecton8.World
             Scene currentScene = ResolveTargetScene();
             if (!currentScene.IsValid())
             {
-                Debug.LogError("[WorldLODSceneBootstrap] Target scene is invalid. Registration aborted.");
+                Hecton8.Core.H8Debug.LogError("[WorldLODSceneBootstrap] Target scene is invalid. Registration aborted.");
                 return;
             }
 

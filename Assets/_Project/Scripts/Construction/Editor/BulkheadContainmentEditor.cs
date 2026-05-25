@@ -222,7 +222,7 @@ namespace Hecton8.Construction.Editor
                 transformDoorMotionHits,
                 ownedRuntimePhysicsHits));
             AssetDatabase.Refresh();
-            Debug.Log("SHINOBU_220 Door Physics Inquisition wrote " + sidecarFullPath);
+            Hecton8.Core.H8Debug.Log("SHINOBU_220 Door Physics Inquisition wrote " + sidecarFullPath);
         }
 
         private static void ScanDirectory(

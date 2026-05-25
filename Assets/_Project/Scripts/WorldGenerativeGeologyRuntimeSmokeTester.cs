@@ -286,7 +286,7 @@ namespace Hecton8.Dev
             {
                 Fail($"Unhandled exception: {exception.Message}");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogException(exception);
+                Hecton8.Core.H8Debug.LogException(exception);
 #endif
             }
             finally
@@ -446,7 +446,7 @@ namespace Hecton8.Dev
             _debugLastPhase = "Failed";
             _debugLastIssue = issue ?? "Unknown issue";
             _debugLastPass = false;
-            Debug.LogWarning(
+            Hecton8.Core.H8Debug.LogWarning(
                 $"[GeologySmoke] FAIL run={_debugRunCount} phase={failedPhase} " +
                 $"runtimeKey={_debugSelectedRuntimeKey} issue={_debugLastIssue} pass={_debugLastPass}");
             _isRunning = false;

@@ -1,9 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.World;
 using TMPro;
 using Unity.Collections;
@@ -72,13 +72,6 @@ namespace Hecton8.UI
             new Quaternion(0f, 0f, 0.38268343f, 0.9238795f),
             new Quaternion(0f, 0f, 0.9238795f, 0.38268343f)
         };
-        // COLD ALLOC: List<SuitHUDV4CanvasOverlay>[4] - overlay lookup scratch buffer - owner: ARWaypointOverlay
-        private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer =
-            new List<SuitHUDV4CanvasOverlay>(4);
-        // COLD ALLOC: List<RectTransform>[32] - direct child lookup scratch buffer - owner: ARWaypointOverlay
-        private static readonly List<RectTransform> s_directChildBuffer =
-            new List<RectTransform>(32);
-
         // COLD ALLOC: string[16] - pre-baked waypoint slot names, avoids runtime interpolation - owner: ARWaypointOverlay
         private static readonly string[] s_waypointSlotNames =
         {
@@ -221,8 +214,6 @@ namespace Hecton8.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            s_overlayResolveBuffer.Clear();
-            s_directChildBuffer.Clear();
             s_activeRuntimeInstance = null;
             s_cachedWaypointService = null;
             s_stencilRenderGraphActive = false;
@@ -533,7 +524,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             if (_cachedPlayerContext != null && _playerTransform == null)
                 _playerTransform = _cachedPlayerContext.PlayerTransform;
         }
@@ -851,7 +842,10 @@ namespace Hecton8.UI
                 if (!waypoint.Active)
                     continue;
 
-                float3 delta = AbsoluteUniversePosition.ToCameraRelativeFloat3(in waypoint.PositionAup, in cameraAup);
+                float3 delta = AupPrecisionMath.LocalDeltaFloat3(
+                    waypoint.PositionAup.ToAbsoluteDouble3(),
+                    cameraAup.ToAbsoluteDouble3(),
+                    float3.zero);
                 float distanceSq = math.lengthsq(delta);
                 if (distanceSq <= 0.01f)
                 {
@@ -912,7 +906,10 @@ namespace Hecton8.UI
             if (projectionFrame.IsValid == 0u)
                 return false;
 
-            float3 deltaAup = AbsoluteUniversePosition.ToCameraRelativeFloat3(in waypointAup, in projectionFrame.CameraAup);
+            float3 deltaAup = AupPrecisionMath.LocalDeltaFloat3(
+                waypointAup.ToAbsoluteDouble3(),
+                projectionFrame.CameraAup.ToAbsoluteDouble3(),
+                float3.zero);
             float viewDepth = math.dot(projectionFrame.CameraForward, deltaAup);
             if (projectionFrame.PlaneDistance <= ProjectionDepthEpsilon)
                 return false;
@@ -1246,22 +1243,17 @@ namespace Hecton8.UI
 
         private static SuitHUDV4CanvasOverlay ResolveProjectionOverlay()
         {
-            SuitHUDV4CanvasOverlay.CopyActiveOverlaysTo(s_overlayResolveBuffer);
-            for (int i = 0; i < s_overlayResolveBuffer.Count; i++)
+            for (int i = 0; i < SuitHUDV4CanvasOverlay.ActiveOverlayCount; i++)
             {
-                SuitHUDV4CanvasOverlay overlay = s_overlayResolveBuffer[i];
+                SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.GetActiveOverlay(i);
                 if (overlay == null || overlay.TargetCanvas == null)
                     continue;
 
                 Canvas targetCanvas = overlay.TargetCanvas;
                 if (targetCanvas.renderMode == RenderMode.WorldSpace && overlay.ProjectionCamera != null)
-                {
-                    s_overlayResolveBuffer.Clear();
                     return overlay;
-                }
             }
 
-            s_overlayResolveBuffer.Clear();
             return null;
         }
 
@@ -1516,22 +1508,17 @@ namespace Hecton8.UI
             if (parent == null)
                 return null;
 
-            s_directChildBuffer.Clear();
-            parent.GetComponentsInChildren(includeInactive: true, result: s_directChildBuffer);
-            for (int i = 0; i < s_directChildBuffer.Count; i++)
+            int childCount = parent.childCount;
+            for (int i = 0; i < childCount; i++)
             {
-                RectTransform child = s_directChildBuffer[i];
-                if (child == null || !ReferenceEquals(child.parent, parent))
+                RectTransform child = parent.GetChild(i) as RectTransform;
+                if (child == null)
                     continue;
 
                 if (string.Equals(child.name, childName, StringComparison.Ordinal))
-                {
-                    s_directChildBuffer.Clear();
                     return child;
-                }
             }
 
-            s_directChildBuffer.Clear();
             return null;
         }
 
@@ -1540,12 +1527,10 @@ namespace Hecton8.UI
             if (parent == null)
                 return;
 
-            s_directChildBuffer.Clear();
-            parent.GetComponentsInChildren(includeInactive: true, result: s_directChildBuffer);
-            for (int i = s_directChildBuffer.Count - 1; i >= 0; i--)
+            for (int i = parent.childCount - 1; i >= 0; i--)
             {
-                RectTransform child = s_directChildBuffer[i];
-                if (child == null || !ReferenceEquals(child.parent, parent))
+                Transform child = parent.GetChild(i);
+                if (child == null)
                     continue;
 
                 if (Application.isPlaying)
@@ -1553,8 +1538,6 @@ namespace Hecton8.UI
                 else
                     DestroyImmediate(child.gameObject);
             }
-
-            s_directChildBuffer.Clear();
         }
 
     }

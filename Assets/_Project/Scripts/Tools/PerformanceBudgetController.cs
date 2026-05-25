@@ -151,10 +151,11 @@ namespace Hecton8.Tools
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             // Log budget status periodically
-            if (Time.unscaledTime >= _nextBudgetStatusLogTime)
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (now >= _nextBudgetStatusLogTime)
             {
                 LogBudgetStatus();
-                _nextBudgetStatusLogTime = Time.unscaledTime + BudgetStatusLogIntervalSeconds;
+                _nextBudgetStatusLogTime = now + BudgetStatusLogIntervalSeconds;
             }
 #endif
         }
@@ -234,9 +235,10 @@ namespace Hecton8.Tools
             if (timeUsedMs > budget.BudgetMs)
             {
                 budget.OverBudgetCount++;
-                if (Time.unscaledTime >= budget.NextOverBudgetLogTime)
+                float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+                if (now >= budget.NextOverBudgetLogTime)
                 {
-                    budget.NextOverBudgetLogTime = Time.unscaledTime + OverBudgetLogIntervalSeconds;
+                    budget.NextOverBudgetLogTime = now + OverBudgetLogIntervalSeconds;
                     LogSystemOverBudget(systemName, timeUsedMs, budget.BudgetMs);
                 }
             }
@@ -541,17 +543,17 @@ namespace Hecton8.Tools
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void LogDuplicateRegistration(string systemName)
         {
-            Debug.LogWarning($"[PerformanceBudgetController] System '{systemName}' already registered");
+            Hecton8.Core.H8Debug.LogWarning($"[PerformanceBudgetController] System '{systemName}' already registered");
         }
 
         private void LogInvalidRegistration(string systemName)
         {
-            Debug.LogWarning($"[PerformanceBudgetController] Ignoring invalid registration '{systemName}'");
+            Hecton8.Core.H8Debug.LogWarning($"[PerformanceBudgetController] Ignoring invalid registration '{systemName}'");
         }
 
         private void LogRegistrationCapacityExceeded(string systemName)
         {
-            Debug.LogWarning($"[PerformanceBudgetController] Ignoring registration '{systemName}' because budget capacity {MaxTrackedBudgetSystems} is full");
+            Hecton8.Core.H8Debug.LogWarning($"[PerformanceBudgetController] Ignoring registration '{systemName}' because budget capacity {MaxTrackedBudgetSystems} is full");
         }
 
         private void LogSystemRegistered(string systemName, float budgetMs)
@@ -566,7 +568,7 @@ namespace Hecton8.Tools
 
         private void LogSystemOverBudget(string systemName, float timeUsedMs, float budgetMs)
         {
-            Debug.LogWarning("[PerformanceBudgetController] System '" + systemName + "' over budget: " +
+            Hecton8.Core.H8Debug.LogWarning("[PerformanceBudgetController] System '" + systemName + "' over budget: " +
                 timeUsedMs.ToString("F2", CultureInfo.InvariantCulture) + "ms > " +
                 budgetMs.ToString("F2", CultureInfo.InvariantCulture) + "ms");
         }

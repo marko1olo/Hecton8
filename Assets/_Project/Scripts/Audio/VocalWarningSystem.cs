@@ -2182,8 +2182,7 @@ namespace Hecton8.Audio
                 NodeRef(queue, bitIndex) = default;
                 state.VwsPriorityWord &= ~bitMask;
                 state.ActivePriorityCount = (uint)CountBits64(state.VwsPriorityWord);
-                int highestBitIndex = ResolveHighestPriorityBitIndex(state.VwsPriorityWord);
-                state.HighestPriorityBitIndex = highestBitIndex >= 0 ? (uint)highestBitIndex : uint.MaxValue;
+                state.HighestPriorityBitIndex = ResolveHighestPriorityBitIndexOrMax(state.VwsPriorityWord);
                 state.Sequence++;
                 return value.AudioBankHashID != 0u;
             }
@@ -2221,8 +2220,7 @@ namespace Hecton8.Audio
                 state.VwsPriorityWord = activeWord;
                 state.ActivePriorityCount = (uint)CountBits64(activeWord);
                 state.DiscardedExpired += discarded;
-                int highestBitIndex = ResolveHighestPriorityBitIndex(activeWord);
-                state.HighestPriorityBitIndex = highestBitIndex >= 0 ? (uint)highestBitIndex : uint.MaxValue;
+                state.HighestPriorityBitIndex = ResolveHighestPriorityBitIndexOrMax(activeWord);
                 state.Sequence++;
             }
 
@@ -2281,6 +2279,13 @@ namespace Hecton8.Audio
                 int baseIndex = math.select(0, 32, useHigh);
                 int candidateIndex = baseIndex + (31 - math.lzcnt(selected));
                 return math.select(NoPriorityBitIndex, candidateIndex, priorityWord != 0UL);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static uint ResolveHighestPriorityBitIndexOrMax(ulong priorityWord)
+            {
+                int bitIndex = ResolveHighestPriorityBitIndex(priorityWord);
+                return (uint)math.select(-1, bitIndex, priorityWord != 0UL);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]

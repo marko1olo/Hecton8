@@ -284,7 +284,7 @@ namespace Hecton8.Core
         /// </summary>
         internal static void AppendPDALogEventHash(uint eventHash)
         {
-            AppendPDALogEventHash(eventHash, Time.unscaledTime);
+            AppendPDALogEventHash(eventHash, (float)SystemDispatcher.CurrentUnscaledTimeSeconds);
         }
 
         /// <summary>

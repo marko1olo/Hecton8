@@ -68,7 +68,7 @@ namespace Hecton.Localization
         /// </summary>
         public string Resolve()
         {
-            return ResolveOrFallback(GlobalRegistry.LocalizationTextExpansion, fallbackText);
+            return ResolveOrFallback(GlobalRegistry.LocalizationText, fallbackText);
         }
 
         /// <summary>
@@ -76,8 +76,7 @@ namespace Hecton.Localization
         /// </summary>
         public string Resolve(LocalizationManager manager)
         {
-            GameLanguage language = manager != null ? manager.CurrentLanguage : GameLanguage.English;
-            return Resolve(language, manager);
+            return ResolveOrFallback((ILocalizationTextReadModel)manager, fallbackText);
         }
 
         /// <summary>
@@ -85,7 +84,7 @@ namespace Hecton.Localization
         /// </summary>
         public string Resolve(GameLanguage language)
         {
-            LocalizationManager manager = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return Resolve(language, manager);
         }
 
@@ -94,15 +93,11 @@ namespace Hecton.Localization
         /// </summary>
         public string Resolve(GameLanguage language, LocalizationManager manager)
         {
-
             if (TryResolveInline(language, out string inlineValue))
-                return manager != null ? manager.ExpandText(inlineValue) : inlineValue;
-
-            if (manager != null && HasTableKey && manager.TryGet(language, tableKey, out string tableValue))
-                return manager.ExpandText(tableValue);
+                return inlineValue;
 
             if (!string.IsNullOrWhiteSpace(fallbackText))
-                return manager != null ? manager.ExpandText(fallbackText) : fallbackText;
+                return fallbackText;
 
             return HasTableKey ? tableKey : string.Empty;
         }
@@ -112,11 +107,7 @@ namespace Hecton.Localization
         /// </summary>
         public string ResolveOrFallback(string legacyFallback)
         {
-            string resolved = Resolve();
-            if (!string.IsNullOrWhiteSpace(resolved))
-                return resolved;
-
-            return legacyFallback ?? string.Empty;
+            return ResolveOrFallback(GlobalRegistry.LocalizationText, legacyFallback);
         }
 
         /// <summary>
@@ -124,11 +115,7 @@ namespace Hecton.Localization
         /// </summary>
         public string ResolveOrFallback(LocalizationManager manager, string legacyFallback)
         {
-            string resolved = Resolve(manager);
-            if (!string.IsNullOrWhiteSpace(resolved))
-                return resolved;
-
-            return legacyFallback ?? string.Empty;
+            return ResolveOrFallback((ILocalizationTextReadModel)manager, legacyFallback);
         }
 
         /// <summary>

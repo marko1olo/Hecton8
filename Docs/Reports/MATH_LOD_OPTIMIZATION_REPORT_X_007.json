@@ -2,6 +2,8 @@
   "agent": "X_007",
   "aiEcosystemQualityRouteProof": {
     "boidSocialLodReadsMathLodConfig": true,
+    "ecosystemBalancerReadsMathLodConfig": true,
+    "ecosystemMacroJobUsesResolvedQuality": true,
     "migrationCadenceContinuousResolved": true,
     "migrationJobUsesResolvedQuality": true,
     "migrationReadsMathLodConfig": true,
@@ -9,7 +11,8 @@
     "symbiosisReadsMathLodConfig": true,
     "symbiosisTruthAmplitudeInvariant": true,
     "symbiosisTuningUsesResolvedQuality": true,
-    "truthPolicy": "ecosystem quality scales cadence/stride/social visual detail; oxygen, feeding, migration authority amplitudes are not reduced by binary quality tiers"
+    "truthPolicy": "ecosystem quality scales cadence/stride/social visual detail; oxygen, feeding, migration authority amplitudes are not reduced by binary quality tiers",
+    "voxelAStarReadsMathLodConfig": true
   },
   "animationQualityGateProof": {
     "kineticCharacterSdfGradientContinuous": true,
@@ -62,9 +65,9 @@
     "Assets/_Project/Scripts/Atmosphere/GasDynamicsSolver.cs": {
       "burstCompileCount": 2,
       "floatModeFastCount": 0,
-      "ifCount": 154,
+      "ifCount": 163,
       "switchCount": 1,
-      "ternaryCount": 42
+      "ternaryCount": 41
     },
     "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereContracts.cs": {
       "burstCompileCount": 7,
@@ -94,6 +97,13 @@
       "switchCount": 3,
       "ternaryCount": 8
     },
+    "Assets/_Project/Scripts/Physics/FluidImpulseJob.cs": {
+      "burstCompileCount": 1,
+      "floatModeFastCount": 0,
+      "ifCount": 5,
+      "switchCount": 0,
+      "ternaryCount": 1
+    },
     "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyJobs.cs": {
       "burstCompileCount": 9,
       "floatModeFastCount": 0,
@@ -111,9 +121,9 @@
     "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs": {
       "burstCompileCount": 8,
       "floatModeFastCount": 0,
-      "ifCount": 206,
+      "ifCount": 207,
       "switchCount": 0,
-      "ternaryCount": 48
+      "ternaryCount": 47
     },
     "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs": {
       "burstCompileCount": 11,
@@ -218,6 +228,8 @@
     "distanceMathContinuousDistanceWeight": true,
     "distanceMathContinuousShaderWeight": true,
     "dynamicMusicInterpolationContinuous": true,
+    "ecosystemBalancerReadsMathLodConfig": true,
+    "ecosystemMacroJobUsesResolvedQuality": true,
     "editorBioForgeExpLogRemoved": true,
     "equipmentDrainSafetyIfCount": 7,
     "exosuitReadsMathLodConfig": true,
@@ -249,6 +261,8 @@
     "logisticsGraphAdaptiveWindowUsesResolvedQuality": true,
     "logisticsGraphJobUsesResolvedQuality": true,
     "logisticsGraphReadsMathLodConfigQuality": true,
+    "logisticsRouterEmergencyTuningUsesResolvedQuality": true,
+    "logisticsRouterReadsMathLodConfigQuality": true,
     "macroEcosystemQualityCurveContinuous": true,
     "mathLodApproximationContractPresent": true,
     "mathLodBlackBoxDumpWriterPresent": true,
@@ -303,7 +317,7 @@
     "qaWatchdogQualityContinuous": true,
     "reactorFiniteOrUsesMathSelect": true,
     "reactorInjectionDiameterContinuous": true,
-    "remainingFloatModeFastCount": 681,
+    "remainingFloatModeFastCount": 679,
     "repairToolQualityFlagsContinuous": true,
     "rollbackDirectExpRemoved": true,
     "runtimeQualityStepGateSweepRemoved": true,
@@ -313,7 +327,10 @@
     "seedShipEntityBudgetContinuous": true,
     "seismicActiveHarmonicsContinuous": true,
     "seismicTideReadsMathLodConfig": true,
+    "solarConditionsReadMathLodConfigQuality": true,
+    "solarDefaultConditionsUseResolvedQuality": true,
     "solarDirectExpRemoved": true,
+    "solarSanitizeFallbackUsesResolvedQuality": true,
     "stormAttenuationDirectExpRemoved": true,
     "stormNoiseOctavesContinuous": true,
     "structuralVisualReadsMathLodConfig": true,
@@ -332,6 +349,7 @@
     "volcanicUpdraftContinuousVisualWeights": true,
     "volcanicUpdraftJobsUseSettingsQuality": true,
     "volcanicUpdraftReadsMathLodConfig": true,
+    "voxelAStarReadsMathLodConfig": true,
     "voxelSurfaceDensityContinuous": true,
     "vrSomaticLowQualityContinuous": true,
     "vramEnforcerReadsMathLodConfig": true,
@@ -419,6 +437,16 @@
   "generatedBy": "Tools/OOP_MathLOD_Scanner.py",
   "hardFailures": [],
   "jacobiProof": {
+    "boundednessStress": {
+      "checkedCases": 829440,
+      "maxAbsSolvedVoltage": 1.0,
+      "maxAbsUnclampedTargetPotential": 1.0,
+      "maxConductanceAfterClamp": 4096.0,
+      "negativeSolvedVoltageCount": 0,
+      "nonFiniteSolvedVoltageCount": 0,
+      "outOfRangeSolvedVoltageCount": 0,
+      "policy": "PowerVoltageSolverJob does not claim convergence at minimum quality; it guarantees finite saturated voltage and capped non-negative conductance per relaxation step"
+    },
     "convergenceClaimAtMinQuality": "not claimed",
     "headlessFuzzerContract": {
       "conductanceCap": 4096.0,
@@ -472,7 +500,12 @@
     "adaptiveWindowUsesResolvedQuality": true,
     "fallback": "AuthoritativeQualityWeight only when MathLodRuntimeConfig has no published snapshot",
     "jobUsesResolvedQuality": true,
-    "readsMathLodConfig": true
+    "readsMathLodConfig": true,
+    "routerEmergencyTuningUsesResolvedQuality": true,
+    "routerReadsMathLodConfig": true,
+    "solarConditionsReadMathLodConfig": true,
+    "solarDefaultConditionsUseResolvedQuality": true,
+    "solarSanitizeFallbackUsesResolvedQuality": true
   },
   "physicsLightingQualityGateProof": {
     "cable132CatmullContinuous": true,
@@ -514,10 +547,85 @@
     "globalQualityWeightInputs": [
       1.0,
       0.1
-    ]
+    ],
+    "numericContinuitySample": {
+      "absDelta": 0.0,
+      "ambientPressure": 0.7900000214576721,
+      "decay": 0.9994223713874817,
+      "deltaSeconds": 0.25,
+      "effectiveK": 0.0023104907013475895,
+      "formula": "ambient + (previous - ambient) * ApproxExpNegPade33Reduced(effectiveK * dt)",
+      "globalQualityWeightAppearsInAuthorityFormula": false,
+      "nextAtQ0_1": 0.8624581098556519,
+      "nextAtQ1": 0.8624581098556519,
+      "previousTissuePressure": 0.862500011920929,
+      "qHigh": 1.0,
+      "qLow": 0.1,
+      "x": 0.0005776226753368974
+    }
   },
   "remainingTranscendentalTotal": 0,
   "remainingTranscendentals": {
+    "MathTypeAlias.SystemMath.Acos": 0,
+    "MathTypeAlias.SystemMath.Asin": 0,
+    "MathTypeAlias.SystemMath.Atan": 0,
+    "MathTypeAlias.SystemMath.Atan2": 0,
+    "MathTypeAlias.SystemMath.Cos": 0,
+    "MathTypeAlias.SystemMath.Exp": 0,
+    "MathTypeAlias.SystemMath.Log": 0,
+    "MathTypeAlias.SystemMath.Pow": 0,
+    "MathTypeAlias.SystemMath.Sin": 0,
+    "MathTypeAlias.SystemMath.Tan": 0,
+    "MathTypeAlias.SystemMathF.Acos": 0,
+    "MathTypeAlias.SystemMathF.Asin": 0,
+    "MathTypeAlias.SystemMathF.Atan": 0,
+    "MathTypeAlias.SystemMathF.Atan2": 0,
+    "MathTypeAlias.SystemMathF.Cos": 0,
+    "MathTypeAlias.SystemMathF.Exp": 0,
+    "MathTypeAlias.SystemMathF.Log": 0,
+    "MathTypeAlias.SystemMathF.Pow": 0,
+    "MathTypeAlias.SystemMathF.Sin": 0,
+    "MathTypeAlias.SystemMathF.Tan": 0,
+    "MathTypeAlias.UnityEngineMathf.Acos": 0,
+    "MathTypeAlias.UnityEngineMathf.Asin": 0,
+    "MathTypeAlias.UnityEngineMathf.Atan": 0,
+    "MathTypeAlias.UnityEngineMathf.Atan2": 0,
+    "MathTypeAlias.UnityEngineMathf.Cos": 0,
+    "MathTypeAlias.UnityEngineMathf.Exp": 0,
+    "MathTypeAlias.UnityEngineMathf.Log": 0,
+    "MathTypeAlias.UnityEngineMathf.Pow": 0,
+    "MathTypeAlias.UnityEngineMathf.Sin": 0,
+    "MathTypeAlias.UnityEngineMathf.Tan": 0,
+    "MathTypeStatic.SystemMath.Acos": 0,
+    "MathTypeStatic.SystemMath.Asin": 0,
+    "MathTypeStatic.SystemMath.Atan": 0,
+    "MathTypeStatic.SystemMath.Atan2": 0,
+    "MathTypeStatic.SystemMath.Cos": 0,
+    "MathTypeStatic.SystemMath.Exp": 0,
+    "MathTypeStatic.SystemMath.Log": 0,
+    "MathTypeStatic.SystemMath.Pow": 0,
+    "MathTypeStatic.SystemMath.Sin": 0,
+    "MathTypeStatic.SystemMath.Tan": 0,
+    "MathTypeStatic.SystemMathF.Acos": 0,
+    "MathTypeStatic.SystemMathF.Asin": 0,
+    "MathTypeStatic.SystemMathF.Atan": 0,
+    "MathTypeStatic.SystemMathF.Atan2": 0,
+    "MathTypeStatic.SystemMathF.Cos": 0,
+    "MathTypeStatic.SystemMathF.Exp": 0,
+    "MathTypeStatic.SystemMathF.Log": 0,
+    "MathTypeStatic.SystemMathF.Pow": 0,
+    "MathTypeStatic.SystemMathF.Sin": 0,
+    "MathTypeStatic.SystemMathF.Tan": 0,
+    "MathTypeStatic.UnityEngineMathf.Acos": 0,
+    "MathTypeStatic.UnityEngineMathf.Asin": 0,
+    "MathTypeStatic.UnityEngineMathf.Atan": 0,
+    "MathTypeStatic.UnityEngineMathf.Atan2": 0,
+    "MathTypeStatic.UnityEngineMathf.Cos": 0,
+    "MathTypeStatic.UnityEngineMathf.Exp": 0,
+    "MathTypeStatic.UnityEngineMathf.Log": 0,
+    "MathTypeStatic.UnityEngineMathf.Pow": 0,
+    "MathTypeStatic.UnityEngineMathf.Sin": 0,
+    "MathTypeStatic.UnityEngineMathf.Tan": 0,
     "SystemMath.Acos": 0,
     "SystemMath.Asin": 0,
     "SystemMath.Atan": 0,
@@ -538,6 +646,49 @@
     "SystemMathF.Pow": 0,
     "SystemMathF.Sin": 0,
     "SystemMathF.Tan": 0,
+    "UnityEngineMathf.Acos": 0,
+    "UnityEngineMathf.Asin": 0,
+    "UnityEngineMathf.Atan": 0,
+    "UnityEngineMathf.Atan2": 0,
+    "UnityEngineMathf.Cos": 0,
+    "UnityEngineMathf.Exp": 0,
+    "UnityEngineMathf.Log": 0,
+    "UnityEngineMathf.Pow": 0,
+    "UnityEngineMathf.Sin": 0,
+    "UnityEngineMathf.Tan": 0,
+    "UnityMathAlias.acos": 0,
+    "UnityMathAlias.asin": 0,
+    "UnityMathAlias.atan": 0,
+    "UnityMathAlias.atan2": 0,
+    "UnityMathAlias.cos": 0,
+    "UnityMathAlias.exp": 0,
+    "UnityMathAlias.log": 0,
+    "UnityMathAlias.pow": 0,
+    "UnityMathAlias.sin": 0,
+    "UnityMathAlias.sincos": 0,
+    "UnityMathAlias.tan": 0,
+    "UnityMathStatic.acos": 0,
+    "UnityMathStatic.asin": 0,
+    "UnityMathStatic.atan": 0,
+    "UnityMathStatic.atan2": 0,
+    "UnityMathStatic.cos": 0,
+    "UnityMathStatic.exp": 0,
+    "UnityMathStatic.log": 0,
+    "UnityMathStatic.pow": 0,
+    "UnityMathStatic.sin": 0,
+    "UnityMathStatic.sincos": 0,
+    "UnityMathStatic.tan": 0,
+    "UnityMathematicsMath.acos": 0,
+    "UnityMathematicsMath.asin": 0,
+    "UnityMathematicsMath.atan": 0,
+    "UnityMathematicsMath.atan2": 0,
+    "UnityMathematicsMath.cos": 0,
+    "UnityMathematicsMath.exp": 0,
+    "UnityMathematicsMath.log": 0,
+    "UnityMathematicsMath.pow": 0,
+    "UnityMathematicsMath.sin": 0,
+    "UnityMathematicsMath.sincos": 0,
+    "UnityMathematicsMath.tan": 0,
     "UnityMathf.Acos": 0,
     "UnityMathf.Asin": 0,
     "UnityMathf.Atan": 0,
@@ -678,6 +829,30 @@
     },
     "p33Denominator": "1 + y/2 + y^2/10 + y^3/120",
     "p33Numerator": "1 - y/2 + y^2/10 - y^3/120",
+    "pade33SeriesProof": {
+      "baseP33YMinusExpNegY": {
+        "coefficient": {
+          "decimal": -9.92063492063492e-06,
+          "fraction": "-1/100800"
+        },
+        "firstNonZeroOrder": 7
+      },
+      "method": "exact rational Taylor series arithmetic through x^10",
+      "reducedP33XOver4Pow4MinusExpNegX": {
+        "coefficient": {
+          "decimal": -2.422030009920635e-09,
+          "fraction": "-1/412876800"
+        },
+        "firstNonZeroOrder": 7
+      },
+      "wideP33XOver40Pow40MinusExpNegX": {
+        "coefficient": {
+          "decimal": -2.422030009920635e-15,
+          "fraction": "-1/412876800000000"
+        },
+        "firstNonZeroOrder": 7
+      }
+    },
     "physiologyWorstCase": {
       "absError": 6.080794978657877e-08,
       "approx": 0.8625420928001404,
@@ -732,8 +907,12 @@
     "bulkheadAuthorityCadenceUsesResolvedQuality": true,
     "bulkheadHatchTuningUsesResolvedQuality": true,
     "bulkheadRuntimeSnapshotRoute": true,
+    "ecosystemBalancerSnapshotRoute": true,
+    "ecosystemMacroJobUsesResolvedQuality": true,
     "gasDynamicsCadenceContinuous": true,
     "gasDynamicsSnapshotRoute": true,
+    "logisticsRouterEmergencyTuningUsesResolvedQuality": true,
+    "logisticsRouterSnapshotRoute": true,
     "metabolismRuntimeSnapshotRoute": true,
     "metabolismThermalInterpolationContinuous": true,
     "migrationCadenceContinuous": true,
@@ -744,13 +923,17 @@
     "policy": "cadence changes integrate accumulated delta time; visual turbulence/debris use smooth continuous quality curves; gameplay truth amplitudes are not reduced by binary quality tiers",
     "seaglideBurstJobUsesGlobalQualityWeight": true,
     "seaglideRuntimeSnapshotRoute": true,
+    "solarConditionsSnapshotRoute": true,
+    "solarDefaultConditionsUseResolvedQuality": true,
+    "solarSanitizeFallbackUsesResolvedQuality": true,
     "symbiosisComplexityContinuous": true,
     "symbiosisSnapshotRoute": true,
     "symbiosisTruthAmplitudeInvariant": true,
     "symbiosisTuningUsesResolvedQuality": true,
     "volcanicJobsUseSettingsQuality": true,
     "volcanicUpdraftSnapshotRoute": true,
-    "volcanicVisualWeightsContinuous": true
+    "volcanicVisualWeightsContinuous": true,
+    "voxelAStarSnapshotRoute": true
   },
   "runtimeQualitySnapshotRouteProof": {
     "abyssalCavitation": true,
@@ -829,5 +1012,34 @@
     ],
     "sampleCount": 16,
     "sanitizesResultEnvelope": true
+  },
+  "transcendentalScannerBypassProof": {
+    "aliasPolicy": "using Alias = Unity.Mathematics.math is allowed only while Alias.exp/pow/sin/cos/sincos/log/tan/atan/atan2/asin/acos remains zero",
+    "frameworkAliasPolicy": "using Alias = UnityEngine.Mathf/System.Math/System.MathF is allowed only while Alias.Exp/Pow/Sin/Cos/Log/Tan/Atan/Atan2/Asin/Acos remains zero",
+    "frameworkMathAliasDeclarations": 0,
+    "frameworkMathAliasTranscendentalTotal": 0,
+    "frameworkMathStaticImportDeclarations": 0,
+    "frameworkMathStaticImportTranscendentalTotal": 0,
+    "frameworkStaticImportPolicy": "using static UnityEngine.Mathf/System.Math/System.MathF is allowed only while bare Exp/Pow/Sin/Cos/Log/Tan/Atan/Atan2/Asin/Acos remains zero in that file",
+    "fullyQualifiedUnityMathPatternsCovered": [
+      "Unity.Mathematics.math.exp",
+      "Unity.Mathematics.math.pow",
+      "Unity.Mathematics.math.sin",
+      "Unity.Mathematics.math.cos",
+      "Unity.Mathematics.math.sincos",
+      "Unity.Mathematics.math.log",
+      "Unity.Mathematics.math.tan",
+      "Unity.Mathematics.math.atan",
+      "Unity.Mathematics.math.atan2",
+      "Unity.Mathematics.math.asin",
+      "Unity.Mathematics.math.acos"
+    ],
+    "fullyQualifiedUnityMathTranscendentalTotal": 0,
+    "staticImportPolicy": "using static Unity.Mathematics.math is allowed only while bare exp/pow/sin/cos/sincos/log/tan/atan/atan2/asin/acos remains zero in that file",
+    "unityEngineMathfFullyQualifiedTranscendentalTotal": 0,
+    "unityMathAliasDeclarations": 0,
+    "unityMathAliasTranscendentalTotal": 0,
+    "unityMathStaticImportDeclarations": 0,
+    "unityMathStaticImportTranscendentalTotal": 0
   }
 }

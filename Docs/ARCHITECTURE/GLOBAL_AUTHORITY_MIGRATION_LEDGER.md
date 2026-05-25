@@ -115,6 +115,12 @@ Allowed global routes:
   - Consumers: builder/dev smoke, construction UI, tools, drone fleet, spatial audio graph reads, flora parasite spread, base degradation, mod runtime catalog, and game bootstrap clearing.
   - `VehicleDockingModule` uses contract routes instead of concrete owner imports where safe.
   - Proof: `CompileWallX003Audit.py` concrete casts `973->968`; critical source using/FQN `0`; hot-path lookup `0`; runtime concrete sibling refs remain `96`; build blocked by active compiler/CPU guard.
+- loop165/X_003: Atlas, scarcity, persistent-drop, celestial/ecosystem, lore, fluid decal, and environmental-strain consumer routes moved to contract surfaces.
+  - Owners: `AtlasSignalSystem`, `Atlas6DirectiveSystem`, `ResourceScarcityDirector`, `PersistentWorldRegistry`, `HectonCelestialEngine`, `FaunaGeneticsManager`, `EnvironmentalStrainManager`, `LoreDatabaseManager`, and `AbyssalFluidDecalManager` keep authority.
+  - Consumers: quest/progression/PDA/narrative/emergency relay, fabricator UI/recycler, inventory/tool/harvest/drop paths, ecosystem/celestial/director routes, base pollution, submarine structural visuals, voxel cave-in presentation, PDA data log, and subtitles.
+  - New/widened routes: `IAtlasSignalDecodeSink`, `IAtlas6DirectiveCommandSink`, `IFaunaWorldSeedReadModel`, `IResourceScarcityReadModel`, `IPersistentDroppedItemRegistry`, `ICelestialResonanceReadModel`, `IEnvironmentalStrainIndustrialSink`, `ILoreDatabaseReadModel`, and voxel cave-in dust on `IFluidDecalPresentationSink`.
+  - Proof: `CompileWallX003Audit.py` concrete casts `968->950`; critical source using/FQN `0`; hot-path lookup `0`.
+  - Residual: runtime concrete sibling refs remain `96`; that loop's build was blocked by CPU 93 plus active `dotnet` PIDs 55120/56776.
 
 ## Required Audit Commands
 

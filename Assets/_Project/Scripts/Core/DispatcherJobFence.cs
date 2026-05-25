@@ -94,7 +94,7 @@ namespace Hecton8.Core
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static void WarnIllegalNonForcedCompletion()
         {
-            float now = Time.unscaledTime;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (now < _nextIllegalCompletionWarningTime)
                 return;
 

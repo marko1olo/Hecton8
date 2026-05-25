@@ -1,0 +1,82 @@
+{
+  "schema": "hecton8.voxel_runtime_hotpath_audit.v1",
+  "agentId": "1304",
+  "repoRoot": "C:\\hades\\Hecton8",
+  "outputPath": "C:\\hades\\Hecton8\\Docs\\Reports\\TETHER_ROSLYN_HOTPATH_AUDIT_1303_RAW.json",
+  "auditHashSha256": "5f66f84bee5d61523e932fa2c2fc612439dc65d0f4e20d4b9a071c1c7b41b2e9",
+  "summary": {
+    "scannedFiles": 4,
+    "parseFailures": 0,
+    "totalFindings": 6,
+    "objectCreations": 6,
+    "valueTypeCreations": 1,
+    "managedRiskCreations": 5,
+    "nativeTempJobAllocations": 0,
+    "nativePersistentAllocations": 0,
+    "nativeOtherAllocations": 0,
+    "stringFormatCalls": 0,
+    "toStringCalls": 0,
+    "linqCalls": 0,
+    "foreachStatements": 0,
+    "interpolatedStrings": 0,
+    "stringConcatSuspects": 0
+  },
+  "files": [
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\TetherInstance.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Physics\\TetherVerletJobs.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Physics\\TetherBlackBoxDumpWriter.cs",
+    "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Core\\Contracts\\Physics\\CableGpuContracts.cs"
+  ],
+  "findings": [
+    {
+      "path": "Assets/_Project/Scripts/TetherInstance.cs",
+      "line": 1009,
+      "owner": "EnsureVisualGraphicsBuffer",
+      "kind": "object_creation",
+      "detail": "GraphicsBuffer",
+      "snippet": "new GraphicsBuffer(                 GraphicsBuffer.Target.Structured,                 GraphicsBuffer.UsageFlags.LockBufferForWrite,                 count,                 stride)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+      "line": 169,
+      "owner": "TryWritePrimaryH8Dump",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(                     path,                     FileMode.Create,                     FileAccess.ReadWrite,                     FileShare.Read,                     4096,                     FileOptions.WriteThrough)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+      "line": 242,
+      "owner": "TryWriteLegacyMirror",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(                     path,                     FileMode.Append,                     FileAccess.Write,                     FileShare.Read,                     4096,                     FileOptions.WriteThrough)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+      "line": 285,
+      "owner": "EnsureDumpWorker",
+      "kind": "value_type_creation",
+      "detail": "AutoResetEvent",
+      "snippet": "new AutoResetEvent(false)"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+      "line": 292,
+      "owner": "EnsureDumpWorker",
+      "kind": "object_creation",
+      "detail": "Thread",
+      "snippet": "new Thread(DumpWorkerLoop)                     {                         IsBackground = true,                         Name = \"H8.Physics.TetherDump1303\"                     }"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+      "line": 507,
+      "owner": "TryWriteQueuedDumpFile",
+      "kind": "object_creation",
+      "detail": "FileStream",
+      "snippet": "new FileStream(                     path,                     mode,                     FileAccess.Write,                     FileShare.Read,                     4096,                     FileOptions.WriteThrough)"
+    }
+  ],
+  "parseFailures": [
+  ]
+}

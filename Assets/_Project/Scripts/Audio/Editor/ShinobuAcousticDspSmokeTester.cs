@@ -35,9 +35,9 @@ namespace Hecton8.Audio.Editor
         {
             bool passed = Run(out string report);
             if (passed)
-                Debug.Log(report);
+                Hecton8.Core.H8Debug.Log(report);
             else
-                Debug.LogError(report);
+                Hecton8.Core.H8Debug.LogError(report);
         }
 
         public static bool Run(out string report)
@@ -95,7 +95,8 @@ namespace Hecton8.Audio.Editor
             AssertContains(spatial, "SpatialAudioAcousticSourceWritePoolBufferId", "AcousticSourceDTO write pool is GlobalDataVault-backed", builder, ref failures);
             AssertContains(spatial, "SpatialAudioAcousticDspOutputPoolBufferId", "Acoustic DSP output pool is GlobalDataVault-backed", builder, ref failures);
             AssertContains(spatial, "SpatialAudioAcousticSelectedSourcePoolBufferId", "Selected physical voice acoustic lane is GlobalDataVault-backed", builder, ref failures);
-            AssertContains(spatial, "NativeArray<AcousticOcclusionTelemetryEntry> _virtualVoiceBlackBox", "SDF recorder ring uses the dedicated acoustic telemetry DTO", builder, ref failures);
+            AssertContains(spatial, "VaultGenerationHandle<AcousticOcclusionTelemetryEntry> _virtualVoiceBlackBoxHandle", "SDF recorder ring keeps only the dedicated acoustic telemetry descriptor", builder, ref failures);
+            AssertContains(spatial, "out NativeArray<AcousticOcclusionTelemetryEntry> blackBox", "SDF recorder ring writes through a scoped DataVault view", builder, ref failures);
             AssertContains(spatial, "BufferID.VoxelSdfTexture3D", "Spatial audio aliases the owner-published voxel SDF buffer", builder, ref failures);
             AssertContains(spatial, "TrySnapshotAcousticSdfPayload", "Spatial audio snapshots owner-published SDF metadata before scheduling", builder, ref failures);
             AssertContains(spatial, "HectonVoxelVolume.TryGetClosestPublishedSonarSdfPayload", "Spatial audio uses the SDF owner's published origin/dimensions/cell/range", builder, ref failures);

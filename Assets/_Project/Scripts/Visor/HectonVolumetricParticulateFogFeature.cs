@@ -172,7 +172,7 @@ namespace Hecton8.Visor
             private const int FrameParamsStrideBytes = 224;
             private const int DumpThresholdMicroseconds = 2000;
             private const float DearLieProxyBypassThreshold = 0.999f;
-            private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_233.bin";
+            private const string DumpRelativePath = "Docs/AgentLogs/Dump_1309_VolumetricFog.bin";
             private const string GridBuildKernelName = "BuildVolumetricFogGrid";
             private const string RaymarchKernelName = "RaymarchVolumetricFog";
             private const string RaymarchXrKernelName = "RaymarchVolumetricFogXR";
@@ -1575,7 +1575,8 @@ namespace Hecton8.Visor
 
                     int byteLength = telemetry.Length * UnsafeUtility.SizeOf<VolumetricFogTelemetryEntry>();
                     void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                    ReadOnlySpan<byte> dumpBytes = new ReadOnlySpan<byte>(source, byteLength);
+                    ReadOnlySpan<byte> dumpBytes =
+                        MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(source), byteLength);
                     using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                         stream.Write(dumpBytes);
                 }
@@ -1828,7 +1829,7 @@ namespace Hecton8.Visor
                        OffsetOf<FogFrameConstantsDTO>(nameof(FogFrameConstantsDTO.InverseViewProjectionC3)) == 208;
             }
 
-            private static int OffsetOf<T>(string fieldName) where T : struct
+            private static int OffsetOf<T>(string fieldName) where T : unmanaged
             {
                 return Marshal.OffsetOf<T>(fieldName).ToInt32();
             }
@@ -2164,7 +2165,7 @@ namespace Hecton8.Visor
             if (IsUnsupportedCameraType(cameraType))
                 return;
 
-            int currentFrame = Time.frameCount;
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
             RunColdMaintenanceIfDue(currentFrame);
             bool sampleSetupCost = currentFrame >= _nextPerformanceWarningFrame;
             long setupStartTimestamp = sampleSetupCost ? Stopwatch.GetTimestamp() : 0L;

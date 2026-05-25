@@ -39,7 +39,7 @@ namespace Hecton8.UI
             CreateMarker(parent);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[RelayHUDRuntimeBootstrap] Spawned RelayRouteMarker at runtime because the active HUD had none. This is a fail-safe, not a substitute for authored HUD setup.");
+            Hecton8.Core.H8Debug.LogWarning("[RelayHUDRuntimeBootstrap] Spawned RelayRouteMarker at runtime because the active HUD had none. This is a fail-safe, not a substitute for authored HUD setup.");
 #endif
         }
 

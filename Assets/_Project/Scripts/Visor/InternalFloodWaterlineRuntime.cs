@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
@@ -14,7 +13,7 @@ namespace Hecton8.Visor
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6920)]
-    public sealed class InternalFloodWaterlineRuntime : MonoBehaviour, IFastTickable, ILateFrameTickable, IOriginShiftListener, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
+    public sealed class InternalFloodWaterlineRuntime : MonoBehaviour, ILateFrameTickable, IOriginShiftListener, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private static int s_x001InternalFloodWaterlineRuntimeSignalPushDropCount;
         private const int TelemetryCapacity = 300;
@@ -80,18 +79,15 @@ namespace Hecton8.Visor
         private IDataVault _dataVault;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IHabitatGraphService _habitatGraph;
-        private IGasDynamicsSolver _gasDynamics;
         private AbsoluteUniversePosition _lastCameraAup;
         private int _telemetryCursor;
         private int _cachedRoomId = -1;
         private int _currentRoomId = -1;
-        private int _pendingGasRoomId = -1;
         private int _lastProcessedExternalDropletFrame = int.MinValue;
         private int _nextDependencyRefreshTick;
         private float _currentWaterlineY = InternalWaterlineInvalidY;
         private float _targetWaterlineY = InternalWaterlineInvalidY;
         private float _currentFill01;
-        private float _pendingGasFill01;
         private float _dropletSecondsRemaining;
         private float _lastPublishedWaterlineY = float.PositiveInfinity;
         private Color _lastPublishedWaterColor = Color.clear;
@@ -99,11 +95,9 @@ namespace Hecton8.Visor
         private Vector4 _lastPublishedDistortion = Vector4.positiveInfinity;
         private float _cachedGlobalQualityWeight01 = 1f;
         private float _cachedQualityPressure01;
-        private bool _hasPendingGasSubmergedFraction;
         private bool _hasWaterline;
         private bool _cameraSubmerged;
         private bool _hasPreviousSubmergedState;
-        private bool _registeredFastTick;
         private bool _registeredLateFrameTick;
         private bool _registeredOriginShift;
         private bool _hotSwapListenerRegistered;
@@ -175,7 +169,7 @@ namespace Hecton8.Visor
             Shutdown();
         }
 
-        public void FastTick(float deltaTime)
+        private void AdvanceWaterlinePresentation(float deltaTime)
         {
             _tickCount++;
             if (!_isInitialized || deltaTime <= 0f)
@@ -185,7 +179,6 @@ namespace Hecton8.Visor
             RefreshQualityPolicy();
             ConsumeExternalDropletSignals();
             ConsumePlayerExhaleSignals();
-            FlushPendingGasSubmergedFraction();
             if (_dropletSecondsRemaining > 0f)
                 _dropletSecondsRemaining = math.max(0f, _dropletSecondsRemaining - deltaTime);
 
@@ -208,7 +201,6 @@ namespace Hecton8.Visor
             _cachedRoomId = snapshot.RoomId;
             _currentRoomId = snapshot.RoomId;
             _currentFill01 = snapshot.Fill01;
-            QueueGasSubmergedFraction(snapshot.RoomId, snapshot.Fill01);
 
             if (snapshot.Fill01 <= FloodVisibleThreshold01)
             {
@@ -255,6 +247,8 @@ namespace Hecton8.Visor
 
         public void LateFrameTick()
         {
+            AdvanceWaterlinePresentation(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (!_shaderGlobalsDirty)
                 return;
 
@@ -283,9 +277,6 @@ namespace Hecton8.Visor
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_registeredFastTick)
-                _registeredFastTick = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.Environment);
-
             if (!_registeredLateFrameTick)
                 _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
 
@@ -298,12 +289,6 @@ namespace Hecton8.Visor
 
         private void UnregisterRuntime()
         {
-            if (_registeredFastTick)
-            {
-                GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.Environment);
-                _registeredFastTick = false;
-            }
-
             if (_registeredLateFrameTick)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -324,9 +309,6 @@ namespace Hecton8.Visor
             _isInitialized = false;
             _playerRuntimeContext = null;
             _habitatGraph = null;
-            _gasDynamics = null;
-            _hasPendingGasSubmergedFraction = false;
-            _pendingGasRoomId = -1;
             IDataVault vault = _dataVault;
             if (vault != null && IsVaultHandleCreated(in _telemetryHandle))
                 vault.ReleaseBuffer(in _telemetryHandle);
@@ -368,7 +350,7 @@ namespace Hecton8.Visor
             return _dataVault;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
         {
             return handle.BufferID != 0u && handle.Generation != 0u;
         }
@@ -431,7 +413,7 @@ namespace Hecton8.Visor
 
         private void ConsumeExternalDropletSignals()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastProcessedExternalDropletFrame == frame)
                 return;
 
@@ -455,35 +437,6 @@ namespace Hecton8.Visor
             }
         }
 
-        private void QueueGasSubmergedFraction(int roomId, float fill01)
-        {
-            if (roomId < 0)
-                return;
-
-            float safeFill01 = math.isfinite(fill01) ? math.saturate(fill01) : 0f;
-            _pendingGasRoomId = roomId;
-            _pendingGasFill01 = safeFill01;
-            _hasPendingGasSubmergedFraction = !TryPushGasSubmergedFraction(roomId, safeFill01);
-        }
-
-        private void FlushPendingGasSubmergedFraction()
-        {
-            if (!_hasPendingGasSubmergedFraction)
-                return;
-
-            if (TryPushGasSubmergedFraction(_pendingGasRoomId, _pendingGasFill01))
-            {
-                _hasPendingGasSubmergedFraction = false;
-                _pendingGasRoomId = -1;
-            }
-        }
-
-        private bool TryPushGasSubmergedFraction(int roomId, float fill01)
-        {
-            IGasDynamicsSolver gasDynamics = _gasDynamics;
-            return gasDynamics != null && gasDynamics.TrySetRoomSubmergedFraction(roomId, fill01);
-        }
-
         private void RefreshCachedDependencies(bool force)
         {
             if (!force && _tickCount < _nextDependencyRefreshTick)
@@ -494,9 +447,6 @@ namespace Hecton8.Visor
 
             if (force || _habitatGraph == null)
                 _habitatGraph = GlobalRegistry.HabitatGraph;
-
-            if (force || _gasDynamics == null)
-                _gasDynamics = GlobalRegistry.GasDynamics;
 
             _nextDependencyRefreshTick = _tickCount + DependencyRefreshTickInterval;
         }
@@ -509,7 +459,6 @@ namespace Hecton8.Visor
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Dispatcher:
-                    _registeredFastTick = false;
                     _registeredLateFrameTick = false;
                     if (currentService != null && isActiveAndEnabled && _isInitialized)
                         RegisterRuntime();
@@ -526,10 +475,6 @@ namespace Hecton8.Visor
                 case GlobalRegistryServiceSlot.Logistics:
                     if (currentService is IHabitatGraphService || previousService is IHabitatGraphService)
                         _habitatGraph = currentService as IHabitatGraphService;
-                    return;
-
-                case GlobalRegistryServiceSlot.GasDynamicsRuntime:
-                    _gasDynamics = currentService as IGasDynamicsSolver;
                     return;
             }
         }
@@ -718,8 +663,6 @@ namespace Hecton8.Visor
             byte telemetryFlags = flags;
             if (_cameraSubmerged)
                 telemetryFlags |= 2;
-            if (_hasPendingGasSubmergedFraction)
-                telemetryFlags |= 4;
             if (_cachedQualityPressure01 > 0.5f)
                 telemetryFlags |= 8;
             byte qualityByte = EncodeQualityWeightByte(_cachedGlobalQualityWeight01);
@@ -803,10 +746,10 @@ namespace Hecton8.Visor
                     }
                 }
             }
-            catch (System.Exception exception)
+            catch (System.Exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[InternalFloodWaterlineRuntime] Black box dump failed: " + exception.Message);
+                Hecton8.Core.H8Debug.LogError("[InternalFloodWaterlineRuntime] Black box dump failed.");
 #endif
             }
         }

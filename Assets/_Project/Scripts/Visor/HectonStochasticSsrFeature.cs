@@ -224,8 +224,14 @@ namespace Hecton8.Visor
                     return false;
 
                 NativeArray<StochasticSsrGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<StochasticSsrGlobalsDTO>(0, 1);
-                mapped[0] = globals;
-                writeBuffer.UnlockBufferAfterWrite<StochasticSsrGlobalsDTO>(1);
+                try
+                {
+                    mapped[0] = globals;
+                }
+                finally
+                {
+                    writeBuffer.UnlockBufferAfterWrite<StochasticSsrGlobalsDTO>(1);
+                }
                 _stochasticSsrGlobalsBuffer = writeBuffer;
                 _stochasticSsrGlobalsWriteIndex ^= 1;
                 _lastStochasticSsrGlobals = globals;

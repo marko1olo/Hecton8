@@ -417,7 +417,7 @@ namespace Hecton8.World
             _lastAbsoluteWaterLevel = alignment.AbsoluteWaterLevel;
             _lastTerrainCount = alignment.TerrainCoverage.TerrainCount;
             _lastAppliedCameraMaxTerrainHeight = alignment.CameraMaxTerrainHeight;
-            _debugLastPopulateFrame = Time.frameCount;
+            _debugLastPopulateFrame = SystemDispatcher.CurrentFrameIndex;
 
             bool cacheReady = depthCache.CacheTexture != null;
             UpdateDiagnostics(cacheReady, in alignment);
@@ -476,7 +476,7 @@ namespace Hecton8.World
             _hasConfiguredBounds = false;
             _lastTerrainCount = activeAuthoredLocalDepthCacheCount;
             _lastAppliedCameraMaxTerrainHeight = MinimumCameraHeightAboveSeaLevel;
-            _debugLastPopulateFrame = Time.frameCount;
+            _debugLastPopulateFrame = SystemDispatcher.CurrentFrameIndex;
             UpdateDiagnosticsForAuthoredLocalDepthCaches(anyLocalCacheReady, activeAuthoredLocalDepthCacheCount, ResolveWaterLevel());
             return true;
         }
@@ -636,7 +636,7 @@ namespace Hecton8.World
 
             _loggedMissingResolvedTerrains = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.LogError(
+            Hecton8.Core.H8Debug.LogError(
                 "[HectonCrestOceanDepthCacheBootstrap] MapMagicBridge resolved no terrain tiles. Crest depth-cache bootstrap requires registry-owned MapMagic terrain coverage.",
                 this);
 #endif

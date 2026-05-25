@@ -1,7 +1,7 @@
 {
   "metadata": {
     "agent": "X_008",
-    "generatedUtc": "2026-05-25T02:15:53.437476+00:00",
+    "generatedUtc": "2026-05-25T02:40:16.046935+00:00",
     "root": "C:\\hades\\Hecton8",
     "evidenceClass": "STATIC_SOURCE_SCAN_AND_SOURCE_LAYOUT_DECLARATIONS",
     "runtimeProof": "PENDING_VERIFICATION_UNITY_IMPORT_BURST_DISASSEMBLY_PROFILER_NOT_RUN"
@@ -118,6 +118,16 @@
     "hullDentShaderQuaternionInverseCalls": 0,
     "mathContract": "Unity Transform.rotation is unit; inverse(q) == conjugate(q) for damage feedback local projection.",
     "truthCaveat": "This proof is for deferred visual dent projection only; central combat health truth still stays on LUT/CAS routes."
+  },
+  "submarineHullVisualRegistryCacheProof": {
+    "verdict": "PASS",
+    "resolvePlayerCameraGlobalRegistryReads": 0,
+    "breachScreenFeedbackFluidRegistryReads": 0,
+    "coldCacheReadsGlobalRegistryPlayer": true,
+    "coldCacheReadsGlobalRegistryFluidDecals": true,
+    "hotSwapUpdatesPlayerRuntime": true,
+    "hotSwapUpdatesFluidDecals": true,
+    "contract": "Submarine hull damage presentation may read GlobalRegistry during OnEnable cold cache and hot-swap rebinding, but LateFrame leak plume camera and breach spray flush paths must read local cached services only."
   },
   "branchlessArmorLookupProof": {
     "sourceBranchlessnessVerdict": "PASS",
@@ -2533,32 +2543,32 @@
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 117,
+        "line": 116,
         "text": "if (!wreckInstance.TryGetComponent(out MantaEmergencyWreck wreck))"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 742,
+        "line": 721,
         "text": "// COLD ALLOC: PoolSlotData[16] - emergency wreck dehydration slot metadata - owner: MantaEmergencyWreck"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 744,
+        "line": 723,
         "text": "// COLD ALLOC: ResidencyState[16] - emergency wreck dehydration restore state - owner: MantaEmergencyWreck"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 746,
+        "line": 725,
         "text": "// COLD ALLOC: int[16] - emergency wreck free residency slot stack - owner: MantaEmergencyWreck"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 748,
+        "line": 727,
         "text": "// COLD ALLOC: int[16] - emergency wreck active dehydrated slot list - owner: MantaEmergencyWreck"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 797,
+        "line": 776,
         "text": "GameObject runtimeRoot = new GameObject(\"[MantaEmergencyWreckResidencyRuntime]\"); // COLD ALLOC: GameObject[1] - emergency wreck dehydration runtime owner - owner: MantaEmergencyWreck"
       },
       {
@@ -3577,17 +3587,17 @@
     "sourceEvidence": [
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 308,
+        "line": 297,
         "text": "_hasCurrentAup = TryResolveAupFromPlayerObserver(_currentRuntimePosition, out _currentAup);"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 934,
+        "line": 913,
         "text": "if (!TryResolveAupFromPlayerObserver(runtimePosition, out wreckAup))"
       },
       {
         "file": "Assets/_Project/Scripts/Gameplay/MantaEmergencyWreck.cs",
-        "line": 943,
+        "line": 922,
         "text": "private static bool TryResolveAupFromPlayerObserver("
       }
     ]

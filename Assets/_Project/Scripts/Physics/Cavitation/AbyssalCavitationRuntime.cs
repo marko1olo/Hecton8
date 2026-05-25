@@ -1,5 +1,7 @@
 using System;
+#if UNITY_EDITOR
 using System.IO;
+#endif
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -20,6 +22,8 @@ namespace Hecton8.Physics
         private static int s_x001DirectSignalPushDropCount_AbyssalCavitationRuntime;
 
         private const SystemID OwnerSystem = SystemID.VehiclesPhysics;
+        private const uint CavitationFaultEventHash = 0x43414654u; // CAFT
+        private const uint CavitationFaultDumpHash = 0x43414450u; // CADP
         private static readonly int _shockwavesShaderId = Shader.PropertyToID("_H8CavitationShockwaves");
         private static readonly int _shockwaveCountShaderId = Shader.PropertyToID("_H8CavitationShockwaveCount");
         private static readonly int _shockwaveParamsShaderId = Shader.PropertyToID("_H8CavitationShockwaveParams");
@@ -34,6 +38,7 @@ namespace Hecton8.Physics
         private static bool _jobScheduled;
         private static bool _csvLoaded;
         private static bool _defaultCsvLoadAttempted;
+        private static bool _coreBlackboxWarmed;
         private static JobHandle _scheduledHandle;
         private static long _scheduleTimestamp;
         private static float _lastSolveMicroseconds;
@@ -48,7 +53,9 @@ namespace Hecton8.Physics
         private static VaultGenerationHandle<CavitationVisualSphereDTO> _visualHandle;
         private static VaultGenerationHandle<ShockwaveTelemetryEntry> _telemetryHandle;
         private static VaultGenerationHandle<OrdnanceProfileDTO> _profileHandle;
+#if UNITY_EDITOR
         private static VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
         private static VaultGenerationHandle<AbyssalCavitationTuningDTO> _tuningHandle;
         private static VaultGenerationHandle<AbyssalCavitationSdfVolumeDTO> _sdfDescriptorHandle;
         private static VaultGenerationHandle<sbyte> _sdfVoxelsHandle;
@@ -81,11 +88,13 @@ namespace Hecton8.Physics
             {
                 if (explicitVault == null && HasRuntimeDescriptorProof(_vault))
                 {
+                    WarmCoreBlackboxRoute();
                     RegisterFaultDumpHookCold();
                     return true;
                 }
                 if (explicitVault != null && ReferenceEquals(_vault, explicitVault) && HasRuntimeDescriptorProof(explicitVault))
                 {
+                    WarmCoreBlackboxRoute();
                     RegisterFaultDumpHookCold();
                     return true;
                 }
@@ -140,11 +149,13 @@ namespace Hecton8.Physics
                 AbyssalCavitationConstants.OrdnanceProfileCapacity,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
+#if UNITY_EDITOR
             _csvScratchHandle = vault.EnsureGenerationHandle<byte>(
                 AbyssalCavitationVaultBufferIds.CsvScratch,
                 AbyssalCavitationConstants.CsvScratchBytes,
                 OwnerSystem,
                 NativeArrayOptions.UninitializedMemory);
+#endif
             _tuningHandle = vault.EnsureGenerationHandle<AbyssalCavitationTuningDTO>(
                 AbyssalCavitationVaultBufferIds.Tuning,
                 1,
@@ -166,6 +177,7 @@ namespace Hecton8.Physics
             _csvLoaded = false;
             _defaultCsvLoadAttempted = false;
             _initialized = true;
+            WarmCoreBlackboxRoute();
             RegisterFaultDumpHookCold();
             return true;
         }
@@ -239,7 +251,9 @@ namespace Hecton8.Physics
                    CanReadVaultDescriptor(vault, in _visualHandle, AbyssalCavitationVaultBufferIds.VisualSpheres, AbyssalCavitationConstants.MaxVisualSpheres) &&
                    CanReadVaultDescriptor(vault, in _telemetryHandle, AbyssalCavitationVaultBufferIds.TelemetryRing, AbyssalCavitationConstants.TelemetryCapacity) &&
                    CanReadVaultDescriptor(vault, in _profileHandle, AbyssalCavitationVaultBufferIds.OrdnanceProfiles, AbyssalCavitationConstants.OrdnanceProfileCapacity) &&
+#if UNITY_EDITOR
                    CanReadVaultDescriptor(vault, in _csvScratchHandle, AbyssalCavitationVaultBufferIds.CsvScratch, AbyssalCavitationConstants.CsvScratchBytes) &&
+#endif
                    CanReadVaultDescriptor(vault, in _tuningHandle, AbyssalCavitationVaultBufferIds.Tuning, 1) &&
                    CanReadVaultDescriptor(vault, in _sdfDescriptorHandle, AbyssalCavitationVaultBufferIds.SdfDescriptor, AbyssalCavitationConstants.SdfDescriptorCount) &&
                    CanReadVaultDescriptor(vault, in _sdfVoxelsHandle, AbyssalCavitationVaultBufferIds.SdfVoxels, AbyssalCavitationConstants.SdfVoxelCapacity);
@@ -851,6 +865,7 @@ namespace Hecton8.Physics
             _lastUploadedVisualIntensity = -1f;
             _lastUploadedFrameIndex = 0u;
             _lastUploadedBuffer = null;
+            _coreBlackboxWarmed = false;
         }
 
         public static int SyncShaderVisuals(CommandBuffer commandBuffer = null)
@@ -982,7 +997,7 @@ namespace Hecton8.Physics
             catch (Exception)
             {
 #if UNITY_EDITOR
-                Debug.LogWarning("[SHINOBU_248] Ordnance CSV load failed.");
+                Hecton8.Core.H8Debug.LogWarning("[SHINOBU_248] Ordnance CSV load failed.");
 #endif
                 return false;
             }
@@ -1050,105 +1065,35 @@ namespace Hecton8.Physics
 
         public static bool TryDumpBlackBox(uint reasonFlags)
         {
-            if (!IsRuntimeReady || _jobScheduled)
+            if (!IsRuntimeReady || _jobScheduled || !_coreBlackboxWarmed || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
                 return false;
 
             NativeArray<ShockwaveTelemetryEntry> ring = OpenVaultView(in _telemetryHandle);
-            if (!ring.IsCreated)
+            if (!ring.IsCreated || ring.Length <= 0)
                 return false;
 
-            string path = ResolveAgentLogPath(AbyssalCavitationConstants.DumpRelativePath);
-            string tempPath = path + ".tmp";
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-
-            try
-            {
-                using (FileStream stream = File.Open(tempPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    unsafe
-                    {
-                        ulong magic = 0x5355524756414348UL; // H8CAVGRS little-endian marker.
-                        uint version = 1u;
-                        stream.Write(new ReadOnlySpan<byte>(&magic, sizeof(ulong)));
-                        stream.Write(new ReadOnlySpan<byte>(&version, sizeof(uint)));
-                        stream.Write(new ReadOnlySpan<byte>(&reasonFlags, sizeof(uint)));
-                        void* ptr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(ring);
-                        int bytes = UnsafeUtility.SizeOf<ShockwaveTelemetryEntry>() * ring.Length;
-                        stream.Write(new ReadOnlySpan<byte>(ptr, bytes));
-                    }
-                }
-
-                ReplaceDumpFile(tempPath, path);
-
-                return true;
-            }
-            catch (Exception)
-            {
-                try
-                {
-                    if (File.Exists(tempPath))
-                        File.Delete(tempPath);
-                }
-                catch (Exception)
-                {
-                }
-
-#if UNITY_EDITOR
-                Debug.LogError("[SHINOBU_248] Cavitation black-box dump failed.");
-#endif
-                return false;
-            }
+            int sampleIndex = (int)(_frameIndex % (uint)ring.Length);
+            ShockwaveTelemetryEntry sample = ring[sampleIndex];
+            float scalar = math.isfinite(sample.PeakPressure) ? sample.PeakPressure : 0f;
+            GlobalTelemetryBus.PushEvent(CavitationFaultEventHash, scalar, reasonFlags);
+            return GlobalTelemetryBus.TryDumpBlackboxNow(CavitationFaultDumpHash);
         }
 
-        private static void ReplaceDumpFile(string tempPath, string path)
+        private static void WarmCoreBlackboxRoute()
         {
-            if (!File.Exists(path))
-            {
-                File.Move(tempPath, path);
+            if (_coreBlackboxWarmed || !Application.isPlaying)
                 return;
-            }
 
-            try
-            {
-                File.Replace(tempPath, path, null, true);
-            }
-            catch (PlatformNotSupportedException)
-            {
-                File.Delete(path);
-                File.Move(tempPath, path);
-            }
-            catch (IOException)
-            {
-                File.Delete(path);
-                File.Move(tempPath, path);
-            }
+            GlobalTelemetryBus.Initialize();
+            _coreBlackboxWarmed = GlobalTelemetryBus.BlackboxActiveFrameCount > 0;
         }
 
-        private static string ResolveAgentLogPath(string relativePath)
-        {
 #if UNITY_EDITOR
-            string dataPath = Application.dataPath;
-            if (!string.IsNullOrEmpty(dataPath))
-            {
-                DirectoryInfo projectRoot = Directory.GetParent(dataPath);
-                if (projectRoot != null)
-                    return Path.Combine(projectRoot.FullName, relativePath);
-            }
-#endif
-
-            string root = Directory.GetCurrentDirectory();
-            if (string.IsNullOrEmpty(root))
-                root = Application.persistentDataPath;
-
-            return Path.Combine(root, relativePath);
-        }
-
         public static bool IsCsvLoaded()
         {
             return _csvLoaded;
         }
+#endif
 
         private static void InitializeBuffersCold(IDataVault vault)
         {

@@ -238,7 +238,7 @@ namespace Hecton8.Narrative
             if (logData == null)
             {
 #if UNITY_EDITOR
-                Debug.LogWarning("[AudioLogPickup] No AudioLogData assigned.");
+                Hecton8.Core.H8Debug.LogWarning("[AudioLogPickup] No AudioLogData assigned.");
 #endif
                 return;
             }
@@ -247,7 +247,7 @@ namespace Hecton8.Narrative
             if (system == null)
             {
 #if UNITY_EDITOR
-                Debug.LogWarning("[AudioLogPickup] AudioLogSystem service is not cached.");
+                Hecton8.Core.H8Debug.LogWarning("[AudioLogPickup] AudioLogSystem service is not cached.");
 #endif
                 return;
             }

@@ -162,6 +162,7 @@ namespace Hecton8.AI.Ecosystem
         private VaultGenerationHandle<SpatialGridTuningDTO> _spatialGridTuningHandle;
         private VaultGenerationHandle<SpatialGridProfileDTO> _spatialGridProfileHandle;
         private VaultGenerationHandle<byte> _spatialGridCsvScratchHandle;
+        private VaultGenerationHandle<byte> _spatialGridDumpSnapshotHandle;
         private VaultGenerationHandle<byte> _csvScratchHandle;
         private VaultGenerationHandle<byte> _legacyScratchHandle;
         private VaultGenerationHandle<SwarmSpeciesProfileDTO> _swarmSpeciesProfileHandle;
@@ -280,9 +281,23 @@ namespace Hecton8.AI.Ecosystem
             EnsureDataVaultCold();
             TryRegisterHotSwapListener();
             if (EnsureVaultState())
+            {
+                TryEnsureSpatialGridDumpWorker(_dataVault);
                 TryRegisterTicks();
+            }
             if (_proceduralRenderMaterial != null)
                 TryRegisterRender();
+        }
+
+        private void TryEnsureSpatialGridDumpWorker(IDataVault vault)
+        {
+            if (!ShinobuSpatialGridForensics.EnsureDumpWorker(
+                    ResolveProjectRoot(),
+                    vault,
+                    in _spatialGridDumpSnapshotHandle))
+            {
+                ShinobuSpatialGridForensics.RecordQueueFailure();
+            }
         }
 
         public void Dispose()
@@ -292,6 +307,7 @@ namespace Hecton8.AI.Ecosystem
             TryUnregisterTicks();
             TryUnregisterHotSwapListener();
             UnlockJobBuffers();
+            ShinobuSpatialGridForensics.ShutdownDumpWorker();
             _gpuUploadDispatcher.Dispose();
             ClearCachedState();
         }
@@ -315,6 +331,7 @@ namespace Hecton8.AI.Ecosystem
 
             CompleteFrameJobForTeardown();
             UnlockJobBuffers();
+            ShinobuSpatialGridForensics.ShutdownDumpWorker();
             _dataVault = currentService as IDataVault;
             ResetVaultHandles();
             _telemetryCursor = 0;
@@ -336,6 +353,7 @@ namespace Hecton8.AI.Ecosystem
             }
 
             ClearSpatialGridRangeTable(_dataVault);
+            TryEnsureSpatialGridDumpWorker(_dataVault);
             TryRegisterTicks();
         }
 
@@ -616,7 +634,7 @@ namespace Hecton8.AI.Ecosystem
                 _jobLocksHeld = true;
                 H8Memory.RegisterActiveJob(SystemID.AIEcology, _activeJobHandle);
             }
-            catch (Exception)
+            catch (InvalidOperationException)
             {
                 if (scheduledWork)
                 {
@@ -1047,6 +1065,11 @@ namespace Hecton8.AI.Ecosystem
                 BufferID.ShinobuSpatialGridCsvScratch,
                 SpatialGridCsvMaxBytes,
                 NativeArrayOptions.UninitializedMemory);
+            _spatialGridDumpSnapshotHandle = ClaimVaultHandle<byte>(
+                vault,
+                BufferID.ShinobuSpatialGridDumpSnapshot,
+                ShinobuSpatialGridForensics.DumpSnapshotBytes,
+                NativeArrayOptions.UninitializedMemory);
             _csvScratchHandle = ClaimVaultHandle<byte>(
                 vault,
                 BufferID.ShinobuEcosystemCsvScratch,
@@ -1105,6 +1128,7 @@ namespace Hecton8.AI.Ecosystem
                    TryOpenVaultView(vault, in _spatialGridTuningHandle, 1, out NativeArray<SpatialGridTuningDTO> _) &&
                    TryOpenVaultView(vault, in _spatialGridProfileHandle, SpatialGridProfileCapacity, out NativeArray<SpatialGridProfileDTO> _) &&
                    TryOpenVaultView(vault, in _spatialGridCsvScratchHandle, SpatialGridCsvMaxBytes, out NativeArray<byte> _) &&
+                   TryOpenVaultView(vault, in _spatialGridDumpSnapshotHandle, ShinobuSpatialGridForensics.DumpSnapshotBytes, out NativeArray<byte> _) &&
                    TryOpenVaultView(vault, in _csvScratchHandle, CsvMaxBytes, out NativeArray<byte> _) &&
                    TryOpenVaultView(vault, in _legacyScratchHandle, LegacyProfileReadBytes, out NativeArray<byte> _) &&
                    TryOpenVaultView(vault, in _swarmSpeciesProfileHandle, SwarmSpeciesProfileCapacity, out NativeArray<SwarmSpeciesProfileDTO> _);
@@ -1119,7 +1143,11 @@ namespace Hecton8.AI.Ecosystem
             {
                 _gpuUploadDispatcher.EnsureGraphicsResources(entityCapacity);
             }
-            catch (Exception)
+            catch (InvalidOperationException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x47505543u, SourceHash, 0f);
+            }
+            catch (ArgumentException)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(0x47505543u, SourceHash, 0f);
             }
@@ -1351,7 +1379,23 @@ namespace Hecton8.AI.Ecosystem
                 _runtimeFlags |= TuningFlagLegacyBinary;
                 return true;
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (InvalidOperationException)
             {
                 return false;
             }
@@ -1527,7 +1571,23 @@ namespace Hecton8.AI.Ecosystem
 
                 _csvTimestampTicks = lastWriteUtc.Ticks;
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x43535646u, SourceHash, 0f);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x43535646u, SourceHash, 0f);
+            }
+            catch (ArgumentException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x43535646u, SourceHash, 0f);
+            }
+            catch (NotSupportedException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x43535646u, SourceHash, 0f);
+            }
+            catch (InvalidOperationException)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(0x43535646u, SourceHash, 0f);
             }
@@ -1562,7 +1622,23 @@ namespace Hecton8.AI.Ecosystem
 
                 _swarmSpeciesCsvTimestampTicks = lastWriteUtc.Ticks;
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53504346u, SourceHash, 0f);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53504346u, SourceHash, 0f);
+            }
+            catch (ArgumentException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53504346u, SourceHash, 0f);
+            }
+            catch (NotSupportedException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x53504346u, SourceHash, 0f);
+            }
+            catch (InvalidOperationException)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(0x53504346u, SourceHash, 0f);
             }
@@ -1618,7 +1694,7 @@ namespace Hecton8.AI.Ecosystem
                     Counters = counters,
                     CenterAup = _cameraAup,
                     Tuning = tuning,
-                    GlobalQualityWeight = AuthoritativeQualityWeight,
+                    GlobalQualityWeight = visualQualityWeight,
                     EntityCount = math.min(entityCapacity, math.min(entities.Length, aups.Length)),
                     SectorCount = math.min(sectorCapacity, sectors.Length),
                     SectorSizeMeters = math.max(1f, sectorSizeMeters),
@@ -1642,7 +1718,7 @@ namespace Hecton8.AI.Ecosystem
                 _jobLocksHeld = true;
                 H8Memory.RegisterActiveJob(SystemID.AIEcology, _activeJobHandle);
             }
-            catch (Exception)
+            catch (InvalidOperationException)
             {
                 if (scheduledWork)
                 {
@@ -1739,7 +1815,11 @@ namespace Hecton8.AI.Ecosystem
             {
                 uploaded = _gpuUploadDispatcher.UploadFromVault(matrices, customData, indirectArgs);
             }
-            catch (Exception)
+            catch (InvalidOperationException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x47505555u, SourceHash, 0f);
+            }
+            catch (ArgumentException)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(0x47505555u, SourceHash, 0f);
             }
@@ -1816,7 +1896,10 @@ namespace Hecton8.AI.Ecosystem
                 TryOpenVaultView(vault, in _spatialGridTelemetryCursorHandle, 1, out NativeArray<int> spatialCursor) &&
                 spatialTelemetry.Length > 0)
             {
-                int spatialIndex = math.max(0, spatialCursor[0] - 1) % spatialTelemetry.Length;
+                int safeSpatialCursor = spatialCursor[0];
+                if (safeSpatialCursor <= 0 || safeSpatialCursor >= int.MaxValue - spatialTelemetry.Length)
+                    safeSpatialCursor = 1;
+                int spatialIndex = (safeSpatialCursor - 1) % spatialTelemetry.Length;
                 SpatialGridTelemetryEntry spatialEntry = spatialTelemetry[spatialIndex];
                 if (TryOpenVaultView(vault, in _flockingCounterHandle, FlockingCounterCapacity, out NativeArray<FlockingCounter64> flockingCounters))
                 {
@@ -1834,14 +1917,12 @@ namespace Hecton8.AI.Ecosystem
                 if (!_dumpedSpatialGridFault && spatialFault)
                 {
                     _dumpedSpatialGridFault = true;
-                    try
-                    {
-                        ShinobuSpatialGridForensics.WriteTelemetryDump(ResolveProjectRoot(), spatialTelemetry, spatialCursor[0]);
-                    }
-                    catch (Exception)
-                    {
-                        GlobalTelemetryBus.PublishPerformanceWarning(0x53473346u, SourceHash, 0f);
-                    }
+                    if (!ShinobuSpatialGridForensics.TryQueueTelemetryDump(
+                            vault,
+                            in _spatialGridDumpSnapshotHandle,
+                            spatialTelemetry,
+                            spatialCursor[0]))
+                        ShinobuSpatialGridForensics.RecordQueueFailure();
                 }
             }
 
@@ -2064,6 +2145,7 @@ namespace Hecton8.AI.Ecosystem
             _spatialGridTuningHandle = default;
             _spatialGridProfileHandle = default;
             _spatialGridCsvScratchHandle = default;
+            _spatialGridDumpSnapshotHandle = default;
             _csvScratchHandle = default;
             _legacyScratchHandle = default;
             _swarmSpeciesProfileHandle = default;
@@ -2190,8 +2272,10 @@ namespace Hecton8.AI.Ecosystem
 
         private static float ResolveGlobalQualityWeight01()
         {
-            float weight = HomeostasisBrain.GlobalQualityWeight;
-            return math.isfinite(weight) ? math.saturate(weight) : 0f;
+            if (MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config))
+                return MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, AuthoritativeQualityWeight);
+
+            return MathLodApproximation.SaturateFinite(HomeostasisBrain.GlobalQualityWeight, AuthoritativeQualityWeight);
         }
 
         private static int ResolveActiveEntityBudget(int capacity)
@@ -2504,7 +2588,19 @@ namespace Hecton8.AI.Ecosystem
                 string[] files = Directory.GetFiles(root, fileName, SearchOption.AllDirectories);
                 return files != null && files.Length > 0 ? files[0] : null;
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                return null;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return null;
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+            catch (NotSupportedException)
             {
                 return null;
             }
@@ -2563,7 +2659,23 @@ namespace Hecton8.AI.Ecosystem
                 WriteBlackBoxFile(Path.Combine(root, DumpRelativePath), telemetry, cursor);
                 WriteBlackBoxFile(Path.Combine(root, DumpH8RelativePath), telemetry, cursor);
             }
-            catch (Exception)
+            catch (IOException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x444D5046u, SourceHash, 0f);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x444D5046u, SourceHash, 0f);
+            }
+            catch (ArgumentException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x444D5046u, SourceHash, 0f);
+            }
+            catch (NotSupportedException)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(0x444D5046u, SourceHash, 0f);
+            }
+            catch (InvalidOperationException)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(0x444D5046u, SourceHash, 0f);
             }
@@ -3528,6 +3640,9 @@ namespace Hecton8.AI.Ecosystem
 
     internal static class ShinobuEcosystemLayoutManifest
     {
+        private const string LayoutSizeMismatchMessage = "[ShinobuEcosystemLayoutManifest] Size mismatch";
+        private const string LayoutOffsetMismatchMessage = "[ShinobuEcosystemLayoutManifest] Offset mismatch";
+
         private static bool _verified;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -3565,6 +3680,8 @@ namespace Hecton8.AI.Ecosystem
             AssertSize<SpatialGridTelemetryEntry>(64);
             AssertSize<SpatialGridTuningDTO>(32);
             AssertSize<SpatialGridProfileDTO>(32);
+            AssertSize<SpatialGridCell64>(24);
+            AssertSize<SpatialHashQuery>(144);
 
             AssertOffset<AmbientEntityDTO>(nameof(AmbientEntityDTO.Position), 0);
             AssertOffset<AmbientEntityDTO>(nameof(AmbientEntityDTO.Velocity), 12);
@@ -3611,8 +3728,57 @@ namespace Hecton8.AI.Ecosystem
             AssertOffset<SpatialGridBucketRangeDTO>(nameof(SpatialGridBucketRangeDTO.Flags), 20);
             AssertOffset<SpatialGridBucketRangeDTO>(nameof(SpatialGridBucketRangeDTO.Pad0), 24);
             AssertOffset<SpatialGridBucketRangeDTO>(nameof(SpatialGridBucketRangeDTO.Pad1), 28);
+            AssertOffset<SpatialGridTelemetryEntry>(nameof(SpatialGridTelemetryEntry.Frame), 0);
+            AssertOffset<SpatialGridTelemetryEntry>(nameof(SpatialGridTelemetryEntry.EntityCount), 4);
+            AssertOffset<SpatialGridTelemetryEntry>(nameof(SpatialGridTelemetryEntry.MaxBucketOccupancy), 8);
+            AssertOffset<SpatialGridTelemetryEntry>(nameof(SpatialGridTelemetryEntry.QueryCount), 12);
+            AssertOffset<SpatialGridTelemetryEntry>(nameof(SpatialGridTelemetryEntry.QuantizeMicroseconds), 16);
+            AssertOffset<SpatialGridTelemetryEntry>(nameof(SpatialGridTelemetryEntry.SortMicroseconds), 20);
+            AssertOffset<SpatialGridTelemetryEntry>(nameof(SpatialGridTelemetryEntry.GlobalQualityWeight), 24);
+            AssertOffset<SpatialGridTelemetryEntry>(nameof(SpatialGridTelemetryEntry.CellSizeMeters), 28);
+            AssertOffset<SpatialGridTelemetryEntry>(nameof(SpatialGridTelemetryEntry.OverflowCount), 32);
+            AssertOffset<SpatialGridTelemetryEntry>(nameof(SpatialGridTelemetryEntry.Flags), 36);
+            AssertOffset<SpatialGridTelemetryEntry>(nameof(SpatialGridTelemetryEntry.StateHash), 40);
+            AssertOffset<SpatialGridTelemetryEntry>(nameof(SpatialGridTelemetryEntry.MaxProbeCount), 44);
+            AssertOffset<SpatialGridTelemetryEntry>(nameof(SpatialGridTelemetryEntry.MaxQueryResults), 48);
+            AssertOffset<SpatialGridTelemetryEntry>(nameof(SpatialGridTelemetryEntry.BucketRangeCount), 52);
             AssertOffset<SpatialGridTelemetryEntry>(nameof(SpatialGridTelemetryEntry.InvalidInputCount), 56);
             AssertOffset<SpatialGridTelemetryEntry>(nameof(SpatialGridTelemetryEntry.Pad1), 60);
+            AssertOffset<SpatialGridTuningDTO>(nameof(SpatialGridTuningDTO.BaseGridCellSize), 0);
+            AssertOffset<SpatialGridTuningDTO>(nameof(SpatialGridTuningDTO.MinGridCellSize), 4);
+            AssertOffset<SpatialGridTuningDTO>(nameof(SpatialGridTuningDTO.MaxGridCellSize), 8);
+            AssertOffset<SpatialGridTuningDTO>(nameof(SpatialGridTuningDTO.MaxQueryResultsLimit), 12);
+            AssertOffset<SpatialGridTuningDTO>(nameof(SpatialGridTuningDTO.HashMultiplierX), 16);
+            AssertOffset<SpatialGridTuningDTO>(nameof(SpatialGridTuningDTO.HashMultiplierY), 20);
+            AssertOffset<SpatialGridTuningDTO>(nameof(SpatialGridTuningDTO.HashMultiplierZ), 24);
+            AssertOffset<SpatialGridTuningDTO>(nameof(SpatialGridTuningDTO.Flags), 28);
+            AssertOffset<SpatialGridProfileDTO>(nameof(SpatialGridProfileDTO.LayerHash), 0);
+            AssertOffset<SpatialGridProfileDTO>(nameof(SpatialGridProfileDTO.BaseGridCellSize), 4);
+            AssertOffset<SpatialGridProfileDTO>(nameof(SpatialGridProfileDTO.MinGridCellSize), 8);
+            AssertOffset<SpatialGridProfileDTO>(nameof(SpatialGridProfileDTO.MaxGridCellSize), 12);
+            AssertOffset<SpatialGridProfileDTO>(nameof(SpatialGridProfileDTO.MaxQueryResultsLimit), 16);
+            AssertOffset<SpatialGridProfileDTO>(nameof(SpatialGridProfileDTO.MaxProbeCount), 20);
+            AssertOffset<SpatialGridProfileDTO>(nameof(SpatialGridProfileDTO.Flags), 24);
+            AssertOffset<SpatialGridProfileDTO>(nameof(SpatialGridProfileDTO.Pad0), 28);
+            AssertOffset<SpatialGridCell64>(nameof(SpatialGridCell64.X), 0);
+            AssertOffset<SpatialGridCell64>(nameof(SpatialGridCell64.Y), 8);
+            AssertOffset<SpatialGridCell64>(nameof(SpatialGridCell64.Z), 16);
+            AssertOffset<SpatialHashQuery>(nameof(SpatialHashQuery.CenterAbsolute), 0);
+            AssertOffset<SpatialHashQuery>(nameof(SpatialHashQuery.EntriesHandle), 24);
+            AssertOffset<SpatialHashQuery>(nameof(SpatialHashQuery.BucketRangesHandle), 40);
+            AssertOffset<SpatialHashQuery>(nameof(SpatialHashQuery.AupSnapshotHandle), 56);
+            AssertOffset<SpatialHashQuery>(nameof(SpatialHashQuery.TelemetryHandle), 72);
+            AssertOffset<SpatialHashQuery>(nameof(SpatialHashQuery.TelemetryCursorHandle), 88);
+            AssertOffset<SpatialHashQuery>(nameof(SpatialHashQuery.EntryCount), 104);
+            AssertOffset<SpatialHashQuery>(nameof(SpatialHashQuery.BucketMask), 108);
+            AssertOffset<SpatialHashQuery>(nameof(SpatialHashQuery.Frame), 112);
+            AssertOffset<SpatialHashQuery>(nameof(SpatialHashQuery.CellSizeMeters), 116);
+            AssertOffset<SpatialHashQuery>(nameof(SpatialHashQuery.HashMultiplierX), 120);
+            AssertOffset<SpatialHashQuery>(nameof(SpatialHashQuery.HashMultiplierY), 124);
+            AssertOffset<SpatialHashQuery>(nameof(SpatialHashQuery.HashMultiplierZ), 128);
+            AssertOffset<SpatialHashQuery>(nameof(SpatialHashQuery.MaxResults), 132);
+            AssertOffset<SpatialHashQuery>(nameof(SpatialHashQuery.MaxProbeCount), 136);
+            AssertOffset<SpatialHashQuery>("_pad0", 140);
 
             _verified = true;
         }
@@ -3621,19 +3787,19 @@ namespace Hecton8.AI.Ecosystem
         {
             int observed = UnsafeUtility.SizeOf<T>();
             if (observed != expected)
-                Fail(typeof(T).Name, expected, observed);
+                Fail(LayoutSizeMismatchMessage);
         }
 
         private static void AssertOffset<T>(string fieldName, int expected) where T : unmanaged
         {
             int observed = (int)Marshal.OffsetOf<T>(fieldName);
             if (observed != expected)
-                Fail(typeof(T).Name + "." + fieldName, expected, observed);
+                Fail(LayoutOffsetMismatchMessage);
         }
 
-        private static void Fail(string label, int expected, int observed)
+        private static void Fail(string message)
         {
-            throw new CriticalBootException("[ShinobuEcosystemLayoutManifest] Layout mismatch " + label + " expected=" + expected + " observed=" + observed);
+            throw new CriticalBootException(message);
         }
     }
 
@@ -4491,10 +4657,13 @@ namespace Hecton8.AI.Ecosystem
             if (!TryFindSpatialRange(cellHash, cellFingerprint, spatialRanges, out SpatialGridBucketRangeDTO range))
                 return;
 
+            int start = math.clamp(range.StartIndex, 0, Count);
+            int available = Count - start;
+            int rangeCount = math.min(math.max(0, range.Count), available);
+            int end = start + rangeCount;
             int4 laneIndices = new int4(-1);
             int laneCount = 0;
-            int end = math.min(Count, range.StartIndex + math.max(0, range.Count));
-            for (int entryIndex = math.max(0, range.StartIndex); entryIndex < end && entryScans < hardSampleLimit && sampleCount < hardSampleLimit; entryIndex++)
+            for (int entryIndex = start; entryIndex < end && entryScans < hardSampleLimit && sampleCount < hardSampleLimit; entryIndex++)
             {
                 SpatialGridEntryDTO entry = spatialEntries[entryIndex];
                 if (!ShinobuSpatialGridMath.CellFingerprintEquals(entry.CellFingerprint, cellFingerprint))

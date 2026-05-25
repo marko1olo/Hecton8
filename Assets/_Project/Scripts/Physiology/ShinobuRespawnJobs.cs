@@ -68,7 +68,7 @@ namespace Hecton8.Physiology
     public struct GenerateMockLethalDamageJob : IJob
     {
         [NativeDisableParallelForRestriction, NoAlias] public NativeArray<MedicalBayDTO> MedicalBays;
-        [WriteOnly, NoAlias] public NativeQueue<PlayerRespawnSignal>.ParallelWriter RespawnSignals;
+        [WriteOnly, NoAlias] public global::Hecton8.Core.MpscSignalRingBuffer<PlayerRespawnSignal>.ParallelWriter RespawnSignals;
         [NativeDisableParallelForRestriction] public NativeArray<int> RespawnSignalsBudget;
         public double3 DeathAUP;
         public double3 FallbackLifepodAUP;
@@ -328,9 +328,9 @@ namespace Hecton8.Physiology
         [NativeDisableUnsafePtrRestriction, NoAlias] public MetabolicStateDTO* Metabolism;
         [NativeDisableUnsafePtrRestriction, NoAlias] public GasPhysiologyStateDTO* GasState;
         [NativeDisableUnsafePtrRestriction, NoAlias] public LockstepPlayerKinematicState* PlayerKinematic;
-        [WriteOnly, NoAlias] public NativeQueue<InventoryCommandSignal>.ParallelWriter InventoryCommands;
+        [WriteOnly, NoAlias] public global::Hecton8.Core.MpscSignalRingBuffer<InventoryCommandSignal>.ParallelWriter InventoryCommands;
         [NativeDisableParallelForRestriction] public NativeArray<int> InventoryCommandsBudget;
-        [WriteOnly, NoAlias] public NativeQueue<InventoryRespawnDeathAupSignal>.ParallelWriter InventoryDeathAupSignals;
+        [WriteOnly, NoAlias] public global::Hecton8.Core.MpscSignalRingBuffer<InventoryRespawnDeathAupSignal>.ParallelWriter InventoryDeathAupSignals;
         [NativeDisableParallelForRestriction] public NativeArray<int> InventoryDeathAupSignalsBudget;
         public int MedicalBayCount;
         public int TissueCount;

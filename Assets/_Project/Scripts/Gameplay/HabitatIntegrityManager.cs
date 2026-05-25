@@ -192,7 +192,7 @@ namespace Hecton8.Gameplay
         private int _combatDamageTargetId;
         private bool _combatDamageRegistered;
         private bool _combatDamageSyncDirty;
-        private AbyssalFluidDecalManager _fluidDecals;
+        private IFluidDecalPresentationSink _fluidDecals;
         private IAtmosphereReadModel _atmosphereRuntime;
         private ITerrainProvider _terrainProvider;
 
@@ -622,7 +622,7 @@ namespace Hecton8.Gameplay
             Vector3 breachPoint = new Vector3(localPoint.x, localPoint.y, localPoint.z);
             _baseModule.EmitHullBreachJet(breachPoint, pressureDelta);
 
-            AbyssalFluidDecalManager fluidDecals = _fluidDecals;
+            IFluidDecalPresentationSink fluidDecals = _fluidDecals;
             if (!emitFluidDecals || fluidDecals == null || depth < HighPressureJetDepthMeters)
                 return;
 
@@ -646,7 +646,7 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            _fluidDecals = GlobalRegistry.FluidDecalPresentation;
             _atmosphereRuntime = GlobalRegistry.AtmosphereReadModel;
             _terrainProvider = GlobalRegistry.Terrain;
         }
@@ -694,7 +694,7 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime:
-                    _fluidDecals = currentService as AbyssalFluidDecalManager;
+                    _fluidDecals = currentService as IFluidDecalPresentationSink;
                     break;
                 case GlobalRegistryServiceSlot.AtmosphereRuntime:
                     _atmosphereRuntime = currentService as IAtmosphereReadModel;

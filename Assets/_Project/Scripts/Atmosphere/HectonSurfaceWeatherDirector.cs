@@ -13,10 +13,12 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Hecton8.World;
 using NASAPunk.Visor;
 using UnityEngine;
+using HectonOceanSurfaceWeatherState = global::Hecton8.Core.Contracts.HectonOceanSurfaceWeatherState;
+using HectonOceanSurfaceWeatherStateFlags = global::Hecton8.Core.Contracts.HectonOceanSurfaceWeatherStateFlags;
+using IHectonOceanKinematics = global::Hecton8.Core.Contracts.IHectonOceanKinematics;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -43,6 +45,7 @@ namespace Hecton8.Atmosphere
         private const uint SurfaceWeatherSolveBudgetWarningHash = 0x53574657u;
         private const uint SurfaceWeatherSolveBudgetContextHash = 0x53574654u;
         private static readonly long SurfaceWeatherSolveBudgetWarningTicks = Math.Max(1L, Stopwatch.Frequency / 5000L);
+        private static int s_x001SurfaceWeatherDirectorSignalPushDropCount;
 
         private enum SurfaceExecutionMode : byte
         {
@@ -292,7 +295,7 @@ namespace Hecton8.Atmosphere
         private Transform _selfTransform;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private Transform _playerTransform;
-        private BuoyancyObject _playerBuoyancy;
+        private IBuoyancyAirStateReadModel _playerBuoyancy;
 
         private IHectonOceanKinematics _oceanKinematics;
         private HectonOceanSurfaceWeatherState _oceanSurfaceDefaults = new HectonOceanSurfaceWeatherState
@@ -568,10 +571,11 @@ namespace Hecton8.Atmosphere
             if (!Application.isPlaying)
                 return;
 
-            if (!force && Time.unscaledTime < _nextResolveTime)
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (!force && now < _nextResolveTime)
                 return;
 
-            _nextResolveTime = Time.unscaledTime + ResolveRetryInterval;
+            _nextResolveTime = now + ResolveRetryInterval;
 
             ResolvePlayerMovementReference();
             ResolveSceneOwnedReferences();
@@ -869,7 +873,7 @@ namespace Hecton8.Atmosphere
                 pendingThunderPitch = _pendingThunderPitch,
                 pendingThunderPosition = ToFloat3(_pendingThunderPosition),
                 gustTimeOffset = _gustTimeOffset,
-                unscaledTime = Time.unscaledTime,
+                unscaledTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
                 stormEquipmentPulseTimer = _stormEquipmentPulseTimer,
                 stormInterferenceElectricalThreshold = stormInterferenceElectricalThreshold,
                 stormInterferencePulseIntervalMin = stormInterferencePulseIntervalMin,
@@ -1206,7 +1210,8 @@ namespace Hecton8.Atmosphere
             float flashDuration = LightningFlashSeconds;
             float flashBase = math.max(0f, _currentState.lightningFlashIntensity);
             float flashVariance = math.lerp(0.7f, 1f, NextRandom01());
-            float gustMultiplier = ResolveGustMultiplier(_currentState);
+            float unscaledTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            float gustMultiplier = ResolveGustMultiplier(_currentState, unscaledTime);
             float strikeRandomA = NextRandom01();
             float strikeRandomB = NextRandom01();
             Vector3 followPosition = ResolveFollowPosition();
@@ -1563,14 +1568,14 @@ namespace Hecton8.Atmosphere
             _isLocallySheltered = dryZoneShelter;
         }
 
-        private float ResolveGustMultiplier(in WeatherFrameState state)
+        private float ResolveGustMultiplier(in WeatherFrameState state, float unscaledTime)
         {
             float gustStrength = math.saturate(state.gustStrength);
             if (gustStrength <= 0.001f)
                 return 1f;
 
             float frequency = math.clamp(state.gustFrequency, 0.005f, 0.2f);
-            float phase = (Time.unscaledTime + _gustTimeOffset) * frequency * math.PI * 2f;
+            float phase = (unscaledTime + _gustTimeOffset) * frequency * math.PI * 2f;
             float composite =
                 CinematicMath.FastSin(phase) * 0.58f +
                 CinematicMath.FastSin(phase * 0.43f + 1.17f) * 0.29f +
@@ -1583,14 +1588,14 @@ namespace Hecton8.Atmosphere
             return math.lerp(calmFloor, gustPeak, envelope);
         }
 
-        private float ResolveSquallMultiplier(in WeatherFrameState state)
+        private float ResolveSquallMultiplier(in WeatherFrameState state, float unscaledTime)
         {
             float squallStrength = math.saturate(state.squallStrength);
             if (squallStrength <= 0.001f)
                 return 1f;
 
             float frequency = math.clamp(state.squallFrequency, 0.005f, 0.08f);
-            float phase = (Time.unscaledTime + _gustTimeOffset * 0.37f) * frequency * math.PI * 2f;
+            float phase = (unscaledTime + _gustTimeOffset * 0.37f) * frequency * math.PI * 2f;
             float composite =
                 CinematicMath.FastSin(phase) * 0.61f +
                 CinematicMath.FastSin(phase * 0.31f + 2.14f) * 0.27f +
@@ -1775,8 +1780,9 @@ namespace Hecton8.Atmosphere
         private void PublishSurfaceWeatherSolveWarningIfNeeded(long solveStartTicks)
         {
             long elapsedTicks = Stopwatch.GetTimestamp() - solveStartTicks;
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (elapsedTicks <= SurfaceWeatherSolveBudgetWarningTicks ||
-                Time.frameCount < _nextSurfaceWeatherPerformanceWarningFrame)
+                currentFrame < _nextSurfaceWeatherPerformanceWarningFrame)
             {
                 return;
             }
@@ -1786,7 +1792,7 @@ namespace Hecton8.Atmosphere
                 SurfaceWeatherSolveBudgetWarningHash,
                 SurfaceWeatherSolveBudgetContextHash,
                 (float)elapsedMilliseconds);
-            _nextSurfaceWeatherPerformanceWarningFrame = Time.frameCount + SurfaceWeatherPerformanceWarningCooldownFrames;
+            _nextSurfaceWeatherPerformanceWarningFrame = currentFrame + SurfaceWeatherPerformanceWarningCooldownFrames;
         }
 
         private void ApplyOceanState(in SurfaceWeatherBindingSnapshot bindings)
@@ -1883,7 +1889,7 @@ namespace Hecton8.Atmosphere
             if (thunderClips == null || thunderClips.Length == 0)
                 return;
 
-            Hecton8.Core.IAudioService audioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
             if (audioManager == null)
                 return;
 
@@ -1921,14 +1927,23 @@ namespace Hecton8.Atmosphere
             float acousticEnergy = intensity01 * ThunderAcousticShockEnergyScale;
             float cameraShake01 = math.saturate(intensity01 * ThunderCameraShakeScale);
 
-            PhysicsEventBus.TryNotifyAcousticPing(new AcousticPingEvent(
-                shockPosition,
-                radiusMeters,
-                intensity01,
-                ThunderAcousticShockLifetimeSeconds,
-                FieldTargetRole.HazardProbe,
-                0,
-                acousticEnergy));
+            PhysicsEventPayload payload = new PhysicsEventPayload
+            {
+                RuntimePosition = shockPosition,
+                Direction = default,
+                ForceVector = default,
+                ImpulseVector = default,
+                RadiusMeters = radiusMeters,
+                Scalar0 = intensity01,
+                Scalar1 = ThunderAcousticShockLifetimeSeconds,
+                Scalar2 = acousticEnergy,
+                PrimaryId = 0,
+                DataHash = 0u,
+                StatusBits = unchecked((uint)FieldTargetRole.HazardProbe),
+                EventType = (ushort)PhysicsEventType.AcousticPing,
+                Reserved = 0
+            };
+            SignalBus<PhysicsEventPayload>.TryPushTracked(in payload, ref s_x001SurfaceWeatherDirectorSignalPushDropCount);
 
             CameraJuiceSignals.TryPublishImpact(cameraShake01, shockPosition, Vector3.down);
         }

@@ -213,7 +213,7 @@ namespace Hecton8.Construction
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private void ClearCachedRegistryServices()

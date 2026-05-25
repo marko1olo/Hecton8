@@ -34,7 +34,7 @@ namespace Hecton8.Editor.AITextureControlMaps
         {
             List<LegacyCaptureFinding> findings = Scan();
             WriteReport(findings);
-            Debug.Log("[AITexturePipelineArchaeology] Findings=" + findings.Count + " report=" + AITextureControlMapConstants.ArchaeologyReportPath);
+            Hecton8.Core.H8Debug.Log("[AITexturePipelineArchaeology] Findings=" + findings.Count + " report=" + AITextureControlMapConstants.ArchaeologyReportPath);
         }
 
         internal static List<LegacyCaptureFinding> Scan()

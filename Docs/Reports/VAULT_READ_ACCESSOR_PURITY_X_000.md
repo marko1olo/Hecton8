@@ -463,3 +463,150 @@ Defragmentation implication: `HectonWorldGenerator` no longer stores `_westLUT`,
 ## Residual Project Truth - After HectonWorldGenerator Static Proof
 
 Scoped regex for direct underscore-prefixed persistent native collection fields in `HectonWorldGenerator.cs` and `CrashTelemetryBuffer.cs` returns 0 findings. Clean compile and full Roslyn ledger refresh are pending because CPU and active compiler processes still block the project build gate.
+
+## HectonIndirectVegetationRenderer.cs
+
+Read-like/native ownership routes checked:
+- `TryGetLatestCullTelemetry` now calls `TryReadScatterCullTelemetry`, which validates the cached `IDataVault`, exact `VaultGenerationHandle<ScatterCullTelemetryEntry>`, and `TryReadOnlyHandle`. It does not allocate/grow telemetry buffers, acquire writer locks, complete jobs, publish signals, or search scene state.
+- `DumpFloraGrowthTelemetry` reads the flora-growth telemetry ring through `TryReadFloraGrowthTelemetry` only. File creation is explicit dump I/O after a fault, not a hidden read-side native allocation.
+- `TryWriteScatterCullTelemetryDump` reads the scatter-cull ring through `TryReadScatterCullTelemetry` only and writes the already existing ring rows to disk.
+- Generic `TryReadTelemetryBuffer<T>` is read-only handle validation only. It does not call `EnsureTelemetryBuffer`, `EnsureGenerationHandle`, `TryAcquireWriteLock`, `ReleaseWriteLock`, or any dispatcher/job API.
+
+Non-read ownership/write routes:
+- `RecordFloraGrowthTelemetry` and `RecordScatterCullTelemetry` are explicit mutation routes. Each acquires a DataVault writer lock for its telemetry ring, writes one row, advances the scalar cursor, and releases the lock in `finally`.
+- `EnsureTelemetryBuffer<T>` is the only fixed telemetry allocation path and is called from record/write preparation, not from `TryGetLatestCullTelemetry`.
+- DataVault replacement releases both old telemetry handles through the previous vault before caching the replacement.
+
+Defragmentation implication: the component no longer stores the two telemetry `NativeArray` fields. Telemetry native views are method-local and protected by read-only resolution or writer locks. The file still has other direct and nested native residuals, so this proof covers telemetry rings only.
+
+## Residual Project Truth - After Indirect Vegetation Telemetry
+
+Clean compile completed with 0 warnings and 0 errors. Full Roslyn ledger now reports 2406 files, 0 parse failures, 2038 forbidden persistent candidates, and 506 MonoBehaviour candidates, proof hash `4857de59d3f64e1f674414c420f242110aefe20c87e74dc68a7865dff3a732ce`.
+
+## SargassumGlobalDragManager.cs
+
+Read-like/native ownership routes checked:
+- `TryRaiseEntanglementStrain` and `TryRaiseMassiveDisplacement` now enqueue into fixed arrays with explicit counts. They do not allocate native queues, grow buffers, resolve DataVault, complete jobs, publish hidden owner sync work, or search scene state.
+- `FlushPendingEvents`, `FlushEntanglementStrain`, `FlushMassiveDisplacement`, and `PromoteNextFrameEvents` drain and move fixed-array rows only. The dispatcher budget gate remains `SystemDispatcher.TryConsumeLateFrameEventDispatch`; there is no native queue lifetime to retain across phases.
+- `ScheduleDebrisPetrification` and `ProcessDebrisPetrificationTimers` use a fixed `DebrisTimer[128]` plus fixed `Rigidbody[128]` handle table. The timer drain never creates or disposes a native container.
+
+Non-read ownership/write routes:
+- Event-lane writes are same-owner bounded staging, not cross-domain native ownership. Overflow still fails closed through existing telemetry counters.
+- Debris petrification timer overflow immediately applies petrification to the body, preserving the previous fail-closed behavior.
+- The density build job, BRG scavenger matrix staging, and BRG metadata arrays remain native fields and require a separate owner route. They were not claimed clean in this slice.
+
+Defragmentation implication: the five removed `NativeQueue<T>` fields can no longer pin unmanaged queue storage across simulation phases. Remaining `SargassumGlobalDragManager` native residuals are three direct `NativeArray` fields: `_scavengerMatricesNative`, `_scavengerBatchMetadata`, and `_densityBuildSources`.
+
+## Residual Project Truth - After Sargassum Queue Cut
+
+Fresh Roslyn ledger now reports 2406 files, 0 parse failures, 2033 forbidden persistent candidates, and 501 MonoBehaviour candidates, proof hash `c3d4f04500dae7ec092b860cf3c35cdd8589d9a48449bd35a113b8f41a42899a`. Initial post-slice build attempt failed on transient concurrent source drift in `InternalFloodWaterlineRuntime.cs`; current source search found no `_hasPendingGasSubmergedFraction` token, and the gated rebuild completed with 0 warnings and 0 errors.
+
+## SpatialAudioManager.cs
+
+Read-like/native ownership routes checked:
+- `TryResolveAudioClipHash` now scans fixed `uint[]` and `int[]` tables populated during cold clip-table setup. It does not allocate, grow a hash map, resolve DataVault, publish signals, complete jobs, or search the scene.
+- `PendingCount` for `AudioCaptionEvents` is scalar count state over fixed rings. It does not touch a native container and does not allocate.
+- `DrainAudioEventQueue`, `DrainDelayedAudioIngress`, `ProcessDelayedAudioEvents`, `AudioCaptionEvents.FlushPending`, and caption promotion paths drain fixed arrays/rings only. They are explicit dispatcher/owner-phase mutation paths, not pure `TryGet*` or `Read*` accessors.
+
+Non-read ownership/write routes:
+- `QueueAudioEvent` writes a fixed `CoreAudioEvent[32]` ring and fails closed on overflow through existing telemetry.
+- `TryEnqueueDelayedAudioEvent` writes a fixed `DelayedAudioEvent[16]` ingress ring; delayed processing compacts a fixed pending array by count.
+- `AudioCaptionEvents.Enqueue` writes fixed static `AudioCaptionPayload` rings and drops overflow deterministically. No `NativeQueue<AudioCaptionPayload>` remains.
+- `InitializeTelemetryCaches` is still a cold/setup path and allocates fixed managed arrays for these lanes. The remaining acoustic portal `NativeList<int>` open/closed sets and audio virtualization `NativeArray` pools remain outside this slice.
+
+Defragmentation implication: the removed audio ingress, delayed-event, clip-hash, and caption native containers can no longer retain unmanaged queue/list/hash-map storage across simulation phases. Current Roslyn proof is 2406 files, 0 parse failures, 2027 forbidden persistent candidates, 497 MonoBehaviour candidates, hash `79511a232bec979412c8d5910beaadd53a7dda78d0411020303cd51a58c1005f`.
+
+## Residual Project Truth - After Spatial Audio Ingress Cut
+
+`SpatialAudioManager.cs` no longer contains `NativeQueue<DelayedAudioEvent>`, `NativeList<DelayedAudioEvent>`, `NativeQueue<CoreAudioEvent>`, `NativeParallelHashMap<uint, int>`, or `NativeQueue<AudioCaptionPayload>`. It still has 29 MonoBehaviour native residuals: 27 `NativeArray` fields and two `NativeList<int>` acoustic portal open/closed sets. Gated build completed with 0 warnings and 0 errors in 00:02:07.53.
+
+## SpatialAudioManager.cs - Acoustic Portal Scratch
+
+Read-like/native ownership routes checked:
+- `TryResolveAcousticPortalPath` no longer stores or mutates `_acousticPortalOpenSet` and `_acousticPortalClosedSet` fields because those fields no longer exist.
+- The method acquires method-local `NativeArray<int>` scratch views through `TryAcquireAcousticPortalScratchSets`, runs `AcousticPathJob` synchronously over those views, and releases both writer locks in `finally`.
+- `AcousticPathJob` now uses `NativeArray<int>` plus local `openCount`/`closedCount`; it does not allocate or grow `NativeList<int>` storage.
+
+Non-read ownership/write routes:
+- `InitializeTelemetryCaches` creates the two fixed DataVault scratch buffers under `SystemID.Audio` with BufferIDs `70028` and `70029`.
+- `ReleaseTelemetryCaches` and `ClearVaultBackedTelemetryAliases` release/reset only descriptors; no native list disposal remains.
+- The scratch sets are owner-phase temporary work buffers. They are not published as gameplay truth, and no read accessor lazily regenerates them.
+
+Defragmentation implication: the acoustic portal pathfinder no longer retains unmanaged `NativeList<int>` containers in the `SpatialAudioManager` MonoBehaviour. The only live native views are method-local and protected by DataVault writer locks for the duration of path solve.
+
+## Residual Project Truth - After Spatial Acoustic Portal Cut
+
+`SpatialAudioManager.cs` no longer contains `NativeList<int>`, `NativeQueue<DelayedAudioEvent>`, `NativeList<DelayedAudioEvent>`, `NativeQueue<CoreAudioEvent>`, `NativeParallelHashMap<uint, int>`, or `NativeQueue<AudioCaptionPayload>`. Latest gated build completed with 0 warnings and 0 errors in 00:01:44.04. Fresh Roslyn ledger: 2407 files, 0 parse failures, 7590 native fields, 2024 forbidden persistent candidates, 495 MonoBehaviour candidates, hash `44d4c8f6e08e790cf651dcb9f6c4e95eb1ea54305dfd86eccbe645de0652dc69`.
+
+## SpatialAudioManager.cs - Loop 37 Descriptor Cut
+
+Read-like/native ownership routes checked:
+- `TryGetVirtualizationStats` now reads `_lastVirtualVoiceStatistics`, a scalar mirror updated after the sort/occlusion owner phase. It does not resolve a writable native view, allocate/grow buffers, complete jobs, publish signals, or search scene state.
+- `TryGetVirtualVoiceRuntimeTuning` reads `VirtualVoiceTuningSnapshot` through `TryReadVirtualVoiceTuningFromVault`, which uses `TryReadOnlyHandle` only. If the read-only handle is absent it returns a sanitized scalar fallback; it does not allocate the vault row.
+- `TryReadVirtualVoiceStatisticsSnapshot` validates the cached vault and `_virtualVoiceStatisticsHandle`, resolves a read-only view, copies row 0, and returns. It does not call `EnsureAudioVaultHandle`, `TryAcquireWriteLock`, `Complete`, or any dispatcher API.
+- `HasAudioVaultReadBuffer<T>` is descriptor/read-only validation only. It is used in readiness checks for `VirtualVoiceStatistics` and `VirtualVoiceDTO` buffers instead of retaining `NativeArray` fields.
+- `TryReadAcousticPortalCache` remains a managed fixed-array cache read over `_acousticPortalCacheKeys` and `_acousticPortalCacheResults`; it does not touch DataVault and does not allocate.
+
+Non-read ownership/write routes:
+- `AppendVirtualVoice` now acquires a DataVault writer lock for `SpatialAudioVirtualVoiceDtoPoolBufferId` before writing the `VirtualVoiceDTO` row, then releases the lock in `finally`. Failure drops the voice through existing counters instead of creating fallback storage.
+- `RebaseVirtualVoiceDtoPool` acquires the same DTO-pool writer lock before AUP grid rebasing and releases in `finally`.
+- `FinishVirtualVoiceSortCompletion` releases the statistics writer lock after the job window, reads a statistics snapshot via `TryReadOnlyHandle`, then writes post-sort timing through `WriteVirtualVoiceStatisticsSnapshot`, an explicit write helper with a writer lock.
+- `FinishAcousticOcclusionCompletion` writes `AcousticOcclusionTimeMs` through the same explicit statistics writer route; it does not mutate statistics from a read helper.
+- `InitializeTelemetryCaches` is the cold owner setup path for the moved DTO/statistics/tuning/material/portal buffers. Allocation/generation is intentionally isolated there and is not reachable from `TryGet*`, `TryRead*`, or public read model methods.
+- `ClearVaultBackedTelemetryAliases` completes or releases outstanding job-owned writer locks before descriptor reset. It does not leave retained native views between phases.
+
+Defragmentation implication: Loop 37 removed retained aliases for portal graph/work/result/black-box rows, virtual voice DTO/statistics/tuning/black-box rows, acoustic material rows, and borrowed scalability/rollback rows. The live native views for these rows are now method-local and protected by read-only handle resolution or DataVault writer fences.
+
+## Residual Project Truth - After Spatial Loop 37 Cut
+
+`SpatialAudioManager.cs` now has 13 direct forbidden `NativeArray` fields remaining: `_acousticRadarIntensityBins`, `_acousticRadarGrid`, `_virtualVoiceWritePool`, `_virtualVoiceSortPool`, `_virtualVoiceSortKeyPool`, `_virtualVoiceSelections`, `_acousticSourceWritePool`, `_acousticSourceSortPool`, `_acousticPreviousAupWritePool`, `_acousticPreviousAupSortPool`, `_acousticDspOutputPool`, `_acousticSelectedSourcePool`, and `_acousticSelectedPreviousAupPool`. Latest gated build completed with 0 warnings and 0 errors in 00:02:24.44. Fresh Roslyn ledger: 2411 files, 0 parse failures, 7576 native fields, 2012 forbidden persistent candidates, 481 MonoBehaviour candidates, hash `15e8fa92c670fc5246f55f0b6511a47ff97774ae316d708418e911a46415891d`.
+
+## SpatialAudioManager.cs - Loop 38 Acoustic Radar Descriptor Cut
+
+Read-like/native ownership routes checked:
+- `AcousticRadarIntensityBins`, `AcousticRadarEnergyGrid`, `TryGetAcousticRadarPayload`, and `TryGetAcousticRadarGridPayload` now resolve method-local read-only views through `TryReadAcousticRadarIntensityBins` / `TryReadAcousticRadarGrid`.
+- `TryReadAudioVaultBuffer<T>` validates cached vault/handle state and calls `TryReadOnlyHandle`; it does not call `EnsureAudioVaultHandle`, acquire a writer lock, allocate/grow buffers, publish signals, complete jobs, or search scene state.
+- `TryUploadAcousticRadarPayload` mutates a caller-owned texture, but it reads DataVault through `TryReadOnlyHandle` and copies into cold `float[360]` scratch. It no longer acquires a DataVault writer lock for readback and does not allocate on demand.
+
+Non-read ownership/write routes:
+- `DecayAcousticRadarBins`, `DecayAcousticRadarGrid`, `ResetAcousticRadarBins`, `ResetAcousticRadarGrid`, `DepositAcousticRadarSample`, and `AccumulateNearestRadarGrid` are explicit owner mutation paths. Each acquires the exact Audio DataVault writer fence and releases it in `finally`.
+- `InitializeTelemetryCaches` is the cold owner setup path for the fixed radar intensity/grid buffers and the cold managed upload scratches.
+
+Defragmentation implication: `SpatialAudioManager` no longer stores `_acousticRadarIntensityBins` or `_acousticRadarGrid` native fields. The only native views for those lanes are method-local read-only views or writer-fenced owner mutation views.
+
+## Residual Project Truth - After Spatial Loop 38 Cut
+
+`SpatialAudioManager.cs` now has 11 direct forbidden `NativeArray` fields remaining: `_virtualVoiceWritePool`, `_virtualVoiceSortPool`, `_virtualVoiceSortKeyPool`, `_virtualVoiceSelections`, `_acousticSourceWritePool`, `_acousticSourceSortPool`, `_acousticPreviousAupWritePool`, `_acousticPreviousAupSortPool`, `_acousticDspOutputPool`, `_acousticSelectedSourcePool`, and `_acousticSelectedPreviousAupPool`. Latest gated build completed with 0 warnings and 0 errors in 00:00:15.49. Fresh Roslyn ledger: 2411 files, 0 parse failures, 7574 native fields, 2010 forbidden persistent candidates, 479 MonoBehaviour candidates, hash `33f75f2c6544864005c37fa69310c400475376a28f9e4336815f5b88d2e08e9b`.
+
+## Loop 39 Spatial Final Pool Read Purity
+
+Scope: `Assets/_Project/Scripts/SpatialAudioManager.cs` final virtual voice/acoustic source pool cluster.
+
+Read-only/pure routes verified:
+- Readiness checks use descriptor/read-buffer state, not cached `NativeArray.IsCreated` aliases.
+- Selection/DSP/gizmo readback uses `TryReadAudioVaultBuffer` / read-only DataVault views and fails closed when the view is unavailable.
+- Statistics/tuning/radar read routes keep read-only handles or scalar mirrors and do not allocate, grow, publish, or complete jobs.
+- `PlayerCriticalProceduralAudioRenderer` compile repair restores a scalar player-owned impact comparison; it does not create native memory ownership.
+
+Mutation routes verified:
+- `AppendVirtualVoice`, pool rebasing, selection reset, and selection rebase acquire writer locks and release in `finally`.
+- Virtual voice sort locks sort pool, sort key pool, selections, and statistics for the scheduled job window only.
+- Acoustic occlusion locks selected source, selected previous-AUP, and DSP output buffers for the scheduled job window only.
+
+Verdict: No `TryGet*`, `Read*`, readiness, or gizmo route in the final SpatialAudioManager slice performs lazy allocation/regeneration. Build and Roslyn proof: 0 warnings, 0 errors, 0 parse failures, SpatialAudioManager 0 forbidden native fields in ledger `38a0b122f62e3236a34c0ba804e8fc867a09ad34ba1584e4a8a9fac3716fd02f`.
+
+## Loop 40 Sargassum Global Drag Read Purity
+
+Scope: `Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs` final direct array cleanup.
+
+Read-only/pure routes verified:
+- This slice added no public `Get*`, `TryGet*`, `Resolve*`, or `Read*` accessor that allocates, grows buffers, publishes signals, completes jobs, or searches scene state.
+- `TryAcquireVaultBuffer<T>` is used only by owner mutation/setup routes for density staging, BRG metadata setup, and scavenger matrix upload. It is not exposed as a read accessor.
+- `UploadScavengerInstances` consumes a method-local `NativeArray<Matrix4x4>` view passed by the owner mutation path; it no longer reads a retained native field.
+
+Mutation routes verified:
+- `RebuildDensityField` writes `DensitySourceData` through a DataVault writer lock and keeps that lock only until `BuildDensityContributionJob` completes. Teardown completes the density job before releasing the lock.
+- `EnsureScavengerRenderResources` resolves one `MetadataValue` row for `BatchRendererGroup.AddBatch` and releases it in `finally`.
+- `UpdateScavengerHosts` resolves the scavenger matrix staging view, fills/uploads it in the same method scope, and releases the writer lock in `finally`.
+
+Verdict: no lazy allocation/regeneration was added to read paths. Build and Roslyn proof: 0 warnings, 0 errors, 0 parse failures, SargassumGlobalDragManager 0 forbidden native fields in ledger `91f4d3c62deea775222c8865966da74234c9e9665817e1d3f050b816a2212db9`.

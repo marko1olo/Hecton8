@@ -399,6 +399,8 @@ namespace Hecton8.World
             {
                 s_RegistryVersion++;
             }
+
+            EmergencyServiceRelayDirector.NotifyRelayRegistryChanged();
         }
 
         /// <inheritdoc />
@@ -431,7 +433,7 @@ namespace Hecton8.World
         {
             _cachedNarrativeDiscovery = GlobalRegistry.NarrativeDiscoveryReadModel;
             _cachedAudioLogSystem = GlobalRegistry.AudioLogRuntime;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedLocalization = GlobalRegistry.LocalizationText;
         }
 

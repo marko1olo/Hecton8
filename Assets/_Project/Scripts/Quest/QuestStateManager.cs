@@ -496,35 +496,6 @@ namespace Hecton8.Quest
             return true;
         }
 
-        public bool TryGetQuestPresentation(
-            uint questHash,
-            out string title,
-            out string description,
-            out uint markerTargetHash,
-            out Vector3 markerWorldPosition,
-            out float markerHeightOffset)
-        {
-            title = string.Empty;
-            description = string.Empty;
-            markerTargetHash = 0u;
-            markerWorldPosition = default;
-            markerHeightOffset = 0f;
-
-            if (!TryGetQuestIndex(questHash, out int questIndex))
-                return false;
-
-            markerTargetHash = _markerTargetHashesByQuestIndex != null && questIndex < _markerTargetHashesByQuestIndex.Length
-                ? _markerTargetHashesByQuestIndex[questIndex]
-                : 0u;
-            markerWorldPosition = _markerWorldPositionsByQuestIndex != null && questIndex < _markerWorldPositionsByQuestIndex.Length
-                ? _markerWorldPositionsByQuestIndex[questIndex]
-                : default;
-            markerHeightOffset = _markerHeightOffsetsByQuestIndex != null && questIndex < _markerHeightOffsetsByQuestIndex.Length
-                ? _markerHeightOffsetsByQuestIndex[questIndex]
-                : 0f;
-            return HasCachedQuestTitle(questIndex) || markerTargetHash != 0u || markerWorldPosition.sqrMagnitude > 0.0001f;
-        }
-
         public bool TryCopyQuestPresentation(
             uint questHash,
             char[] titleDestination,
@@ -1572,7 +1543,7 @@ namespace Hecton8.Quest
             }
             catch (Exception)
             {
-                Debug.LogWarning("[QuestStateManager] Quest audit append failed.");
+                Hecton8.Core.H8Debug.LogWarning("[QuestStateManager] Quest audit append failed.");
             }
 #endif
         }

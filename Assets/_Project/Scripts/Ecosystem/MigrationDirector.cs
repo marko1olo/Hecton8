@@ -5,7 +5,6 @@ using Hecton8.Celestial;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.PDA;
-using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -71,12 +70,15 @@ namespace Hecton8.Ecosystem
         private bool _duplicateServiceSuppressed;
         private bool _migrationFieldBuffersLocked;
         private IDataVault _migrationVault;
+        private IFaunaWorldSeedReadModel _faunaWorldSeedReadModel;
+        private IAmbientCurrentReadModel _ambientCurrentReadModel;
         private BufferID _migrationFieldWriteBufferId;
         private BufferID _migrationFieldPoiBufferId;
         private VaultGenerationHandle<MigrationGridCell> _migrationGridFrontHandle;
         private VaultGenerationHandle<MigrationGridCell> _migrationGridBackHandle;
         private VaultGenerationHandle<MigrationBloodCloudPoi> _bloodCloudPoisHandle;
         private VaultGenerationHandle<MigrationSwarmState> _migrationSwarmStatesHandle;
+        private static MigrationDirector s_activeRuntime;
 
         private readonly MigrationBloodCloudPoi[] _bloodCloudPoiMirror = new MigrationBloodCloudPoi[BloodCloudPoiCapacity]; // COLD ALLOC: MigrationBloodCloudPoi[8] - main-thread POI mirror; NativeArray is job-owned during scheduled rebuilds - owner: MigrationDirector
         private readonly MigrationBloodCloudPoi[] _pendingBloodCloudPoiWrites = new MigrationBloodCloudPoi[BloodCloudPoiCapacity]; // COLD ALLOC: MigrationBloodCloudPoi[8] - deferred kill-site writes while migration job owns NativeArray - owner: MigrationDirector
@@ -270,6 +272,18 @@ namespace Hecton8.Ecosystem
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.FaunaGeneticsRuntime)
+            {
+                _faunaWorldSeedReadModel = currentService as IFaunaWorldSeedReadModel;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime)
+            {
+                _ambientCurrentReadModel = currentService as IAmbientCurrentReadModel;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
             _registeredToTick = false;
@@ -301,7 +315,7 @@ namespace Hecton8.Ecosystem
         /// </summary>
         public static float ResolveSelectionMultiplier(int biomeIndex, CreatureArchetypeData archetype)
         {
-            MigrationDirector runtime = GlobalRegistry.Migration;
+            MigrationDirector runtime = s_activeRuntime;
             return runtime != null ? runtime.ResolveSelectionMultiplierInternal(biomeIndex, archetype) : 1f;
         }
 
@@ -310,7 +324,7 @@ namespace Hecton8.Ecosystem
         /// </summary>
         public static int ResolveVisibleBoidCount(int speciesId, Vector3 origin, int requestedPopulationCount)
         {
-            MigrationDirector runtime = GlobalRegistry.Migration;
+            MigrationDirector runtime = s_activeRuntime;
             return runtime != null
                 ? runtime.ResolveVisibleBoidCountInternal(speciesId, origin, requestedPopulationCount)
                 : ResolveVisibleBoidCountFromMigrationPopulationStatic(requestedPopulationCount);
@@ -321,7 +335,7 @@ namespace Hecton8.Ecosystem
         /// </summary>
         public static void RegisterStatisticalSwarmPopulation(int speciesId, Vector3 origin, int populationCount)
         {
-            MigrationDirector runtime = GlobalRegistry.Migration;
+            MigrationDirector runtime = s_activeRuntime;
             if (runtime != null)
                 runtime.RegisterStatisticalSwarmPopulationInternal(speciesId, origin, populationCount);
         }
@@ -331,7 +345,7 @@ namespace Hecton8.Ecosystem
         /// </summary>
         public static float ResolveVatSwayAmplitudeScale()
         {
-            MigrationDirector runtime = GlobalRegistry.Migration;
+            MigrationDirector runtime = s_activeRuntime;
             return runtime != null ? runtime.ResolveVatSwayAmplitudeScaleInternal() : 1f;
         }
 
@@ -340,7 +354,7 @@ namespace Hecton8.Ecosystem
         /// </summary>
         public static void RegisterPredatorKillPoi(uint uniqueInstanceUid, Vector3 worldPosition, float fallbackRuntimeSeconds)
         {
-            MigrationDirector runtime = GlobalRegistry.Migration;
+            MigrationDirector runtime = s_activeRuntime;
             if (runtime != null)
                 runtime.RegisterPredatorKillPoiInternal(uniqueInstanceUid, worldPosition, fallbackRuntimeSeconds);
         }
@@ -348,13 +362,13 @@ namespace Hecton8.Ecosystem
         internal static bool TryResolveMigrationTarget(int speciesId, Vector3 origin, out Vector3 target)
         {
             target = origin;
-            MigrationDirector runtime = GlobalRegistry.Migration;
+            MigrationDirector runtime = s_activeRuntime;
             return runtime != null && runtime.TryResolveMigrationTargetInternal(speciesId, origin, out target);
         }
 
         internal static int RegisterStatisticalSwarmPopulationAndResolveCount(int speciesId, Vector3 origin, int populationCount)
         {
-            MigrationDirector runtime = GlobalRegistry.Migration;
+            MigrationDirector runtime = s_activeRuntime;
             return runtime != null
                 ? runtime.RegisterStatisticalSwarmPopulationInternal(speciesId, origin, populationCount)
                 : Mathf.Max(0, populationCount);
@@ -362,7 +376,7 @@ namespace Hecton8.Ecosystem
 
         internal static int ResolveVisibleBoidCountFromMigrationPopulation(int migrationPopulationCount)
         {
-            MigrationDirector runtime = GlobalRegistry.Migration;
+            MigrationDirector runtime = s_activeRuntime;
             return runtime != null
                 ? runtime.ResolveVisibleBoidCountFromMigrationPopulationInternal(migrationPopulationCount)
                 : ResolveVisibleBoidCountFromMigrationPopulationStatic(migrationPopulationCount);
@@ -370,7 +384,7 @@ namespace Hecton8.Ecosystem
 
         internal static int3 ResolveMigrationPopulationAupCell(Vector3 origin)
         {
-            MigrationDirector runtime = GlobalRegistry.Migration;
+            MigrationDirector runtime = s_activeRuntime;
             return runtime != null
                 ? runtime.ResolveMigrationAupCell(origin)
                 : ResolveMigrationAupCell(origin, GlobalMigrationCellSizeMeters);
@@ -387,7 +401,7 @@ namespace Hecton8.Ecosystem
                 return 1f;
             }
 
-            FaunaGeneticsManager geneticsManager = GlobalRegistry.FaunaGenetics;
+            IFaunaWorldSeedReadModel geneticsManager = _faunaWorldSeedReadModel;
             int worldSeed = geneticsManager != null ? geneticsManager.WorldSeed : 0;
             uint hash = Hash((uint)worldSeed ^ (uint)_currentDayIndex * 0x9E3779B9u ^ (uint)biomeIndex * 0x85EBCA6Bu ^ HashString(archetype.creatureId));
             if ((hash & 0x3u) != 0u)
@@ -411,10 +425,22 @@ namespace Hecton8.Ecosystem
             _currentDayIndex = Mathf.Max(1, dayIndex);
         }
 
+        private Vector3 SampleAmbientCurrent(Vector3 samplePosition)
+        {
+            IAmbientCurrentReadModel ambientCurrent = _ambientCurrentReadModel;
+            if (ambientCurrent != null &&
+                ambientCurrent.TrySampleCombinedCurrent(samplePosition, out Vector3 currentVector))
+            {
+                return currentVector;
+            }
+
+            return Vector3.zero;
+        }
+
         private float ResolveCurrentDrivenBias(int biomeIndex, CreatureArchetypeData archetype, uint hash)
         {
             Vector3 probePosition = ResolveMigrationProbePosition(biomeIndex, hash);
-            Vector3 currentVector = CurrentVolume.SampleCombinedCurrent(probePosition);
+            Vector3 currentVector = SampleAmbientCurrent(probePosition);
             currentVector.y = 0f;
             float sqrMagnitude = currentVector.sqrMagnitude;
             if (sqrMagnitude <= 0.0001f)
@@ -439,7 +465,7 @@ namespace Hecton8.Ecosystem
         {
             target = origin;
             float sampledTemperature = ResolveWaterTemperature(origin);
-            Vector3 currentVector = CurrentVolume.SampleCombinedCurrent(origin);
+            Vector3 currentVector = SampleAmbientCurrent(origin);
             currentVector.y = 0f;
 
             EcosystemMigrationProfile.TemperatureRoute route = default;
@@ -1742,6 +1768,12 @@ namespace Hecton8.Ecosystem
 
             GlobalRegistry.RegisterMigrationDirectorRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Migration, this);
+            if (_serviceRegistered)
+            {
+                s_activeRuntime = this;
+                _faunaWorldSeedReadModel = GlobalRegistry.FaunaWorldSeed;
+                _ambientCurrentReadModel = GlobalRegistry.AmbientCurrent;
+            }
         }
 
         private void SuppressDuplicateService()
@@ -1760,6 +1792,10 @@ namespace Hecton8.Ecosystem
 
             GlobalRegistry.UnregisterMigrationDirectorRuntime(this);
             _serviceRegistered = false;
+            if (ReferenceEquals(s_activeRuntime, this))
+                s_activeRuntime = null;
+            _faunaWorldSeedReadModel = null;
+            _ambientCurrentReadModel = null;
         }
 
         private void TryRegisterToTickManager()

@@ -5,7 +5,6 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Interaction;
 using Hecton8.Inventory;
 using Hecton8.Items;
-using Hecton8.Physics;
 using Hecton8.World;
 using System;
 using Unity.Mathematics;
@@ -105,7 +104,7 @@ namespace Hecton8.Gameplay
         private float _currentHealth;
         private bool _isBroken;
         private IPlayerInventoryService _playerInventoryService;
-        private PersistentWorldRegistry _persistentWorldRegistry;
+        private IPersistentDroppedItemRegistry _persistentWorldRegistry;
         private IAudioService _audioService;
         private IObjectPoolService _objectPool;
         private ILocalizationTextReadModel _localizationManager;
@@ -332,7 +331,7 @@ namespace Hecton8.Gameplay
                 rejectedQuantity = result.RejectedQuantity;
             }
 
-            PersistentWorldRegistry registry = _persistentWorldRegistry;
+            IPersistentDroppedItemRegistry registry = _persistentWorldRegistry;
             if (registry != null && rejectedQuantity > 0)
                 registry.TryRegisterDroppedItem(item, rejectedQuantity, dropPoint);
         }
@@ -617,7 +616,7 @@ namespace Hecton8.Gameplay
                     _playerInventoryService = currentService as IPlayerInventoryService;
                     break;
                 case GlobalRegistryServiceSlot.PersistentWorldRegistry:
-                    _persistentWorldRegistry = currentService as PersistentWorldRegistry;
+                    _persistentWorldRegistry = currentService as IPersistentDroppedItemRegistry;
                     break;
                 case GlobalRegistryServiceSlot.Audio:
                     _audioService = currentService as IAudioService;
@@ -652,8 +651,8 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold()
         {
             _playerInventoryService = GlobalRegistry.PlayerInventory;
-            _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _persistentWorldRegistry = GlobalRegistry.PersistentDroppedItems;
+            _audioService = GlobalRegistry.Audio;
             _objectPool = GlobalRegistry.ObjectPoolService;
             _localizationManager = GlobalRegistry.LocalizationText;
         }

@@ -111,7 +111,7 @@ namespace Hecton8.Core
             if (camera == null || camera.cameraType != CameraType.Game)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastDynamicShadowBudgetFrame == frame)
                 return;
 

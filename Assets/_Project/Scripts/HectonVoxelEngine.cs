@@ -37,16 +37,54 @@ using UnityEditor;
 
 public static class MCTables
 {
-    public static NativeArray<int>.ReadOnly EdgeTable => _edgeTable.IsCreated ? _edgeTable.AsReadOnly() : default;
-    public static NativeArray<int>.ReadOnly TriTable  => _triTable.IsCreated ? _triTable.AsReadOnly() : default;
     public static bool IsReady => Volatile.Read(ref _ready) == 1;
 
-    static NativeArray<int> _edgeTable;
-    static NativeArray<int> _triTable;
+    const BufferID EdgeTableBufferId = BufferID.VoxelMarchingCubesEdgeTable;
+    const BufferID TriTableBufferId = BufferID.VoxelMarchingCubesTriTable;
+    const SystemID TableOwnerSystemId = SystemID.TerrainSeams;
+    const int EdgeTableLength = 256;
+    const int TriTableLength = 4096;
+
+    static IDataVault _vault;
+    static VaultGenerationHandle<int> _edgeTableHandle;
+    static VaultGenerationHandle<int> _triTableHandle;
     static int _ready;
-    static readonly object _initLock = new object();
+    static int _initGate;
     static bool _editorHooksInstalled;
-    const Allocator DataVaultExemptMarchingCubesTableAllocator = Allocator.Persistent;
+
+    public readonly struct JobTableLease : IDisposable
+    {
+        readonly IDataVault _vault;
+        readonly bool _edgeLocked;
+        readonly bool _triLocked;
+
+        public readonly NativeArray<int>.ReadOnly EdgeTable;
+        public readonly NativeArray<int>.ReadOnly TriTable;
+
+        public JobTableLease(
+            IDataVault vault,
+            NativeArray<int>.ReadOnly edgeTable,
+            NativeArray<int>.ReadOnly triTable,
+            bool edgeLocked,
+            bool triLocked)
+        {
+            _vault = vault;
+            EdgeTable = edgeTable;
+            TriTable = triTable;
+            _edgeLocked = edgeLocked;
+            _triLocked = triLocked;
+        }
+
+        public void Dispose()
+        {
+            if (_vault == null)
+                return;
+            if (_triLocked)
+                _vault.TryUnlockBuffer(TriTableBufferId, TableOwnerSystemId);
+            if (_edgeLocked)
+                _vault.TryUnlockBuffer(EdgeTableBufferId, TableOwnerSystemId);
+        }
+    }
 
 #if UNITY_EDITOR
     static void EnsureEditorHooks()
@@ -76,24 +114,39 @@ public static class MCTables
     static void DomainReloadCleanup()
     {
         Shutdown();
-        _edgeTable = default;
-        _triTable = default;
+        _edgeTableHandle = default;
+        _triTableHandle = default;
+        _vault = null;
         _ready = 0;
+        _initGate = 0;
         _editorHooksInstalled = false;
     }
 
     public static void Initialize()
     {
-        if (Volatile.Read(ref _ready) == 1) return;
-        lock (_initLock)
+        IDataVault vault = GlobalRegistry.DataVault;
+        if (vault == null)
+            return;
+
+        if (Volatile.Read(ref _ready) == 1 && ReferenceEquals(_vault, vault))
+            return;
+
+        EnterInitGate();
+        try
         {
-            if (Volatile.Read(ref _ready) == 1) return;
+            if (Volatile.Read(ref _ready) == 1 && ReferenceEquals(_vault, vault))
+                return;
 
 #if UNITY_EDITOR
             EnsureEditorHooks();
 #endif
 
-            var et = new int[256]
+            if (!ReferenceEquals(_vault, vault))
+                ReleaseVaultTables();
+
+            _vault = vault;
+
+            ReadOnlySpan<int> et = stackalloc int[256]
             {
                 0x000,0x109,0x203,0x30A,0x406,0x50F,0x605,0x70C,
                 0x80C,0x905,0xA0F,0xB06,0xC0A,0xD03,0xE09,0xF00,
@@ -128,11 +181,20 @@ public static class MCTables
                 0xF00,0xE09,0xD03,0xC0A,0xB06,0xA0F,0x905,0x80C,
                 0x70C,0x605,0x50F,0x406,0x30A,0x203,0x109,0x000
             };
-            _edgeTable = new NativeArray<int>(256, DataVaultExemptMarchingCubesTableAllocator);
-            _edgeTable.CopyFrom(et);
-            NativeMemorySentinel.RegisterNativeArray(_edgeTable, nameof(MCTables), nameof(_edgeTable), NativeAllocationLifetime.Permanent);
+            if (!TryAcquireWritableVaultTable(vault, EdgeTableBufferId, EdgeTableLength, ref _edgeTableHandle, out NativeArray<int> edgeTable))
+            {
+                ReleaseVaultTables();
+                return;
+            }
+            for (int i = 0; i < et.Length; i++)
+                edgeTable[i] = et[i];
+            if (!vault.ReleaseWriteLock(in _edgeTableHandle, TableOwnerSystemId))
+            {
+                ReleaseVaultTables();
+                return;
+            }
 
-            var tt = new int[4096]
+            ReadOnlySpan<int> tt = stackalloc int[4096]
             {
                 -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
                 0,8,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
@@ -391,34 +453,142 @@ public static class MCTables
                 0,3,8,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
                 -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
             };
-            _triTable = new NativeArray<int>(4096, DataVaultExemptMarchingCubesTableAllocator);
-            _triTable.CopyFrom(tt);
-            NativeMemorySentinel.RegisterNativeArray(_triTable, nameof(MCTables), nameof(_triTable), NativeAllocationLifetime.Permanent);
+            if (!TryAcquireWritableVaultTable(vault, TriTableBufferId, TriTableLength, ref _triTableHandle, out NativeArray<int> triTable))
+            {
+                ReleaseVaultTables();
+                return;
+            }
+            for (int i = 0; i < tt.Length; i++)
+                triTable[i] = tt[i];
+            if (!vault.ReleaseWriteLock(in _triTableHandle, TableOwnerSystemId))
+            {
+                ReleaseVaultTables();
+                return;
+            }
 
             Volatile.Write(ref _ready, 1);
         }
+        finally
+        {
+            ExitInitGate();
+        }
+    }
+
+    static bool TryAcquireWritableVaultTable(
+        IDataVault vault,
+        BufferID bufferId,
+        int requiredLength,
+        ref VaultGenerationHandle<int> handle,
+        out NativeArray<int> table)
+    {
+        table = default;
+        if (vault == null || requiredLength <= 0)
+            return false;
+
+        handle = vault.EnsureGenerationHandle<int>(
+            bufferId,
+            requiredLength,
+            TableOwnerSystemId,
+            NativeArrayOptions.UninitializedMemory);
+        if (!IsTableHandleCreated(in handle, bufferId) ||
+            !vault.TryAcquireWriteLock(in handle, TableOwnerSystemId, out table))
+        {
+            return false;
+        }
+
+        if (table.IsCreated && table.Length >= requiredLength)
+            return true;
+
+        vault.ReleaseWriteLock(in handle, TableOwnerSystemId);
+        table = default;
+        return false;
+    }
+
+    static bool IsTableHandleCreated(in VaultGenerationHandle<int> handle, BufferID expectedBufferId)
+    {
+        return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
+               handle.SystemID == (uint)TableOwnerSystemId &&
+               handle.Generation != 0u;
+    }
+
+    static void ReleaseVaultTables()
+    {
+        IDataVault vault = _vault;
+        if (vault != null)
+        {
+            if (IsTableHandleCreated(in _edgeTableHandle, EdgeTableBufferId))
+                vault.ReleaseBuffer(in _edgeTableHandle);
+            if (IsTableHandleCreated(in _triTableHandle, TriTableBufferId))
+                vault.ReleaseBuffer(in _triTableHandle);
+        }
+
+        _edgeTableHandle = default;
+        _triTableHandle = default;
+        _vault = null;
+        Volatile.Write(ref _ready, 0);
+    }
+
+    public static bool TryAcquireJobTables(out JobTableLease lease)
+    {
+        lease = default;
+        Initialize();
+        IDataVault vault = _vault;
+        if (vault == null ||
+            Volatile.Read(ref _ready) != 1 ||
+            !IsTableHandleCreated(in _edgeTableHandle, EdgeTableBufferId) ||
+            !IsTableHandleCreated(in _triTableHandle, TriTableBufferId))
+        {
+            return false;
+        }
+
+        if (!vault.TryLockBuffer(EdgeTableBufferId, TableOwnerSystemId))
+            return false;
+
+        if (!vault.TryLockBuffer(TriTableBufferId, TableOwnerSystemId))
+        {
+            vault.TryUnlockBuffer(EdgeTableBufferId, TableOwnerSystemId);
+            return false;
+        }
+
+        if (!vault.TryReadOnlyHandle(in _edgeTableHandle, out NativeArray<int>.ReadOnly edgeTable) ||
+            edgeTable.Length < EdgeTableLength ||
+            !vault.TryReadOnlyHandle(in _triTableHandle, out NativeArray<int>.ReadOnly triTable) ||
+            triTable.Length < TriTableLength)
+        {
+            vault.TryUnlockBuffer(TriTableBufferId, TableOwnerSystemId);
+            vault.TryUnlockBuffer(EdgeTableBufferId, TableOwnerSystemId);
+            return false;
+        }
+
+        lease = new JobTableLease(vault, edgeTable, triTable, edgeLocked: true, triLocked: true);
+        return true;
+    }
+
+    static void EnterInitGate()
+    {
+        SpinWait spinWait = default;
+        while (Interlocked.CompareExchange(ref _initGate, 1, 0) != 0)
+            spinWait.SpinOnce();
+    }
+
+    static void ExitInitGate()
+    {
+        Volatile.Write(ref _initGate, 0);
     }
 
     public static void Shutdown()
     {
-        lock (_initLock)
+        EnterInitGate();
+        try
         {
 #if UNITY_EDITOR
             ReleaseEditorHooks();
 #endif
-            if (_edgeTable.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_edgeTable);
-                _edgeTable.Dispose(default);
-            }
-
-            if (_triTable.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_triTable);
-                _triTable.Dispose(default);
-            }
-
-            Volatile.Write(ref _ready, 0);
+            ReleaseVaultTables();
+        }
+        finally
+        {
+            ExitInitGate();
         }
     }
 }
@@ -937,7 +1107,8 @@ public struct VoxelDensityJob : IJobParallelFor
         {
             VoxelCraterStamp crater = craterStamps[i];
             float outerRadius = crater.radius + math.max(crater.blendRadius, voxelStep);
-            float3 delta = wp - (float3)crater.position;
+            float3 craterLocal = AupPrecisionMath.DowncastLocalDelta(crater.position, float3.zero);
+            float3 delta = wp - craterLocal;
             if (math.any(math.abs(delta) > outerRadius))
                 continue;
 
@@ -2781,7 +2952,7 @@ public struct VoxelSpawnPointJob : IJob
 // ════════════════════════════════════════════════════════════════════════════════
 #region HectonVoxelEngine
 
-public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSonarSdfReadModel
+public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSonarSdfReadModel, Hecton8.Core.Contracts.IVoxelSonarSdfSurfaceResolver
 {
     private const string DefaultVoxelBakeGhostShaderName = "Hecton8/Environment/Hecton_VoxelBakeGhost";
     private const string RuntimeCaveVolumeName = "CaveVolume";
@@ -2825,6 +2996,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     private const float PredictiveVoxelProxyLookaheadSeconds = 0.35f;
     private const float PredictiveVoxelProxyDampenerStrength01 = 0.35f;
     private const float PredictiveVoxelProxyCinematicPaddingMeters = 0.75f;
+    private const uint PredictiveVoxelProxyKccVelocityMaxAgeFrames = 12u;
     private const int VoxelSurfaceMeshPoolSize = 256;
     private const int VoxelPhysicsBakeMeshPoolSize = 256;
     private const int VoxelMeshPoolAcquireWarmupRetryFrames = 4;
@@ -2840,9 +3012,11 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     private const uint VoxelMeshPipelineEmergencyBakeTeardownFlag = 1u << 3;
     private const uint VoxelMeshPipelineVolumeSpawnPoolMissFlag = 1u << 4;
     private const uint VoxelMeshPipelineNullVolumeColliderFallbackFlag = 1u << 5;
+    private const uint VoxelMeshPipelineRegistryCorruptionFlag = 1u << 6;
+    private const uint VoxelMeshPipelineRebuildFailClosedFlag = 1u << 7;
     private const uint VoxelMeshPipelineBlackBoxDumpMagic = 0x564D5042u; // VMPB
     private const string VoxelMeshPipelineBlackBoxPrimaryDumpRelativePath = "Docs/AgentLogs/Dump_VOXEL_MESH_PIPELINE.bin";
-    private const string VoxelMeshPipelineBlackBoxAgentDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_308_Voxel.bin";
+    private const string VoxelMeshPipelineBlackBoxAgentDumpRelativePath = "Docs/AgentLogs/Dump_1304_Voxel.bin";
     private const int BiomeHeatmapResolution = 256;
     private const int BiomeHeatmapMaxIndex = BiomeHeatmapResolution - 1;
     private const float VoxelChunkSkirtDepthMeters = 0.5f;
@@ -2939,34 +3113,6 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     const uint ChthonicPillarTectonicBoundarySeedFallback = 83117u;
     const float ChthonicPillarMinimumTectonicBoundaryMask = 0.55f;
     const int ChthonicPillarColliderSegments = 24;
-    // COLD ALLOC: float2[24] - smooth chthonic pillar collider unit circle LUT - owner: HectonVoxelEngine
-    private static readonly float2[] _chthonicPillarColliderUnitCircle =
-    {
-        new float2(1f, 0f),
-        new float2(0.9659258f, 0.258819f),
-        new float2(0.8660254f, 0.5f),
-        new float2(0.7071068f, 0.7071068f),
-        new float2(0.5f, 0.8660254f),
-        new float2(0.258819f, 0.9659258f),
-        new float2(0f, 1f),
-        new float2(-0.258819f, 0.9659258f),
-        new float2(-0.5f, 0.8660254f),
-        new float2(-0.7071068f, 0.7071068f),
-        new float2(-0.8660254f, 0.5f),
-        new float2(-0.9659258f, 0.258819f),
-        new float2(-1f, 0f),
-        new float2(-0.9659258f, -0.258819f),
-        new float2(-0.8660254f, -0.5f),
-        new float2(-0.7071068f, -0.7071068f),
-        new float2(-0.5f, -0.8660254f),
-        new float2(-0.258819f, -0.9659258f),
-        new float2(0f, -1f),
-        new float2(0.258819f, -0.9659258f),
-        new float2(0.5f, -0.8660254f),
-        new float2(0.7071068f, -0.7071068f),
-        new float2(0.8660254f, -0.5f),
-        new float2(0.9659258f, -0.258819f)
-    };
     const float CliffOverhangSlopeThreshold = 1.7320508f;
     const float CliffOverhangLateralAmplitudeMeters = 1.25f;
     const float CliffOverhangNoiseFrequency = 0.075f;
@@ -2980,6 +3126,13 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     const int StreamingCaveGraphEntranceScratchCapacity = 8;
     const int StreamingCaveGraphStructureScratchCapacity = 128;
     const int StreamingCraterStampScratchCapacity = 16;
+    const int StreamingScratchGridMin = 16;
+    const int StreamingScratchGridMax = 128;
+    const int StreamingHeightScratchMax = 16641;
+    const int StreamingPointScratchMax = 2146689;
+    const int StreamingCellScratchMax = 2097152;
+    const int StreamingEdgeVertexScratchMax = 2130048;
+    const int StreamingSpawnPointScratchMax = StreamingCellScratchMax / 10;
     const double VoxelRebuildBudgetMilliseconds = 5.0d;
     const int VoxelRebuildBudgetStrikeFrames = 3;
     const uint VoxelRebuildLaneHash = 0x56584F4Cu;
@@ -3005,9 +3158,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     static int _voxelRebuildOverBudgetConsecutive;
     internal static HectonVoxelEngine ActiveRuntimeInstance => GlobalRegistry.VoxelEngine;
     private static int _airPocketCount;
-    private static readonly Vector3[] _airPocketCenters = new Vector3[AirPocketRegistryCapacity]; // COLD ALLOC: Vector3[64] - fixed voxel air-pocket centers - owner: HectonVoxelEngine
-    private static readonly Vector3[] _airPocketHalfExtents = new Vector3[AirPocketRegistryCapacity]; // COLD ALLOC: Vector3[64] - fixed voxel air-pocket AABB extents - owner: HectonVoxelEngine
-    private static readonly float[] _airPocketRefillFractions = new float[AirPocketRegistryCapacity]; // COLD ALLOC: float[64] - fixed voxel air-pocket O2 refill scalars - owner: HectonVoxelEngine
+    private static FixedList4096Bytes<AirPocketEntry> _airPocketEntries;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void ResetStaticRuntimeState()
@@ -3051,14 +3202,14 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     private static readonly List<DeferredVoxelColliderUpload> _deferredVoxelColliderUploads = new List<DeferredVoxelColliderUpload>(DeferredVoxelColliderUploadCapacity);
     // COLD ALLOC: Mesh[256] - global voxel surface mesh pool preallocated at engine boot - owner: HectonVoxelEngine
     private static readonly Mesh[] _voxelSurfaceMeshPool = new Mesh[VoxelSurfaceMeshPoolSize];
-    // COLD ALLOC: bool[256] - occupancy flags for global voxel surface mesh pool - owner: HectonVoxelEngine
-    private static readonly bool[] _voxelSurfaceMeshPoolInUse = new bool[VoxelSurfaceMeshPoolSize];
+    private static FixedList4096Bytes<byte> _voxelSurfaceMeshPoolInUse;
     private static int _voxelSurfaceMeshPoolInUseCount;
     // COLD ALLOC: Mesh[256] - global PhysX voxel bake mesh pool - owner: HectonVoxelEngine
     private static readonly Mesh[] _voxelPhysicsBakeMeshPool = new Mesh[VoxelPhysicsBakeMeshPoolSize];
-    // COLD ALLOC: bool[256] - occupancy flags for global PhysX voxel bake mesh pool - owner: HectonVoxelEngine
-    private static readonly bool[] _voxelPhysicsBakeMeshPoolInUse = new bool[VoxelPhysicsBakeMeshPoolSize];
+    private static FixedList4096Bytes<byte> _voxelPhysicsBakeMeshPoolInUse;
     private static int _voxelPhysicsBakeMeshPoolInUseCount;
+    private static int _voxelMeshPoolOccupancyInitGate;
+    private static int _voxelMeshPoolOccupancyInitialized;
     // COLD ALLOC: DeferredVoxelPhysicsBakeTeardownDriver[1] - dispatcher late-frame adapter for voxel bake teardown - owner: HectonVoxelEngine
     private static readonly DeferredVoxelPhysicsBakeTeardownDriver _deferredVoxelPhysicsBakeTeardownDriver = new DeferredVoxelPhysicsBakeTeardownDriver();
     // COLD ALLOC: DeferredVoxelColliderUploadDriver[1] - dispatcher late-frame adapter for collider mesh assignment - owner: HectonVoxelEngine
@@ -3106,6 +3257,40 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         public byte Flags;
         public byte HasProxyBounds;
         public byte RetryCount;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 32)]
+    private struct AirPocketEntry
+    {
+        [FieldOffset(0)] public float3 Center;
+        [FieldOffset(12)] public float3 HalfExtents;
+        [FieldOffset(24)] public float OxygenRefillFraction;
+        [FieldOffset(28)] private uint _pad0;
+    }
+
+    [StructLayout(LayoutKind.Explicit, Size = 24)]
+    private struct ActiveVolumeLocalBoundsEntry
+    {
+        [FieldOffset(0)] public float3 Center;
+        [FieldOffset(12)] public float3 Size;
+
+        public static ActiveVolumeLocalBoundsEntry FromBounds(Bounds bounds)
+        {
+            Vector3 center = bounds.center;
+            Vector3 size = bounds.size;
+            return new ActiveVolumeLocalBoundsEntry
+            {
+                Center = new float3(center.x, center.y, center.z),
+                Size = new float3(size.x, size.y, size.z)
+            };
+        }
+
+        public Bounds ToBounds()
+        {
+            return new Bounds(
+                new Vector3(Center.x, Center.y, Center.z),
+                new Vector3(Size.x, Size.y, Size.z));
+        }
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -3181,7 +3366,16 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     internal static int RegisterAirPocket(Vector3 centerWS, Vector3 halfExtentsWS, float oxygenRefillFraction = 1f)
     {
-        if (_airPocketCount >= AirPocketRegistryCapacity ||
+        if (_airPocketCount < 0 ||
+            _airPocketCount != _airPocketEntries.Length ||
+            _airPocketEntries.Length > AirPocketRegistryCapacity)
+        {
+            RecordVoxelRegistryCorruptionForAgent1304(_airPocketCount, _airPocketEntries.Length, AirPocketRegistryCapacity);
+            ClearAirPocketRegistry();
+        }
+
+        if (_airPocketEntries.Length >= AirPocketRegistryCapacity ||
+            _airPocketEntries.Length >= _airPocketEntries.Capacity ||
             !IsFiniteVector(centerWS) ||
             !IsFiniteVector(halfExtentsWS))
         {
@@ -3192,38 +3386,39 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             math.max(0.01f, math.abs(halfExtentsWS.x)),
             math.max(0.01f, math.abs(halfExtentsWS.y)),
             math.max(0.01f, math.abs(halfExtentsWS.z)));
-        int slot = _airPocketCount++;
-        _airPocketCenters[slot] = centerWS;
-        _airPocketHalfExtents[slot] = safeExtents;
-        _airPocketRefillFractions[slot] = math.saturate(oxygenRefillFraction);
+        int slot = _airPocketEntries.Length;
+        _airPocketEntries.AddNoResize(new AirPocketEntry
+        {
+            Center = new float3(centerWS.x, centerWS.y, centerWS.z),
+            HalfExtents = new float3(safeExtents.x, safeExtents.y, safeExtents.z),
+            OxygenRefillFraction = math.saturate(oxygenRefillFraction)
+        });
+        _airPocketCount = _airPocketEntries.Length;
         return slot + 1;
     }
 
     internal static void UnregisterAirPocket(int handle)
     {
+        if (_airPocketCount < 0 ||
+            _airPocketCount != _airPocketEntries.Length ||
+            _airPocketEntries.Length > AirPocketRegistryCapacity)
+        {
+            RecordVoxelRegistryCorruptionForAgent1304(_airPocketCount, _airPocketEntries.Length, AirPocketRegistryCapacity);
+            ClearAirPocketRegistry();
+            return;
+        }
+
         int slot = handle - 1;
-        if ((uint)slot >= (uint)_airPocketCount)
+        if ((uint)slot >= (uint)_airPocketEntries.Length)
             return;
 
-        int lastSlot = _airPocketCount - 1;
-        _airPocketCenters[slot] = _airPocketCenters[lastSlot];
-        _airPocketHalfExtents[slot] = _airPocketHalfExtents[lastSlot];
-        _airPocketRefillFractions[slot] = _airPocketRefillFractions[lastSlot];
-        _airPocketCenters[lastSlot] = Vector3.zero;
-        _airPocketHalfExtents[lastSlot] = Vector3.zero;
-        _airPocketRefillFractions[lastSlot] = 0f;
-        _airPocketCount = lastSlot;
+        _airPocketEntries.RemoveAtSwapBack(slot);
+        _airPocketCount = _airPocketEntries.Length;
     }
 
     internal static void ClearAirPocketRegistry()
     {
-        for (int i = 0; i < _airPocketCount; i++)
-        {
-            _airPocketCenters[i] = Vector3.zero;
-            _airPocketHalfExtents[i] = Vector3.zero;
-            _airPocketRefillFractions[i] = 0f;
-        }
-
+        _airPocketEntries.Clear();
         _airPocketCount = 0;
     }
 
@@ -3233,10 +3428,15 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (!IsFiniteVector(worldPosition))
             return false;
 
-        for (int i = 0; i < _airPocketCount; i++)
+        int airPocketCount = _airPocketEntries.Length < AirPocketRegistryCapacity
+            ? _airPocketEntries.Length
+            : AirPocketRegistryCapacity;
+
+        for (int i = 0; i < airPocketCount; i++)
         {
-            Vector3 center = _airPocketCenters[i];
-            Vector3 extents = _airPocketHalfExtents[i];
+            AirPocketEntry entry = _airPocketEntries[i];
+            float3 center = entry.Center;
+            float3 extents = entry.HalfExtents;
             if (math.abs(worldPosition.x - center.x) > extents.x ||
                 math.abs(worldPosition.y - center.y) > extents.y ||
                 math.abs(worldPosition.z - center.z) > extents.z)
@@ -3244,7 +3444,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 continue;
             }
 
-            oxygenRefillFraction = math.max(0.01f, _airPocketRefillFractions[i]);
+            oxygenRefillFraction = math.max(0.01f, entry.OxygenRefillFraction);
             return true;
         }
 
@@ -3336,9 +3536,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     readonly List<GameObject> _activeVolumes = new List<GameObject>(ActiveVolumeRegistryCapacity);
     // COLD ALLOC: List<HectonVoxelVolume>[64] - active voxel volume component registry - owner: HectonVoxelEngine
     readonly List<HectonVoxelVolume> _activeVolumeComponents = new List<HectonVoxelVolume>(ActiveVolumeRegistryCapacity);
-    // COLD ALLOC: List<Bounds>[64] - cached local mesh bounds for editor gizmos - owner: HectonVoxelEngine
-    readonly List<Bounds> _activeVolumeLocalBounds = new List<Bounds>(ActiveVolumeRegistryCapacity);
-    readonly object _streamingScratchGate = new object();
+    FixedList4096Bytes<ActiveVolumeLocalBoundsEntry> _activeVolumeLocalBounds;
+    int _streamingScratchGate;
     bool _registeredLiveEngine;
     bool _teardownStreamingScratchRequested;
     VoxelStreamingScratchSlot[] _streamingScratchSlots;
@@ -3347,6 +3546,35 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     internal VoxelDeltaProcessor DeltaProcessor => _deltaProcessor;
     internal Material ResolvedVoxelBakeGhostMaterial => voxelBakeGhostMaterial != null ? voxelBakeGhostMaterial : _runtimeVoxelBakeGhostMaterial;
+
+    StreamingScratchGateScope EnterStreamingScratchGate()
+    {
+        SpinWait spinWait = default;
+        while (Interlocked.CompareExchange(ref _streamingScratchGate, 1, 0) != 0)
+            spinWait.SpinOnce();
+
+        return new StreamingScratchGateScope(this);
+    }
+
+    void ExitStreamingScratchGate()
+    {
+        Volatile.Write(ref _streamingScratchGate, 0);
+    }
+
+    readonly struct StreamingScratchGateScope : IDisposable
+    {
+        readonly HectonVoxelEngine _owner;
+
+        public StreamingScratchGateScope(HectonVoxelEngine owner)
+        {
+            _owner = owner;
+        }
+
+        public void Dispose()
+        {
+            _owner.ExitStreamingScratchGate();
+        }
+    }
 
     sealed class VoxelStreamingScratchSlot
     {
@@ -3940,7 +4168,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             if (mapMagicBridge == null)
             {
 #if UNITY_EDITOR
-                Debug.LogError("[HectonVoxel] No MapMagicBridge assigned!");
+                Hecton8.Core.H8Debug.LogError("[HectonVoxel] No MapMagicBridge assigned!");
 #endif
                 return null;
             }
@@ -3971,7 +4199,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             if (!TryResolveCurrentRuntimeOriginAbsolute(out double3 absoluteUniverseOffsetAtStartDouble))
                 return null;
 
-            Vector3 absoluteUniverseOffsetAtStart = ToVector3(absoluteUniverseOffsetAtStartDouble);
+            if (!TryDowncastAbsoluteAupForLegacyMapMagicBridge(absoluteUniverseOffsetAtStartDouble, out Vector3 absoluteUniverseOffsetAtStart))
+                return null;
             uint shiftEpochAtStart = HectonFloatingOrigin.CurrentShiftSequence;
 
             float terrainHeightCenter = worldCenter.y - 10f;
@@ -4241,7 +4470,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             if (mapMagicBridge == null)
             {
 #if UNITY_EDITOR
-                Debug.LogError("[HectonVoxel] No MapMagicBridge assigned!");
+                Hecton8.Core.H8Debug.LogError("[HectonVoxel] No MapMagicBridge assigned!");
 #endif
                 return null;
             }
@@ -4267,7 +4496,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             if (!TryResolveCurrentRuntimeOriginAbsolute(out double3 absoluteUniverseOffsetAtStartDouble))
                 return null;
 
-            Vector3 absoluteUniverseOffsetAtStart = ToVector3(absoluteUniverseOffsetAtStartDouble);
+            if (!TryDowncastAbsoluteAupForLegacyMapMagicBridge(absoluteUniverseOffsetAtStartDouble, out Vector3 absoluteUniverseOffsetAtStart))
+                return null;
             uint shiftEpochAtStart = HectonFloatingOrigin.CurrentShiftSequence;
 
             float terrainHeightCenter = worldCenter.y - 10f;
@@ -4406,7 +4636,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             if (mapMagicBridge == null)
             {
 #if UNITY_EDITOR
-                Debug.LogError("[HectonVoxel] No MapMagicBridge assigned!");
+                Hecton8.Core.H8Debug.LogError("[HectonVoxel] No MapMagicBridge assigned!");
 #endif
                 return false;
             }
@@ -4418,7 +4648,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             int gridDim = math.clamp(volume.GridDimension, 16, 128);
             float voxelStep = math.max(volume.VoxelSize, 0.25f);
             double3 committedTotalOffsetDouble = stableShift.NewTotalOffsetDouble;
-            Vector3 committedTotalOffset = ToVector3(committedTotalOffsetDouble);
+            if (!TryDowncastAbsoluteAupForLegacyMapMagicBridge(committedTotalOffsetDouble, out Vector3 committedTotalOffset))
+                return false;
             Vector3 worldCenter = HectonFloatingOrigin.ToRuntimePosition(volume.GenerationAbsoluteUniversePositionDouble, committedTotalOffsetDouble);
             CaveGenerationParams caveParams = volume.CaveParams;
             float lodTransitionBand = lodLevel > 0 ? math.max(voxelStep * 1.25f, 0.5f) : 0f;
@@ -4437,13 +4668,12 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             CaveTunnel[] tunnelSnapshot = volume.Tunnels;
             CaveEntrance[] entranceSnapshot = volume.Entrances;
             CaveStructure[] structureSnapshot = volume.Structures;
-            VoxelCraterStamp[] craterSnapshot = volume.CraterStamps;
             int craterCount = volume.CraterStampCount;
             int nodeCount = nodeSnapshot != null ? nodeSnapshot.Length : 0;
             int tunnelCount = tunnelSnapshot != null ? tunnelSnapshot.Length : 0;
             int entranceCount = entranceSnapshot != null ? entranceSnapshot.Length : 0;
             int structureCount = structureSnapshot != null ? structureSnapshot.Length : 0;
-            int safeCraterCount = math.clamp(craterCount, 0, craterSnapshot != null ? craterSnapshot.Length : 0);
+            int safeCraterCount = math.clamp(craterCount, 0, StreamingCraterStampScratchCapacity);
 
             rebuildScratchLease = await AcquireStreamingScratchLeaseAsync(ptsX * ptsZ, totalPts, totalCells, gridDim, ct);
             if (!rebuildScratchLease.IsValid)
@@ -4496,8 +4726,13 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             }
             for (int i = 0; i < safeCraterCount; i++)
             {
-                VoxelCraterStamp crater = craterSnapshot[i];
-                crater.position -= committedTotalOffset;
+                if (!volume.TryGetCraterStamp(i, out VoxelCraterStamp crater))
+                {
+                    rebuildScratchLease.Dispose();
+                    return false;
+                }
+
+                crater.position -= committedTotalOffsetDouble;
                 craterStamps[i] = crater;
             }
 
@@ -4626,9 +4861,12 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (!hasLocalBounds)
             localBounds = new Bounds(Vector3.zero, Vector3.one);
 
+        if (_activeVolumeLocalBounds.Length >= _activeVolumeLocalBounds.Capacity)
+            return;
+
         _activeVolumes.Add(volumeObject);
         _activeVolumeComponents.Add(voxelVolume);
-        _activeVolumeLocalBounds.Add(localBounds);
+        _activeVolumeLocalBounds.AddNoResize(ActiveVolumeLocalBoundsEntry.FromBounds(localBounds));
     }
 
     int SelectActiveVolumeEvictionIndex(HectonVoxelVolume incomingVolume)
@@ -4702,14 +4940,14 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             _activeVolumeComponents.RemoveAt(index);
         }
 
-        if (_activeVolumeLocalBounds.Count > last)
+        if (_activeVolumeLocalBounds.Length > last)
         {
             _activeVolumeLocalBounds[index] = _activeVolumeLocalBounds[last];
-            _activeVolumeLocalBounds.RemoveAt(last);
+            _activeVolumeLocalBounds.RemoveAtSwapBack(last);
         }
-        else if (index < _activeVolumeLocalBounds.Count)
+        else if (index < _activeVolumeLocalBounds.Length)
         {
-            _activeVolumeLocalBounds.RemoveAt(index);
+            _activeVolumeLocalBounds.RemoveAtSwapBack(index);
         }
     }
 
@@ -4832,7 +5070,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     public int ActiveVolumeCount => _activeVolumes.Count;
 
-    internal bool TryGetNearestActiveVolume(Vector3 worldPosition, out Hecton8.Caves.HectonVoxelVolume nearestVolume)
+    public bool TryGetNearestActiveVolume(Vector3 worldPosition, out Hecton8.Caves.HectonVoxelVolume nearestVolume)
     {
         nearestVolume = null;
         if (!TryResolveRuntimeAup(worldPosition, out AbsoluteUniversePosition queryAup))
@@ -4918,6 +5156,56 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         out float3 cellSize,
         out float sdfRange)
     {
+        return TryResolveNearestSonarSdfSurfaceCore(
+            runtimeOrigin,
+            runtimeDirection,
+            maxDistance,
+            stepMeters,
+            out hit,
+            out encodedSdf,
+            out gridDimensions,
+            out volumeOrigin,
+            out cellSize,
+            out sdfRange);
+    }
+
+    public bool TryResolveNearestSonarSdfSurface(
+        float3 runtimeOrigin,
+        float3 runtimeDirection,
+        float maxDistance,
+        float stepMeters,
+        out VoxelSonarSdfRaycastHit hit,
+        out NativeArray<byte>.ReadOnly encodedSdf,
+        out int3 gridDimensions,
+        out float3 volumeOrigin,
+        out float3 cellSize,
+        out float sdfRange)
+    {
+        return TryResolveNearestSonarSdfSurfaceCore(
+            runtimeOrigin,
+            runtimeDirection,
+            maxDistance,
+            stepMeters,
+            out hit,
+            out encodedSdf,
+            out gridDimensions,
+            out volumeOrigin,
+            out cellSize,
+            out sdfRange);
+    }
+
+    private bool TryResolveNearestSonarSdfSurfaceCore(
+        float3 runtimeOrigin,
+        float3 runtimeDirection,
+        float maxDistance,
+        float stepMeters,
+        out VoxelSonarSdfRaycastHit hit,
+        out NativeArray<byte>.ReadOnly encodedSdf,
+        out int3 gridDimensions,
+        out float3 volumeOrigin,
+        out float3 cellSize,
+        out float sdfRange)
+    {
         hit = default;
         encodedSdf = default;
         gridDimensions = default;
@@ -4932,8 +5220,6 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             return false;
         }
 
-        Vector3 origin = new Vector3(runtimeOrigin.x, runtimeOrigin.y, runtimeOrigin.z);
-        Vector3 direction = new Vector3(runtimeDirection.x, runtimeDirection.y, runtimeDirection.z);
         float safeStepMeters = math.max(0.05f, math.isfinite(stepMeters) ? stepMeters : 0.05f);
         float bestDistance = float.MaxValue;
         bool resolved = false;
@@ -4949,18 +5235,6 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 continue;
             }
 
-            if (!volume.TryRaymarchPublishedSdf(
-                    origin,
-                    direction,
-                    maxDistance,
-                    safeStepMeters,
-                    out VoxelSdfRaycastHit candidateHit) ||
-                candidateHit.Hit == 0 ||
-                candidateHit.Distance >= bestDistance)
-            {
-                continue;
-            }
-
             if (!volume.TryGetPublishedSonarSdfPayload(
                     out NativeArray<byte>.ReadOnly candidateSdf,
                     out Vector3Int candidateDimensions,
@@ -4972,9 +5246,29 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 continue;
             }
 
+            int3 candidateGridDimensions = new int3(candidateDimensions.x, candidateDimensions.y, candidateDimensions.z);
+            float3 candidateVolumeOrigin = new float3(candidateOrigin.x, candidateOrigin.y, candidateOrigin.z);
+            float3 candidateVoxelCellSize = new float3(candidateCellSize.x, candidateCellSize.y, candidateCellSize.z);
+            if (!VoxelSonarSdfMath.TryRaymarchEncodedSdf(
+                    candidateSdf,
+                    candidateGridDimensions,
+                    candidateVolumeOrigin,
+                    candidateVoxelCellSize,
+                    candidateRange,
+                    runtimeOrigin,
+                    runtimeDirection,
+                    maxDistance,
+                    safeStepMeters,
+                    out VoxelSonarSdfRaycastHit candidateHit) ||
+                (candidateHit.Flags & VoxelSonarSdfRaycastHit.FlagHit) == 0u ||
+                candidateHit.Distance >= bestDistance)
+            {
+                continue;
+            }
+
             bestDistance = candidateHit.Distance;
-            hit.Point = new float3(candidateHit.Point.x, candidateHit.Point.y, candidateHit.Point.z);
-            hit.Normal = new float3(candidateHit.Normal.x, candidateHit.Normal.y, candidateHit.Normal.z);
+            hit.Point = candidateHit.Point;
+            hit.Normal = candidateHit.Normal;
             hit.Distance = math.max(0f, candidateHit.Distance);
             hit.Density = math.isfinite(candidateHit.Density) ? candidateHit.Density : 0f;
             hit.Density01 = math.saturate(math.max(0f, hit.Density) * math.rcp(math.max(0.0001f, candidateRange)));
@@ -4982,9 +5276,9 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             hit.Version = candidateVersion;
             hit.Flags = VoxelSonarSdfRaycastHit.FlagHit;
             encodedSdf = candidateSdf;
-            gridDimensions = new int3(candidateDimensions.x, candidateDimensions.y, candidateDimensions.z);
-            volumeOrigin = new float3(candidateOrigin.x, candidateOrigin.y, candidateOrigin.z);
-            cellSize = new float3(candidateCellSize.x, candidateCellSize.y, candidateCellSize.z);
+            gridDimensions = candidateGridDimensions;
+            volumeOrigin = candidateVolumeOrigin;
+            cellSize = candidateVoxelCellSize;
             sdfRange = candidateRange;
             resolved = true;
         }
@@ -5244,7 +5538,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     {
         while (true)
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_voxelMeshUploadFrame != frame)
             {
                 _voxelMeshUploadFrame = frame;
@@ -5303,7 +5597,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     private static void ApplyPredictiveVoxelProxyCinematicGate()
     {
-        int frame = Time.frameCount;
+        int frame = SystemDispatcher.CurrentFrameIndex;
         if (_predictiveVoxelProxyLastFrame == frame)
             return;
 
@@ -5314,6 +5608,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 out Rigidbody targetBody,
                 out HectonPlayerMovement targetMovement,
                 out ITransportPredictiveVoxelProxySource targetVehicle,
+                out Vector3 origin,
                 out Vector3 velocity))
         {
             return;
@@ -5331,7 +5626,6 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (lookaheadSq > maxDistanceSq)
             lookaheadOffset *= PredictiveVoxelProxyMaxDistanceMeters / math.max(LengthApprox(lookaheadOffset), 0.0001f);
 
-        Vector3 origin = targetBody.worldCenterOfMass;
         Vector3 predicted = origin + new Vector3(lookaheadOffset.x, lookaheadOffset.y, lookaheadOffset.z);
         if (!PathIntersectsDeferredVoxelProxyAup(origin, predicted))
             return;
@@ -5491,11 +5785,13 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         out Rigidbody targetBody,
         out HectonPlayerMovement targetMovement,
         out ITransportPredictiveVoxelProxySource targetVehicle,
+        out Vector3 origin,
         out Vector3 velocity)
     {
         targetBody = null;
         targetMovement = null;
         targetVehicle = null;
+        origin = Vector3.zero;
         velocity = Vector3.zero;
 
         targetMovement = PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext)
@@ -5508,6 +5804,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             targetVehicle = platform as ITransportPredictiveVoxelProxySource;
             if (targetVehicle != null && targetVehicle.TryResolvePredictiveVoxelProxy(out targetBody, out velocity))
             {
+                origin = targetBody != null ? targetBody.worldCenterOfMass : Vector3.zero;
                 return true;
             }
 
@@ -5516,17 +5813,22 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             {
                 targetBody = submarineRuntimeContext.HullRigidbody;
                 velocity = HectonPlayerMotor.SafeVelocity(targetBody.linearVelocity);
+                origin = targetBody.worldCenterOfMass;
                 return true;
             }
         }
 
-        targetBody = runtimeContext != null ? runtimeContext.PlayerRigidbody : null;
-        if (targetBody == null)
+        Transform playerTransform = runtimeContext != null ? runtimeContext.PlayerTransform : null;
+        if (playerTransform == null && targetMovement != null)
+            playerTransform = targetMovement.transform;
+
+        if (playerTransform == null)
             return false;
 
-        velocity = targetMovement != null
-            ? targetMovement.CurrentWorldVelocity
-            : HectonPlayerMotor.SafeVelocity(targetBody.linearVelocity);
+        origin = playerTransform.position;
+        velocity = CoreDeterminismSignals.TryGetLatestKccVelocityVector(PredictiveVoxelProxyKccVelocityMaxAgeFrames, out Vector3 kccVelocity)
+            ? kccVelocity
+            : (targetMovement != null ? targetMovement.CurrentWorldVelocity : Vector3.zero);
         return true;
     }
 
@@ -5536,7 +5838,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         ITransportPredictiveVoxelProxySource targetVehicle,
         Vector3 sampledVelocity)
     {
-        if (targetBody == null || sampledVelocity.y >= -0.01f)
+        if (sampledVelocity.y >= -0.01f)
             return;
 
         if (targetVehicle != null)
@@ -5552,11 +5854,14 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             return;
         }
 
+        if (targetBody == null)
+            return;
+
         Vector3 velocity = HectonPlayerMotor.SafeVelocity(targetBody.linearVelocity);
         if (velocity.y < 0f)
         {
             velocity.y = math.lerp(velocity.y, 0f, PredictiveVoxelProxyDampenerStrength01);
-            Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(targetBody, velocity);
+            GlobalRegistry.Physics?.QueueLinearVelocitySet(targetBody, velocity);
         }
     }
 
@@ -5788,7 +6093,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     private static int ResolveDeferredVoxelPhysicsBakeTeardownDrainBudgetThisFrame()
     {
-        int frame = Time.frameCount;
+        int frame = SystemDispatcher.CurrentFrameIndex;
         if (_deferredVoxelPhysicsBakeTeardownFrame != frame)
         {
             _deferredVoxelPhysicsBakeTeardownFrame = frame;
@@ -6260,7 +6565,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     private static int ResolveDeferredVoxelColliderUploadBudgetThisFrame()
     {
-        int frame = Time.frameCount;
+        int frame = SystemDispatcher.CurrentFrameIndex;
         if (_deferredVoxelColliderUploadFrame != frame)
         {
             _deferredVoxelColliderUploadFrame = frame;
@@ -6389,7 +6694,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     private static void RecordVoxelChunkMeshed()
     {
-        int frame = Time.frameCount;
+        int frame = SystemDispatcher.CurrentFrameIndex;
         if (_voxelMeshTelemetryFrame != frame)
         {
             _voxelMeshTelemetryFrame = frame;
@@ -6404,7 +6709,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     private static void PublishVoxelMeshPipelineTelemetry()
     {
-        int frame = Time.frameCount;
+        int frame = SystemDispatcher.CurrentFrameIndex;
         if (_voxelMeshTelemetryFrame != frame)
         {
             _voxelMeshTelemetryFrame = frame;
@@ -6604,6 +6909,26 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             hash ^= value;
             return hash * 16777619u;
         }
+    }
+
+    internal static void RecordVoxelRegistryCorruptionForAgent1304(int primaryCount, int secondaryCount, int limit)
+    {
+        WriteVoxelMeshPipelineBlackBoxSample(
+            (uint)Time.frameCount,
+            VoxelMeshPipelineRegistryCorruptionFlag,
+            primaryCount,
+            secondaryCount,
+            limit);
+    }
+
+    internal static void RecordVoxelRebuildFailClosedForAgent1304(int runtimeStamp, int bakeState, int queued)
+    {
+        WriteVoxelMeshPipelineBlackBoxSample(
+            (uint)Time.frameCount,
+            VoxelMeshPipelineRebuildFailClosedFlag,
+            runtimeStamp,
+            bakeState,
+            queued);
     }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -6928,6 +7253,22 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         return new Vector3((float)value.x, (float)value.y, (float)value.z);
     }
 
+    private static bool TryDowncastAbsoluteAupForLegacyMapMagicBridge(double3 absoluteAup, out Vector3 legacyAbsolute)
+    {
+        const double LegacyMapMagicFloatAupMaxAbsMeters = 8388608d;
+        legacyAbsolute = default;
+        if (!math.all(math.isfinite(absoluteAup)) ||
+            math.cmax(math.abs(absoluteAup)) > LegacyMapMagicFloatAupMaxAbsMeters)
+        {
+            return false;
+        }
+
+        legacyAbsolute = ToVector3(absoluteAup);
+        return math.isfinite(legacyAbsolute.x) &&
+               math.isfinite(legacyAbsolute.y) &&
+               math.isfinite(legacyAbsolute.z);
+    }
+
     private static bool ResolveDeferredVoxelPhysicsBakeBackpressureState(int pendingCount, bool currentlyActive)
     {
         return VoxelRuntimeIntegrityUtility.ResolveBackpressureState(
@@ -6954,14 +7295,48 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     private static void ResetVoxelMeshPoolState()
     {
+        EnsureVoxelMeshPoolOccupancyFlags();
         for (int i = 0; i < _voxelSurfaceMeshPoolInUse.Length; i++)
-            _voxelSurfaceMeshPoolInUse[i] = false;
+            _voxelSurfaceMeshPoolInUse[i] = 0;
 
         for (int i = 0; i < _voxelPhysicsBakeMeshPoolInUse.Length; i++)
-            _voxelPhysicsBakeMeshPoolInUse[i] = false;
+            _voxelPhysicsBakeMeshPoolInUse[i] = 0;
 
         _voxelSurfaceMeshPoolInUseCount = 0;
         _voxelPhysicsBakeMeshPoolInUseCount = 0;
+    }
+
+    private static void EnsureVoxelMeshPoolOccupancyFlags()
+    {
+        if (Volatile.Read(ref _voxelMeshPoolOccupancyInitialized) == 1)
+            return;
+
+        SpinWait spinWait = default;
+        while (Interlocked.CompareExchange(ref _voxelMeshPoolOccupancyInitGate, 1, 0) != 0)
+        {
+            if (Volatile.Read(ref _voxelMeshPoolOccupancyInitialized) == 1)
+                return;
+
+            spinWait.SpinOnce();
+        }
+
+        try
+        {
+            if (Volatile.Read(ref _voxelMeshPoolOccupancyInitialized) == 1)
+                return;
+
+            while (_voxelSurfaceMeshPoolInUse.Length < VoxelSurfaceMeshPoolSize)
+                _voxelSurfaceMeshPoolInUse.Add(0);
+
+            while (_voxelPhysicsBakeMeshPoolInUse.Length < VoxelPhysicsBakeMeshPoolSize)
+                _voxelPhysicsBakeMeshPoolInUse.Add(0);
+
+            Volatile.Write(ref _voxelMeshPoolOccupancyInitialized, 1);
+        }
+        finally
+        {
+            Volatile.Write(ref _voxelMeshPoolOccupancyInitGate, 0);
+        }
     }
 
     private static async Awaitable WarmVoxelMeshPoolsAsync(CancellationToken ct)
@@ -6972,18 +7347,14 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         _voxelMeshPoolWarmupRunning = true;
         try
         {
+            if (ct.IsCancellationRequested || ShouldAbortVoxelMeshPoolWarmup())
+                return;
+
             await WarmVoxelSurfaceMeshPoolAsync(ct);
+            if (ct.IsCancellationRequested || ShouldAbortVoxelMeshPoolWarmup())
+                return;
+
             await WarmVoxelPhysicsBakeMeshPoolAsync(ct);
-        }
-        catch (OperationCanceledException)
-        {
-            // Owner teardown cancels cold prewarm; runtime acquire fails closed instead of allocating a mesh.
-        }
-        catch (Exception exception)
-        {
-#if UNITY_EDITOR
-            Debug.LogException(exception);
-#endif
         }
         finally
         {
@@ -7000,12 +7371,11 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             if (_voxelSurfaceMeshPool[i] != null)
                 continue;
 
-            ct.ThrowIfCancellationRequested();
-            if (ShouldAbortVoxelMeshPoolWarmup())
+            if (ct.IsCancellationRequested || ShouldAbortVoxelMeshPoolWarmup())
                 return;
 
             _voxelSurfaceMeshPool[i] = CreateVoxelPoolMesh(VoxelSurfacePoolMeshName);
-            await AwaitableDebtMonitor.NextFrameAsync(ct);
+            await AwaitableDebtMonitor.NextFrameAsync();
         }
     }
 
@@ -7016,12 +7386,11 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             if (_voxelPhysicsBakeMeshPool[i] != null)
                 continue;
 
-            ct.ThrowIfCancellationRequested();
-            if (ShouldAbortVoxelMeshPoolWarmup())
+            if (ct.IsCancellationRequested || ShouldAbortVoxelMeshPoolWarmup())
                 return;
 
             _voxelPhysicsBakeMeshPool[i] = CreateVoxelPoolMesh(VoxelPhysicsBakePoolMeshName);
-            await AwaitableDebtMonitor.NextFrameAsync(ct);
+            await AwaitableDebtMonitor.NextFrameAsync();
         }
     }
 
@@ -7060,8 +7429,10 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
         for (int retry = 0; retry < VoxelMeshPoolAcquireWarmupRetryFrames && _voxelMeshPoolWarmupRunning; retry++)
         {
-            ct.ThrowIfCancellationRequested();
-            await AwaitableDebtMonitor.NextFrameAsync(ct);
+            if (ct.IsCancellationRequested)
+                return null;
+
+            await AwaitableDebtMonitor.NextFrameAsync();
             mesh = AcquireVoxelSurfaceMesh();
             if (mesh != null)
                 return mesh;
@@ -7078,8 +7449,10 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
         for (int retry = 0; retry < VoxelMeshPoolAcquireWarmupRetryFrames && _voxelMeshPoolWarmupRunning; retry++)
         {
-            ct.ThrowIfCancellationRequested();
-            await AwaitableDebtMonitor.NextFrameAsync(ct);
+            if (ct.IsCancellationRequested)
+                return null;
+
+            await AwaitableDebtMonitor.NextFrameAsync();
             mesh = AcquireVoxelPhysicsBakeMesh();
             if (mesh != null)
                 return mesh;
@@ -7090,10 +7463,11 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     internal static Mesh AcquireVoxelSurfaceMesh()
     {
+        EnsureVoxelMeshPoolOccupancyFlags();
         bool hasColdFreeSlot = false;
         for (int i = 0; i < _voxelSurfaceMeshPool.Length; i++)
         {
-            if (_voxelSurfaceMeshPoolInUse[i])
+            if (_voxelSurfaceMeshPoolInUse[i] != 0)
                 continue;
 
             Mesh mesh = _voxelSurfaceMeshPool[i];
@@ -7103,7 +7477,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 continue;
             }
 
-            _voxelSurfaceMeshPoolInUse[i] = true;
+            _voxelSurfaceMeshPoolInUse[i] = 1;
             _voxelSurfaceMeshPoolInUseCount = math.min(VoxelSurfaceMeshPoolSize, _voxelSurfaceMeshPoolInUseCount + 1);
             mesh.Clear(false);
             _voxelSurfaceMeshPoolExhaustedWarningArmed = false;
@@ -7127,15 +7501,16 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (mesh == null)
             return false;
 
+        EnsureVoxelMeshPoolOccupancyFlags();
         for (int i = 0; i < _voxelSurfaceMeshPool.Length; i++)
         {
             if (!ReferenceEquals(_voxelSurfaceMeshPool[i], mesh))
                 continue;
 
             mesh.Clear(false);
-            if (_voxelSurfaceMeshPoolInUse[i])
+            if (_voxelSurfaceMeshPoolInUse[i] != 0)
             {
-                _voxelSurfaceMeshPoolInUse[i] = false;
+                _voxelSurfaceMeshPoolInUse[i] = 0;
                 _voxelSurfaceMeshPoolInUseCount = math.max(0, _voxelSurfaceMeshPoolInUseCount - 1);
             }
 
@@ -7148,10 +7523,11 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     internal static Mesh AcquireVoxelPhysicsBakeMesh()
     {
+        EnsureVoxelMeshPoolOccupancyFlags();
         bool hasColdFreeSlot = false;
         for (int i = 0; i < _voxelPhysicsBakeMeshPool.Length; i++)
         {
-            if (_voxelPhysicsBakeMeshPoolInUse[i])
+            if (_voxelPhysicsBakeMeshPoolInUse[i] != 0)
                 continue;
 
             Mesh mesh = _voxelPhysicsBakeMeshPool[i];
@@ -7161,7 +7537,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 continue;
             }
 
-            _voxelPhysicsBakeMeshPoolInUse[i] = true;
+            _voxelPhysicsBakeMeshPoolInUse[i] = 1;
             _voxelPhysicsBakeMeshPoolInUseCount = math.min(VoxelPhysicsBakeMeshPoolSize, _voxelPhysicsBakeMeshPoolInUseCount + 1);
             mesh.Clear(false);
             return mesh;
@@ -7184,15 +7560,16 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (mesh == null)
             return false;
 
+        EnsureVoxelMeshPoolOccupancyFlags();
         for (int i = 0; i < _voxelPhysicsBakeMeshPool.Length; i++)
         {
             if (!ReferenceEquals(_voxelPhysicsBakeMeshPool[i], mesh))
                 continue;
 
             mesh.Clear(false);
-            if (_voxelPhysicsBakeMeshPoolInUse[i])
+            if (_voxelPhysicsBakeMeshPoolInUse[i] != 0)
             {
-                _voxelPhysicsBakeMeshPoolInUse[i] = false;
+                _voxelPhysicsBakeMeshPoolInUse[i] = 0;
                 _voxelPhysicsBakeMeshPoolInUseCount = math.max(0, _voxelPhysicsBakeMeshPoolInUseCount - 1);
             }
 
@@ -7205,6 +7582,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     private static void DestroyVoxelMeshPools()
     {
+        EnsureVoxelMeshPoolOccupancyFlags();
         for (int i = 0; i < _voxelSurfaceMeshPool.Length; i++)
         {
             Mesh mesh = _voxelSurfaceMeshPool[i];
@@ -7212,7 +7590,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 DestroyDeferredVoxelObject(mesh);
 
             _voxelSurfaceMeshPool[i] = null;
-            _voxelSurfaceMeshPoolInUse[i] = false;
+            _voxelSurfaceMeshPoolInUse[i] = 0;
         }
 
         for (int i = 0; i < _voxelPhysicsBakeMeshPool.Length; i++)
@@ -7222,7 +7600,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                 DestroyDeferredVoxelObject(mesh);
 
             _voxelPhysicsBakeMeshPool[i] = null;
-            _voxelPhysicsBakeMeshPoolInUse[i] = false;
+            _voxelPhysicsBakeMeshPoolInUse[i] = 0;
         }
 
         _voxelSurfaceMeshPoolExhaustedWarningArmed = false;
@@ -7253,7 +7631,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     static void LogVoxelJobWaitWatchdog(string context, int waitFrames)
     {
 #if UNITY_EDITOR
-        Debug.LogError("[HectonVoxel] Job wait watchdog tripped. Cleanup barrier required.");
+        Hecton8.Core.H8Debug.LogError("[HectonVoxel] Job wait watchdog tripped. Cleanup barrier required.");
 #endif
     }
 
@@ -7425,9 +7803,9 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         float fallbackHeight = data.TerrainHeightCenter;
         bool sampledHeightGrid = false;
         double3 absoluteGridOriginDouble = new double3(data.VolumeOrigin.x, 0d, data.VolumeOrigin.z) + data.AbsoluteUniverseOffsetAtStartDouble;
-        Vector3 absoluteGridOrigin = ToVector3(absoluteGridOriginDouble);
         HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-        if (vegetationBridge != null)
+        if (vegetationBridge != null &&
+            TryDowncastAbsoluteAupForLegacyMapMagicBridge(absoluteGridOriginDouble, out Vector3 absoluteGridOrigin))
         {
             sampledHeightGrid = vegetationBridge.TryFillTerrainHeightGridFromNativeCacheAUP(
                 absoluteGridOrigin,
@@ -7448,8 +7826,9 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
                     float wz = data.VolumeOrigin.z + iz * data.VoxelStep;
                     int hi = ix + iz * data.PtsX;
 
-                    Vector3 absoluteSamplePosition = ToVector3(new double3(wx, 0d, wz) + data.AbsoluteUniverseOffsetAtStartDouble);
-                    if (mapMagicBridge.TryGetHeightAUP(absoluteSamplePosition, out float sampledHeight))
+                    double3 absoluteSampleAup = new double3(wx, 0d, wz) + data.AbsoluteUniverseOffsetAtStartDouble;
+                    if (TryDowncastAbsoluteAupForLegacyMapMagicBridge(absoluteSampleAup, out Vector3 absoluteSamplePosition) &&
+                        mapMagicBridge.TryGetHeightAUP(absoluteSamplePosition, out float sampledHeight))
                         terrainHeights[hi] = sampledHeight;
                     else
                         terrainHeights[hi] = fallbackHeight;
@@ -7640,6 +8019,12 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             navGridScheduled = true;
         }
 
+        if (!MCTables.TryAcquireJobTables(out MCTables.JobTableLease mcCountTables))
+        {
+            ReportVoxelMeshScratchCapacityOverflow();
+            return false;
+        }
+
         JobHandle mcCountHandle = new VoxelMCCountJob
         {
             cellsX = data.GridDimension,
@@ -7650,15 +8035,22 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             ptsZ = data.PtsZ,
             densityDecodeScale = densityDecodeScale,
             density = quantizedDensityField,
-            edgeTable = MCTables.EdgeTable,
-            triTable = MCTables.TriTable,
+            edgeTable = mcCountTables.EdgeTable,
+            triTable = mcCountTables.TriTable,
             cellVertexCounts = cellVertexCounts
         }.Schedule(data.TotalCells, JOB_BATCH, quantizeDensityHandle);
 
         JobHandle firstPhaseHandle = navGridScheduled
             ? JobHandle.CombineDependencies(mcCountHandle, navGridHandle)
             : mcCountHandle;
-        await AwaitForJobCompletionAsync(firstPhaseHandle, ct, "density/count phase");
+        try
+        {
+            await AwaitForJobCompletionAsync(firstPhaseHandle, ct, "density/count phase");
+        }
+        finally
+        {
+            mcCountTables.Dispose();
+        }
         if (navGridScheduled)
             VoxelDynamicNavGridRuntime.CommitBuild(data.SourceVolume, data.SourceRuntimeStamp);
 
@@ -7716,6 +8108,12 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         JobHandle clearEdgesHandle = JobHandle.CombineDependencies(clearEdgeXHandle, clearEdgeYHandle, clearEdgeZHandle);
         await AwaitForJobCompletionAsync(clearEdgesHandle, ct, "edge vertex registry clear");
 
+        if (!MCTables.TryAcquireJobTables(out MCTables.JobTableLease mcExtractTables))
+        {
+            ReportVoxelMeshScratchCapacityOverflow();
+            return false;
+        }
+
         JobHandle mcHandle = new VoxelMCExtractJob
         {
             cellsX = data.GridDimension,
@@ -7728,14 +8126,21 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             voxelStep = data.VoxelStep,
             densityDecodeScale = densityDecodeScale,
             density = quantizedDensityField,
-            edgeTable = MCTables.EdgeTable,
-            triTable = MCTables.TriTable,
+            edgeTable = mcExtractTables.EdgeTable,
+            triTable = mcExtractTables.TriTable,
             cellVertexOffsets = cellVertexOffsets,
             cellVertexCounts = cellVertexCounts,
             outVertices = data.RawVertices
         }.Schedule(data.TotalCells, JOB_BATCH);
 
-        await AwaitForJobCompletionAsync(mcHandle, ct, "marching-cubes extract");
+        try
+        {
+            await AwaitForJobCompletionAsync(mcHandle, ct, "marching-cubes extract");
+        }
+        finally
+        {
+            mcExtractTables.Dispose();
+        }
 
         ct.ThrowIfCancellationRequested();
 
@@ -8041,15 +8446,12 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         if (biomeHash == 0u)
             return false;
 
-        H8BiomeRecord* records = (H8BiomeRecord*)H8StaticDataArena.GetSectionDataPointer(
-            H8DataSectionId.Biomes,
-            H8DataLayoutConstants.BiomeRecordSize,
-            out int count);
-        if (records == null || count <= 0)
+        ReadOnlySpan<H8BiomeRecord> records = H8StaticDataArena.GetSectionSpan<H8BiomeRecord>(H8DataSectionId.Biomes);
+        if (records.Length <= 0)
             return false;
 
         int low = 0;
-        int high = count - 1;
+        int high = records.Length - 1;
         while (low <= high)
         {
             int mid = (low + high) >> 1;
@@ -8101,13 +8503,13 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         int waitFrames)
     {
 #if UNITY_EDITOR
-        Debug.LogError("[HectonVoxel] Streaming scratch lease timed out.");
+        Hecton8.Core.H8Debug.LogError("[HectonVoxel] Streaming scratch lease timed out.");
 #endif
     }
 
     void GetStreamingScratchLeaseState(out int slotCount, out int inUseCount, out bool teardownRequested)
     {
-        lock (_streamingScratchGate)
+        using (EnterStreamingScratchGate())
         {
             teardownRequested = _teardownStreamingScratchRequested;
             slotCount = _streamingScratchSlots != null ? _streamingScratchSlots.Length : 0;
@@ -8129,7 +8531,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         out VoxelStreamingScratchLease lease)
     {
         lease = default;
-        lock (_streamingScratchGate)
+        using (EnterStreamingScratchGate())
         {
             EnsureStreamingScratchSlots();
             if (_streamingScratchSlots == null || _streamingScratchSlots.Length == 0)
@@ -8207,7 +8609,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     void ReleaseStreamingScratchLease(int slotIndex)
     {
-        lock (_streamingScratchGate)
+        using (EnterStreamingScratchGate())
         {
             if (_streamingScratchSlots == null || slotIndex < 0 || slotIndex >= _streamingScratchSlots.Length)
                 return;
@@ -8253,7 +8655,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     void DisposeStreamingScratchSlots()
     {
-        lock (_streamingScratchGate)
+        using (EnterStreamingScratchGate())
         {
             if (_streamingScratchSlots == null)
                 return;
@@ -8267,7 +8669,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
     void TryFinalizeStreamingScratchTeardown()
     {
-        lock (_streamingScratchGate)
+        using (EnterStreamingScratchGate())
             TryFinalizeStreamingScratchTeardown_NoLock();
     }
 
@@ -8361,19 +8763,54 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         int totalCellCount,
         int gridDimension)
     {
-        try
-        {
-            EnsureStreamingScratchSlotCapacity(slot, heightCount, totalPointCount, totalCellCount, gridDimension);
-            return true;
-        }
-        catch (Exception ex)
+        if (!IsStreamingScratchCapacityRequestSafe(
+                heightCount,
+                totalPointCount,
+                totalCellCount,
+                gridDimension))
         {
             ReportVoxelMeshScratchCapacityOverflow();
-#if UNITY_EDITOR
-            Debug.LogException(ex);
-#endif
             return false;
         }
+
+        EnsureStreamingScratchSlotCapacity(slot, heightCount, totalPointCount, totalCellCount, gridDimension);
+        return true;
+    }
+
+    static bool IsStreamingScratchCapacityRequestSafe(
+        int heightCount,
+        int totalPointCount,
+        int totalCellCount,
+        int gridDimension)
+    {
+        if (heightCount <= 0 ||
+            totalPointCount <= 0 ||
+            totalCellCount <= 0 ||
+            gridDimension < StreamingScratchGridMin ||
+            gridDimension > StreamingScratchGridMax ||
+            heightCount > StreamingHeightScratchMax ||
+            totalPointCount > StreamingPointScratchMax ||
+            totalCellCount > StreamingCellScratchMax)
+        {
+            return false;
+        }
+
+        int meshRawScratchCapacity = ResolveStreamingMeshRawScratchCapacity(totalCellCount);
+        ResolveStreamingEdgeVertexScratchCapacity(
+            gridDimension,
+            out int edgeVertexCountX,
+            out int edgeVertexCountY,
+            out int edgeVertexCountZ);
+
+        return meshRawScratchCapacity > 0 &&
+               meshRawScratchCapacity <= StreamingMeshRawVertexScratchVisualOverkillCapacity &&
+               edgeVertexCountX > 0 &&
+               edgeVertexCountX <= StreamingEdgeVertexScratchMax &&
+               edgeVertexCountY > 0 &&
+               edgeVertexCountY <= StreamingEdgeVertexScratchMax &&
+               edgeVertexCountZ > 0 &&
+               edgeVertexCountZ <= StreamingEdgeVertexScratchMax &&
+               ResolveStreamingSpawnPointScratchCapacity(totalCellCount) <= StreamingSpawnPointScratchMax;
     }
 
     static int ResolveStreamingMeshRawScratchCapacity(int totalCellCount)
@@ -8428,7 +8865,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         int safeEdgeVertexCountY = math.max(1, edgeVertexCountY);
         int safeEdgeVertexCountZ = math.max(1, edgeVertexCountZ);
 
-        lock (_streamingScratchGate)
+        using (EnterStreamingScratchGate())
         {
             if (_streamingScratchSlots == null ||
                 lease._slotIndex >= _streamingScratchSlots.Length ||
@@ -8472,7 +8909,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
         int safeWeldedCount = math.max(1, weldedCount);
 
-        lock (_streamingScratchGate)
+        using (EnterStreamingScratchGate())
         {
             if (_streamingScratchSlots == null ||
                 lease._slotIndex >= _streamingScratchSlots.Length ||
@@ -8514,7 +8951,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
         int safeVertexCount = math.max(1, vertexCount);
 
-        lock (_streamingScratchGate)
+        using (EnterStreamingScratchGate())
         {
             if (_streamingScratchSlots == null ||
                 lease._slotIndex >= _streamingScratchSlots.Length ||
@@ -8544,7 +8981,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
         int safeBucketCount = math.max(1, bucketCount);
 
-        lock (_streamingScratchGate)
+        using (EnterStreamingScratchGate())
         {
             if (_streamingScratchSlots == null ||
                 lease._slotIndex >= _streamingScratchSlots.Length ||
@@ -8577,7 +9014,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         int safeOffsetCount = math.max(1, bucketCount + 1);
         int safeReferenceCount = math.max(1, totalReferences);
 
-        lock (_streamingScratchGate)
+        using (EnterStreamingScratchGate())
         {
             if (_streamingScratchSlots == null ||
                 lease._slotIndex >= _streamingScratchSlots.Length ||
@@ -8610,7 +9047,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         int safeOffsetCount = math.max(1, bucketCount + 1);
         int safeReferenceCount = math.max(1, totalReferences);
 
-        lock (_streamingScratchGate)
+        using (EnterStreamingScratchGate())
         {
             if (_streamingScratchSlots == null ||
                 lease._slotIndex >= _streamingScratchSlots.Length ||
@@ -8671,7 +9108,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         int safeStructureCount = math.max(1, structureCount);
         int safeCraterStampCount = math.max(1, craterStampCount);
 
-        lock (_streamingScratchGate)
+        using (EnterStreamingScratchGate())
         {
             if (_streamingScratchSlots == null ||
                 lease._slotIndex >= _streamingScratchSlots.Length ||
@@ -8721,7 +9158,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
         int safeCapacity = math.max(1, requiredCapacity);
 
-        lock (_streamingScratchGate)
+        using (EnterStreamingScratchGate())
         {
             if (_streamingScratchSlots == null ||
                 lease._slotIndex >= _streamingScratchSlots.Length ||
@@ -8754,7 +9191,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
         int safeCapacity = math.max(1, requiredCapacity);
 
-        lock (_streamingScratchGate)
+        using (EnterStreamingScratchGate())
         {
             if (_streamingScratchSlots == null ||
                 lease._slotIndex >= _streamingScratchSlots.Length ||
@@ -8853,7 +9290,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         int safeVertexCount = math.max(1, vertexCount);
         int safeColliderChunkCount = math.max(1, colliderChunkCount);
 
-        lock (_streamingScratchGate)
+        using (EnterStreamingScratchGate())
         {
             if (_streamingScratchSlots == null ||
                 lease._slotIndex >= _streamingScratchSlots.Length ||
@@ -10038,6 +10475,38 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
         }
     }
 
+    static float2 GetChthonicPillarColliderUnitCircle(int index)
+    {
+        switch (index)
+        {
+            case 0: return new float2(1f, 0f);
+            case 1: return new float2(0.9659258f, 0.258819f);
+            case 2: return new float2(0.8660254f, 0.5f);
+            case 3: return new float2(0.7071068f, 0.7071068f);
+            case 4: return new float2(0.5f, 0.8660254f);
+            case 5: return new float2(0.258819f, 0.9659258f);
+            case 6: return new float2(0f, 1f);
+            case 7: return new float2(-0.258819f, 0.9659258f);
+            case 8: return new float2(-0.5f, 0.8660254f);
+            case 9: return new float2(-0.7071068f, 0.7071068f);
+            case 10: return new float2(-0.8660254f, 0.5f);
+            case 11: return new float2(-0.9659258f, 0.258819f);
+            case 12: return new float2(-1f, 0f);
+            case 13: return new float2(-0.9659258f, -0.258819f);
+            case 14: return new float2(-0.8660254f, -0.5f);
+            case 15: return new float2(-0.7071068f, -0.7071068f);
+            case 16: return new float2(-0.5f, -0.8660254f);
+            case 17: return new float2(-0.258819f, -0.9659258f);
+            case 18: return new float2(0f, -1f);
+            case 19: return new float2(0.258819f, -0.9659258f);
+            case 20: return new float2(0.5f, -0.8660254f);
+            case 21: return new float2(0.7071068f, -0.7071068f);
+            case 22: return new float2(0.8660254f, -0.5f);
+            case 23: return new float2(0.9659258f, -0.258819f);
+            default: return new float2(1f, 0f);
+        }
+    }
+
     bool TryBuildSmoothChthonicPillarColliderMesh(
         in VoxelPipelineData data,
         VoxelFinalizeProjectionState projectionState,
@@ -10102,7 +10571,7 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
 
         for (int segment = 0; segment < segments; segment++)
         {
-            float2 unit = _chthonicPillarColliderUnitCircle[segment];
+            float2 unit = GetChthonicPillarColliderUnitCircle(segment);
             float x = localCenterX + unit.x * safeRadius;
             float z = localCenterZ + unit.y * safeRadius;
             int vertexBase = segment * 2;
@@ -10655,6 +11124,65 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
     // ╚═══════════════════════════════════════════════╝
 
 #if UNITY_EDITOR
+    public static bool ValidateAgent1304EnginePrivateLayouts(ref uint failureFlags)
+    {
+        bool ok = true;
+        ok &= AssertAgent1304ExplicitLayout<AirPocketEntry>(32, ref failureFlags);
+        ok &= AssertAgent1304Offset<AirPocketEntry>(nameof(AirPocketEntry.Center), 0, ref failureFlags);
+        ok &= AssertAgent1304Offset<AirPocketEntry>(nameof(AirPocketEntry.HalfExtents), 12, ref failureFlags);
+        ok &= AssertAgent1304Offset<AirPocketEntry>(nameof(AirPocketEntry.OxygenRefillFraction), 24, ref failureFlags);
+        ok &= AssertAgent1304Offset<AirPocketEntry>("_pad0", 28, ref failureFlags);
+
+        ok &= AssertAgent1304ExplicitLayout<ActiveVolumeLocalBoundsEntry>(24, ref failureFlags);
+        ok &= AssertAgent1304Offset<ActiveVolumeLocalBoundsEntry>(nameof(ActiveVolumeLocalBoundsEntry.Center), 0, ref failureFlags);
+        ok &= AssertAgent1304Offset<ActiveVolumeLocalBoundsEntry>(nameof(ActiveVolumeLocalBoundsEntry.Size), 12, ref failureFlags);
+
+        ok &= AssertAgent1304ExplicitLayout<VoxelMeshPipelineTelemetryEntry>(32, ref failureFlags);
+        ok &= AssertAgent1304Offset<VoxelMeshPipelineTelemetryEntry>(nameof(VoxelMeshPipelineTelemetryEntry.Frame), 0, ref failureFlags);
+        ok &= AssertAgent1304Offset<VoxelMeshPipelineTelemetryEntry>(nameof(VoxelMeshPipelineTelemetryEntry.Flags), 4, ref failureFlags);
+        ok &= AssertAgent1304Offset<VoxelMeshPipelineTelemetryEntry>(nameof(VoxelMeshPipelineTelemetryEntry.ChunksMeshedThisFrame), 8, ref failureFlags);
+        ok &= AssertAgent1304Offset<VoxelMeshPipelineTelemetryEntry>(nameof(VoxelMeshPipelineTelemetryEntry.BakeQueueLength), 10, ref failureFlags);
+        ok &= AssertAgent1304Offset<VoxelMeshPipelineTelemetryEntry>(nameof(VoxelMeshPipelineTelemetryEntry.ColliderUploadQueueLength), 12, ref failureFlags);
+        ok &= AssertAgent1304Offset<VoxelMeshPipelineTelemetryEntry>(nameof(VoxelMeshPipelineTelemetryEntry.ActiveGenerationOperations), 14, ref failureFlags);
+        ok &= AssertAgent1304Offset<VoxelMeshPipelineTelemetryEntry>(nameof(VoxelMeshPipelineTelemetryEntry.SurfacePoolInUse), 16, ref failureFlags);
+        ok &= AssertAgent1304Offset<VoxelMeshPipelineTelemetryEntry>(nameof(VoxelMeshPipelineTelemetryEntry.PhysicsPoolInUse), 18, ref failureFlags);
+        ok &= AssertAgent1304Offset<VoxelMeshPipelineTelemetryEntry>(nameof(VoxelMeshPipelineTelemetryEntry.StateHash), 20, ref failureFlags);
+        ok &= AssertAgent1304Offset<VoxelMeshPipelineTelemetryEntry>(nameof(VoxelMeshPipelineTelemetryEntry.Padding0), 24, ref failureFlags);
+        ok &= AssertAgent1304Offset<VoxelMeshPipelineTelemetryEntry>(nameof(VoxelMeshPipelineTelemetryEntry.Padding1), 28, ref failureFlags);
+        return ok;
+    }
+
+    private static bool AssertAgent1304ExplicitLayout<T>(int expectedSize, ref uint failureFlags)
+        where T : struct
+    {
+        StructLayoutAttribute layout = typeof(T).StructLayoutAttribute;
+        int observedSize = UnsafeUtility.SizeOf<T>();
+        bool ok = layout != null &&
+                  layout.Value == LayoutKind.Explicit &&
+                  observedSize == expectedSize &&
+                  (observedSize & 7) == 0;
+        if (!ok)
+            failureFlags |= 1u;
+
+        return ok;
+    }
+
+    private static bool AssertAgent1304Offset<T>(string fieldName, int expectedOffset, ref uint failureFlags)
+        where T : struct
+    {
+        System.Reflection.FieldInfo field = typeof(T).GetField(
+            fieldName,
+            System.Reflection.BindingFlags.Instance |
+            System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.NonPublic);
+        int observedOffset = field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
+        bool ok = observedOffset == expectedOffset;
+        if (!ok)
+            failureFlags |= 1u;
+
+        return ok;
+    }
+
     void OnDrawGizmosSelected()
     {
         Gizmos.color = new Color(0f, 1f, 0.5f, 0.3f);
@@ -10665,8 +11193,8 @@ public class HectonVoxelEngine : MonoBehaviour, Hecton8.Core.Contracts.IVoxelSon
             if (activeVolume == null)
                 continue;
 
-            Bounds localBounds = i < _activeVolumeLocalBounds.Count
-                ? _activeVolumeLocalBounds[i]
+            Bounds localBounds = i < _activeVolumeLocalBounds.Length
+                ? _activeVolumeLocalBounds[i].ToBounds()
                 : new Bounds(Vector3.zero, Vector3.one);
 
             if (localBounds.size.sqrMagnitude <= 0.0001f)

@@ -12,7 +12,7 @@ namespace Hecton8.Biolum
     /// Publishes a player-centered 3D bioluminescence radiance volume for flora shading.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HectonBiolumDiffusionVolume : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public sealed class HectonBiolumDiffusionVolume : MonoBehaviour, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const int DefaultResolution = 64;
         private const float DefaultVolumeWorldSize = 72f;
@@ -213,13 +213,9 @@ namespace Hecton8.Biolum
         /// <summary>
         /// Updates the persistent 3D radiance volume from nearby biolum zone data.
         /// </summary>
-        public void Tick(float deltaTime)
-        {
-        }
-
         public void LateFrameTick()
         {
-            float deltaTime = Time.deltaTime;
+            float deltaTime = SystemDispatcher.CurrentFrameDeltaTime;
             if (deltaTime < 0f)
                 return;
 
@@ -518,7 +514,7 @@ namespace Hecton8.Biolum
 
         private void ReportInvalidGlowInput()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastInvalidGlowTelemetryFrame == frame)
                 return;
 

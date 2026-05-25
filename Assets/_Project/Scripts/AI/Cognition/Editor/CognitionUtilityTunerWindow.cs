@@ -372,13 +372,17 @@ namespace Hecton8.AI.Cognition.Editor
             }
 
             int count = math.min(buffers.Outputs.Length, math.min(buffers.Aups.Length, 256));
+            if (!TryResolveFiniteOriginAup(in buffers, count, out double3 originAup))
+                return;
+
             for (int i = 0; i < count; i++)
             {
                 CognitionActionOutputDTO output = buffers.Outputs[i];
                 if ((output.Flags & UtilityAICognitionActionFlags.Active) == 0)
                     continue;
 
-                float3 local = AupPrecisionMath.DowncastLocalDeltaClamped(buffers.Aups[i].AUP, 2048f, float3.zero);
+                double3 localDelta = AupPrecisionMath.LocalDeltaDouble(buffers.Aups[i].AUP, originAup);
+                float3 local = AupPrecisionMath.DowncastLocalDeltaClamped(localDelta, 2048f, float3.zero);
                 Vector3 center = new Vector3(local.x, local.y, local.z);
                 Handles.color = ResolveActionColor(output.ActionHash);
                 Handles.CubeHandleCap(0, center, Quaternion.identity, 2.0f + output.MaxUtility, EventType.Repaint);
@@ -403,6 +407,23 @@ namespace Hecton8.AI.Cognition.Editor
             }
 
             return 1f / 30f;
+        }
+
+        private static bool TryResolveFiniteOriginAup(in UtilityAICognitionVaultBuffers buffers, int count, out double3 originAup)
+        {
+            originAup = default;
+            int limit = math.min(count, buffers.Aups.IsCreated ? buffers.Aups.Length : 0);
+            for (int i = 0; i < limit; i++)
+            {
+                double3 candidate = buffers.Aups[i].AUP;
+                if (!math.all(math.isfinite(candidate)))
+                    continue;
+
+                originAup = candidate;
+                return true;
+            }
+
+            return false;
         }
 
         private static bool TryResolveTargetDelta(

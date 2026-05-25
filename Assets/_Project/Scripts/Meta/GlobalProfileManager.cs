@@ -496,7 +496,7 @@ namespace Hecton8.Meta
                 _discoveryManager = GlobalRegistry.Discovery;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             RefreshSurvivalSignalBinding();
             return ResolveOwnersHot();
@@ -918,7 +918,7 @@ namespace Hecton8.Meta
             if (saveService != null)
                 return Mathf.Max(0f, saveService.CurrentPlayTimeSeconds);
 
-            return Mathf.Max(0f, Time.realtimeSinceStartup);
+            return Mathf.Max(0f, (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -998,7 +998,7 @@ namespace Hecton8.Meta
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[GlobalProfileManager] Failed to flush profile.json. Dirty state retained.");
+            Hecton8.Core.H8Debug.LogWarning("[GlobalProfileManager] Failed to flush profile.json. Dirty state retained.");
 #endif
         }
 
@@ -1032,7 +1032,7 @@ namespace Hecton8.Meta
             catch (Exception ex)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[GlobalProfileManager] Failed to write profile file '{path}': {ex.Message}");
+                Hecton8.Core.H8Debug.LogWarning($"[GlobalProfileManager] Failed to write profile file '{path}': {ex.Message}");
 #endif
                 try
                 {
@@ -1071,7 +1071,7 @@ namespace Hecton8.Meta
             catch (Exception ex)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[GlobalProfileManager] Failed to load profile file '{path}': {ex.Message}");
+                Hecton8.Core.H8Debug.LogWarning($"[GlobalProfileManager] Failed to load profile file '{path}': {ex.Message}");
 #endif
                 return new GlobalProfileData();
             }

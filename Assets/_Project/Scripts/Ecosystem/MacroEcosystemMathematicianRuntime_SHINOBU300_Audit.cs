@@ -109,7 +109,7 @@ namespace Hecton8.Ecosystem
             if (RunShinobu300SelfAudit(out string failure))
                 Hecton8.Core.H8Debug.Log("[SHINOBU_300] Macro ecosystem self audit passed.");
             else
-                UnityEngine.Debug.LogError("[SHINOBU_300] Macro ecosystem self audit failed: " + failure);
+                Hecton8.Core.H8Debug.LogError("[SHINOBU_300] Macro ecosystem self audit failed: " + failure);
         }
 #endif
     }

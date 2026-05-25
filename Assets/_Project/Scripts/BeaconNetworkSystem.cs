@@ -203,7 +203,7 @@ namespace Hecton8.Gameplay
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[BeaconNetwork] Missing bootstrap-owned BeaconNetworkSystem service.");
+            Hecton8.Core.H8Debug.LogError("[BeaconNetwork] Missing bootstrap-owned BeaconNetworkSystem service.");
 #endif
             return null;
         }
@@ -856,7 +856,7 @@ namespace Hecton8.Gameplay
         {
             _cachedObjectPool = GlobalRegistry.ObjectPoolService;
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
-            _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _cachedSaveService = GlobalRegistry.Save;
         }
 
         private void TryRegisterHotSwapListener()

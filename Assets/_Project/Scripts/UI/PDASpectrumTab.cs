@@ -692,7 +692,10 @@ namespace Hecton8.UI
         private static bool TryResolveRuntimeAup(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
         {
             positionAup = default;
-            float3 localRuntime = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            float3 localRuntime = default;
+            localRuntime.x = runtimePosition.x;
+            localRuntime.y = runtimePosition.y;
+            localRuntime.z = runtimePosition.z;
             if (!math.all(math.isfinite(localRuntime)))
                 return false;
 
@@ -700,9 +703,13 @@ namespace Hecton8.UI
             if (!originAup.IsFinite())
                 return false;
 
+            double3 localOffset = default;
+            localOffset.x = runtimePosition.x;
+            localOffset.y = runtimePosition.y;
+            localOffset.z = runtimePosition.z;
             positionAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
-                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+                localOffset);
             return positionAup.IsFinite();
         }
 
@@ -814,16 +821,16 @@ namespace Hecton8.UI
         //  NESTED TYPES
         // ══════════════════════════════════════════════════════════
 
-        private static bool IsEmpSensorBlindActive()
+        private bool IsEmpSensorBlindActive()
         {
-            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
-                runtimeContext == null ||
-                runtimeContext.TraumaDispatcher == null)
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext == null ||
+                playerContext.TraumaDispatcher == null)
             {
                 return false;
             }
 
-            return runtimeContext.TraumaDispatcher.IsEmpSensorBlindActive;
+            return playerContext.TraumaDispatcher.IsEmpSensorBlindActive;
         }
 
         private static string ResolveDeathCauseTag(SurvivalDeathCause cause)

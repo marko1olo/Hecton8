@@ -4,7 +4,6 @@ using UnityEngine.EventSystems;
 using UnityEngine.Events;
 using Hecton8.Audio;
 using Hecton8.Core;
-using System.Collections.Generic;
 
 namespace Hecton8.UI
 {
@@ -85,12 +84,6 @@ namespace Hecton8.UI
         private UnityAction<float> _sliderChangedAction;
         private UnityAction<bool> _toggleChangedAction;
         private UnityAction<BaseEventData> _buttonHoverAction;
-        // COLD ALLOC: List<Button>(64) — UI button registration buffer — owner: UIAudioFeedback
-        private readonly List<Button> _buttonResolveBuffer = new List<Button>(64);
-        // COLD ALLOC: List<Slider>(32) — UI slider registration buffer — owner: UIAudioFeedback
-        private readonly List<Slider> _sliderResolveBuffer = new List<Slider>(32);
-        // COLD ALLOC: List<Toggle>(32) — UI toggle registration buffer — owner: UIAudioFeedback
-        private readonly List<Toggle> _toggleResolveBuffer = new List<Toggle>(32);
 
         // Stats
         private int _totalSoundsPlayed;
@@ -299,7 +292,7 @@ namespace Hecton8.UI
 
         private void BindAudioAndRegisterControls()
         {
-            _audioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioManager = GlobalRegistry.Audio;
 
             if (_controlsRegistered)
                 return;
@@ -327,73 +320,93 @@ namespace Hecton8.UI
 
         private void RegisterAllButtons()
         {
-            _buttonResolveBuffer.Clear();
-            GetComponentsInChildren(true, _buttonResolveBuffer);
-            for (int i = 0; i < _buttonResolveBuffer.Count; i++)
-            {
-                Button button = _buttonResolveBuffer[i];
-                if (button == null)
-                    continue;
-
-                // Classification is cold, but avoid allocating a lowercase copy of the button name.
-                ButtonType type = GetButtonType(button.name);
-                RegisterButton(button, type);
-            }
-
-            _buttonResolveBuffer.Clear();
+            RegisterButtonsInHierarchy(transform);
         }
 
         private void RegisterAllSliders()
         {
-            _sliderResolveBuffer.Clear();
-            GetComponentsInChildren(true, _sliderResolveBuffer);
-            for (int i = 0; i < _sliderResolveBuffer.Count; i++)
-            {
-                Slider slider = _sliderResolveBuffer[i];
-                if (slider == null)
-                    continue;
-
-                slider.onValueChanged.RemoveListener(_sliderChangedAction);
-                slider.onValueChanged.AddListener(_sliderChangedAction);
-            }
-
-            _sliderResolveBuffer.Clear();
+            RegisterSlidersInHierarchy(transform);
         }
 
         private void RegisterAllToggles()
         {
-            _toggleResolveBuffer.Clear();
-            GetComponentsInChildren(true, _toggleResolveBuffer);
-            for (int i = 0; i < _toggleResolveBuffer.Count; i++)
-            {
-                Toggle toggle = _toggleResolveBuffer[i];
-                if (toggle == null)
-                    continue;
-
-                toggle.onValueChanged.RemoveListener(_toggleChangedAction);
-                toggle.onValueChanged.AddListener(_toggleChangedAction);
-            }
-
-            _toggleResolveBuffer.Clear();
+            RegisterTogglesInHierarchy(transform);
         }
 
         private void UnregisterAllButtons()
         {
-            _buttonResolveBuffer.Clear();
-            GetComponentsInChildren(true, _buttonResolveBuffer);
-            for (int i = 0; i < _buttonResolveBuffer.Count; i++)
-            {
-                Button button = _buttonResolveBuffer[i];
-                if (button == null)
-                    continue;
+            UnregisterButtonsInHierarchy(transform);
+        }
 
+        private void UnregisterAllSliders()
+        {
+            UnregisterSlidersInHierarchy(transform);
+        }
+
+        private void UnregisterAllToggles()
+        {
+            UnregisterTogglesInHierarchy(transform);
+        }
+
+        private void RegisterButtonsInHierarchy(Transform root)
+        {
+            if (root == null)
+                return;
+
+            if (root.TryGetComponent(out Button button))
+            {
+                ButtonType type = GetButtonType(button.name);
+                RegisterButton(button, type);
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+                RegisterButtonsInHierarchy(root.GetChild(i));
+        }
+
+        private void RegisterSlidersInHierarchy(Transform root)
+        {
+            if (root == null)
+                return;
+
+            if (root.TryGetComponent(out Slider slider))
+            {
+                slider.onValueChanged.RemoveListener(_sliderChangedAction);
+                slider.onValueChanged.AddListener(_sliderChangedAction);
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+                RegisterSlidersInHierarchy(root.GetChild(i));
+        }
+
+        private void RegisterTogglesInHierarchy(Transform root)
+        {
+            if (root == null)
+                return;
+
+            if (root.TryGetComponent(out Toggle toggle))
+            {
+                toggle.onValueChanged.RemoveListener(_toggleChangedAction);
+                toggle.onValueChanged.AddListener(_toggleChangedAction);
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+                RegisterTogglesInHierarchy(root.GetChild(i));
+        }
+
+        private void UnregisterButtonsInHierarchy(Transform root)
+        {
+            if (root == null)
+                return;
+
+            if (root.TryGetComponent(out Button button))
+            {
                 button.onClick.RemoveListener(_primaryButtonClickAction);
                 button.onClick.RemoveListener(_secondaryButtonClickAction);
                 button.onClick.RemoveListener(_destructiveButtonClickAction);
 
                 if (button.TryGetComponent(out EventTrigger trigger))
                 {
-                    List<EventTrigger.Entry> entries = trigger.triggers;
+                    var entries = trigger.triggers;
                     for (int entryIndex = 0; entryIndex < entries.Count; entryIndex++)
                     {
                         EventTrigger.Entry entry = entries[entryIndex];
@@ -403,39 +416,32 @@ namespace Hecton8.UI
                 }
             }
 
-            _buttonResolveBuffer.Clear();
+            for (int i = 0; i < root.childCount; i++)
+                UnregisterButtonsInHierarchy(root.GetChild(i));
         }
 
-        private void UnregisterAllSliders()
+        private void UnregisterSlidersInHierarchy(Transform root)
         {
-            _sliderResolveBuffer.Clear();
-            GetComponentsInChildren(true, _sliderResolveBuffer);
-            for (int i = 0; i < _sliderResolveBuffer.Count; i++)
-            {
-                Slider slider = _sliderResolveBuffer[i];
-                if (slider == null)
-                    continue;
+            if (root == null)
+                return;
 
+            if (root.TryGetComponent(out Slider slider))
                 slider.onValueChanged.RemoveListener(_sliderChangedAction);
-            }
 
-            _sliderResolveBuffer.Clear();
+            for (int i = 0; i < root.childCount; i++)
+                UnregisterSlidersInHierarchy(root.GetChild(i));
         }
 
-        private void UnregisterAllToggles()
+        private void UnregisterTogglesInHierarchy(Transform root)
         {
-            _toggleResolveBuffer.Clear();
-            GetComponentsInChildren(true, _toggleResolveBuffer);
-            for (int i = 0; i < _toggleResolveBuffer.Count; i++)
-            {
-                Toggle toggle = _toggleResolveBuffer[i];
-                if (toggle == null)
-                    continue;
+            if (root == null)
+                return;
 
+            if (root.TryGetComponent(out Toggle toggle))
                 toggle.onValueChanged.RemoveListener(_toggleChangedAction);
-            }
 
-            _toggleResolveBuffer.Clear();
+            for (int i = 0; i < root.childCount; i++)
+                UnregisterTogglesInHierarchy(root.GetChild(i));
         }
 
         private void RegisterButton(Button button, ButtonType type)
@@ -467,7 +473,7 @@ namespace Hecton8.UI
 
         private static EventTrigger.Entry GetOrCreatePointerEnterEntry(EventTrigger trigger)
         {
-            List<EventTrigger.Entry> entries = trigger.triggers;
+            var entries = trigger.triggers;
             for (int i = 0; i < entries.Count; i++)
             {
                 EventTrigger.Entry entry = entries[i];
@@ -562,7 +568,7 @@ namespace Hecton8.UI
 
         private void OnSliderChanged(float value)
         {
-            float currentTime = Time.unscaledTime;
+            float currentTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (currentTime - _lastSliderTickTime < sliderTickThrottle)
             {
                 _throttledSounds++;
@@ -597,7 +603,7 @@ namespace Hecton8.UI
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (debugLog)
             {
-                float now = Time.unscaledTime;
+                float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
                 if (now >= _nextDebugLogTime)
                 {
                     _nextDebugLogTime = now + 1f;

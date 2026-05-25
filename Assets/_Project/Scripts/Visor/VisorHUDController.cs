@@ -7,7 +7,6 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
-using Hecton8.Physics;
 using Hecton8.Tools;
 using Hecton8.UI;
 using Hecton8.World;
@@ -44,7 +43,16 @@ namespace NASAPunk.Visor
         private const float RadiationFatigueMinimumScale = 0.65f;
         private const float RadiationFatigueScalePerSecond = 0.005f;
         private const float RadiationFatigueCriticalExposureSeconds = (1f - RadiationFatigueMinimumScale) / RadiationFatigueScalePerSecond;
-        private static readonly List<VisorHUDController> s_activeControllers = new List<VisorHUDController>(2);
+        private const int ActiveControllerCapacity = 8;
+        private static VisorHUDController s_activeController0;
+        private static VisorHUDController s_activeController1;
+        private static VisorHUDController s_activeController2;
+        private static VisorHUDController s_activeController3;
+        private static VisorHUDController s_activeController4;
+        private static VisorHUDController s_activeController5;
+        private static VisorHUDController s_activeController6;
+        private static VisorHUDController s_activeController7;
+        private static int s_activeControllerCount;
         private static int s_hudPhosphorModeUserCount;
 
         public enum ProjectionMode
@@ -283,7 +291,7 @@ namespace NASAPunk.Visor
         private uint _survivalVitalsSourceId;
         private uint _lastSurvivalVitalsSignalSequence;
         private ISubmarineRuntimeContext _submarineRuntimeContext;
-        private SubmarineStructuralGrid _structuralGrid;
+        private ISubmarineHullBreachReadModel _hullBreachReadModel;
         private bool _hasTemperatureSample;
         private float _lastTemperatureSample;
         private bool _hasPressureSample;
@@ -363,7 +371,7 @@ namespace NASAPunk.Visor
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticRuntimeState()
         {
-            s_activeControllers.Clear();
+            ClearActiveControllerSlots();
             s_hudPhosphorModeUserCount = 0;
             Shader.DisableKeyword(HudPhosphorKeyword);
             Shader.SetGlobalFloat(ID_HectonVRBrownoutIntensity, 0f);
@@ -375,15 +383,133 @@ namespace NASAPunk.Visor
                 return;
 
             results.Clear();
-            for (int i = 0; i < s_activeControllers.Count; i++)
+            for (int i = 0; i < s_activeControllerCount; i++)
             {
                 if (results.Count >= results.Capacity)
                     break;
 
-                VisorHUDController controller = s_activeControllers[i];
+                VisorHUDController controller = GetActiveControllerSlot(i);
                 if (controller != null && controller.isActiveAndEnabled)
                     results.Add(controller);
             }
+        }
+
+        internal static int ActiveControllerCount => s_activeControllerCount;
+
+        internal static VisorHUDController GetActiveController(int index)
+        {
+            return GetActiveControllerSlot(index);
+        }
+
+        public static void PulseActiveControllers(float intensity, int maxCount)
+        {
+            if (maxCount <= 0)
+                return;
+
+            int emitted = 0;
+            for (int i = 0; i < s_activeControllerCount; i++)
+            {
+                VisorHUDController controller = GetActiveControllerSlot(i);
+                if (controller == null || !controller.isActiveAndEnabled)
+                    continue;
+
+                controller.GlitchPulse(intensity);
+                emitted++;
+                if (emitted >= maxCount)
+                    break;
+            }
+        }
+
+        private static void ClearActiveControllerSlots()
+        {
+            s_activeController0 = null;
+            s_activeController1 = null;
+            s_activeController2 = null;
+            s_activeController3 = null;
+            s_activeController4 = null;
+            s_activeController5 = null;
+            s_activeController6 = null;
+            s_activeController7 = null;
+            s_activeControllerCount = 0;
+        }
+
+        private static VisorHUDController GetActiveControllerSlot(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return s_activeController0;
+                case 1:
+                    return s_activeController1;
+                case 2:
+                    return s_activeController2;
+                case 3:
+                    return s_activeController3;
+                case 4:
+                    return s_activeController4;
+                case 5:
+                    return s_activeController5;
+                case 6:
+                    return s_activeController6;
+                case 7:
+                    return s_activeController7;
+                default:
+                    return null;
+            }
+        }
+
+        private static void SetActiveControllerSlot(int index, VisorHUDController controller)
+        {
+            switch (index)
+            {
+                case 0:
+                    s_activeController0 = controller;
+                    break;
+                case 1:
+                    s_activeController1 = controller;
+                    break;
+                case 2:
+                    s_activeController2 = controller;
+                    break;
+                case 3:
+                    s_activeController3 = controller;
+                    break;
+                case 4:
+                    s_activeController4 = controller;
+                    break;
+                case 5:
+                    s_activeController5 = controller;
+                    break;
+                case 6:
+                    s_activeController6 = controller;
+                    break;
+                case 7:
+                    s_activeController7 = controller;
+                    break;
+            }
+        }
+
+        private static void CompactActiveControllerSlots()
+        {
+            int writeIndex = 0;
+            int readCount = s_activeControllerCount;
+
+            for (int readIndex = 0; readIndex < readCount; readIndex++)
+            {
+                VisorHUDController controller = GetActiveControllerSlot(readIndex);
+                if (controller == null)
+                    continue;
+
+                if (writeIndex != readIndex)
+                    SetActiveControllerSlot(writeIndex, controller);
+
+                writeIndex++;
+            }
+
+            for (int clearIndex = writeIndex; clearIndex < readCount; clearIndex++)
+                SetActiveControllerSlot(clearIndex, null);
+
+            s_activeControllerCount = writeIndex;
         }
 
         private void Awake()
@@ -575,7 +701,7 @@ namespace NASAPunk.Visor
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedModularEquipment = GlobalRegistry.ModularEquipment;
             _submarineRuntimeContext = GlobalRegistry.Submarine;
             _cachedVramMonitor = GlobalRegistry.VRAMBudgetReadModel;
@@ -606,7 +732,7 @@ namespace NASAPunk.Visor
         private void ApplyCachedSubmarineContext()
         {
             ISubmarineRuntimeContext submarineRuntimeContext = _submarineRuntimeContext;
-            _structuralGrid = submarineRuntimeContext != null ? submarineRuntimeContext.StructuralGrid : null;
+            _hullBreachReadModel = submarineRuntimeContext != null ? submarineRuntimeContext.StructuralGrid : null;
         }
 
 #if UNITY_EDITOR
@@ -744,15 +870,34 @@ namespace NASAPunk.Visor
 
         private void RegisterActiveController()
         {
-            if (s_activeControllers.Contains(this))
+            CompactActiveControllerSlots();
+
+            for (int i = 0; i < s_activeControllerCount; i++)
+            {
+                if (ReferenceEquals(GetActiveControllerSlot(i), this))
+                    return;
+            }
+
+            if (s_activeControllerCount >= ActiveControllerCapacity)
                 return;
 
-            s_activeControllers.Add(this);
+            SetActiveControllerSlot(s_activeControllerCount, this);
+            s_activeControllerCount++;
         }
 
         private void UnregisterActiveController()
         {
-            s_activeControllers.Remove(this);
+            for (int i = 0; i < s_activeControllerCount; i++)
+            {
+                if (!ReferenceEquals(GetActiveControllerSlot(i), this))
+                    continue;
+
+                int lastIndex = s_activeControllerCount - 1;
+                SetActiveControllerSlot(i, GetActiveControllerSlot(lastIndex));
+                SetActiveControllerSlot(lastIndex, null);
+                s_activeControllerCount = lastIndex;
+                return;
+            }
         }
 
         private void ApplyHudPhosphorKeyword(bool enabled)
@@ -853,7 +998,7 @@ namespace NASAPunk.Visor
             bool needsSurvivalSystem = Application.isPlaying && _survivalSystem == null;
             bool needsTraumaDispatcher = Application.isPlaying && _traumaDispatcher == null;
             bool needsPlayerHealth = Application.isPlaying && _playerHealth == null;
-            bool needsStructuralGrid = Application.isPlaying && _structuralGrid == null;
+            bool needsHullBreachReadModel = Application.isPlaying && _hullBreachReadModel == null;
 
             return _visorRenderer == null
                 || needsHudCamera
@@ -862,12 +1007,19 @@ namespace NASAPunk.Visor
                 || needsSurvivalSystem
                 || needsTraumaDispatcher
                 || needsPlayerHealth
-                || needsStructuralGrid;
+                || needsHullBreachReadModel;
         }
 
         private static float GetAutoResolveNow()
         {
-            return Application.isPlaying ? Time.unscaledTime : Time.realtimeSinceStartup;
+            return Application.isPlaying
+                ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds
+                : ResolveEditorPreviewClockSeconds();
+        }
+
+        private static float ResolveEditorPreviewClockSeconds()
+        {
+            return (float)(System.Diagnostics.Stopwatch.GetTimestamp() / (double)System.Diagnostics.Stopwatch.Frequency);
         }
 
         private void EnsurePropertyBlock()
@@ -954,7 +1106,7 @@ namespace NASAPunk.Visor
             propertyBlockChanged |= ApplyVisorFloat(ID_ToolDistanceMeters, _resolvedToolDistanceMeters, ref _appliedToolDistanceMeters);
             propertyBlockChanged |= ApplyVisorVector(
                 ID_VisorCameraForwardWS,
-                new Vector4(_resolvedVisorCameraForward.x, _resolvedVisorCameraForward.y, _resolvedVisorCameraForward.z, 1f),
+                MakeVector4(_resolvedVisorCameraForward.x, _resolvedVisorCameraForward.y, _resolvedVisorCameraForward.z, 1f),
                 ref _appliedVisorCameraForward);
             propertyBlockChanged |= ApplyVisorVector(ID_VisorStrongestLightDirectionWS, _resolvedStrongestLightDirection, ref _appliedStrongestLightDirection);
 
@@ -1173,6 +1325,16 @@ namespace NASAPunk.Visor
                 math.abs(current.w - next.w) > VisorPropertyFloatWriteEpsilon;
         }
 
+        private static Vector4 MakeVector4(float x, float y, float z, float w)
+        {
+            Vector4 result = default;
+            result.x = x;
+            result.y = y;
+            result.z = z;
+            result.w = w;
+            return result;
+        }
+
         private void ApplyVRBrownoutState(float biosRecoverySwitch)
         {
             float powerBrownout = 0f;
@@ -1222,7 +1384,7 @@ namespace NASAPunk.Visor
 
             Vector3 directionToLight = -lightSource.transform.forward;
             float intensity = Mathf.Max(0f, lightSource.intensity);
-            return new Vector4(directionToLight.x, directionToLight.y, directionToLight.z, intensity);
+            return MakeVector4(directionToLight.x, directionToLight.y, directionToLight.z, intensity);
         }
 
         private void ResolveActiveToolDisplayState(
@@ -1398,7 +1560,7 @@ namespace NASAPunk.Visor
                 return;
 
             ISubmarineRuntimeContext submarineRuntimeContext = _submarineRuntimeContext;
-            _structuralGrid = submarineRuntimeContext != null ? submarineRuntimeContext.StructuralGrid : null;
+            _hullBreachReadModel = submarineRuntimeContext != null ? submarineRuntimeContext.StructuralGrid : null;
         }
 
         private void RefreshSurvivalSubscription(HectonSurvivalSystem target)
@@ -1822,8 +1984,10 @@ namespace NASAPunk.Visor
 
         private float ResolveStructuralFatigue01()
         {
-            if (_structuralGrid != null && _structuralGrid.isActiveAndEnabled && _structuralGrid.IsReady)
-                return Mathf.Clamp01(_structuralGrid.FatiguePeakNormalized);
+            ISubmarineHullBreachReadModel hullBreachReadModel = _hullBreachReadModel;
+            UnityEngine.Object readModelObject = hullBreachReadModel as UnityEngine.Object;
+            if (readModelObject != null && hullBreachReadModel.IsReady)
+                return Mathf.Clamp01(hullBreachReadModel.FatiguePeakNormalized);
 
             return 0f;
         }
@@ -2711,7 +2875,7 @@ namespace NASAPunk.Visor
             _glitchActive = true;
             _glitchTimer = 0f;
             _glitchDuration = duration;
-            _glitchRngState = (uint)(Time.unscaledTime * 1000f) | 1u;
+            _glitchRngState = (uint)((float)SystemDispatcher.CurrentUnscaledTimeSeconds * 1000f) | 1u;
         }
 
         /// <summary>

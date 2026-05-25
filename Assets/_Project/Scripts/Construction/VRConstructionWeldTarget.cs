@@ -448,13 +448,16 @@ namespace Hecton8.Construction
 
         private void CacheConstructionLogisticsCold()
         {
-            _constructionLogistics = ResolveConstructionLogistics();
+            ILogisticsService providerService = constructionLogisticsProvider as ILogisticsService;
+            _constructionLogistics = providerService;
+            if (_constructionLogistics == null)
+                _constructionLogistics = GlobalRegistry.Logistics;
         }
 
         private ILogisticsService ResolveConstructionLogistics()
         {
             ILogisticsService providerService = constructionLogisticsProvider as ILogisticsService;
-            ILogisticsService logistics = providerService ?? GlobalRegistry.Logistics;
+            ILogisticsService logistics = providerService ?? _constructionLogistics;
             return logistics;
         }
 

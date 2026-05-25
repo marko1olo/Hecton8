@@ -1,35 +1,35 @@
 // ============================================================================
-// HECTON-8 — EndingSystem.cs
+// HECTON-8 â€” EndingSystem.cs
 // Sistema kontsovok igry.
 //
-// LOR (lor1 — Final):
+// LOR (lor1 â€” Final):
 //   Igrok dobralsya do yadra Atlas-6 na -5000m.
-//   Tri vybora — ni odin ne "pravilnyy". Eto nuar.
+//   Tri vybora â€” ni odin ne "pravilnyy". Eto nuar.
 //
 //   VYKLYuChIT ATLAS-6:
 //     Signal prekraschaetsya. Korporatsiya pridet.
 //     Terraformirovanie prodolzhitsya. Zhizn unichtozhena.
-//     Igrok uletaet. Ekonomicheski logichno — moralno net.
+//     Igrok uletaet. Ekonomicheski logichno â€” moralno net.
 //
 //   OSTAVIT ATLAS-6:
 //     Signal prodolzhaetsya. Korporatsiya ne pridet poka signal aktiven.
-//     Zhizn zaschischena — vremenno. Signal kogda-nibud naydut i zaglushat.
+//     Zhizn zaschischena â€” vremenno. Signal kogda-nibud naydut i zaglushat.
 //
 //   USILIT SIGNAL:
-//     Signal publichnyy — ves sektor slyshit.
-//     Korporatsiyu ne ostanovit — no teper vse znayut.
-//     Atlas-6 vyklyuchaetsya sam — zadacha vypolnena.
+//     Signal publichnyy â€” ves sektor slyshit.
+//     Korporatsiyu ne ostanovit â€” no teper vse znayut.
+//     Atlas-6 vyklyuchaetsya sam â€” zadacha vypolnena.
 //     Igrok stanovitsya tem, kto raskryl taynu.
 //
 // ARHITEKTURA:
-//   • Otslezhivaet usloviya aktivatsii (glubina + rasshifrovka signala).
-//   • Publikuet sobytiya dlya vseh sistem pri vybore kontsovki.
-//   • ISaveable: sohranyaet vybrannuyu kontsovku.
-//   • Integriruetsya s Atlas6DirectiveSystem, QuestManager, NarrativeEvents.
+//   â€¢ Otslezhivaet usloviya aktivatsii (glubina + rasshifrovka signala).
+//   â€¢ Publikuet sobytiya dlya vseh sistem pri vybore kontsovki.
+//   â€¢ ISaveable: sohranyaet vybrannuyu kontsovku.
+//   â€¢ Integriruetsya s Atlas6DirectiveSystem, QuestManager, NarrativeEvents.
 //
 // ZERO GC:
-//   • Static events, enum state.
-//   • Nikakih new/LINQ v hot path.
+//   â€¢ Static events, enum state.
+//   â€¢ Nikakih new/LINQ v hot path.
 // ============================================================================
 
 using System;
@@ -385,7 +385,7 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<EndingEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] — deferred ending lane flushed by SystemDispatcher LateUpdate — owner: EndingEvents
+                _pendingEvents = new NativeQueue<EndingEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] â€” deferred ending lane flushed by SystemDispatcher LateUpdate â€” owner: EndingEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
@@ -397,7 +397,7 @@ namespace Hecton8.Gameplay
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<EndingEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] — next-frame ending lane prevents same-frame reentrant dispatch — owner: EndingEvents
+                _nextFrameEvents = new NativeQueue<EndingEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] â€” next-frame ending lane prevents same-frame reentrant dispatch â€” owner: EndingEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
@@ -440,7 +440,7 @@ namespace Hecton8.Gameplay
         private static void LogListenerDispatchException(Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogException(exception);
+            Hecton8.Core.H8Debug.LogException(exception);
 #endif
         }
 
@@ -697,7 +697,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-50)]
-    public sealed class EndingSystem : MonoBehaviour, ISaveable, ISlowTickable, IAtlasSignalEventListener, IGlobalRegistryHotSwapListener
+    public sealed class EndingSystem : MonoBehaviour, ISaveable, ISlowTickable, IAtlasSignalEventListener, IGlobalRegistryHotSwapListener, IEndingRuntimeService
     {
         // ----------------------------------------------------------
         //  INSPECTOR
@@ -743,8 +743,9 @@ namespace Hecton8.Gameplay
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
         private HectonSurvivalSystem _survivalSystem;
-        private AtlasSignalSystem _atlasSignal;
-        private Atlas6DirectiveSystem _atlas6Directive;
+        private IAtlasSignalReadModel _atlasSignal;
+        private IAtlasSignalDecodeSink _atlasSignalDecodeSink;
+        private IAtlas6DirectiveCommandSink _atlas6Directive;
         private IQuestSystem _questRuntime;
         private ISaveService _saveService;
         private ILocalizationTextReadModel _localization;
@@ -815,9 +816,9 @@ namespace Hecton8.Gameplay
             float depth = _survivalSystem != null ? _survivalSystem.Depth : 0f;
             if (depth < requiredDepth) return;
 
-            AtlasSignalSystem signal = _atlasSignal;
+            IAtlasSignalReadModel signal = _atlasSignal;
             if (signal == null) return;
-            if (signal.CurrentStrength < requiredSignalStrength) return;
+            if (signal.CurrentAtlasSignalStrength01 < requiredSignalStrength) return;
 
             // Usloviya vypolneny
             _conditionMet = true;
@@ -875,16 +876,18 @@ namespace Hecton8.Gameplay
 
         private void CacheRuntimeDependencies()
         {
-            _atlasSignal = Hecton8.Core.GlobalRegistry.AtlasSignal;
-            _atlas6Directive = Hecton8.Core.GlobalRegistry.Atlas6Directive;
+            _atlasSignal = Hecton8.Core.GlobalRegistry.AtlasSignalReadModel;
+            _atlasSignalDecodeSink = Hecton8.Core.GlobalRegistry.AtlasSignalDecodeSink;
+            _atlas6Directive = Hecton8.Core.GlobalRegistry.Atlas6DirectiveCommandSink;
             _questRuntime = GlobalRegistry.QuestSystem;
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = Hecton8.Core.GlobalRegistry.Save;
             _localization = Hecton8.Core.GlobalRegistry.LocalizationText;
         }
 
         private void ClearRuntimeDependencies()
         {
             _atlasSignal = null;
+            _atlasSignalDecodeSink = null;
             _atlas6Directive = null;
             _questRuntime = null;
             _saveService = null;
@@ -921,10 +924,11 @@ namespace Hecton8.Gameplay
                         TryRegister();
                     break;
                 case GlobalRegistryServiceSlot.AtlasSignalRuntime:
-                    _atlasSignal = currentService as AtlasSignalSystem;
+                    _atlasSignal = currentService as IAtlasSignalReadModel;
+                    _atlasSignalDecodeSink = currentService as IAtlasSignalDecodeSink;
                     break;
                 case GlobalRegistryServiceSlot.Atlas6DirectiveRuntime:
-                    _atlas6Directive = currentService as Atlas6DirectiveSystem;
+                    _atlas6Directive = currentService as IAtlas6DirectiveCommandSink;
                     break;
                 case GlobalRegistryServiceSlot.QuestRuntime:
                 case GlobalRegistryServiceSlot.QuestSystem:
@@ -967,7 +971,7 @@ namespace Hecton8.Gameplay
         }
 
         // ----------------------------------------------------------
-        //  PUBLIC API — VYBOR KONTsOVKI
+        //  PUBLIC API â€” VYBOR KONTsOVKI
         // ----------------------------------------------------------
 
         /// <summary>
@@ -999,8 +1003,21 @@ namespace Hecton8.Gameplay
             ExecuteEnding(choice);
         }
 
+        public void ChooseEnding(byte endingChoiceCode)
+        {
+            EndingChoice choice = endingChoiceCode switch
+            {
+                (byte)EndingChoice.ShutDown => EndingChoice.ShutDown,
+                (byte)EndingChoice.Leave => EndingChoice.Leave,
+                (byte)EndingChoice.Amplify => EndingChoice.Amplify,
+                _ => EndingChoice.None
+            };
+
+            ChooseEnding(choice);
+        }
+
         // ----------------------------------------------------------
-        //  PRIVATE — KONTsOVKI
+        //  PRIVATE â€” KONTsOVKI
         // ----------------------------------------------------------
 
         private void ExecuteEnding(EndingChoice choice)
@@ -1034,11 +1051,11 @@ namespace Hecton8.Gameplay
         private void ExecuteShutDown()
         {
             // Atlas-6 vyklyuchen. Signal prekraschaetsya.
-            AtlasSignalSystem signal = _atlasSignal;
+            IAtlasSignalDecodeSink signal = _atlasSignalDecodeSink;
             if (signal != null)
                 signal.DecodeSignal(_atlasShutdownMessageHash);
 
-            Atlas6DirectiveSystem directive = _atlas6Directive;
+            IAtlas6DirectiveCommandSink directive = _atlas6Directive;
             if (directive != null)
                 directive.RegisterBarterTransaction(); // Korporatsiya poluchila chto hotela
 
@@ -1061,14 +1078,14 @@ namespace Hecton8.Gameplay
 
         private void ExecuteAmplify()
         {
-            // Signal usilen — publichnyy. Atlas-6 vyklyuchaetsya sam.
-            AtlasSignalSystem signal = _atlasSignal;
+            // Signal usilen â€” publichnyy. Atlas-6 vyklyuchaetsya sam.
+            IAtlasSignalDecodeSink signal = _atlasSignalDecodeSink;
             if (signal != null)
                 signal.DecodeSignal(_atlasAmplifiedPublicMessageHash);
 
             NarrativeEvents.TryRaiseDiscoveryMade(_endingAmplifyDiscoveryHash);
 
-            // Publikuem v sheyder — maksimalnaya intensivnost signala
+            // Publikuem v sheyder â€” maksimalnaya intensivnost signala
             Shader.SetGlobalFloat(
                 Shader.PropertyToID("_AtlasSignalStrength"), 1f);
 
@@ -1100,7 +1117,7 @@ namespace Hecton8.Gameplay
         private static void LogInvalidEndingChoice(bool conditionMet, bool endingComplete)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning($"[Ending] Cannot choose ending: conditionMet={conditionMet}, complete={endingComplete}");
+            Hecton8.Core.H8Debug.LogWarning($"[Ending] Cannot choose ending: conditionMet={conditionMet}, complete={endingComplete}");
 #endif
         }
 
@@ -1116,7 +1133,7 @@ namespace Hecton8.Gameplay
         private static void LogEndingConditionMet()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            H8Debug.Log("[Ending] Condition met — player at Atlas-6 core.");
+            H8Debug.Log("[Ending] Condition met â€” player at Atlas-6 core.");
 #endif
         }
 
@@ -1128,7 +1145,7 @@ namespace Hecton8.Gameplay
 
         private void HandleSignalDecoded()
         {
-            // Polnaya rasshifrovka — uslovie mozhet byt vypolneno
+            // Polnaya rasshifrovka â€” uslovie mozhet byt vypolneno
             // SlowTick proverit glubinu na sleduyuschem tike
         }
 

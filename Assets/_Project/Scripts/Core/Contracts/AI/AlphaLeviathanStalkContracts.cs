@@ -81,8 +81,8 @@ namespace Hecton8.Core.Contracts.AI.Cognition
         [FieldOffset(0)] public long GridX;
         [FieldOffset(8)] public long GridY;
         [FieldOffset(16)] public long GridZ;
-        [FieldOffset(24)] public float4 Local;
-        [FieldOffset(40)] public ulong Reserved;
+        [FieldOffset(24)] public ulong Reserved;
+        [FieldOffset(32)] public float4 Local;
 
         /// <summary>
         /// Converts the payload into absolute meter space for Burst-safe double precision distance math.
@@ -121,26 +121,110 @@ namespace Hecton8.Core.Contracts.AI.Cognition
         public uint LastShiftFrameId;
         [FieldOffset(132)]
         public uint StateHash;
+        [FieldOffset(136)]
+        public uint Reserved0;
         [FieldOffset(140)]
         public ushort Slot;
         [FieldOffset(142)]
         public byte CurrentPhase;
         [FieldOffset(143)]
         public byte Flags;
-        [FieldOffset(136)]
-        public uint Reserved0;
         [FieldOffset(144)]
-        private ulong _pad1;
+        private byte _pad0;
+        [FieldOffset(145)]
+        private byte _pad1;
+        [FieldOffset(146)]
+        private byte _pad2;
+        [FieldOffset(147)]
+        private byte _pad3;
+        [FieldOffset(148)]
+        private byte _pad4;
+        [FieldOffset(149)]
+        private byte _pad5;
+        [FieldOffset(150)]
+        private byte _pad6;
+        [FieldOffset(151)]
+        private byte _pad7;
         [FieldOffset(152)]
-        private ulong _pad2;
+        private byte _pad8;
+        [FieldOffset(153)]
+        private byte _pad9;
+        [FieldOffset(154)]
+        private byte _pad10;
+        [FieldOffset(155)]
+        private byte _pad11;
+        [FieldOffset(156)]
+        private byte _pad12;
+        [FieldOffset(157)]
+        private byte _pad13;
+        [FieldOffset(158)]
+        private byte _pad14;
+        [FieldOffset(159)]
+        private byte _pad15;
         [FieldOffset(160)]
-        private ulong _pad3;
+        private byte _pad16;
+        [FieldOffset(161)]
+        private byte _pad17;
+        [FieldOffset(162)]
+        private byte _pad18;
+        [FieldOffset(163)]
+        private byte _pad19;
+        [FieldOffset(164)]
+        private byte _pad20;
+        [FieldOffset(165)]
+        private byte _pad21;
+        [FieldOffset(166)]
+        private byte _pad22;
+        [FieldOffset(167)]
+        private byte _pad23;
         [FieldOffset(168)]
-        private ulong _pad4;
+        private byte _pad24;
+        [FieldOffset(169)]
+        private byte _pad25;
+        [FieldOffset(170)]
+        private byte _pad26;
+        [FieldOffset(171)]
+        private byte _pad27;
+        [FieldOffset(172)]
+        private byte _pad28;
+        [FieldOffset(173)]
+        private byte _pad29;
+        [FieldOffset(174)]
+        private byte _pad30;
+        [FieldOffset(175)]
+        private byte _pad31;
         [FieldOffset(176)]
-        private ulong _pad5;
+        private byte _pad32;
+        [FieldOffset(177)]
+        private byte _pad33;
+        [FieldOffset(178)]
+        private byte _pad34;
+        [FieldOffset(179)]
+        private byte _pad35;
+        [FieldOffset(180)]
+        private byte _pad36;
+        [FieldOffset(181)]
+        private byte _pad37;
+        [FieldOffset(182)]
+        private byte _pad38;
+        [FieldOffset(183)]
+        private byte _pad39;
         [FieldOffset(184)]
-        private ulong _pad6;
+        private byte _pad40;
+        [FieldOffset(185)]
+        private byte _pad41;
+        [FieldOffset(186)]
+        private byte _pad42;
+        [FieldOffset(187)]
+        private byte _pad43;
+        [FieldOffset(188)]
+        private byte _pad44;
+        [FieldOffset(189)]
+        private byte _pad45;
+        [FieldOffset(190)]
+        private byte _pad46;
+        [FieldOffset(191)]
+        private byte _pad47;
     }
 
     /// <summary>
@@ -236,16 +320,88 @@ namespace Hecton8.Core.Contracts.AI.Cognition
         [FieldOffset(85)]
         private byte _pad0;
         [FieldOffset(86)]
-        private ushort _pad1;
+        private byte _pad1;
+        [FieldOffset(87)]
+        private byte _pad2;
         [FieldOffset(88)]
-        private ulong _pad2;
+        private byte _pad3;
+        [FieldOffset(89)]
+        private byte _pad4;
+        [FieldOffset(90)]
+        private byte _pad5;
+        [FieldOffset(91)]
+        private byte _pad6;
+        [FieldOffset(92)]
+        private byte _pad7;
+        [FieldOffset(93)]
+        private byte _pad8;
+        [FieldOffset(94)]
+        private byte _pad9;
+        [FieldOffset(95)]
+        private byte _pad10;
         [FieldOffset(96)]
-        private ulong _pad3;
+        private byte _pad11;
+        [FieldOffset(97)]
+        private byte _pad12;
+        [FieldOffset(98)]
+        private byte _pad13;
+        [FieldOffset(99)]
+        private byte _pad14;
+        [FieldOffset(100)]
+        private byte _pad15;
+        [FieldOffset(101)]
+        private byte _pad16;
+        [FieldOffset(102)]
+        private byte _pad17;
+        [FieldOffset(103)]
+        private byte _pad18;
         [FieldOffset(104)]
-        private ulong _pad4;
+        private byte _pad19;
+        [FieldOffset(105)]
+        private byte _pad20;
+        [FieldOffset(106)]
+        private byte _pad21;
+        [FieldOffset(107)]
+        private byte _pad22;
+        [FieldOffset(108)]
+        private byte _pad23;
+        [FieldOffset(109)]
+        private byte _pad24;
+        [FieldOffset(110)]
+        private byte _pad25;
+        [FieldOffset(111)]
+        private byte _pad26;
         [FieldOffset(112)]
-        private ulong _pad5;
+        private byte _pad27;
+        [FieldOffset(113)]
+        private byte _pad28;
+        [FieldOffset(114)]
+        private byte _pad29;
+        [FieldOffset(115)]
+        private byte _pad30;
+        [FieldOffset(116)]
+        private byte _pad31;
+        [FieldOffset(117)]
+        private byte _pad32;
+        [FieldOffset(118)]
+        private byte _pad33;
+        [FieldOffset(119)]
+        private byte _pad34;
         [FieldOffset(120)]
-        private ulong _pad6;
+        private byte _pad35;
+        [FieldOffset(121)]
+        private byte _pad36;
+        [FieldOffset(122)]
+        private byte _pad37;
+        [FieldOffset(123)]
+        private byte _pad38;
+        [FieldOffset(124)]
+        private byte _pad39;
+        [FieldOffset(125)]
+        private byte _pad40;
+        [FieldOffset(126)]
+        private byte _pad41;
+        [FieldOffset(127)]
+        private byte _pad42;
     }
 }

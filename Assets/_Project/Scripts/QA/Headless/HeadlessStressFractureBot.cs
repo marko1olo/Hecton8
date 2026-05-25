@@ -268,11 +268,11 @@ namespace Hecton8.QA.Headless
                 return;
 
             long phaseTimestamp = Stopwatch.GetTimestamp();
-            int unityFrame = Time.frameCount;
-            if (_phaseStartTimestamp == 0L || _phaseFrame != unityFrame)
+            int dispatcherFrame = SystemDispatcher.CurrentFrameIndex;
+            if (_phaseStartTimestamp == 0L || _phaseFrame != dispatcherFrame)
             {
                 _phaseStartTimestamp = phaseTimestamp;
-                _phaseFrame = unityFrame;
+                _phaseFrame = dispatcherFrame;
             }
 
             _extremeFrame++;
@@ -325,7 +325,7 @@ namespace Hecton8.QA.Headless
             if (!_started || _finished)
                 return;
 
-            if (_phaseFrame != Time.frameCount || _phaseStartTimestamp == 0L)
+            if (_phaseFrame != SystemDispatcher.CurrentFrameIndex || _phaseStartTimestamp == 0L)
                 return;
 
             long elapsedTicks = Stopwatch.GetTimestamp() - _phaseStartTimestamp;
@@ -520,7 +520,7 @@ namespace Hecton8.QA.Headless
             _staticHPhiAupPrecisionIntegrity = CalculateAupPrecisionIntegrity(in staticHPhiCounters);
             _staticHPhiDispatcherContracts = CountDispatcherContracts(in staticHPhiCounters);
             _staticHPhiUnityUpdateMethods = staticHPhiCounters.UnityUpdateMethods;
-            Debug.LogWarning(FormatStaticHPhiLog(
+            Hecton8.Core.H8Debug.LogWarning(FormatStaticHPhiLog(
                 _staticHPhiMetric,
                 _staticHPhiAupPrecisionIntegrity,
                 _staticHPhiAupPrecisionSafe,
@@ -682,7 +682,7 @@ namespace Hecton8.QA.Headless
         private void IssueEcosystemStressRequest()
         {
             AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(0d, -128d, 0d));
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = SystemDispatcher.CurrentFrameId;
             long chunkId = unchecked((long)0x4853464200010001UL);
             SignalBus<SectorResidencyHydratedSignal>.TryPushTracked(new SectorResidencyHydratedSignal
             {
@@ -701,7 +701,7 @@ namespace Hecton8.QA.Headless
                 SourceId = RunnerHash,
                 EstimatedBoidCount = RequestedBoidCount,
                 Flags = 1,
-                QualityTier = 0
+                QualityTier = 255
             };
             SignalBus<SwarmDispersedSignal>.TryPushTracked(in swarmSignal, ref s_x001HeadlessStressFractureBotSignalPushDropCount);
             _ecosystemDirectorReadyAtIssue = _ecosystemDirector != null && _ecosystemDirector.IsInitialized ? 1 : 0;
@@ -712,7 +712,7 @@ namespace Hecton8.QA.Headless
         private void EmitSyntheticChunkUnload()
         {
             AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(0d, -128d, 0d));
-            uint frame = unchecked((uint)Time.frameCount);
+            uint frame = SystemDispatcher.CurrentFrameId;
             long chunkId = unchecked((long)(0x4853464200020000UL | (uint)_extremeFrame));
             SignalBus<SectorDehydratedSignal>.TryPushTracked(new SectorDehydratedSignal
             {
@@ -932,7 +932,7 @@ namespace Hecton8.QA.Headless
 
             _finished = true;
             _lastFractureHash = reasonHash;
-            UnityEngine.Debug.LogError(status);
+            Hecton8.Core.H8Debug.LogError(status);
             RecordBlackbox(reasonHash);
             UnregisterRuntimeHooks();
             ReleaseScratchBlock();
@@ -991,7 +991,7 @@ namespace Hecton8.QA.Headless
             {
                 SystemHash = RunnerHash,
                 ReasonHash = reasonHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = SystemDispatcher.CurrentFrameId,
                 ExitCode = exitCode,
                 NativeAllocationCount = snapshot.NativeAllocations,
                 NativeTrackedBytesMb = snapshot.NativeBytes * NativeBytesToMegabytes,
@@ -1019,7 +1019,7 @@ namespace Hecton8.QA.Headless
                 int index = _blackboxCursor % blackbox.Length;
                 blackbox[index] = new FractureTelemetryEntry
                 {
-                    Frame = unchecked((uint)Time.frameCount),
+                    Frame = SystemDispatcher.CurrentFrameId,
                     ExtremeFrame = unchecked((uint)_extremeFrame),
                     ShiftSequence = _shiftSequence,
                     EventHash = eventHash,

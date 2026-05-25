@@ -161,7 +161,6 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/PDA Encyclopedia Streamer")]
     public sealed unsafe class PDAEncyclopediaStreamer :
         MonoBehaviour,
-        IUpdatable,
         ILateFrameTickable,
         IPDAEventListener,
         IGlobalRegistryHotSwapListener
@@ -255,7 +254,6 @@ namespace Hecton8.UI
         private PdaH8lrLoreStore _h8lrLoreStore;
         private BabelDictionaryStore _babelStore;
         private bool _ownsBabelStore;
-        private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _registeredPdaEvents;
         private bool _registeredHotSwap;
@@ -362,7 +360,7 @@ namespace Hecton8.UI
             PDAEvents.AssertUnregistered(this, nameof(PDAEncyclopediaStreamer));
         }
 
-        public void Tick(float deltaTime)
+        private void AdvanceEncyclopediaFrameState()
         {
             if (!_vaultReady)
             {
@@ -381,6 +379,8 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            AdvanceEncyclopediaFrameState();
+
             if (!_isPdaVisible || bodyText == null)
                 return;
 
@@ -611,7 +611,7 @@ namespace Hecton8.UI
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, FileOptions.SequentialScan))
                 {
                     byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(scratch);
-                    Span<byte> span = new Span<byte>(ptr, scratch.Length);
+                    Span<byte> span = MemoryMarshal.CreateSpan(ref UnsafeUtility.AsRef<byte>(ptr), scratch.Length);
                     while (totalRead < span.Length)
                     {
                         int read = stream.Read(span.Slice(totalRead));
@@ -1497,13 +1497,13 @@ namespace Hecton8.UI
         }
 
         private NativeArray<T> ResolveVaultBuffer<T>(in VaultGenerationHandle<T> handle)
-            where T : struct
+            where T : unmanaged
         {
             return TryResolveVaultBuffer(in handle, out NativeArray<T> buffer) ? buffer : default;
         }
 
         private ref T GetVaultElementRef<T>(in VaultGenerationHandle<T> handle, int index)
-            where T : struct
+            where T : unmanaged
         {
             if (!TryResolveVaultBuffer(in handle, out NativeArray<T> buffer) ||
                 (uint)index >= (uint)buffer.Length)
@@ -1518,7 +1518,7 @@ namespace Hecton8.UI
         private bool TryResolveVaultBuffer<T>(
             in VaultGenerationHandle<T> handle,
             out NativeArray<T> buffer)
-            where T : struct
+            where T : unmanaged
         {
             buffer = default;
             if (_vault == null ||
@@ -1535,7 +1535,7 @@ namespace Hecton8.UI
         }
 
         private static bool IsPdaHandleCreated<T>(in VaultGenerationHandle<T> handle)
-            where T : struct
+            where T : unmanaged
         {
             return handle.BufferID != 0u && handle.Generation != 0u;
         }
@@ -1569,7 +1569,7 @@ namespace Hecton8.UI
         }
 
         private bool IsPdaBufferResolvable<T>(in VaultGenerationHandle<T> handle, int requiredLength)
-            where T : struct
+            where T : unmanaged
         {
             return TryResolveVaultBuffer(in handle, out NativeArray<T> buffer) &&
                    buffer.Length >= requiredLength;
@@ -1708,7 +1708,7 @@ namespace Hecton8.UI
             if (_playerContext != null)
                 return;
 
-            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerContext = GlobalRegistry.Player;
         }
 
         private void EnsureTextLeases()
@@ -1893,7 +1893,9 @@ namespace Hecton8.UI
             }
 
             byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(bytes);
-            utf8 = new ReadOnlySpan<byte>(ptr + row.ByteOffset, (int)row.ByteLength);
+            utf8 = MemoryMarshal.CreateReadOnlySpan(
+                ref UnsafeUtility.AsRef<byte>(ptr + row.ByteOffset),
+                (int)row.ByteLength);
             return true;
         }
 
@@ -1932,7 +1934,9 @@ namespace Hecton8.UI
                 return false;
 
             byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(scratch);
-            ReadOnlySpan<byte> bytes = new ReadOnlySpan<byte>(ptr, math.min(byteLength, scratch.Length));
+            ReadOnlySpan<byte> bytes = MemoryMarshal.CreateReadOnlySpan(
+                ref UnsafeUtility.AsRef<byte>(ptr),
+                math.min(byteLength, scratch.Length));
             int lineStart = 0;
             int imported = 0;
             for (int i = 0; i <= bytes.Length; i++)
@@ -2057,21 +2061,12 @@ namespace Hecton8.UI
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_registeredUpdate)
-                _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
-
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterDispatcherLanes()
         {
-            if (_registeredUpdate)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registeredUpdate = false;
-            }
-
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
@@ -2219,7 +2214,7 @@ namespace Hecton8.UI
             try
             {
                 Directory.CreateDirectory(directory);
-                WriteBlackBoxDump(Path.Combine(directory, "Dump_SHINOBU_130.bin"), telemetry);
+                WriteBlackBoxDump(Path.Combine(directory, "Dump_1309_PDAEncyclopedia.bin"), telemetry);
                 WriteBlackBoxDump(Path.Combine(directory, "Dump_PDA_STREAMER.bin"), telemetry);
             }
             catch (IOException)
@@ -2244,8 +2239,8 @@ namespace Hecton8.UI
                 stream.Write(header);
 
                 byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                ReadOnlySpan<byte> bytes = new ReadOnlySpan<byte>(
-                    ptr,
+                ReadOnlySpan<byte> bytes = MemoryMarshal.CreateReadOnlySpan(
+                    ref UnsafeUtility.AsRef<byte>(ptr),
                     telemetry.Length * UnsafeUtility.SizeOf<PdaEncyclopediaTelemetryEntry>());
                 stream.Write(bytes);
             }

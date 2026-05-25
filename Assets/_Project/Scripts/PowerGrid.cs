@@ -10,13 +10,14 @@ using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using Hecton8.World;
+
+using SubmarineFluidDynamics = global::Hecton8.Physics.SubmarineFluidDynamics;
 
 namespace Hecton8.Power
 {

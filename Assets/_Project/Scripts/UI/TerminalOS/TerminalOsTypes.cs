@@ -96,7 +96,7 @@ namespace Hecton8.UI
         [FieldOffset(16)] public uint TerminalHash;
         [FieldOffset(20)] public uint CommandHash;
         [FieldOffset(24)] public uint Flags;
-        [FieldOffset(28)] public uint _pad0;
+        [FieldOffset(28)] private uint _pad0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = TerminalOsConstants.TerminalInteractionStrideBytes)]
@@ -106,18 +106,18 @@ namespace Hecton8.UI
         [FieldOffset(4)] public float2 LocalHitUV;
         [FieldOffset(12)] public uint InteractionFlags;
         [FieldOffset(16)] public float Distance;
-        [FieldOffset(20)] public byte _pad0;
-        [FieldOffset(21)] public byte _pad1;
-        [FieldOffset(22)] public byte _pad2;
-        [FieldOffset(23)] public byte _pad3;
-        [FieldOffset(24)] public byte _pad4;
-        [FieldOffset(25)] public byte _pad5;
-        [FieldOffset(26)] public byte _pad6;
-        [FieldOffset(27)] public byte _pad7;
-        [FieldOffset(28)] public byte _pad8;
-        [FieldOffset(29)] public byte _pad9;
-        [FieldOffset(30)] public byte _pad10;
-        [FieldOffset(31)] public byte _pad11;
+        [FieldOffset(20)] private byte _pad0;
+        [FieldOffset(21)] private byte _pad1;
+        [FieldOffset(22)] private byte _pad2;
+        [FieldOffset(23)] private byte _pad3;
+        [FieldOffset(24)] private byte _pad4;
+        [FieldOffset(25)] private byte _pad5;
+        [FieldOffset(26)] private byte _pad6;
+        [FieldOffset(27)] private byte _pad7;
+        [FieldOffset(28)] private byte _pad8;
+        [FieldOffset(29)] private byte _pad9;
+        [FieldOffset(30)] private byte _pad10;
+        [FieldOffset(31)] private byte _pad11;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = TerminalOsConstants.TerminalPlaneStrideBytes)]
@@ -135,9 +135,9 @@ namespace Hecton8.UI
         [FieldOffset(104)] public uint LayoutButtonCount;
         [FieldOffset(108)] public float Power01;
         [FieldOffset(112)] public float Submerged01;
-        [FieldOffset(116)] public uint _pad0;
-        [FieldOffset(120)] public uint _pad1;
-        [FieldOffset(124)] public uint _pad2;
+        [FieldOffset(116)] private uint _pad0;
+        [FieldOffset(120)] private uint _pad1;
+        [FieldOffset(124)] private uint _pad2;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = TerminalOsConstants.GazeRayStrideBytes)]
@@ -148,7 +148,7 @@ namespace Hecton8.UI
         [FieldOffset(60)] public uint InteractionFlags;
         [FieldOffset(64)] public uint Frame;
         [FieldOffset(68)] public float2 ScrollDelta;
-        [FieldOffset(76)] public uint _pad0;
+        [FieldOffset(76)] private uint _pad0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = TerminalOsConstants.TerminalInputStateStrideBytes)]
@@ -181,11 +181,15 @@ namespace Hecton8.UI
         [FieldOffset(16)] public float LowRadiusMeters;
         [FieldOffset(20)] public float UltraRadiusMeters;
         [FieldOffset(24)] public uint TuningFlags;
-        [FieldOffset(28)] public uint _pad0;
-        [FieldOffset(32)] public ulong _pad1;
-        [FieldOffset(40)] public ulong _pad2;
-        [FieldOffset(48)] public ulong _pad3;
-        [FieldOffset(56)] public ulong _pad4;
+        [FieldOffset(28)] private uint _pad0;
+        [FieldOffset(32)] private uint _pad1;
+        [FieldOffset(36)] private uint _pad2;
+        [FieldOffset(40)] private uint _pad3;
+        [FieldOffset(44)] private uint _pad4;
+        [FieldOffset(48)] private uint _pad5;
+        [FieldOffset(52)] private uint _pad6;
+        [FieldOffset(56)] private uint _pad7;
+        [FieldOffset(60)] private uint _pad8;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 8)]
@@ -253,7 +257,7 @@ namespace Hecton8.UI
         [FieldOffset(16)] public float AlignmentAccuracy01;
         [FieldOffset(20)] public uint PuzzleID;
         [FieldOffset(24)] public uint Flags;
-        [FieldOffset(28)] public uint _pad0;
+        [FieldOffset(28)] private uint _pad0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = TerminalOsConstants.DecryptionTerminalStrideBytes)]
@@ -264,9 +268,12 @@ namespace Hecton8.UI
         [FieldOffset(28)] public uint NodeHash;
         [FieldOffset(32)] public float InteractionRadiusMeters;
         [FieldOffset(36)] public uint Flags;
-        [FieldOffset(40)] public ulong _pad0;
-        [FieldOffset(48)] public ulong _pad1;
-        [FieldOffset(56)] public ulong _pad2;
+        [FieldOffset(40)] private uint _pad0;
+        [FieldOffset(44)] private uint _pad1;
+        [FieldOffset(48)] private uint _pad2;
+        [FieldOffset(52)] private uint _pad3;
+        [FieldOffset(56)] private uint _pad4;
+        [FieldOffset(60)] private uint _pad5;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = TerminalOsConstants.DecryptionKnobInputStrideBytes)]
@@ -279,8 +286,10 @@ namespace Hecton8.UI
         [FieldOffset(36)] public float PhaseDelta;
         [FieldOffset(40)] public float DeltaTime;
         [FieldOffset(44)] public uint Frame;
-        [FieldOffset(48)] public ulong _pad0;
-        [FieldOffset(56)] public ulong _pad1;
+        [FieldOffset(48)] private uint _pad0;
+        [FieldOffset(52)] private uint _pad1;
+        [FieldOffset(56)] private uint _pad2;
+        [FieldOffset(60)] private uint _pad3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -297,7 +306,8 @@ namespace Hecton8.UI
         [FieldOffset(12)] public uint Frame;
         [FieldOffset(16)] public float AlignmentAccuracy01;
         [FieldOffset(20)] public uint Flags;
-        [FieldOffset(24)] public ulong _pad0;
+        [FieldOffset(24)] private uint _pad0;
+        [FieldOffset(28)] private uint _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = TerminalOsConstants.DecryptionTelemetryStrideBytes)]
@@ -315,8 +325,10 @@ namespace Hecton8.UI
         [FieldOffset(36)] public uint NodeHash;
         [FieldOffset(40)] public uint TerminalHash;
         [FieldOffset(44)] public uint FaultFlags;
-        [FieldOffset(48)] public ulong _pad0;
-        [FieldOffset(56)] public ulong _pad1;
+        [FieldOffset(48)] private uint _pad0;
+        [FieldOffset(52)] private uint _pad1;
+        [FieldOffset(56)] private uint _pad2;
+        [FieldOffset(60)] private uint _pad3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 80)]
@@ -364,7 +376,8 @@ namespace Hecton8.UI
         [FieldOffset(44)] public float CursorSnappingTolerance;
         [FieldOffset(48)] public float RaycastThickness;
         [FieldOffset(52)] public int NonFiniteCount;
-        [FieldOffset(56)] public ulong _pad0;
+        [FieldOffset(56)] private uint _pad0;
+        [FieldOffset(60)] private uint _pad1;
     }
 
     public static class TerminalOsHash
@@ -608,7 +621,7 @@ namespace Hecton8.UI
         [ReadOnly] [NoAlias] public NativeArray<ButtonAABBDTO> Buttons;
         public int ClickCount;
         public int ButtonCount;
-        public NativeQueue<TerminalCommandSignal>.ParallelWriter Commands;
+        public global::Hecton8.Core.MpscSignalRingBuffer<TerminalCommandSignal>.ParallelWriter Commands;
         [NativeDisableParallelForRestriction] public NativeArray<int> CommandsBudget;
         public void Execute(int index)
         {
@@ -899,9 +912,9 @@ namespace Hecton8.UI
         public float LowRadiusMeters;
         public float UltraRadiusMeters;
         public uint Frame;
-        public NativeQueue<TerminalCommandSignal>.ParallelWriter Commands;
+        public global::Hecton8.Core.MpscSignalRingBuffer<TerminalCommandSignal>.ParallelWriter Commands;
         [NativeDisableParallelForRestriction] public NativeArray<int> CommandsBudget;
-        public NativeQueue<InteractionUiSignal>.ParallelWriter UiSignals;
+        public global::Hecton8.Core.MpscSignalRingBuffer<InteractionUiSignal>.ParallelWriter UiSignals;
         [NativeDisableParallelForRestriction] public NativeArray<int> UiSignalsBudget;
         public void Execute(int index)
         {
@@ -1221,7 +1234,7 @@ namespace Hecton8.UI
         public float SolveThreshold01;
         public uint Frame;
         public uint StepFrames;
-        public NativeQueue<TerminalUnlockedSignal>.ParallelWriter UnlockedSignals;
+        public global::Hecton8.Core.MpscSignalRingBuffer<TerminalUnlockedSignal>.ParallelWriter UnlockedSignals;
         [NativeDisableParallelForRestriction] public NativeArray<int> UnlockedSignalsBudget;
         public void Execute()
         {
@@ -1380,9 +1393,9 @@ namespace Hecton8.UI
         public int TerminalCount;
         public int ButtonCount;
         public uint Frame;
-        public NativeQueue<TerminalCommandSignal>.ParallelWriter Commands;
+        public global::Hecton8.Core.MpscSignalRingBuffer<TerminalCommandSignal>.ParallelWriter Commands;
         [NativeDisableParallelForRestriction] public NativeArray<int> CommandsBudget;
-        public NativeQueue<InteractionUiSignal>.ParallelWriter UiSignals;
+        public global::Hecton8.Core.MpscSignalRingBuffer<InteractionUiSignal>.ParallelWriter UiSignals;
         [NativeDisableParallelForRestriction] public NativeArray<int> UiSignalsBudget;
         public void Execute(int index)
         {

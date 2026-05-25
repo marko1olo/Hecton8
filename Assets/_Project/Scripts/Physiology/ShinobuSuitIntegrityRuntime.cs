@@ -378,7 +378,7 @@ namespace Hecton8.Physiology
         private void RebindColdServices()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerContext = GlobalRegistry.Player;
             _tickDispatcher = GlobalRegistry.TickDispatcher;
             _lastDispatcherTimeSeconds = -1d;
             ClearTargetHashCache();

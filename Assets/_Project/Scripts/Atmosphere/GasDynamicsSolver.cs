@@ -133,8 +133,10 @@ namespace Hecton8.Atmosphere
         private NativeArray<int> _bulkheadRoomA;
         private NativeArray<int> _bulkheadRoomB;
         private NativeArray<byte> _bulkheadSealed;
-        private NativeArray<GasDynamicsTelemetryEntry> _telemetryRing;
-        private NativeList<PendingBaseTransitionSignal> _deferredBaseTransitions;
+        private VaultGenerationHandle<GasDynamicsTelemetryEntry> _telemetryRingHandle;
+        // COLD ALLOC: PendingBaseTransitionSignal[128] - fixed managed staging while gas job owns native lanes - owner: GasDynamicsSolver
+        private readonly PendingBaseTransitionSignal[] _deferredBaseTransitions = new PendingBaseTransitionSignal[PendingBaseTransitionCapacity];
+        private int _deferredBaseTransitionCount;
         private JobHandle _stepHandle;
         private JobHandle _disposeHandle;
         private bool _stepRunning;
@@ -142,6 +144,7 @@ namespace Hecton8.Atmosphere
         private bool _registeredRegistry;
         private bool _registeredHotSwap;
         private bool _baseAwakeVaultOwned;
+        private bool _telemetryRingLocked;
         private bool _seededStandardAtmosphere;
         private bool _blackBoxDumped;
         private bool _deferredBaseTransitionOverflow;
@@ -166,8 +169,8 @@ namespace Hecton8.Atmosphere
         private IDataVault _dataVault;
 
         public bool IsInitialized =>
-            _deferredBaseTransitions.IsCreated &&
-            _telemetryRing.IsCreated &&
+            _deferredBaseTransitions.Length >= PendingBaseTransitionCapacity &&
+            IsTelemetryRingReady() &&
             AreRoomStateLanesReady(_roomCount) &&
             AreBulkheadLanesReady(_bulkheadCount) &&
             AreBaseStateLanesReady(_baseCount);
@@ -613,8 +616,13 @@ namespace Hecton8.Atmosphere
             AccumulateAudit(_bulkheadRoomA, nameof(_bulkheadRoomA), ref accumulator);
             AccumulateAudit(_bulkheadRoomB, nameof(_bulkheadRoomB), ref accumulator);
             AccumulateAudit(_bulkheadSealed, nameof(_bulkheadSealed), ref accumulator);
-            AccumulateAudit(_telemetryRing, nameof(_telemetryRing), ref accumulator);
-            AccumulateAudit(_deferredBaseTransitions, nameof(_deferredBaseTransitions), ref accumulator);
+            if (TryReadTelemetryRing(out NativeArray<GasDynamicsTelemetryEntry>.ReadOnly telemetryRing))
+            {
+                AccumulateAudit(
+                    (long)UnsafeUtility.SizeOf<GasDynamicsTelemetryEntry>() * telemetryRing.Length,
+                    nameof(_telemetryRingHandle),
+                    ref accumulator);
+            }
 
             audit = new GasDynamicsNativeMemoryAudit(
                 RoomO2.Length,
@@ -802,8 +810,15 @@ namespace Hecton8.Atmosphere
             _bulkheadRoomA = new NativeArray<int>(math.max(1, safeBulkheadCapacity), Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _bulkheadRoomB = new NativeArray<int>(math.max(1, safeBulkheadCapacity), Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _bulkheadSealed = new NativeArray<byte>(math.max(1, safeBulkheadCapacity), Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _telemetryRing = new NativeArray<GasDynamicsTelemetryEntry>(TelemetryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _deferredBaseTransitions = new NativeList<PendingBaseTransitionSignal>(PendingBaseTransitionCapacity, DataVaultExemptSceneScratchAllocator); // COLD ALLOC: NativeList<PendingBaseTransitionSignal>[128] - base transition buffer held while gas job is running - owner: GasDynamicsSolver
+            if (!TryEnsureTelemetryRing())
+            {
+                DisposeNativeStateDeferred();
+                _roomCount = 0;
+                _baseCount = 0;
+                _sleepingBaseCount = 0;
+                _bulkheadCount = 0;
+                return;
+            }
 
             RegisterNativeArray(RoomO2, nameof(RoomO2));
             RegisterNativeArray(RoomCO2, nameof(RoomCO2));
@@ -837,8 +852,7 @@ namespace Hecton8.Atmosphere
             RegisterNativeArray(_bulkheadRoomA, nameof(_bulkheadRoomA));
             RegisterNativeArray(_bulkheadRoomB, nameof(_bulkheadRoomB));
             RegisterNativeArray(_bulkheadSealed, nameof(_bulkheadSealed));
-            RegisterNativeArray(_telemetryRing, nameof(_telemetryRing));
-            RegisterNativeList(_deferredBaseTransitions, nameof(_deferredBaseTransitions));
+            _deferredBaseTransitionCount = 0;
             for (int i = 0; i < _roomCount; i++)
             {
                 _roomTemperatureCelsius[i] = DefaultRoomTemperatureCelsius;
@@ -877,6 +891,88 @@ namespace Hecton8.Atmosphere
 
             _baseAwakeVaultOwned = false;
             return default;
+        }
+
+        private bool TryEnsureTelemetryRing()
+        {
+            IDataVault vault = _dataVault;
+            if (vault == null)
+            {
+                _telemetryRingHandle = default;
+                return false;
+            }
+
+            VaultGenerationHandle<GasDynamicsTelemetryEntry> handle = vault.EnsureGenerationHandle<GasDynamicsTelemetryEntry>(
+                BufferID.GasDynamicsTelemetryRing,
+                TelemetryCapacity,
+                SystemID.HabitatAtmosphere,
+                NativeArrayOptions.ClearMemory);
+            if (handle.BufferID != unchecked((uint)(int)BufferID.GasDynamicsTelemetryRing) ||
+                !vault.TryReadOnlyHandle(in handle, out NativeArray<GasDynamicsTelemetryEntry>.ReadOnly telemetryRing) ||
+                !telemetryRing.IsCreated ||
+                telemetryRing.Length < TelemetryCapacity)
+            {
+                _telemetryRingHandle = default;
+                return false;
+            }
+
+            _telemetryRingHandle = handle;
+            return true;
+        }
+
+        private bool IsTelemetryRingReady()
+        {
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   _telemetryRingHandle.BufferID == unchecked((uint)(int)BufferID.GasDynamicsTelemetryRing) &&
+                   vault.TryReadOnlyHandle(in _telemetryRingHandle, out NativeArray<GasDynamicsTelemetryEntry>.ReadOnly telemetryRing) &&
+                   telemetryRing.IsCreated &&
+                   telemetryRing.Length >= TelemetryCapacity;
+        }
+
+        private bool TryReadTelemetryRing(out NativeArray<GasDynamicsTelemetryEntry>.ReadOnly telemetryRing)
+        {
+            telemetryRing = default;
+            IDataVault vault = _dataVault;
+            return vault != null &&
+                   _telemetryRingHandle.BufferID == unchecked((uint)(int)BufferID.GasDynamicsTelemetryRing) &&
+                   vault.TryReadOnlyHandle(in _telemetryRingHandle, out telemetryRing) &&
+                   telemetryRing.IsCreated;
+        }
+
+        private bool TryAcquireTelemetryRingForStep(out NativeArray<GasDynamicsTelemetryEntry> telemetryRing)
+        {
+            telemetryRing = default;
+            if (_telemetryRingLocked)
+                return false;
+
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                _telemetryRingHandle.BufferID != unchecked((uint)(int)BufferID.GasDynamicsTelemetryRing) ||
+                !vault.TryAcquireWriteLock(in _telemetryRingHandle, SystemID.HabitatAtmosphere, out telemetryRing) ||
+                !telemetryRing.IsCreated ||
+                telemetryRing.Length < TelemetryCapacity)
+            {
+                return false;
+            }
+
+            _telemetryRingLocked = true;
+            return true;
+        }
+
+        private void ReleaseTelemetryRingStepLock()
+        {
+            if (!_telemetryRingLocked)
+                return;
+
+            IDataVault vault = _dataVault;
+            if (vault != null &&
+                _telemetryRingHandle.BufferID == unchecked((uint)(int)BufferID.GasDynamicsTelemetryRing))
+            {
+                vault.ReleaseWriteLock(in _telemetryRingHandle, SystemID.HabitatAtmosphere);
+            }
+
+            _telemetryRingLocked = false;
         }
 
         private void InitializeBaseSlots(int safeBaseCapacity, int safeRoomCapacity)
@@ -962,7 +1058,10 @@ namespace Hecton8.Atmosphere
             float co2Fatal = math.max(co2Threshold + 0.01f, FiniteNonNegativeOrZero(co2FatalKPa));
             float narcosisThreshold = math.max(1f, FiniteNonNegativeOrZero(narcosisThresholdAtm));
             float narcosisFull = math.max(narcosisThreshold + 0.01f, FiniteNonNegativeOrZero(narcosisFullAtm));
-            int telemetryLength = _telemetryRing.IsCreated ? _telemetryRing.Length : 0;
+            if (!TryAcquireTelemetryRingForStep(out NativeArray<GasDynamicsTelemetryEntry> telemetryRing))
+                return;
+
+            int telemetryLength = telemetryRing.Length;
             int writeIndex = telemetryLength > 0 ? _telemetryWriteIndex % telemetryLength : 0;
             _telemetryWriteIndex = telemetryLength > 0 ? (writeIndex + 1) % telemetryLength : 0;
             GasDynamicsStepJob job = new GasDynamicsStepJob
@@ -1001,11 +1100,19 @@ namespace Hecton8.Atmosphere
                 BulkheadRoomA = _bulkheadRoomA,
                 BulkheadRoomB = _bulkheadRoomB,
                 BulkheadSealed = _bulkheadSealed,
-                TelemetryRing = _telemetryRing
+                TelemetryRing = telemetryRing
             };
 
-            _stepHandle = job.Schedule();
-            _stepRunning = true;
+            try
+            {
+                _stepHandle = job.Schedule();
+                _stepRunning = true;
+            }
+            catch (Exception)
+            {
+                ReleaseTelemetryRingStepLock();
+                throw;
+            }
         }
 
         private bool TryCompleteStep()
@@ -1017,6 +1124,7 @@ namespace Hecton8.Atmosphere
                 return false;
 
             _stepRunning = false;
+            ReleaseTelemetryRingStepLock();
             Swap(ref RoomO2, ref _roomO2Back);
             Swap(ref RoomCO2, ref _roomCO2Back);
             Swap(ref _roomNitrogen, ref _roomNitrogenBack);
@@ -1039,7 +1147,7 @@ namespace Hecton8.Atmosphere
             }
 
             bool hasDeferred = _deferredBaseTransitionOverflow ||
-                               (_deferredBaseTransitions.IsCreated && _deferredBaseTransitions.Length > 0);
+                               _deferredBaseTransitionCount > 0;
             if (!hasDeferred &&
                 SignalBus<PlayerBaseExitSignal>.SnapshotCount <= 0 &&
                 SignalBus<PlayerBaseEnterSignal>.SnapshotCount <= 0)
@@ -1170,49 +1278,50 @@ namespace Hecton8.Atmosphere
 
         private void EnqueueDeferredBaseTransition(in PlayerBaseExitSignal signal, bool isEnter)
         {
-            if (!_deferredBaseTransitions.IsCreated || _deferredBaseTransitions.Length >= _deferredBaseTransitions.Capacity)
+            if (_deferredBaseTransitionCount >= _deferredBaseTransitions.Length)
             {
                 _deferredBaseTransitionOverflow = true;
                 return;
             }
 
-            _deferredBaseTransitions.AddNoResize(new PendingBaseTransitionSignal
+            _deferredBaseTransitions[_deferredBaseTransitionCount++] = new PendingBaseTransitionSignal
             {
                 BaseCenterAup = signal.BaseCenterAup,
                 BaseId = signal.BaseId,
                 RoomId = signal.RoomId,
                 Flags = signal.Flags,
                 IsEnter = (byte)(isEnter ? 1 : 0)
-            });
+            };
         }
 
         private void EnqueueDeferredBaseTransition(in PlayerBaseEnterSignal signal, bool isEnter)
         {
-            if (!_deferredBaseTransitions.IsCreated || _deferredBaseTransitions.Length >= _deferredBaseTransitions.Capacity)
+            if (_deferredBaseTransitionCount >= _deferredBaseTransitions.Length)
             {
                 _deferredBaseTransitionOverflow = true;
                 return;
             }
 
-            _deferredBaseTransitions.AddNoResize(new PendingBaseTransitionSignal
+            _deferredBaseTransitions[_deferredBaseTransitionCount++] = new PendingBaseTransitionSignal
             {
                 BaseCenterAup = signal.BaseCenterAup,
                 BaseId = signal.BaseId,
                 RoomId = signal.RoomId,
                 Flags = signal.Flags,
                 IsEnter = (byte)(isEnter ? 1 : 0)
-            });
+            };
         }
 
         private void ApplyDeferredBaseTransitions(double now, bool allowWake)
         {
-            if (!_deferredBaseTransitions.IsCreated)
+            if (_deferredBaseTransitions.Length <= 0)
             {
                 _deferredBaseTransitionOverflow = false;
                 return;
             }
 
-            for (int i = 0; i < _deferredBaseTransitions.Length; i++)
+            int deferredCount = math.min(_deferredBaseTransitionCount, _deferredBaseTransitions.Length);
+            for (int i = 0; i < deferredCount; i++)
             {
                 PendingBaseTransitionSignal signal = _deferredBaseTransitions[i];
                 if (signal.IsEnter != 0)
@@ -1221,7 +1330,7 @@ namespace Hecton8.Atmosphere
                     ApplyBaseExitSignal(in signal);
             }
 
-            _deferredBaseTransitions.Clear();
+            _deferredBaseTransitionCount = 0;
             if (!_deferredBaseTransitionOverflow)
                 return;
 
@@ -1667,7 +1776,7 @@ namespace Hecton8.Atmosphere
 
             float invPressure = snapshot.PressureKPa > 0.001f ? math.rcp(snapshot.PressureKPa) : 0f;
             float oxygen01 = math.saturate(snapshot.OxygenKPa * invPressure);
-            float time = Time.unscaledTime;
+            float time = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             UIStateStore.WriteValue(UIValueSlotId.RoomOxygen01, oxygen01, time);
             UIStateStore.WriteValue(UIValueSlotId.RoomOxygenPartialKPa, snapshot.OxygenKPa, time);
             UIStateStore.WriteValue(UIValueSlotId.RoomCarbonDioxidePartialKPa, snapshot.CarbonDioxideKPa, time);
@@ -1677,22 +1786,23 @@ namespace Hecton8.Atmosphere
 
         private void CheckTelemetryForFault()
         {
-            if (!_telemetryRing.IsCreated)
+            if (!TryReadTelemetryRing(out NativeArray<GasDynamicsTelemetryEntry>.ReadOnly telemetryRing))
                 return;
 
-            int telemetryLength = _telemetryRing.Length;
+            int telemetryLength = telemetryRing.Length;
             if (telemetryLength <= 0)
                 return;
 
             int lastIndex = (_telemetryWriteIndex + telemetryLength - 1) % telemetryLength;
-            GasDynamicsTelemetryEntry entry = _telemetryRing[lastIndex];
+            GasDynamicsTelemetryEntry entry = telemetryRing[lastIndex];
             if ((entry.Flags & TelemetryFlagNaN) != 0)
                 DumpBlackBoxOnce();
         }
 
         private void DumpBlackBoxOnce()
         {
-            if (_blackBoxDumped || !_telemetryRing.IsCreated)
+            if (_blackBoxDumped ||
+                !TryReadTelemetryRing(out NativeArray<GasDynamicsTelemetryEntry>.ReadOnly telemetryRing))
                 return;
 
             _blackBoxDumped = true;
@@ -1705,12 +1815,12 @@ namespace Hecton8.Atmosphere
                     writer.Write(DumpMagic);
                     writer.Write(DumpFormatVersion);
                     writer.Write(TelemetryEntrySizeBytes);
-                    writer.Write(_telemetryRing.Length);
+                    writer.Write(telemetryRing.Length);
                     writer.Write(_telemetryWriteIndex);
                     writer.Write(_tickCount);
-                    for (int i = 0; i < _telemetryRing.Length; i++)
+                    for (int i = 0; i < telemetryRing.Length; i++)
                     {
-                        GasDynamicsTelemetryEntry entry = _telemetryRing[i];
+                        GasDynamicsTelemetryEntry entry = telemetryRing[i];
                         writer.Write(entry.FrameIndex);
                         writer.Write(entry.RoomCount);
                         writer.Write(entry.TotalO2KPa);
@@ -1740,7 +1850,15 @@ namespace Hecton8.Atmosphere
                 return;
 
             bool waitForStep = _stepRunning;
+            if (waitForStep)
+            {
+                DispatcherJobSwap.TryComplete(ref _stepHandle, forceComplete: true);
+                _stepRunning = false;
+                waitForStep = false;
+            }
+
             JobHandle disposeHandle = waitForStep ? _stepHandle : default;
+            ReleaseTelemetryRingStepLock();
 
             DisposeArray(ref RoomO2, ref disposeHandle, waitForStep);
             DisposeArray(ref RoomCO2, ref disposeHandle, waitForStep);
@@ -1773,8 +1891,8 @@ namespace Hecton8.Atmosphere
             DisposeArray(ref _bulkheadRoomA, ref disposeHandle, waitForStep);
             DisposeArray(ref _bulkheadRoomB, ref disposeHandle, waitForStep);
             DisposeArray(ref _bulkheadSealed, ref disposeHandle, waitForStep);
-            DisposeArray(ref _telemetryRing, ref disposeHandle, waitForStep);
-            DisposeList(ref _deferredBaseTransitions, nameof(_deferredBaseTransitions));
+            ReleaseTelemetryRingBuffer();
+            _deferredBaseTransitionCount = 0;
 
             _disposeHandle = waitForStep ? disposeHandle : default;
             _stepHandle = default;
@@ -1796,11 +1914,6 @@ namespace Hecton8.Atmosphere
             NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.Scene);
         }
 
-        private static void RegisterNativeList<T>(NativeList<T> list, string label) where T : unmanaged
-        {
-            NativeMemorySentinel.RegisterNativeList(list, NativeMemoryOwner, label, NativeAllocationLifetime.Scene);
-        }
-
         private static void DisposeArray<T>(ref NativeArray<T> array, ref JobHandle disposeHandle, bool deferred) where T : struct
         {
             if (!array.IsCreated)
@@ -1812,16 +1925,6 @@ namespace Hecton8.Atmosphere
             else
                 array.Dispose();
             array = default;
-        }
-
-        private static void DisposeList<T>(ref NativeList<T> list, string label) where T : unmanaged
-        {
-            if (!list.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
-            list.Dispose();
-            list = default;
         }
 
         private void DisposeBaseAwakeState(ref JobHandle disposeHandle, bool deferred)
@@ -1845,6 +1948,19 @@ namespace Hecton8.Atmosphere
             _baseAwakeVaultOwned = false;
         }
 
+        private void ReleaseTelemetryRingBuffer()
+        {
+            ReleaseTelemetryRingStepLock();
+            IDataVault vault = _dataVault;
+            if (vault != null &&
+                _telemetryRingHandle.BufferID == unchecked((uint)(int)BufferID.GasDynamicsTelemetryRing))
+            {
+                vault.ReleaseBuffer(in _telemetryRingHandle);
+            }
+
+            _telemetryRingHandle = default;
+        }
+
         private static void AccumulateAudit<T>(
             NativeArray<T> array,
             string label,
@@ -1854,18 +1970,6 @@ namespace Hecton8.Atmosphere
                 return;
 
             long bytes = (long)UnsafeUtility.SizeOf<T>() * array.Length;
-            AccumulateAudit(bytes, label, ref accumulator);
-        }
-
-        private static void AccumulateAudit<T>(
-            NativeList<T> list,
-            string label,
-            ref GasDynamicsMemoryAuditAccumulator accumulator) where T : unmanaged
-        {
-            if (!list.IsCreated)
-                return;
-
-            long bytes = (long)UnsafeUtility.SizeOf<T>() * list.Capacity;
             AccumulateAudit(bytes, label, ref accumulator);
         }
 

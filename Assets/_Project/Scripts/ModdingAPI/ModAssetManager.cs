@@ -105,7 +105,7 @@ namespace Hecton8.Modding
                 IsProjectPrefabReference(assetName) &&
                 !IsLedgerModCompatible(assetName))
             {
-                Debug.LogWarning(string.Concat("[ModAssetManager] SECURITY_VIOLATION: mod '", modId, "' attempted to load unauthorized prefab reference '", assetName, "'."));
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] SECURITY_VIOLATION: mod '", modId, "' attempted to load unauthorized prefab reference '", assetName, "'."));
                 return null;
             }
 
@@ -135,7 +135,7 @@ namespace Hecton8.Modding
                     return asset;
             }
 
-            Debug.LogWarning(string.Concat("[ModAssetManager] Asset '", assetName, "' was not found in bundle for mod '", modId, "'."));
+            Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Asset '", assetName, "' was not found in bundle for mod '", modId, "'."));
             return null;
         }
 
@@ -155,7 +155,7 @@ namespace Hecton8.Modding
             bundle = AssetBundle.LoadFromFile(bundlePath);
             if (bundle == null)
             {
-                Debug.LogWarning(string.Concat("[ModAssetManager] Failed to load AssetBundle '", bundlePath, "' for mod '", modId, "'."));
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Failed to load AssetBundle '", bundlePath, "' for mod '", modId, "'."));
                 return false;
             }
 
@@ -194,7 +194,7 @@ namespace Hecton8.Modding
             }
             catch (IOException exception)
             {
-                Debug.LogWarning(string.Concat("[ModAssetManager] Failed to read raw texture '", filePath, "': ", exception.Message));
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Failed to read raw texture '", filePath, "': ", exception.Message));
                 return null;
             }
 
@@ -206,14 +206,14 @@ namespace Hecton8.Modding
             if (!ImageConversion.LoadImage(texture, pngBytes, false))
             {
                 UnityEngine.Object.Destroy(texture);
-                Debug.LogWarning(string.Concat("[ModAssetManager] PNG decode failed for '", filePath, "'."));
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] PNG decode failed for '", filePath, "'."));
                 return null;
             }
 
             if (texture.width > MaxRawTextureDimension || texture.height > MaxRawTextureDimension)
             {
                 UnityEngine.Object.Destroy(texture);
-                Debug.LogWarning(string.Concat("[ModAssetManager] Raw texture '", filePath, "' exceeded ", MaxRawTextureDimensionLabel, "px dimension cap."));
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Raw texture '", filePath, "' exceeded ", MaxRawTextureDimensionLabel, "px dimension cap."));
                 return null;
             }
 
@@ -232,18 +232,18 @@ namespace Hecton8.Modding
 
                 if (fileInfo.Length > MaxRawTextureBytes)
                 {
-                    Debug.LogWarning(string.Concat("[ModAssetManager] Raw texture '", filePath, "' exceeded ", MaxRawTextureBytesLabel, " byte cap."));
+                    Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Raw texture '", filePath, "' exceeded ", MaxRawTextureBytesLabel, " byte cap."));
                     return false;
                 }
             }
             catch (IOException exception)
             {
-                Debug.LogWarning(string.Concat("[ModAssetManager] Failed to inspect raw texture '", filePath, "': ", exception.Message));
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Failed to inspect raw texture '", filePath, "': ", exception.Message));
                 return false;
             }
             catch (System.Exception exception)
             {
-                Debug.LogWarning(string.Concat("[ModAssetManager] Rejected invalid raw texture '", filePath, "': ", exception.Message));
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Rejected invalid raw texture '", filePath, "': ", exception.Message));
                 return false;
             }
 
@@ -324,7 +324,7 @@ namespace Hecton8.Modding
             }
             catch (IOException exception)
             {
-                Debug.LogWarning(string.Concat("[ModAssetManager] Failed to scan project content ledger for mod allowlist: ", exception.Message));
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Failed to scan project content ledger for mod allowlist: ", exception.Message));
             }
         }
 
@@ -454,7 +454,7 @@ namespace Hecton8.Modding
             }
             catch (System.Exception exception)
             {
-                Debug.LogWarning(string.Concat("[ModAssetManager] Rejected invalid raw texture path '", relativePath, "': ", exception.Message));
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModAssetManager] Rejected invalid raw texture path '", relativePath, "': ", exception.Message));
                 return false;
             }
 

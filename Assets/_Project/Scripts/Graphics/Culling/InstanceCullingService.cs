@@ -270,13 +270,19 @@ namespace Hecton8.Graphics.Culling
 
             int safeCount = math.min(instanceCount, allInstancesBuffer.count);
             NativeArray<Matrix4x4> matrices = allInstancesBuffer.LockBufferForWrite<Matrix4x4>(0, safeCount);
-            JobHandle handle = new ApplyAupShiftJob
+            try
             {
-                Matrices = matrices,
-                ShiftMeters = shift
-            }.Schedule(safeCount, _threadGroupSize);
-            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
-            allInstancesBuffer.UnlockBufferAfterWrite<Matrix4x4>(safeCount);
+                JobHandle handle = new ApplyAupShiftJob
+                {
+                    Matrices = matrices,
+                    ShiftMeters = shift
+                }.Schedule(safeCount, _threadGroupSize);
+                DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
+            }
+            finally
+            {
+                allInstancesBuffer.UnlockBufferAfterWrite<Matrix4x4>(safeCount);
+            }
 
             _lastShiftFrameId = shiftFrameId;
             WriteTelemetry(
@@ -445,12 +451,18 @@ namespace Hecton8.Graphics.Culling
                 return;
 
             NativeArray<uint> indirectArgs = _indirectArgsBuffer.LockBufferForWrite<uint>(0, IndirectArgsCount);
-            indirectArgs[0] = args.IndexCountPerInstance;
-            indirectArgs[1] = 0u;
-            indirectArgs[2] = args.StartIndex;
-            indirectArgs[3] = args.BaseVertexIndex;
-            indirectArgs[4] = args.StartInstance;
-            _indirectArgsBuffer.UnlockBufferAfterWrite<uint>(IndirectArgsCount);
+            try
+            {
+                indirectArgs[0] = args.IndexCountPerInstance;
+                indirectArgs[1] = 0u;
+                indirectArgs[2] = args.StartIndex;
+                indirectArgs[3] = args.BaseVertexIndex;
+                indirectArgs[4] = args.StartInstance;
+            }
+            finally
+            {
+                _indirectArgsBuffer.UnlockBufferAfterWrite<uint>(IndirectArgsCount);
+            }
             _lastArgs0 = args0;
             _lastArgs2 = args2;
             _lastArgs3 = args3;
@@ -462,7 +474,7 @@ namespace Hecton8.Graphics.Culling
             if (!_enableTelemetryReadback || _readbackPending != 0 || !IsExactVaultHandle(in _indirectArgsReadbackHandle, IndirectArgsReadbackBufferId))
                 return;
 
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (frame % TelemetryReadbackStride != 0)
                 return;
 

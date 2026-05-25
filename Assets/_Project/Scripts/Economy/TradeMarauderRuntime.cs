@@ -2638,7 +2638,7 @@ namespace Hecton8.Economy
                 if (!TryOpenVaultView(_vault, in _telemetryHandle, TradeMarauderConstants.TelemetryFrameCount, out NativeArray<MarauderTelemetryEntry> telemetry) ||
                     !TryDumpBlackBox(telemetry))
                 {
-                    Debug.LogError("[TradeMarauderDirector] blackbox dump failed.");
+                    Hecton8.Core.H8Debug.LogError("[TradeMarauderDirector] blackbox dump failed.");
                 }
             }
 

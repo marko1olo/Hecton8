@@ -161,7 +161,7 @@ namespace Hecton8.UI
             if (listener == null || !ContainsImmediate(listener))
                 return;
 
-            Debug.LogError("[PDAEvents] Listener destroyed while still registered as an IPDAEventListener.");
+            Hecton8.Core.H8Debug.LogError("[PDAEvents] Listener destroyed while still registered as an IPDAEventListener.");
         }
 
         /// <summary>
@@ -848,7 +848,7 @@ namespace Hecton8.UI
             {
                 if (!pdaPanel.TryGetComponent(out pdaCanvasGroup))
                 {
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         "[PlayerPDA] No CanvasGroup found. Adding one for fade animation.");
                     pdaCanvasGroup = pdaPanel.AddComponent<CanvasGroup>();
                 }
@@ -881,14 +881,14 @@ namespace Hecton8.UI
 
             if (!_registered)
             {
-                Debug.LogError(
+                Hecton8.Core.H8Debug.LogError(
                     "[PlayerPDA] PDA dispatcher registration failed at Start(). PDA tick loop will not run.");
             }
 
             IInputService inputManager = _inputService;
             if (inputManager == null || !inputManager.IsInitialized)
             {
-                Debug.LogError("[PlayerPDA] GlobalRegistry.Input is not initialized at Start. PDA will not function.");
+                Hecton8.Core.H8Debug.LogError("[PlayerPDA] GlobalRegistry.Input is not initialized at Start. PDA will not function.");
             }
         }
 
@@ -1160,7 +1160,7 @@ namespace Hecton8.UI
         private void RefreshColdRegistryReferences()
         {
             _inputService = GlobalRegistry.Input;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _renderTexturePool = GlobalRegistry.RenderTexturePoolService;
             CachePlayerRuntimeContext(GlobalRegistry.Player);
         }
@@ -1532,7 +1532,7 @@ namespace Hecton8.UI
                 return;
 
             _missingUiShellReported = true;
-            Debug.LogError("[PlayerPDA] Refusing to open: no configured PDA panel/tabs or DiegeticPDAController bridge has configured the shell.");
+            Hecton8.Core.H8Debug.LogError("[PlayerPDA] Refusing to open: no configured PDA panel/tabs or DiegeticPDAController bridge has configured the shell.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1543,7 +1543,7 @@ namespace Hecton8.UI
                 return;
 
             _missingInputServiceReported = true;
-            Debug.LogError("[PlayerPDA] GlobalRegistry.Input is missing or not initialized; PDA input-map switch skipped.");
+            Hecton8.Core.H8Debug.LogError("[PlayerPDA] GlobalRegistry.Input is missing or not initialized; PDA input-map switch skipped.");
         }
 
         private void ReclaimPdaRenderTextures()

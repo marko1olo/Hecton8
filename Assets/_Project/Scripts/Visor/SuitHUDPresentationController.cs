@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.UI;
@@ -15,7 +14,7 @@ namespace NASAPunk.Visor
     // Editor preview must keep the shared HUD RenderTexture current outside Play Mode.
     [ExecuteAlways]
     [AddComponentMenu("Hecton8/HUD/Suit HUD Presentation Controller")]
-    public sealed class SuitHUDPresentationController : MonoBehaviour, ITickable, IUnscaledFastTickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class SuitHUDPresentationController : MonoBehaviour, IUnscaledFastTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float AutoResolveRetryInterval = 1f;
         private const float DegreesToHalfRadians = 0.00872664626f;
@@ -23,8 +22,6 @@ namespace NASAPunk.Visor
         private const float PrimaryHudTanMaxRadians = 1.55334306f;
         private static readonly int VrComfortVignette01Id = Shader.PropertyToID("_VRComfortVignette01");
         private static readonly int SomaticComfortVignetteId = Shader.PropertyToID("_VRComfortVignette");
-        private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
-        private static readonly List<SuitHUDScreenCompositor> s_compositorResolveBuffer = new List<SuitHUDScreenCompositor>(2);
 
         public enum PresentationMode
         {
@@ -255,11 +252,6 @@ namespace NASAPunk.Visor
         }
 #endif
 
-        public void Tick(float deltaTime)
-        {
-            _pendingApply = true;
-        }
-
         public void LateFrameTick()
         {
             AutoResolveReferences();
@@ -270,7 +262,7 @@ namespace NASAPunk.Visor
 
         public void UnscaledFastTick(float unscaledDeltaTime)
         {
-            Tick(unscaledDeltaTime);
+            _pendingApply = true;
         }
 
         private void AutoResolveReferences(bool force = false)
@@ -278,7 +270,9 @@ namespace NASAPunk.Visor
             if (!force && !NeedsAutoResolve())
                 return;
 
-            float now = Time.realtimeSinceStartup;
+            float now = Application.isPlaying
+                ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds
+                : ResolveEditorPreviewClockSeconds();
             if (!force && now < _nextAutoResolveAt)
                 return;
 
@@ -324,26 +318,21 @@ namespace NASAPunk.Visor
 
             if (canvasOverlay == null || (projectedCanvasSourceNeeded && projectionSourceOverlay == null))
             {
-                SuitHUDV4CanvasOverlay.CopyActiveOverlaysTo(s_overlayResolveBuffer);
                 Transform root = transform.root;
                 if (allowHierarchySearch)
                 {
-                    canvasOverlay = FindOverlayByName(s_overlayResolveBuffer, "Suit_HUD_Canvas", canvasOverlay, root);
-                    projectionSourceOverlay = FindOverlayByName(s_overlayResolveBuffer, ProjectionSourceCanvasName, projectionSourceOverlay, root);
+                    canvasOverlay = FindOverlayByName("Suit_HUD_Canvas", canvasOverlay, root);
+                    projectionSourceOverlay = FindOverlayByName(ProjectionSourceCanvasName, projectionSourceOverlay, root);
                 }
                 else
                 {
-                    canvasOverlay = FindOverlayByRoot(s_overlayResolveBuffer, canvasOverlay, root);
+                    canvasOverlay = FindOverlayByRoot(canvasOverlay, root);
                 }
-
-                s_overlayResolveBuffer.Clear();
             }
 
             if (screenCompositor == null && IsProjectionSourcePreviewEnabled())
             {
-                SuitHUDScreenCompositor.CopyActiveCompositorsTo(s_compositorResolveBuffer);
-                screenCompositor = FindCompositor(s_compositorResolveBuffer, screenCompositor, transform.root);
-                s_compositorResolveBuffer.Clear();
+                screenCompositor = FindCompositor(screenCompositor, transform.root);
             }
 
             if (diegeticProjectionRenderer == null && allowHierarchySearch)
@@ -379,6 +368,11 @@ namespace NASAPunk.Visor
                  presentationMode == PresentationMode.ModernProjectedRuntimeRT);
 
             return projectedCanvasSourceNeeded && projectionSourceOverlay == null && !Application.isPlaying;
+        }
+
+        private static float ResolveEditorPreviewClockSeconds()
+        {
+            return (float)(System.Diagnostics.Stopwatch.GetTimestamp() / (double)System.Diagnostics.Stopwatch.Frequency);
         }
 
         private void ApplyPresentation(bool force, bool allowProjectionSourceCreation = true)
@@ -468,8 +462,8 @@ namespace NASAPunk.Visor
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             debugAppliedModeLabel = projectedModeRequested && !projectedMode
                 ? screenOverlayFallbackAllowed
-                    ? presentationMode + " -> FallbackOverlay"
-                    : presentationMode + " -> ProjectionUnavailable"
+                    ? ResolveFallbackOverlayModeLabel(presentationMode)
+                    : ResolveProjectionUnavailableModeLabel(presentationMode)
                 : presentationMode == PresentationMode.LegacyOverlay
                     ? "ModernOverlay (legacy retired)"
                     : ResolvePresentationModeLabel(presentationMode);
@@ -781,7 +775,6 @@ namespace NASAPunk.Visor
         }
 
         private static SuitHUDV4CanvasOverlay FindOverlayByName(
-            List<SuitHUDV4CanvasOverlay> overlays,
             string expectedName,
             SuitHUDV4CanvasOverlay current,
             Transform preferredRoot)
@@ -789,18 +782,18 @@ namespace NASAPunk.Visor
             if (current != null && current.name == expectedName)
                 return current;
 
-            for (int i = 0; i < overlays.Count; i++)
+            for (int i = 0; i < SuitHUDV4CanvasOverlay.ActiveOverlayCount; i++)
             {
-                SuitHUDV4CanvasOverlay candidate = overlays[i];
+                SuitHUDV4CanvasOverlay candidate = SuitHUDV4CanvasOverlay.GetActiveOverlay(i);
                 if (candidate != null &&
                     candidate.name == expectedName &&
                     candidate.transform.root == preferredRoot)
                     return candidate;
             }
 
-            for (int i = 0; i < overlays.Count; i++)
+            for (int i = 0; i < SuitHUDV4CanvasOverlay.ActiveOverlayCount; i++)
             {
-                SuitHUDV4CanvasOverlay candidate = overlays[i];
+                SuitHUDV4CanvasOverlay candidate = SuitHUDV4CanvasOverlay.GetActiveOverlay(i);
                 if (candidate != null && candidate.name == expectedName)
                     return candidate;
             }
@@ -809,16 +802,15 @@ namespace NASAPunk.Visor
         }
 
         private static SuitHUDV4CanvasOverlay FindOverlayByRoot(
-            List<SuitHUDV4CanvasOverlay> overlays,
             SuitHUDV4CanvasOverlay current,
             Transform preferredRoot)
         {
             if (current != null && current.transform.root == preferredRoot)
                 return current;
 
-            for (int i = 0; i < overlays.Count; i++)
+            for (int i = 0; i < SuitHUDV4CanvasOverlay.ActiveOverlayCount; i++)
             {
-                SuitHUDV4CanvasOverlay candidate = overlays[i];
+                SuitHUDV4CanvasOverlay candidate = SuitHUDV4CanvasOverlay.GetActiveOverlay(i);
                 if (candidate != null &&
                     candidate.transform.root == preferredRoot)
                     return candidate;
@@ -838,9 +830,7 @@ namespace NASAPunk.Visor
             if (_cachedHudCanvasTransform != null)
                 return _cachedHudCanvasTransform;
 
-            SuitHUDV4CanvasOverlay.CopyActiveOverlaysTo(s_overlayResolveBuffer);
-            canvasOverlay = FindOverlayByName(s_overlayResolveBuffer, "Suit_HUD_Canvas", canvasOverlay, transform.root);
-            s_overlayResolveBuffer.Clear();
+            canvasOverlay = FindOverlayByName("Suit_HUD_Canvas", canvasOverlay, transform.root);
 
             if (canvasOverlay != null)
             {
@@ -918,6 +908,32 @@ namespace NASAPunk.Visor
                 case PresentationMode.ModernProjectedRuntimeRT: return "ModernProjectedRuntimeRT";
                 case PresentationMode.StencilRenderGraph: return "StencilRenderGraph";
                 default: return "UnknownPresentationMode";
+            }
+        }
+
+        private static string ResolveFallbackOverlayModeLabel(PresentationMode mode)
+        {
+            switch (mode)
+            {
+                case PresentationMode.LegacyOverlay: return "LegacyOverlay -> FallbackOverlay";
+                case PresentationMode.ModernOverlay: return "ModernOverlay -> FallbackOverlay";
+                case PresentationMode.ModernProjectedSharedRT: return "ModernProjectedSharedRT -> FallbackOverlay";
+                case PresentationMode.ModernProjectedRuntimeRT: return "ModernProjectedRuntimeRT -> FallbackOverlay";
+                case PresentationMode.StencilRenderGraph: return "StencilRenderGraph -> FallbackOverlay";
+                default: return "UnknownPresentationMode -> FallbackOverlay";
+            }
+        }
+
+        private static string ResolveProjectionUnavailableModeLabel(PresentationMode mode)
+        {
+            switch (mode)
+            {
+                case PresentationMode.LegacyOverlay: return "LegacyOverlay -> ProjectionUnavailable";
+                case PresentationMode.ModernOverlay: return "ModernOverlay -> ProjectionUnavailable";
+                case PresentationMode.ModernProjectedSharedRT: return "ModernProjectedSharedRT -> ProjectionUnavailable";
+                case PresentationMode.ModernProjectedRuntimeRT: return "ModernProjectedRuntimeRT -> ProjectionUnavailable";
+                case PresentationMode.StencilRenderGraph: return "StencilRenderGraph -> ProjectionUnavailable";
+                default: return "UnknownPresentationMode -> ProjectionUnavailable";
             }
         }
 
@@ -1200,16 +1216,19 @@ namespace NASAPunk.Visor
         }
 
         private static SuitHUDScreenCompositor FindCompositor(
-            List<SuitHUDScreenCompositor> compositors,
             SuitHUDScreenCompositor current,
             Transform preferredRoot)
         {
             if (current != null && current.isActiveAndEnabled)
                 return current;
 
-            for (int i = 0; i < compositors.Count; i++)
+            SuitHUDScreenCompositor fallback = null;
+            for (int i = 0; i < SuitHUDScreenCompositor.ActiveCompositorCount; i++)
             {
-                SuitHUDScreenCompositor candidate = compositors[i];
+                SuitHUDScreenCompositor candidate = SuitHUDScreenCompositor.GetActiveCompositor(i);
+                if (fallback == null && candidate != null)
+                    fallback = candidate;
+
                 if (candidate != null &&
                     candidate.transform.root == preferredRoot)
                 {
@@ -1217,7 +1236,7 @@ namespace NASAPunk.Visor
                 }
             }
 
-            return compositors.Count > 0 ? compositors[0] : null;
+            return fallback;
         }
 
         private static Renderer FindDiegeticProjectionRenderer(Transform root)

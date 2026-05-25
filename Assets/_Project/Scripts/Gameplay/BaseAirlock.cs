@@ -23,7 +23,6 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Gameplay.AirlockPressurization;
 using Hecton8.Interaction;
-using Hecton8.Physics;
 using Hecton8.World;
 using System;
 using Unity.Mathematics;
@@ -226,6 +225,7 @@ namespace Hecton8.Gameplay
         private bool _hotSwapListenerRegistered;
         private IAudioService _cachedAudioService;
         private INativeInputManagerRuntime _cachedNativeInputManager;
+        private IPhysicsService _cachedPhysicsService;
 
         // Cached references
         private Transform _cachedTransform;
@@ -358,6 +358,9 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.NativeInputManagerRuntime:
                     _cachedNativeInputManager = currentService as INativeInputManagerRuntime;
                     break;
+                case GlobalRegistryServiceSlot.Physics:
+                    _cachedPhysicsService = currentService as IPhysicsService;
+                    break;
             }
         }
 
@@ -417,14 +420,16 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _cachedAudioService = GlobalRegistry.Audio;
             _cachedNativeInputManager = GlobalRegistry.NativeInputRuntime;
+            _cachedPhysicsService = GlobalRegistry.Physics;
         }
 
         private void ClearCachedRegistryServices()
         {
             _cachedAudioService = null;
             _cachedNativeInputManager = null;
+            _cachedPhysicsService = null;
         }
 
         private void TryRegisterHotSwapListener()
@@ -840,7 +845,7 @@ namespace Hecton8.Gameplay
             if (destination == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                UnityEngine.Debug.LogError(
+                Hecton8.Core.H8Debug.LogError(
                     _isPlayerInside ? MissingExteriorSpawnPointMessage : MissingInteriorSpawnPointMessage,
                     this);
 #endif
@@ -852,7 +857,7 @@ namespace Hecton8.Gameplay
             if (!IsFinite(destinationPosition) || !IsFinite(destinationRotation))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                UnityEngine.Debug.LogError(
+                Hecton8.Core.H8Debug.LogError(
                     _isPlayerInside ? InvalidExteriorSpawnPointPoseMessage : InvalidInteriorSpawnPointPoseMessage,
                     this);
 #endif
@@ -875,7 +880,7 @@ namespace Hecton8.Gameplay
                 if (TryResolveHydroPlayerMotor(player, playerBody, out HectonPlayerMotor hydroMotor))
                     TeleportHydroPlayer(player, hydroMotor, destinationPosition, destinationRotation);
                 else if (playerBody != null)
-                    TeleportBody(playerBody, destinationPosition, destinationRotation);
+                    TeleportBody(playerBody, destinationPosition, destinationRotation, _cachedPhysicsService);
                 else
                     player.SetPositionAndRotation(destinationPosition, destinationRotation);
             }
@@ -923,8 +928,13 @@ namespace Hecton8.Gameplay
                 _snapBodyLinearDamping = _snapBody.linearDamping;
                 _snapBodyAngularDamping = _snapBody.angularDamping;
                 _snapBodyStateCached = true;
-                Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(_snapBody, Vector3.zero, wake: false);
-                Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(_snapBody, Vector3.zero, wake: false);
+                IPhysicsService physicsService = _cachedPhysicsService;
+                if (physicsService != null)
+                {
+                    physicsService.QueueLinearVelocitySet(_snapBody, Vector3.zero, wake: false);
+                    physicsService.QueueAngularVelocitySet(_snapBody, Vector3.zero, wake: false);
+                }
+
                 _snapBody.useGravity = false;
                 _snapBody.linearDamping = 0f;
                 _snapBody.angularDamping = 0f;
@@ -1012,8 +1022,13 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(_snapBody, Vector3.zero, wake: false);
-            Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(_snapBody, Vector3.zero, wake: false);
+            IPhysicsService physicsService = _cachedPhysicsService;
+            if (physicsService != null)
+            {
+                physicsService.QueueLinearVelocitySet(_snapBody, Vector3.zero, wake: false);
+                physicsService.QueueAngularVelocitySet(_snapBody, Vector3.zero, wake: false);
+            }
+
             _snapBody.linearDamping = _snapBodyLinearDamping;
             _snapBody.angularDamping = _snapBodyAngularDamping;
             _snapBody.useGravity = _snapBodyUseGravity;
@@ -1053,7 +1068,7 @@ namespace Hecton8.Gameplay
             _cachedInteractorComponentCacheValid = false;
         }
 
-        private static void TeleportBody(Rigidbody body, Vector3 position, Quaternion rotation)
+        private static void TeleportBody(Rigidbody body, Vector3 position, Quaternion rotation, IPhysicsService physicsService)
         {
             if (body.TryGetComponent(out HectonPlayerMotor playerMotor) &&
                 playerMotor.HydrodynamicKccOwnsCollisionAuthority)
@@ -1077,8 +1092,12 @@ namespace Hecton8.Gameplay
 
             if (!wasKinematic)
             {
-                Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(body, Vector3.zero, wake: false);
-                Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
+                if (physicsService != null)
+                {
+                    physicsService.QueueLinearVelocitySet(body, Vector3.zero, wake: false);
+                    physicsService.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
+                }
+
                 if (wasSleeping)
                     body.Sleep();
                 else

@@ -608,7 +608,7 @@ namespace Hecton8.Input
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void LogWarning(string message)
         {
-            Debug.LogWarning(message);
+            Hecton8.Core.H8Debug.LogWarning(message);
         }
 
         /// <summary>

@@ -215,18 +215,18 @@ namespace Hecton8.Visor
                     passData.DecalBuffer = decalBufferHandle;
                     passData.Material = _material;
                     passData.DecalCount = readableCount;
-                    passData.DecalAtlasParams = new Vector4(
+                    passData.DecalAtlasParams = MakeVector4(
                         Mathf.Max(1, _settings.atlasSlices),
                         Mathf.Clamp01(stats.GlobalQualityWeight),
                         Mathf.Max(0f, _settings.intensity),
                         _settings.decalAtlas != null ? 1f : 0f);
-                    passData.DecalRefractionParams = new Vector4(
+                    passData.DecalRefractionParams = MakeVector4(
                         Mathf.Max(0f, stats.NormalRefractionIntensity),
                         readableCount,
                         Mathf.Clamp01(stats.ThermalPressure01),
                         0f);
-                    passData.DecalTint = new Vector4(_settings.decalTint.r, _settings.decalTint.g, _settings.decalTint.b, _settings.decalTint.a);
-                    passData.CameraPosition = new Vector4(cameraPosition.x, cameraPosition.y, cameraPosition.z, 1f);
+                    passData.DecalTint = MakeVector4(_settings.decalTint.r, _settings.decalTint.g, _settings.decalTint.b, _settings.decalTint.a);
+                    passData.CameraPosition = MakeVector4(cameraPosition.x, cameraPosition.y, cameraPosition.z, 1f);
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
@@ -257,15 +257,18 @@ namespace Hecton8.Visor
             private void UploadDecalBuffer(in DynamicDecalFrameStats stats)
             {
                 int requestedUploadCount = Mathf.Clamp(stats.UploadCount, 0, DynamicDecalVaultRuntime.MaxCapacity);
-                if (requestedUploadCount <= 0 || !stats.UploadBuffer.IsCreated)
+                if (requestedUploadCount <= 0 ||
+                    !DynamicDecalVaultRuntime.TryResolveUploadBuffer(in stats, out NativeArray<TraumaDecalDTO> uploadBuffer))
+                {
                     return;
+                }
 
                 EnsureDecalBuffers(Mathf.Clamp(_settings.maxDecals, DynamicDecalVaultRuntime.LowCapacity, DynamicDecalVaultRuntime.MaxCapacity));
                 GraphicsBuffer target = ResolveBuffer(_writeBufferIndex);
                 if (target == null)
                     return;
 
-                int uploadCount = Mathf.Min(requestedUploadCount, Mathf.Min(target.count, stats.UploadBuffer.Length));
+                int uploadCount = Mathf.Min(requestedUploadCount, Mathf.Min(target.count, uploadBuffer.Length));
                 if (uploadCount <= 0)
                     return;
 
@@ -276,7 +279,7 @@ namespace Hecton8.Visor
                     unsafe
                     {
                         DynamicDecalVaultRuntime.CopyDecalsToMappedUploadBuffer(
-                            stats.UploadBuffer,
+                            uploadBuffer,
                             (TraumaDecalDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped),
                             uploadCount);
                     }
@@ -340,6 +343,16 @@ namespace Hecton8.Visor
             private GraphicsBuffer ResolveBuffer(int index)
             {
                 return (index & 1) == 0 ? _decalBufferA : _decalBufferB;
+            }
+
+            private static Vector4 MakeVector4(float x, float y, float z, float w)
+            {
+                Vector4 result = default;
+                result.x = x;
+                result.y = y;
+                result.z = z;
+                result.w = w;
+                return result;
             }
 
             private void ReleaseBuffers()

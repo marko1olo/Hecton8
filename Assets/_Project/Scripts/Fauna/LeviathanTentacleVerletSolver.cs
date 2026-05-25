@@ -1409,15 +1409,21 @@ namespace Hecton8.AI
 
             NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
                 _indirectArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            try
             {
-                indexCountPerInstance = tentacleSegmentMesh.GetIndexCount(0),
-                instanceCount = (uint)instanceCount,
-                startIndex = tentacleSegmentMesh.GetIndexStart(0),
-                baseVertexIndex = (uint)Mathf.Max(0, tentacleSegmentMesh.GetBaseVertex(0)),
-                startInstance = 0u
-            };
-            _indirectArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+                argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+                {
+                    indexCountPerInstance = tentacleSegmentMesh.GetIndexCount(0),
+                    instanceCount = (uint)instanceCount,
+                    startIndex = tentacleSegmentMesh.GetIndexStart(0),
+                    baseVertexIndex = (uint)Mathf.Max(0, tentacleSegmentMesh.GetBaseVertex(0)),
+                    startInstance = 0u
+                };
+            }
+            finally
+            {
+                _indirectArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            }
             _argsUploadMesh = tentacleSegmentMesh;
             _argsUploadInstanceCount = instanceCount;
         }

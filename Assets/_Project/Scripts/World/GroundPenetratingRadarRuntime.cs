@@ -18,7 +18,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/World/Ground Penetrating Radar Runtime")]
-    public sealed class GroundPenetratingRadarRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IRenderable, IGroundRadarService, IDisposable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed class GroundPenetratingRadarRuntime : MonoBehaviour, ILateFrameTickable, IRenderable, IGroundRadarService, IDisposable, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private static int s_x001GroundPenetratingRadarRuntimeSignalPushDropCount;
         private const string OwnerName = "TERRAIN_GPR_SYSTEM";
@@ -78,7 +78,6 @@ namespace Hecton8.World
         private int _telemetryWriteIndex;
         private int _lastScannerSignalSequence;
         private int _oreFilterType;
-        private int _registeredUpdate;
         private int _registeredLateFrame;
         private int _registeredRenderable;
         private int _hotSwapRegistered;
@@ -133,7 +132,6 @@ namespace Hecton8.World
             GlobalRegistry.RegisterGroundRadarService(this);
             CacheConfiguredOreReadModel();
             CacheOreReadModelFromRegistry();
-            _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment) ? 1 : 0;
             _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment) ? 1 : 0;
             _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this) ? 1 : 0;
         }
@@ -161,12 +159,6 @@ namespace Hecton8.World
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLateFrame = 0;
-            }
-
-            if (_registeredUpdate != 0)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registeredUpdate = 0;
             }
 
             if (ReferenceEquals(GlobalRegistry.GroundRadar, this))
@@ -212,7 +204,7 @@ namespace Hecton8.World
             }
         }
 
-        public void Tick(float deltaTime)
+        private void AdvanceRadarFrameState(float deltaTime)
         {
             if (_scanJobScheduled || _pendingDataVaultRebind || !_gprReadSnapshotsValid)
                 return;
@@ -245,6 +237,8 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
+            AdvanceRadarFrameState(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (!_scanJobScheduled)
                 TryApplyPendingDataVaultRebind();
 
@@ -998,7 +992,7 @@ namespace Hecton8.World
         private void CacheRuntimeServices()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerContext = GlobalRegistry.Player;
             _submarineState = GlobalRegistry.SubmarineState;
             _voxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
             _ecosystemDirector = GlobalRegistry.EcosystemDirector;
@@ -1121,7 +1115,7 @@ namespace Hecton8.World
             }
             catch (Exception exception)
             {
-                Debug.LogException(exception, this);
+                Hecton8.Core.H8Debug.LogException(exception);
             }
         }
 
@@ -1153,13 +1147,19 @@ namespace Hecton8.World
 
             NativeArray<GroundRadarIndirectArgsDTO> argsWrite =
                 argsWriteBuffer.LockBufferForWrite<GroundRadarIndirectArgsDTO>(0, 1);
-            GroundRadarIndirectArgsDTO args = default;
-            args.VertexCountPerInstance = GroundRadarProceduralVertexCount;
-            args.InstanceCount = instanceCount;
-            args.StartVertex = 0u;
-            args.StartInstance = 0u;
-            argsWrite[0] = args;
-            argsWriteBuffer.UnlockBufferAfterWrite<GroundRadarIndirectArgsDTO>(1);
+            try
+            {
+                GroundRadarIndirectArgsDTO args = default;
+                args.VertexCountPerInstance = GroundRadarProceduralVertexCount;
+                args.InstanceCount = instanceCount;
+                args.StartVertex = 0u;
+                args.StartInstance = 0u;
+                argsWrite[0] = args;
+            }
+            finally
+            {
+                argsWriteBuffer.UnlockBufferAfterWrite<GroundRadarIndirectArgsDTO>(1);
+            }
             _activeGprArgsBuffer = argsWriteBuffer;
         }
 

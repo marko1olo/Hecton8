@@ -24,8 +24,10 @@ namespace Hecton8.Physiology
         private static ShinobuPhysiologyRuntime s_activeRuntime;
 
         private const SystemID OwnerSystem = SystemID.GameplayPlayer;
+#if UNITY_EDITOR
         private const int CsvMaxBytes = 8192;
         private const int CsvOverrideCapacity = 32;
+#endif
         private const int LockBufferCount = 20;
         private const float KilopascalsPerAtmosphere = 101.325f;
         private const float AuthoritativeQualityWeight = 1f;
@@ -36,8 +38,10 @@ namespace Hecton8.Physiology
         private const string GasCsvRelativePath = "physiological_gas_profiles.csv";
 #endif
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_321.bin";
+#if UNITY_EDITOR
         private const string LegacyMetabolismFile = "metabolism_rates.h8bin";
         private const string LegacyMValueFile = "haldane_m-values.bin";
+#endif
         private const ulong DumpMagic = 0x5348494E4F425532UL; // SHINOBU2
         private const uint DumpVersion = 3u;
 
@@ -97,9 +101,13 @@ namespace Hecton8.Physiology
         private VaultGenerationHandle<MockPredatorAggroSignal> _predatorHandle;
         private VaultGenerationHandle<MockMedicalItemUsedSignal> _medicalHandle;
         private VaultGenerationHandle<PhysiologyTuningDTO> _tuningHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<BiologyConstantOverrideDTO> _csvOverrideHandle;
+#endif
         private VaultGenerationHandle<DiveProfileSampleDTO> _mockDiveProfileHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
 
         private IDataVault _dataVault;
         private IPlayerRuntimeContext _playerContext;
@@ -131,11 +139,11 @@ namespace Hecton8.Physiology
         private bool _playerDepthValid;
         private bool _previousDepthValid;
         private bool _insideHabitat;
-        private bool _gasCsvOverrideActive;
+        private bool _breathingGasOverrideActive;
         private int _activeHabitatRoomId = -1;
         private float _previousDepthMeters;
         private uint _playerDamageTargetHash;
-        private BreathingGasFractionsDTO _gasCsvOverride;
+        private BreathingGasFractionsDTO _breathingGasOverride;
 
         public static bool TryGetActive(out ShinobuPhysiologyRuntime runtime)
         {
@@ -331,9 +339,9 @@ namespace Hecton8.Physiology
             {
                 Environment = environment,
                 BreathingGas = breathingGas,
-                OverrideGas = _gasCsvOverride,
+                OverrideGas = _breathingGasOverride,
                 Count = count,
-                UseOverrideGas = _gasCsvOverrideActive ? (byte)1 : (byte)0
+                UseOverrideGas = _breathingGasOverrideActive ? (byte)1 : (byte)0
             }.Schedule(count, ShinobuPhysiologyConstants.FrameJobBatchSize, handle);
 
             handle = new CalculatePartialPressuresJob
@@ -523,9 +531,9 @@ namespace Hecton8.Physiology
             {
                 Environment = environment,
                 BreathingGas = breathingGas,
-                OverrideGas = _gasCsvOverride,
+                OverrideGas = _breathingGasOverride,
                 Count = math.min(environment.Length, breathingGas.Length),
-                UseOverrideGas = _gasCsvOverrideActive ? (byte)1 : (byte)0
+                UseOverrideGas = _breathingGasOverrideActive ? (byte)1 : (byte)0
             };
             // COLD SYNC JOB: explicit gas-profile generation for test tooling, not a frame simulation dependency.
             for (int i = 0; i < job.Count; i++)
@@ -836,7 +844,7 @@ namespace Hecton8.Physiology
         private void RebindColdServices()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerContext = GlobalRegistry.Player;
             _gasDynamics = GlobalRegistry.GasDynamics;
         }
 
@@ -873,9 +881,14 @@ namespace Hecton8.Physiology
                 OpenOrAcquirePhysiologyVaultBuffer(ref _predatorHandle, BufferID.ShinobuMockPredatorAggroSignals, entityCapacity, NativeArrayOptions.ClearMemory, out _) &&
                 OpenOrAcquirePhysiologyVaultBuffer(ref _medicalHandle, BufferID.ShinobuMockMedicalItemSignals, entityCapacity, NativeArrayOptions.ClearMemory, out _) &&
                 OpenOrAcquirePhysiologyVaultBuffer(ref _tuningHandle, BufferID.ShinobuPhysiologyTuning, 1, NativeArrayOptions.ClearMemory, out _) &&
+#if UNITY_EDITOR
                 OpenOrAcquirePhysiologyVaultBuffer(ref _csvOverrideHandle, BufferID.ShinobuBiologyCsvOverrides, CsvOverrideCapacity, NativeArrayOptions.ClearMemory, out _) &&
-                OpenOrAcquirePhysiologyVaultBuffer(ref _mockDiveProfileHandle, BufferID.ShinobuMockDiveProfile, ShinobuPhysiologyConstants.TelemetryFrameCount, NativeArrayOptions.ClearMemory, out _) &&
-                OpenOrAcquirePhysiologyVaultBuffer(ref _csvScratchHandle, BufferID.ShinobuTissueCsvScratch, CsvMaxBytes, NativeArrayOptions.UninitializedMemory, out _);
+#endif
+                OpenOrAcquirePhysiologyVaultBuffer(ref _mockDiveProfileHandle, BufferID.ShinobuMockDiveProfile, ShinobuPhysiologyConstants.TelemetryFrameCount, NativeArrayOptions.ClearMemory, out _)
+#if UNITY_EDITOR
+                && OpenOrAcquirePhysiologyVaultBuffer(ref _csvScratchHandle, BufferID.ShinobuTissueCsvScratch, CsvMaxBytes, NativeArrayOptions.UninitializedMemory, out _)
+#endif
+                ;
             if (!created || !HandlesReady())
                 return false;
 
@@ -905,9 +918,14 @@ namespace Hecton8.Physiology
                    OpenPhysiologyVaultBuffer(ref _predatorHandle, BufferID.ShinobuMockPredatorAggroSignals, entityCapacity, out _) &&
                    OpenPhysiologyVaultBuffer(ref _medicalHandle, BufferID.ShinobuMockMedicalItemSignals, entityCapacity, out _) &&
                    OpenPhysiologyVaultBuffer(ref _tuningHandle, BufferID.ShinobuPhysiologyTuning, 1, out _) &&
+#if UNITY_EDITOR
                    OpenPhysiologyVaultBuffer(ref _csvOverrideHandle, BufferID.ShinobuBiologyCsvOverrides, CsvOverrideCapacity, out _) &&
-                   OpenPhysiologyVaultBuffer(ref _mockDiveProfileHandle, BufferID.ShinobuMockDiveProfile, ShinobuPhysiologyConstants.TelemetryFrameCount, out _) &&
-                   OpenPhysiologyVaultBuffer(ref _csvScratchHandle, BufferID.ShinobuTissueCsvScratch, CsvMaxBytes, out _);
+#endif
+                   OpenPhysiologyVaultBuffer(ref _mockDiveProfileHandle, BufferID.ShinobuMockDiveProfile, ShinobuPhysiologyConstants.TelemetryFrameCount, out _)
+#if UNITY_EDITOR
+                   && OpenPhysiologyVaultBuffer(ref _csvScratchHandle, BufferID.ShinobuTissueCsvScratch, CsvMaxBytes, out _)
+#endif
+                   ;
         }
 
         private bool OpenOrAcquirePhysiologyVaultBuffer<T>(
@@ -1030,7 +1048,9 @@ namespace Hecton8.Physiology
             if (gasTuning.IsCreated && gasTuning.Length > 0)
                 gasTuning[0] = ShinobuPhysiologyJobMath.SanitizeGasTuning(gasTuning[0]);
 
+#if UNITY_EDITOR
             if (!TryLoadLegacyMetabolismTables(vault))
+#endif
                 GenerateEmergencyMockMetabolism(vault);
 #if UNITY_EDITOR
             LoadCsvOverridesFromDisk(vault);
@@ -1190,11 +1210,13 @@ namespace Hecton8.Physiology
                    mockDiveProfile.IsCreated;
         }
 
+#if UNITY_EDITOR
         private bool TryResolveCsvScratch(IDataVault vault, out NativeArray<byte> scratch)
         {
             scratch = OpenPhysiologyVaultArray(ref _csvScratchHandle, BufferID.ShinobuTissueCsvScratch, CsvMaxBytes);
             return scratch.IsCreated && scratch.Length >= CsvMaxBytes;
         }
+#endif
 
         private void WriteEnvironmentSeed(IDataVault vault, float deltaTime, uint frame)
         {
@@ -1677,6 +1699,7 @@ namespace Hecton8.Physiology
             }
         }
 
+#if UNITY_EDITOR
         private bool TryLoadLegacyMetabolismTables(IDataVault vault)
         {
             NativeArray<HaldaneTissueCoefficientDTO> coefficients = OpenPhysiologyVaultArray(ref _coefficientHandle, BufferID.ShinobuHaldaneCoefficients, ShinobuPhysiologyConstants.TissueCompartmentCount);
@@ -1773,6 +1796,7 @@ namespace Hecton8.Physiology
 
             return true;
         }
+#endif
 
         private void GenerateEmergencyMockMetabolism(IDataVault vault)
         {
@@ -1902,8 +1926,8 @@ namespace Hecton8.Physiology
 
         private void ParseGasProfilesCsv(IDataVault vault, ReadOnlySpan<byte> bytes)
         {
-            BreathingGasFractionsDTO gas = _gasCsvOverrideActive
-                ? _gasCsvOverride
+            BreathingGasFractionsDTO gas = _breathingGasOverrideActive
+                ? _breathingGasOverride
                 : new BreathingGasFractionsDTO
                 {
                     OxygenFraction = ShinobuPhysiologyConstants.OxygenFraction,
@@ -1932,8 +1956,8 @@ namespace Hecton8.Physiology
             }
 
             gas.Flags |= ShinobuPhysiologyFlags.CsvOverride;
-            _gasCsvOverride = ShinobuPhysiologyJobMath.SanitizeBreathingGas(gas);
-            _gasCsvOverrideActive = true;
+            _breathingGasOverride = ShinobuPhysiologyJobMath.SanitizeBreathingGas(gas);
+            _breathingGasOverrideActive = true;
             if (tuningArray.IsCreated && tuningArray.Length > 0)
                 tuningArray[0] = ShinobuPhysiologyJobMath.SanitizeGasTuning(gasTuning);
         }
@@ -2355,9 +2379,13 @@ namespace Hecton8.Physiology
             _predatorHandle = default;
             _medicalHandle = default;
             _tuningHandle = default;
+#if UNITY_EDITOR
             _csvOverrideHandle = default;
+#endif
             _mockDiveProfileHandle = default;
+#if UNITY_EDITOR
             _csvScratchHandle = default;
+#endif
             _simulationAccumulator = 0f;
             _previousDepthValid = false;
             _insideHabitat = false;
@@ -2450,6 +2478,7 @@ namespace Hecton8.Physiology
             return hash;
         }
 
+#if UNITY_EDITOR
         private static bool ShouldReadLegacyTableAsBigEndian(ReadOnlySpan<byte> bytes, bool readHalfTimes)
         {
             float little = ReadFloatEndianAware(bytes, 0, bigEndian: false);
@@ -2489,6 +2518,7 @@ namespace Hecton8.Physiology
                    ((value << 8) & 0x00FF0000u) |
                    (value << 24);
         }
+#endif
 
         private static void WriteUInt32LittleEndian(Span<byte> destination, uint value)
         {

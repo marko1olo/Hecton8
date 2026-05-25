@@ -155,7 +155,7 @@ namespace Hecton8.UI.Editor
             if (streamer == null || !TryParseHash(_hashField.value, out uint hash))
                 return;
 
-            if (streamer.EditorTryWriteRawUtf8Hex(hash, new Span<char>(_rawBuffer), out int written))
+            if (streamer.EditorTryWriteRawUtf8Hex(hash, _rawBuffer.AsSpan(), out int written))
                 _rawLabel.text = new string(_rawBuffer, 0, written);
             else
                 _rawLabel.text = "Raw UTF-8 x-ray unavailable for this hash.";

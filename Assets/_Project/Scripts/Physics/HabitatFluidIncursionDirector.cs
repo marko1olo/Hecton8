@@ -1,8 +1,8 @@
 using System;
-using System.IO;
 using System.Diagnostics;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Physics;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.World;
@@ -21,7 +21,8 @@ namespace Hecton8.Physics
         private static int s_x001DirectSignalPushDropCount_HabitatFluidIncursionDirector;
 
         private const SystemID OwnerSystem = SystemID.Fluid;
-        private const string DumpPath = "Docs/AgentLogs/Dump_SHINOBU_330.bin";
+        private const uint HabitatFaultEventHash = 0x48464654u; // HFFT
+        private const uint HabitatFaultDumpHash = 0x48464450u; // HFDP
         private const uint FloodMuffleLaneHash = 0x464C4D46u; // FLMF
         private const int FloodMuffleSignalCapacity = 32;
         private const int FloodMuffleMinimumQualityFrameSignals = 8;
@@ -85,6 +86,7 @@ namespace Hecton8.Physics
         private bool _registeredHotSwapListener;
         private bool _buffersReady;
         private bool _dumpWritten;
+        private bool _coreBlackboxWarmed;
         private bool _waterlineUploadDirty;
         private bool _floodScalarDirty;
 
@@ -103,6 +105,7 @@ namespace Hecton8.Physics
             SignalBus<SubmarineFloodStateSignal>.EnsureInitialized();
             EnsureFloodMuffleSignalLane();
             PhysicsEventBus.EnsureReady();
+            WarmCoreBlackboxRoute();
 
             _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
             _registeredPostFixed = GlobalRegistry.TryRegisterPostFixedTickable(this, PriorityLayer.Environment);
@@ -129,6 +132,7 @@ namespace Hecton8.Physics
             _registeredPostFixed = false;
             _registeredRenderable = false;
             _buffersReady = false;
+            _coreBlackboxWarmed = false;
             _cachedTransform = null;
         }
 
@@ -143,7 +147,10 @@ namespace Hecton8.Physics
                 UnlockJobBuffers();
                 CacheDataVaultCold(currentService as IDataVault);
                 if (isActiveAndEnabled)
+                {
                     _buffersReady = EnsureBuffersInitialized();
+                    WarmCoreBlackboxRoute();
+                }
                 _waterlineUploadDirty = true;
                 return;
             }
@@ -383,13 +390,19 @@ namespace Hecton8.Physics
                 return;
 
             NativeArray<FluidWaterlineShaderDTO> mapped = targetBuffer.LockBufferForWrite<FluidWaterlineShaderDTO>(0, safeCount);
-            unsafe
+            try
             {
-                void* dst = NativeArrayUnsafeUtility.GetUnsafePtr(mapped);
-                void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(waterlines);
-                UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<FluidWaterlineShaderDTO>());
+                unsafe
+                {
+                    void* dst = NativeArrayUnsafeUtility.GetUnsafePtr(mapped);
+                    void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(waterlines);
+                    UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<FluidWaterlineShaderDTO>());
+                }
             }
-            targetBuffer.UnlockBufferAfterWrite<FluidWaterlineShaderDTO>(safeCount);
+            finally
+            {
+                targetBuffer.UnlockBufferAfterWrite<FluidWaterlineShaderDTO>(safeCount);
+            }
             Shader.SetGlobalBuffer(s_WaterlineBufferId, targetBuffer);
             Shader.SetGlobalInt(s_WaterlineCountId, safeCount);
             _waterlineUploadDirty = false;
@@ -1434,18 +1447,26 @@ namespace Hecton8.Physics
                 return;
 
             NativeArray<FluidIncursionTelemetryEntry> telemetry = ResolveFluidVaultBuffer(ref _telemetryHandle, BufferID.ShinobuFluidTelemetryRing, HabitatFluidIncursionConstants.TelemetryFrameCount);
-            if (!telemetry.IsCreated)
+            NativeArray<int> cursor = ResolveFluidVaultBuffer(ref _telemetryCursorHandle, BufferID.ShinobuFluidTelemetryCursor, 1);
+            if (!telemetry.IsCreated || telemetry.Length <= 0 || !_coreBlackboxWarmed || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
                 return;
 
+            int cursorValue = cursor.IsCreated && cursor.Length > 0 ? math.max(0, cursor[0]) : 0;
+            int latestIndex = cursorValue > 0 ? (cursorValue - 1) % telemetry.Length : 0;
+            FluidIncursionTelemetryEntry latest = telemetry[latestIndex];
+            float scalar = math.max(latest.TotalWaterM3, latest.PeakIngressRate);
+            GlobalTelemetryBus.PushEvent(HabitatFaultEventHash, scalar, latest.StateHash);
+            _ = GlobalTelemetryBus.TryDumpBlackboxNow(HabitatFaultDumpHash);
             _dumpWritten = true;
-            Directory.CreateDirectory("Docs/AgentLogs");
-            int bytes = math.min(telemetry.Length, HabitatFluidIncursionConstants.TelemetryFrameCount) *
-                        UnsafeUtility.SizeOf<FluidIncursionTelemetryEntry>();
-            byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-            using (FileStream stream = new FileStream(DumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
-            {
-                stream.Write(new ReadOnlySpan<byte>(source, bytes));
-            }
+        }
+
+        private void WarmCoreBlackboxRoute()
+        {
+            if (_coreBlackboxWarmed)
+                return;
+
+            GlobalTelemetryBus.Initialize();
+            _coreBlackboxWarmed = GlobalTelemetryBus.BlackboxActiveFrameCount > 0;
         }
 
         private void OnDrawGizmos()

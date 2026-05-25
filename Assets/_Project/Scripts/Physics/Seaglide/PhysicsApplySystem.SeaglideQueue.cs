@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Physics;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;

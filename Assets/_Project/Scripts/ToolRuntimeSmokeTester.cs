@@ -138,7 +138,7 @@ namespace Hecton8.Dev
             if (toolManager == null || playerInventory == null)
             {
                 _debugLastIssue = "Missing PlayerToolManager or PlayerInventory.";
-                Debug.LogWarning("[ToolSmoke] Missing PlayerToolManager or PlayerInventory.");
+                Hecton8.Core.H8Debug.LogWarning("[ToolSmoke] Missing PlayerToolManager or PlayerInventory.");
                 return;
             }
 
@@ -175,7 +175,7 @@ namespace Hecton8.Dev
                     _debugLastToolName = toolName;
                     if (!prefab.TryGetComponent(out PlayerTool prefabTool) || prefabTool.ToolData == null)
                     {
-                        Debug.LogWarning($"[ToolSmoke] SKIP {toolName}: missing PlayerTool or ToolData.");
+                        Hecton8.Core.H8Debug.LogWarning($"[ToolSmoke] SKIP {toolName}: missing PlayerTool or ToolData.");
                         continue;
                     }
 
@@ -201,7 +201,7 @@ namespace Hecton8.Dev
                     if (holsterElapsed >= equipTimeout &&
                         (toolManager.IsSwapping || toolManager.CurrentTool != null || toolManager.CurrentSlotIndex >= 0))
                     {
-                        Debug.LogWarning(
+                        Hecton8.Core.H8Debug.LogWarning(
                             $"[ToolSmoke] HOLSTER WAIT TIMEOUT slot={toolManager.CurrentSlotIndex} " +
                             $"tool={(toolManager.CurrentTool != null ? toolManager.CurrentTool.GetType().Name : "null")} " +
                             $"swapping={toolManager.IsSwapping}");
@@ -225,7 +225,7 @@ namespace Hecton8.Dev
                         _debugLastIssue = "Setup exception for " + toolName;
                         _debugLastPass = false;
                         setupFailed = true;
-                        Debug.LogError($"[ToolSmoke] SETUP EXCEPTION {toolName}: {ex}");
+                        Hecton8.Core.H8Debug.LogError($"[ToolSmoke] SETUP EXCEPTION {toolName}: {ex}");
                     }
 
                     if (setupFailed)
@@ -253,7 +253,7 @@ namespace Hecton8.Dev
                         _debugFailCount++;
                         _debugLastIssue = "Equip timeout/mismatch for " + toolName;
                         _debugLastPass = false;
-                        Debug.LogWarning(
+                        Hecton8.Core.H8Debug.LogWarning(
                             $"[ToolSmoke] FAIL {toolName}: equip timeout/mismatch. " +
                             $"live={(liveTool != null ? liveTool.GetType().Name : "null")}, " +
                             $"slot={toolManager.CurrentSlotIndex}, swapping={toolManager.IsSwapping}");
@@ -323,7 +323,7 @@ namespace Hecton8.Dev
                 _debugFailCount++;
                 _debugLastIssue = "Unhandled exception";
                 _debugLastPass = false;
-                Debug.LogError($"[ToolSmoke] UNHANDLED EXCEPTION: {ex}");
+                Hecton8.Core.H8Debug.LogError($"[ToolSmoke] UNHANDLED EXCEPTION: {ex}");
             }
             finally
             {
@@ -354,7 +354,7 @@ namespace Hecton8.Dev
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[ToolSmoke] EXCEPTION {toolName}: {ex}");
+                Hecton8.Core.H8Debug.LogError($"[ToolSmoke] EXCEPTION {toolName}: {ex}");
                 return false;
             }
         }

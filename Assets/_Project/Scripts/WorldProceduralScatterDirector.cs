@@ -30,6 +30,12 @@ namespace Hecton8.World
         internal static WorldProceduralScatterDirector ActiveRuntimeInstance => GlobalRegistry.ProceduralScatter;
         // COLD ALLOC: RegistryBucket<WorldProceduralScatterDirector>[4] - active scatter directors for bootstrap lookup without scene scans - owner: WorldProceduralScatterDirector
         private static readonly RegistryBucket<WorldProceduralScatterDirector> _registeredScatterDirectors = new RegistryBucket<WorldProceduralScatterDirector>(MaxRegisteredScatterDirectors);
+
+        private static float RuntimeNowSeconds()
+        {
+            return Application.isPlaying ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
+        }
+
         /// <summary>
         /// True once the world-generation owner is registered in the global registry.
         /// </summary>
@@ -665,12 +671,13 @@ namespace Hecton8.World
             if (_scatterState == ScatterState.Sampling && _isSamplingJobRunning)
                 return;
 
-            if (Time.unscaledTime < _lifecycleRuntimeState.NextTickDrivenScatterAttemptTime)
+            float now = RuntimeNowSeconds();
+            if (now < _lifecycleRuntimeState.NextTickDrivenScatterAttemptTime)
                 return;
 
             using (_scatterTickProfilerMarker.Auto())
             {
-                _lifecycleRuntimeState.NextTickDrivenScatterAttemptTime = Time.unscaledTime + 0.25f;
+                _lifecycleRuntimeState.NextTickDrivenScatterAttemptTime = now + 0.25f;
                 RefreshRuntimeStreamingSettings();
 
                 if (ShouldSkipScatterRefresh())
@@ -740,7 +747,7 @@ namespace Hecton8.World
                     _lifecycleRuntimeState.LoggedRuntimeStartState = 1;
 #endif
                 _startupRuntimeState.StabilizationPending = 1;
-                _startupRuntimeState.StartTime = Time.unscaledTime;
+                _startupRuntimeState.StartTime = RuntimeNowSeconds();
                 InvalidateScatterRefreshSample("startup");
                 return;
             }
@@ -942,7 +949,7 @@ namespace Hecton8.World
             if (Application.isPlaying && _lifecycleRuntimeState.LoggedFirstSlowTick == 0 && ShouldLogScatterLifecycleDiagnostics())
             {
                 _lifecycleRuntimeState.LoggedFirstSlowTick = 1;
-                _nextScatterLifecycleLogTime = Time.unscaledTime + 5f;
+                _nextScatterLifecycleLogTime = RuntimeNowSeconds() + 5f;
                 LogFirstSlowTick(this);
             }
 #endif
@@ -951,7 +958,7 @@ namespace Hecton8.World
                 if (ShouldDeferUntilBootstrapReady())
                     return;
 
-                TickMigratorySargassumLane(Time.unscaledTime);
+                TickMigratorySargassumLane(RuntimeNowSeconds());
 
                 if (_scatterState == ScatterState.Sampling && _isSamplingJobRunning)
                     return;
@@ -1071,7 +1078,7 @@ namespace Hecton8.World
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.LogError("[WorldScatter] RebuildScatterPreview fell through dispatcher. This path is invalid.", this);
+            Hecton8.Core.H8Debug.LogError("[WorldScatter] RebuildScatterPreview fell through dispatcher. This path is invalid.", this);
 #endif
             ResetDiagnostics();
         }
@@ -1189,7 +1196,7 @@ namespace Hecton8.World
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (ShouldLogScatterLifecycleDiagnostics())
             {
-                _nextScatterLifecycleLogTime = Time.unscaledTime + 5f;
+                _nextScatterLifecycleLogTime = RuntimeNowSeconds() + 5f;
                 Hecton8.Core.H8Debug.Log(
                         $"[WorldScatterRuntime] bootstrap-ready registered={_lifecycleRuntimeState.RegisteredToTickManager != 0} dilation={SimulationSignalRoute.TimeDilationScalar:0.###}",
                     this);
@@ -1230,7 +1237,7 @@ namespace Hecton8.World
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!string.IsNullOrWhiteSpace(reason))
             {
-                UnityEngine.Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     $"[WorldScatter] Scene bootstrap failed and scatter fallback was enabled. Reason: {reason}",
                     this);
             }
@@ -1241,7 +1248,7 @@ namespace Hecton8.World
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (ShouldLogScatterLifecycleDiagnostics())
             {
-                _nextScatterLifecycleLogTime = Time.unscaledTime + 5f;
+                _nextScatterLifecycleLogTime = RuntimeNowSeconds() + 5f;
                 Hecton8.Core.H8Debug.Log(
                         $"[WorldScatterRuntime] bootstrap-failed registered={_lifecycleRuntimeState.RegisteredToTickManager != 0} dilation={SimulationSignalRoute.TimeDilationScalar:0.###}",
                     this);
@@ -1298,7 +1305,7 @@ namespace Hecton8.World
 
             if (_startupRuntimeState.StabilizationPending != 0 &&
                 Application.isPlaying &&
-                Time.unscaledTime - _startupRuntimeState.StartTime >= StartupScatterStabilizationDelaySeconds)
+                RuntimeNowSeconds() - _startupRuntimeState.StartTime >= StartupScatterStabilizationDelaySeconds)
             {
                 _startupRuntimeState.StabilizationPending = 0;
                 _debugLastScatterRefreshReason = "startup-settle";
@@ -1308,7 +1315,7 @@ namespace Hecton8.World
             if (enableForcedScatterRefresh && scatterForcedRefreshInterval > 0f)
             {
                 float forcedInterval = math.max(0.5f, scatterForcedRefreshInterval);
-                if (Application.isPlaying && Time.unscaledTime - _scatterRefreshSampleState.Time >= forcedInterval)
+                if (Application.isPlaying && RuntimeNowSeconds() - _scatterRefreshSampleState.Time >= forcedInterval)
                 {
                     _debugLastScatterRefreshReason = "forced-interval";
                     return false;
@@ -1487,7 +1494,7 @@ namespace Hecton8.World
                 return;
 
             _candidateMapCapacityExceededWarningLogged = true;
-            UnityEngine.Debug.LogWarning(CandidateMapCapacityExceededWarning);
+            Hecton8.Core.H8Debug.LogWarning(CandidateMapCapacityExceededWarning);
 #endif
         }
 
@@ -1500,7 +1507,7 @@ namespace Hecton8.World
                 return;
 
             _candidateMapNearCapacityWarningLogged = true;
-            UnityEngine.Debug.LogWarning(CandidateMapNearCapacityWarning);
+            Hecton8.Core.H8Debug.LogWarning(CandidateMapNearCapacityWarning);
 #endif
         }
 
@@ -1545,7 +1552,7 @@ namespace Hecton8.World
 
             _scatterRefreshSampleState.HasSample = 1;
             _scatterRefreshSampleState.AbsolutePosition = observerAbsolutePosition;
-            _scatterRefreshSampleState.Time = Application.isPlaying ? Time.unscaledTime : 0f;
+            _scatterRefreshSampleState.Time = RuntimeNowSeconds();
             _scatterRefreshSampleState.RadiusCells = ResolveActiveScatterSamplingRadiusCells(_runtimeStreamingState.RadiusCells);
             if (TryGetScatterCenterCell(out int centerCellX, out int centerCellZ))
             {
@@ -1685,7 +1692,7 @@ namespace Hecton8.World
                 return;
 
             _placementPoolExhaustedWarningLogged = true;
-            UnityEngine.Debug.LogWarning(PlacementPoolExhaustedWarning);
+            Hecton8.Core.H8Debug.LogWarning(PlacementPoolExhaustedWarning);
 #endif
         }
 
@@ -1985,7 +1992,7 @@ namespace Hecton8.World
             if (!Application.isPlaying || !enableScatterDetailedDiagnostics)
                 return false;
 
-            float now = Time.unscaledTime;
+            float now = RuntimeNowSeconds();
             return now >= _nextScatterLifecycleLogTime;
 #else
             return false;
@@ -3120,7 +3127,7 @@ namespace Hecton8.World
             {
                 _loggedMissingPrefabRegistry = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                UnityEngine.Debug.LogError(
+                Hecton8.Core.H8Debug.LogError(
                     "[WorldScatter] PrefabRegistry not initialized. Scatter create/warmup path aborted.",
                     this);
 #endif
@@ -3565,7 +3572,7 @@ namespace Hecton8.World
 
         private bool TryRegisterDesiredPlacement(ScatterPlacement placement)
         {
-            float now = Application.isPlaying ? Time.unscaledTime : 0f;
+            float now = RuntimeNowSeconds();
             return TryRegisterDesiredPlacement(placement, now);
         }
 
@@ -11398,7 +11405,7 @@ namespace Hecton8.World
 
         private void CachePlayerContextCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedObjectPool = GlobalRegistry.ObjectPoolService;
         }
 

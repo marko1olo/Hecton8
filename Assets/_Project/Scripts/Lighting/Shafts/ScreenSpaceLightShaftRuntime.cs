@@ -192,7 +192,7 @@ namespace Hecton8.Lighting.Shafts
             RefreshQualityPolicy();
             TryRegisterHotSwapListener();
             CacheDataVaultCold(GlobalRegistry.DataVault);
-            CachePlayerCold(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+            CachePlayerCold(GlobalRegistry.Player);
             SignalCorridorRuntime.EnsureInitialized();
             EnsureBuffers();
             ResolveRenderCamera();
@@ -470,7 +470,7 @@ namespace Hecton8.Lighting.Shafts
 
         private void ResolveRenderCamera()
         {
-            float now = Time.unscaledTime;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (_renderCamera != null || now < _nextCameraResolveTime)
                 return;
 
@@ -481,7 +481,7 @@ namespace Hecton8.Lighting.Shafts
 
         private void UpdateLoadShedState()
         {
-            float dt = SanitizeDelta(Time.unscaledDeltaTime);
+            float dt = SanitizeDelta(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
             if (dt > math.rcp(FpsDisableThreshold))
             {
                 _loadShedTimer = LoadShedSeconds;
@@ -521,7 +521,7 @@ namespace Hecton8.Lighting.Shafts
             }
             else
             {
-                float dt = SanitizeDelta(Time.unscaledDeltaTime);
+                float dt = SanitizeDelta(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
                 _brownout01 = math.max(0f, _brownout01 - brownoutRecoveryPerSecond * dt);
             }
         }
@@ -687,7 +687,7 @@ namespace Hecton8.Lighting.Shafts
 
         private void EmitVisualFlareSignals(int activeCount, NativeArray<LightShaftContribution> topContributions)
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             for (int i = 0; i < activeCount; i++)
             {
                 LightShaftContribution contribution = topContributions[i];
@@ -786,7 +786,7 @@ namespace Hecton8.Lighting.Shafts
             if (_brownout01 <= 0.0001f)
                 return 1f;
 
-            float phase = math.frac(Time.frameCount * 0.381966f);
+            float phase = math.frac(SystemDispatcher.CurrentFrameIndex * 0.381966f);
             float triangle = 1f - math.abs(phase * 2f - 1f);
             return math.saturate(1f - _brownout01 * (0.35f + triangle * 0.45f));
         }

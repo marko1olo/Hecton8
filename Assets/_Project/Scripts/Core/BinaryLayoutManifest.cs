@@ -366,16 +366,19 @@ namespace Hecton8.Core
             string voxelHeader = save + "VoxelDeltaHeaderDTO";
             AssertSize(voxelHeader, 32);
             AssertOffset(voxelHeader, "SectorHash", 0);
-            AssertOffset(voxelHeader, "CompressedSize", 8);
-            AssertOffset(voxelHeader, "UncompressedSize", 12);
-            AssertOffset(voxelHeader, "XXHash3Checksum", 16);
-            AssertOffset(voxelHeader, "_pad0", 24);
-            AssertOffset(voxelHeader, "_pad1", 28);
+            AssertOffset(voxelHeader, "XXHash3Checksum", 8);
+            AssertOffset(voxelHeader, "CompressedSize", 16);
+            AssertOffset(voxelHeader, "UncompressedSize", 20);
+            AssertOffset(voxelHeader, "Flags", 24);
+            AssertOffset(voxelHeader, "LayoutMarker", 28);
 
             string voxelCounter = save + "VoxelDeltaBlockCounter64";
             AssertSize(voxelCounter, 64);
-            AssertOffset(voxelCounter, "RunCount", 0);
-            AssertOffset(voxelCounter, "SectorHash", 16);
+            AssertOffset(voxelCounter, "SectorHash", 0);
+            AssertOffset(voxelCounter, "RunCount", 8);
+            AssertOffset(voxelCounter, "ModifiedCellCount", 12);
+            AssertOffset(voxelCounter, "EncodedBytes", 16);
+            AssertOffset(voxelCounter, "Flags", 20);
 
             string voxelTelemetry = save + "VoxelDeltaCompressionTelemetryEntry";
             AssertSize(voxelTelemetry, 64);
@@ -386,9 +389,12 @@ namespace Hecton8.Core
             string voxelDumpHeader = save + "VoxelDeltaTelemetryDumpHeaderDTO";
             AssertSize(voxelDumpHeader, 64);
             AssertOffset(voxelDumpHeader, "Magic", 0);
-            AssertOffset(voxelDumpHeader, "EntryStride", 12);
-            AssertOffset(voxelDumpHeader, "FirstSectorHash", 32);
-            AssertOffset(voxelDumpHeader, "LastFrame", 52);
+            AssertOffset(voxelDumpHeader, "FirstSectorHash", 8);
+            AssertOffset(voxelDumpHeader, "LastSectorHash", 16);
+            AssertOffset(voxelDumpHeader, "Version", 24);
+            AssertOffset(voxelDumpHeader, "EntryStride", 32);
+            AssertOffset(voxelDumpHeader, "ReasonFlags", 40);
+            AssertOffset(voxelDumpHeader, "LastFrame", 56);
 
             string voxelTuning = save + "VoxelDeltaCompressionTuningDTO";
             AssertSize(voxelTuning, 64);
@@ -404,6 +410,7 @@ namespace Hecton8.Core
             AssertOffset(voxelStats, "SectorHash", 0);
             AssertOffset(voxelStats, "ModifiedRatio01", 36);
             AssertOffset(voxelStats, "_pad1", 56);
+            AssertOffset(voxelStats, "_pad2", 60);
 
             string voxelDearLie = save + "VoxelDeltaDearLieStateDTO";
             AssertSize(voxelDearLie, 32);
@@ -413,7 +420,9 @@ namespace Hecton8.Core
             string voxelMock = save + "VoxelDeltaMockSchemaDTO";
             AssertSize(voxelMock, 64);
             AssertOffset(voxelMock, "Magic", 0);
-            AssertOffset(voxelMock, "Seed", 40);
+            AssertOffset(voxelMock, "SchemaHash", 8);
+            AssertOffset(voxelMock, "Seed", 16);
+            AssertOffset(voxelMock, "Version", 24);
 
             string entityHeader = save + "EntityDeltaHeaderDTO";
             AssertSize(entityHeader, 32);
@@ -831,7 +840,7 @@ namespace Hecton8.Core
             AssertOffset<ComplianceViolationSignal>(nameof(ComplianceViolationSignal.Frame), 12);
             AssertOffset<ComplianceViolationSignal>(nameof(ComplianceViolationSignal.Severity), 16);
 
-            string physicsImpact = PhysicsLayoutNamespace + "PhysicsImpactSignal";
+            string physicsImpact = "Hecton8.Core.Contracts.PhysicsImpactSignal";
             AssertSize(physicsImpact, 128);
             AssertOffset(physicsImpact, "PrimaryBodyId", 0);
             AssertOffset(physicsImpact, "SecondaryBodyId", 8);

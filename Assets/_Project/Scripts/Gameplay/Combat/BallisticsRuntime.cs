@@ -1282,7 +1282,7 @@ namespace Hecton8.Gameplay
             catch (Exception ex)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[BallisticsRuntime] Telemetry dump failed: " + ex.GetType().Name);
+                Hecton8.Core.H8Debug.LogWarning("[BallisticsRuntime] Telemetry dump failed: " + ex.GetType().Name);
 #endif
             }
         }
@@ -2191,7 +2191,7 @@ namespace Hecton8.Gameplay
     public unsafe struct EmitBallisticDamageSignalsJob : IJob
     {
         [NoAlias] public NativeArray<BallisticHitResultDTO> HitResults;
-        public NativeQueue<CombatDamageSignal>.ParallelWriter DamageWriter;
+        public global::Hecton8.Core.MpscSignalRingBuffer<CombatDamageSignal>.ParallelWriter DamageWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> DamageWriterBudget;
         public int HitCount;
         public int SignalEmitBudget;

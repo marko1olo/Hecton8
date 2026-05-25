@@ -1,9 +1,12 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.Audio
@@ -13,6 +16,16 @@ namespace Hecton8.Audio
         internal const int AudioBufferCapacity = 65536;
         private const int MinimumCapacityFrames = 256;
         private const int MaximumCapacityFrames = 1 << 30;
+        private const int TelemetryCapacity = 300;
+        private const uint TelemetryMagic = 0x41313331u;
+        private const int TelemetryHeaderBytes = 16;
+        private const int TelemetryEntryBytes = 64;
+        private const int TelemetryDumpBytes = TelemetryHeaderBytes + TelemetryCapacity * TelemetryEntryBytes;
+        private const int TelemetryStatusWrite = 1 << 16;
+        private const int TelemetryStatusOverflow = 1 << 17;
+        private const int TelemetryStatusNonFinite = 1 << 18;
+        private const int TelemetryStatusBridgeFailure = 1 << 19;
+        private const int TelemetryStatusSharedStateInvalid = 1 << 20;
         private const SystemID VaultOwner = SystemID.AudioFrameRing;
         private const int AudioBufferCapacityPowerOfTwoGuard =
             1 / ((AudioBufferCapacity > 1 &&
@@ -22,16 +35,57 @@ namespace Hecton8.Audio
         {
             public NativeArray<float> Frames;
             public NativeArray<int> SharedState;
+            public NativeArray<AudioBridgeTelemetryEntry> Telemetry;
+            public NativeArray<byte> DumpBytes;
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = 64)]
+        internal struct AudioBridgeTelemetryEntry
+        {
+            [FieldOffset(0)] public long ProducedSampleCount;
+            [FieldOffset(8)] public long DspExecutionTicks;
+            [FieldOffset(16)] public int WriteIndex;
+            [FieldOffset(20)] public int ReadIndex;
+            [FieldOffset(24)] public int DroppedSampleCount;
+            [FieldOffset(28)] public int BufferedFrames;
+            [FieldOffset(32)] public int WritableFrames;
+            [FieldOffset(36)] public int StatusBits;
+            [FieldOffset(40)] public uint Sequence;
+            [FieldOffset(44)] public int CapacityFrames;
+            [FieldOffset(48)] public int SourceChannels;
+            [FieldOffset(52)] public int NonFiniteCount;
+            [FieldOffset(56)] public uint StateHash;
+#pragma warning disable 0169
+            [FieldOffset(60)] private uint _pad0;
+#pragma warning restore 0169
+        }
+
+        [StructLayout(LayoutKind.Explicit, Size = TelemetryHeaderBytes)]
+        private struct AudioBridgeTelemetryDumpHeader
+        {
+            [FieldOffset(0)] public uint Magic;
+            [FieldOffset(4)] public uint EntryCount;
+            [FieldOffset(8)] public uint StructSizeBytes;
+            [FieldOffset(12)] public uint Reason;
         }
 
         private IDataVault _dataVault;
-        private VaultGenerationHandle<float> _framesHandle;
-        private VaultGenerationHandle<int> _sharedStateHandle;
+        private VaultGenerationHandle<AudioBridgeTelemetryEntry> _telemetryHandle;
+        private void* _framesPtr;
+        private void* _sharedStatePtr;
+        private void* _telemetryPtr;
+        private void* _telemetryDumpBytesPtr;
+        private int _frameSampleCapacity;
         private int _capacityFrames;
         private int _capacityMask;
         private int _sourceChannels = 1;
         private int _overflowDropCount;
         private int _lastTelemetryOverflowDropCount;
+        private int _telemetryWriteIndex;
+        private int _telemetrySequence;
+        private int _telemetryDumpQueued;
+        private long _producedSampleCount;
+        private long _lastDspExecutionTicks;
 
         public bool IsCreated => TryResolveRingViews(out _);
         public int CapacityFrames => _capacityFrames;
@@ -48,8 +102,10 @@ namespace Hecton8.Audio
                 if (!HasValidPowerOfTwoState())
                     return 0;
 
-                int writeIndex = ReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
-                int readIndex = ReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.ReadIndexSlot);
+                if (!TryReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.WriteIndexSlot, out int writeIndex) ||
+                    !TryReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.ReadIndexSlot, out int readIndex))
+                    return 0;
+
                 return (writeIndex - readIndex) & _capacityMask;
             }
         }
@@ -61,8 +117,10 @@ namespace Hecton8.Audio
                 if (!TryResolveRingViews(out RingVaultViews views) || !HasValidPowerOfTwoState())
                     return 0;
 
-                int writeIndex = ReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
-                int readIndex = ReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.ReadIndexSlot);
+                if (!TryReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.WriteIndexSlot, out int writeIndex) ||
+                    !TryReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.ReadIndexSlot, out int readIndex))
+                    return 0;
+
                 int bufferedFrames = (writeIndex - readIndex) & _capacityMask;
                 return math.max(0, _capacityFrames - bufferedFrames - 1);
             }
@@ -84,8 +142,14 @@ namespace Hecton8.Audio
                 return;
             }
 
-            int writeIndex = ReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
-            int readIndex = ReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.ReadIndexSlot);
+            if (!TryReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.WriteIndexSlot, out int writeIndex) ||
+                !TryReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.ReadIndexSlot, out int readIndex))
+            {
+                bufferedFrames = 0;
+                writableFrames = 0;
+                return;
+            }
+
             bufferedFrames = (writeIndex - readIndex) & _capacityMask;
             writableFrames = _capacityFrames - bufferedFrames - 1;
         }
@@ -101,21 +165,29 @@ namespace Hecton8.Audio
             }
 
             Dispose();
+            if (HasNativeBridgeBuffers())
+                return;
+
             IDataVault vault = GlobalRegistry.DataVault;
             if (vault == null)
                 return;
 
+            if (resolvedCapacity > int.MaxValue / resolvedChannels)
+                return;
+
+            int frameSampleCapacity = resolvedCapacity * resolvedChannels;
             _dataVault = vault;
-            _framesHandle = vault.EnsureGenerationHandle<float>(
-                BufferID.AudioFrameRingFrames,
-                resolvedCapacity * resolvedChannels,
+            _telemetryHandle = vault.EnsureGenerationHandle<AudioBridgeTelemetryEntry>(
+                BufferID.AudioFrameRingTelemetry,
+                TelemetryCapacity,
                 VaultOwner,
                 NativeArrayOptions.ClearMemory);
-            _sharedStateHandle = vault.EnsureGenerationHandle<int>(
-                BufferID.AudioFrameRingSharedState,
-                NativeAudioKernelRingBufferDescriptor.SharedStateSlotCount,
-                VaultOwner,
-                NativeArrayOptions.ClearMemory);
+            if (!TryAllocateNativeBridgeBuffers(frameSampleCapacity))
+            {
+                Dispose();
+                return;
+            }
+
             if (!TryResolveRingViews(out _))
             {
                 Dispose();
@@ -124,10 +196,20 @@ namespace Hecton8.Audio
 
             _capacityFrames = resolvedCapacity;
             _capacityMask = resolvedCapacity - 1;
-            AssertPowerOfTwoCapacity(_capacityFrames, _capacityMask);
+            if (!HasPowerOfTwoCapacity(_capacityFrames, _capacityMask))
+            {
+                Dispose();
+                return;
+            }
+
             _sourceChannels = resolvedChannels;
             Volatile.Write(ref _overflowDropCount, 0);
             Volatile.Write(ref _lastTelemetryOverflowDropCount, 0);
+            Volatile.Write(ref _telemetryWriteIndex, 0);
+            Volatile.Write(ref _telemetrySequence, 0);
+            Volatile.Write(ref _telemetryDumpQueued, 0);
+            Interlocked.Exchange(ref _producedSampleCount, 0L);
+            Interlocked.Exchange(ref _lastDspExecutionTicks, 0L);
             Clear();
         }
 
@@ -136,7 +218,9 @@ namespace Hecton8.Audio
             if (!TryResolveRingViews(out RingVaultViews views))
                 return;
 
-            AssertPowerOfTwoCapacity(_capacityFrames, _capacityMask);
+            if (!HasPowerOfTwoCapacity(_capacityFrames, _capacityMask))
+                return;
+
             WriteSharedMetadata(ref views);
             WriteSharedIndex(ref views, NativeAudioKernelRingBufferDescriptor.ReadIndexSlot, 0);
             WriteSharedIndex(ref views, NativeAudioKernelRingBufferDescriptor.WriteIndexSlot, 0);
@@ -171,8 +255,14 @@ namespace Hecton8.Audio
             if (!frames.IsCreated || frames.Length < requiredSamples)
                 return false;
 
-            int readIndex = ReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.ReadIndexSlot);
-            int writeIndex = ReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
+            if (!TryReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.ReadIndexSlot, out int readIndex) ||
+                !TryReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.WriteIndexSlot, out int writeIndex))
+            {
+                RecordTelemetry(ref views, 0, 0, TelemetryStatusSharedStateInvalid, 0);
+                RequestTelemetryDump(ref views, (uint)TelemetryStatusSharedStateInvalid);
+                return false;
+            }
+
             int availableFrames = (writeIndex - readIndex) & _capacityMask;
             int freeFrames = _capacityFrames - availableFrames - 1;
             if (safeFrameCount > freeFrames)
@@ -190,30 +280,104 @@ namespace Hecton8.Audio
                         freeFrames);
                 }
 
+                RecordTelemetry(ref views, readIndex, writeIndex, TelemetryStatusOverflow, 0);
                 return false;
             }
 
+            NativeArray<float> sourceCopy = source;
+            float* sourcePtr = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(sourceCopy);
+            float* framesPtr = (float*)NativeArrayUnsafeUtility.GetUnsafePtr(frames);
+            int nonFiniteCount = 0;
             if (safeChannels == 2)
             {
                 for (int i = 0; i < safeFrameCount; i++)
                 {
                     int frameWriteIndex = ((writeIndex + i) & _capacityMask) << 1;
                     int frameSourceIndex = i << 1;
-                    frames[frameWriteIndex] = source[frameSourceIndex];
-                    frames[frameWriteIndex + 1] = source[frameSourceIndex + 1];
+                    float left = sourcePtr[frameSourceIndex];
+                    float right = sourcePtr[frameSourceIndex + 1];
+                    if (!math.isfinite(left))
+                    {
+                        left = 0f;
+                        nonFiniteCount++;
+                    }
+
+                    if (!math.isfinite(right))
+                    {
+                        right = 0f;
+                        nonFiniteCount++;
+                    }
+
+                    framesPtr[frameWriteIndex] = left;
+                    framesPtr[frameWriteIndex + 1] = right;
                 }
             }
             else
             {
                 for (int i = 0; i < safeFrameCount; i++)
-                    frames[(writeIndex + i) & _capacityMask] = source[i];
+                {
+                    float sample = sourcePtr[i];
+                    if (!math.isfinite(sample))
+                    {
+                        sample = 0f;
+                        nonFiniteCount++;
+                    }
+
+                    framesPtr[(writeIndex + i) & _capacityMask] = sample;
+                }
             }
 
+            int nextWriteIndex = (writeIndex + safeFrameCount) & _capacityMask;
             WriteSharedIndex(
                 ref views,
                 NativeAudioKernelRingBufferDescriptor.WriteIndexSlot,
-                (writeIndex + safeFrameCount) & _capacityMask);
+                nextWriteIndex);
+            Interlocked.Add(ref _producedSampleCount, (long)safeFrameCount * safeChannels);
+            int statusBits = TelemetryStatusWrite;
+            if (nonFiniteCount > 0)
+                statusBits |= TelemetryStatusNonFinite;
+            RecordTelemetry(ref views, readIndex, nextWriteIndex, statusBits, nonFiniteCount);
+            if (nonFiniteCount > 0)
+                RequestTelemetryDump(ref views, (uint)TelemetryStatusNonFinite);
             return true;
+        }
+
+        public void RecordDspExecutionTicks(long ticks)
+        {
+            if (ticks < 0L)
+                ticks = 0L;
+
+            Interlocked.Exchange(ref _lastDspExecutionTicks, ticks);
+            if (!TryResolveRingViews(out RingVaultViews views))
+                return;
+
+            if (!TryReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.ReadIndexSlot, out int readIndex) ||
+                !TryReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.WriteIndexSlot, out int writeIndex))
+            {
+                RecordTelemetry(ref views, 0, 0, TelemetryStatusSharedStateInvalid, 0);
+                RequestTelemetryDump(ref views, (uint)TelemetryStatusSharedStateInvalid);
+                return;
+            }
+
+            RecordTelemetry(ref views, readIndex, writeIndex, 0, 0);
+        }
+
+        public void RecordBridgeFailure(NativeAudioKernelBridgeStatus status)
+        {
+            if (!TryResolveRingViews(out RingVaultViews views))
+                return;
+
+            int statusBits = TelemetryStatusBridgeFailure | (int)status;
+            if (!TryReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.ReadIndexSlot, out int readIndex) ||
+                !TryReadSharedFrameIndex(ref views, NativeAudioKernelRingBufferDescriptor.WriteIndexSlot, out int writeIndex))
+            {
+                readIndex = 0;
+                writeIndex = 0;
+                statusBits |= TelemetryStatusSharedStateInvalid;
+            }
+
+            RecordTelemetry(ref views, readIndex, writeIndex, statusBits, 0);
+            RequestTelemetryDump(ref views, (uint)statusBits);
         }
 
         public NativeAudioKernelRingBufferDescriptor CreateNativeDescriptor()
@@ -252,39 +416,163 @@ namespace Hecton8.Audio
             }
 
             int* sharedStatePtr = (int*)NativeArrayUnsafeUtility.GetUnsafePtr(sharedState);
-            descriptor = new NativeAudioKernelRingBufferDescriptor
-            {
-                DescriptorMagic = NativeAudioKernelRingBufferDescriptor.DescriptorMagicValue,
-                Frames = (IntPtr)NativeArrayUnsafeUtility.GetUnsafePtr(frames),
-                SharedState = (IntPtr)sharedStatePtr,
-                ReadIndex = (IntPtr)(sharedStatePtr + NativeAudioKernelRingBufferDescriptor.ReadIndexSlot),
-                WriteIndex = (IntPtr)(sharedStatePtr + NativeAudioKernelRingBufferDescriptor.WriteIndexSlot),
-                CapacityFrames = _capacityFrames,
-                CapacityMask = _capacityMask,
-                SharedStateLengthInts = sharedState.Length
-            };
+            IntPtr sharedStateBase = (IntPtr)sharedStatePtr;
+            IntPtr readIndexPtr = (IntPtr)(sharedStatePtr + NativeAudioKernelRingBufferDescriptor.ReadIndexSlot);
+            IntPtr writeIndexPtr = (IntPtr)(sharedStatePtr + NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
+            descriptor = default;
+            descriptor.DescriptorMagic = NativeAudioKernelRingBufferDescriptor.DescriptorMagicValue;
+            descriptor.Frames = (IntPtr)NativeArrayUnsafeUtility.GetUnsafePtr(frames);
+            descriptor.SharedState = sharedStateBase;
+            descriptor.ReadIndex = readIndexPtr;
+            descriptor.WriteIndex = writeIndexPtr;
+            descriptor.CapacityFrames = _capacityFrames;
+            descriptor.CapacityMask = _capacityMask;
+            descriptor.SharedStateLengthInts = sharedState.Length;
+            descriptor.SourceChannels = _sourceChannels;
 
-            return HectonSensoryKernelNativeBridge.IsDescriptorValid(in descriptor, out status);
+            bool valid = HectonSensoryKernelNativeBridge.IsDescriptorValid(in descriptor, out status);
+            if (!valid)
+                RecordBridgeFailure(status);
+            return valid;
         }
 
         internal static int ResolvePowerOfTwoCapacity(int capacityFrames)
         {
             int resolvedCapacity = math.max(MinimumCapacityFrames, NextPowerOfTwo(capacityFrames));
-            AssertPowerOfTwoCapacity(resolvedCapacity, resolvedCapacity - 1);
             return resolvedCapacity;
         }
 
         public void Dispose()
         {
             IDataVault vault = _dataVault;
-            ReleaseVaultBuffer(vault, ref _framesHandle);
-            ReleaseVaultBuffer(vault, ref _sharedStateHandle);
+            if (HasNativeBridgeBuffers())
+            {
+                bool cleared = HectonSensoryKernelNativeBridge.TryClear(out NativeAudioKernelBridgeStatus clearStatus);
+                if (!cleared)
+                {
+                    RecordBridgeFailure(clearStatus);
+                    if (H8Memory.IsInitialized &&
+                        (clearStatus & NativeAudioKernelBridgeStatus.PluginUnavailable) == 0)
+                    {
+                        return;
+                    }
+                }
+            }
+
+            if (TryResolveRingViews(out RingVaultViews views))
+                TryMirrorTelemetryToDataVault(ref views);
+
+            ReleaseNativeBridgeBuffers();
+            ReleaseVaultBuffer(vault, ref _telemetryHandle);
 
             _dataVault = null;
             _capacityFrames = 0;
             _capacityMask = 0;
             _sourceChannels = 1;
+            _frameSampleCapacity = 0;
             Volatile.Write(ref _overflowDropCount, 0);
+            Volatile.Write(ref _telemetryDumpQueued, 0);
+        }
+
+        private bool HasNativeBridgeBuffers()
+        {
+            return _framesPtr != null ||
+                   _sharedStatePtr != null ||
+                   _telemetryPtr != null ||
+                   _telemetryDumpBytesPtr != null;
+        }
+
+        private bool TryAllocateNativeBridgeBuffers(int frameSampleCapacity)
+        {
+            if (frameSampleCapacity <= 0)
+                return false;
+
+            _framesPtr = H8Memory.AllocateRaw(
+                (long)frameSampleCapacity * sizeof(float),
+                NativeAudioKernelRingBufferDescriptor.RequiredAlignmentBytes,
+                VaultOwner,
+                Allocator.Persistent,
+                clearMemory: true);
+            if (_framesPtr == null)
+                return false;
+
+            _sharedStatePtr = H8Memory.AllocateRaw(
+                (long)NativeAudioKernelRingBufferDescriptor.SharedStateSlotCount * sizeof(int),
+                NativeAudioKernelRingBufferDescriptor.RequiredAlignmentBytes,
+                VaultOwner,
+                Allocator.Persistent,
+                clearMemory: true);
+            if (_sharedStatePtr == null)
+            {
+                ReleaseNativeBridgeBuffers();
+                return false;
+            }
+
+            _telemetryPtr = H8Memory.AllocateRaw(
+                (long)TelemetryCapacity * TelemetryEntryBytes,
+                NativeAudioKernelRingBufferDescriptor.RequiredAlignmentBytes,
+                VaultOwner,
+                Allocator.Persistent,
+                clearMemory: true);
+            if (_telemetryPtr == null)
+            {
+                ReleaseNativeBridgeBuffers();
+                return false;
+            }
+
+            _telemetryDumpBytesPtr = H8Memory.AllocateRaw(
+                TelemetryDumpBytes,
+                NativeAudioKernelRingBufferDescriptor.RequiredAlignmentBytes,
+                VaultOwner,
+                Allocator.Persistent,
+                clearMemory: true);
+            if (_telemetryDumpBytesPtr == null)
+            {
+                ReleaseNativeBridgeBuffers();
+                return false;
+            }
+
+            _frameSampleCapacity = frameSampleCapacity;
+            return true;
+        }
+
+        private void ReleaseNativeBridgeBuffers()
+        {
+            if (!H8Memory.IsInitialized)
+            {
+                _telemetryDumpBytesPtr = null;
+                _telemetryPtr = null;
+                _sharedStatePtr = null;
+                _framesPtr = null;
+                _frameSampleCapacity = 0;
+                return;
+            }
+
+            if (_telemetryDumpBytesPtr != null)
+            {
+                H8Memory.FreeRaw(_telemetryDumpBytesPtr, Allocator.Persistent, VaultOwner);
+                _telemetryDumpBytesPtr = null;
+            }
+
+            if (_telemetryPtr != null)
+            {
+                H8Memory.FreeRaw(_telemetryPtr, Allocator.Persistent, VaultOwner);
+                _telemetryPtr = null;
+            }
+
+            if (_sharedStatePtr != null)
+            {
+                H8Memory.FreeRaw(_sharedStatePtr, Allocator.Persistent, VaultOwner);
+                _sharedStatePtr = null;
+            }
+
+            if (_framesPtr != null)
+            {
+                H8Memory.FreeRaw(_framesPtr, Allocator.Persistent, VaultOwner);
+                _framesPtr = null;
+            }
+
+            _frameSampleCapacity = 0;
         }
 
         private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
@@ -299,14 +587,26 @@ namespace Hecton8.Audio
         private bool TryResolveRingViews(out RingVaultViews views)
         {
             views = default;
-            IDataVault vault = _dataVault;
-            if (vault == null)
+            if (!H8Memory.IsInitialized ||
+                _framesPtr == null ||
+                _sharedStatePtr == null ||
+                _telemetryPtr == null ||
+                _telemetryDumpBytesPtr == null ||
+                _frameSampleCapacity <= 0)
                 return false;
 
-            if (!vault.TryResolveHandle(in _framesHandle, out views.Frames) ||
-                !vault.TryResolveHandle(in _sharedStateHandle, out views.SharedState) ||
-                !views.Frames.IsCreated ||
-                !views.SharedState.IsCreated)
+            views.Frames = H8Memory.CreateNativeArrayView<float>(_framesPtr, _frameSampleCapacity);
+            views.SharedState = H8Memory.CreateNativeArrayView<int>(
+                _sharedStatePtr,
+                NativeAudioKernelRingBufferDescriptor.SharedStateSlotCount);
+            views.Telemetry = H8Memory.CreateNativeArrayView<AudioBridgeTelemetryEntry>(
+                _telemetryPtr,
+                TelemetryCapacity);
+            views.DumpBytes = H8Memory.CreateNativeArrayView<byte>(_telemetryDumpBytesPtr, TelemetryDumpBytes);
+            if (!views.Frames.IsCreated ||
+                !views.SharedState.IsCreated ||
+                !views.Telemetry.IsCreated ||
+                !views.DumpBytes.IsCreated)
             {
                 views = default;
                 return false;
@@ -325,9 +625,18 @@ namespace Hecton8.Audio
             return Volatile.Read(ref sharedStatePtr[slot]);
         }
 
-        private int ReadSharedFrameIndex(ref RingVaultViews views, int slot)
+        private bool TryReadSharedFrameIndex(ref RingVaultViews views, int slot, out int value)
         {
-            return ReadSharedIndex(ref views, slot) & _capacityMask;
+            value = 0;
+            if (!HasValidPowerOfTwoState())
+                return false;
+
+            int rawIndex = ReadSharedIndex(ref views, slot);
+            if ((uint)rawIndex >= (uint)_capacityFrames)
+                return false;
+
+            value = rawIndex;
+            return true;
         }
 
         private static void WriteSharedIndex(ref RingVaultViews views, int slot, int value)
@@ -340,9 +649,270 @@ namespace Hecton8.Audio
             Volatile.Write(ref sharedStatePtr[slot], value);
         }
 
+        private void RecordTelemetry(
+            ref RingVaultViews views,
+            int readIndex,
+            int writeIndex,
+            int statusBits,
+            int nonFiniteCount)
+        {
+            WriteTelemetryEntry(views.Telemetry, readIndex, writeIndex, statusBits, nonFiniteCount);
+        }
+
+        private void RecordTelemetry(
+            int readIndex,
+            int writeIndex,
+            int statusBits,
+            int nonFiniteCount)
+        {
+            if (!TryResolveRingViews(out RingVaultViews views))
+                return;
+
+            RecordTelemetry(ref views, readIndex, writeIndex, statusBits, nonFiniteCount);
+        }
+
+        private void WriteTelemetryEntry(
+            NativeArray<AudioBridgeTelemetryEntry> telemetry,
+            int readIndex,
+            int writeIndex,
+            int statusBits,
+            int nonFiniteCount)
+        {
+            if (!telemetry.IsCreated || telemetry.Length <= 0)
+                return;
+
+            int safeCapacity = math.min(TelemetryCapacity, telemetry.Length);
+            int index = Interlocked.Increment(ref _telemetryWriteIndex) - 1;
+            if (index < 0)
+            {
+                Volatile.Write(ref _telemetryWriteIndex, 1);
+                index = 0;
+            }
+
+            if (index >= safeCapacity)
+                index %= safeCapacity;
+
+            int bufferedFrames = HasValidPowerOfTwoState()
+                ? (writeIndex - readIndex) & _capacityMask
+                : 0;
+            int writableFrames = HasValidPowerOfTwoState()
+                ? math.max(0, _capacityFrames - bufferedFrames - 1)
+                : 0;
+            long producedSamples = Interlocked.Read(ref _producedSampleCount);
+            long dspTicks = Interlocked.Read(ref _lastDspExecutionTicks);
+            int droppedSamples = Volatile.Read(ref _overflowDropCount);
+            uint sequence = unchecked((uint)Interlocked.Increment(ref _telemetrySequence));
+            if (sequence == 0u)
+                sequence = unchecked((uint)Interlocked.Increment(ref _telemetrySequence));
+
+            AudioBridgeTelemetryEntry* telemetryPtr = (AudioBridgeTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafePtr(telemetry);
+            if (telemetryPtr == null)
+                return;
+
+            ref AudioBridgeTelemetryEntry target = ref telemetryPtr[index];
+            Volatile.Write(ref target.Sequence, 0u);
+            target.ProducedSampleCount = producedSamples;
+            target.DspExecutionTicks = dspTicks;
+            target.WriteIndex = writeIndex;
+            target.ReadIndex = readIndex;
+            target.DroppedSampleCount = droppedSamples;
+            target.BufferedFrames = bufferedFrames;
+            target.WritableFrames = writableFrames;
+            target.StatusBits = statusBits;
+            target.CapacityFrames = _capacityFrames;
+            target.SourceChannels = _sourceChannels;
+            target.NonFiniteCount = nonFiniteCount;
+            target.StateHash = HashTelemetryState(readIndex, writeIndex, bufferedFrames, writableFrames, droppedSamples, statusBits, sequence);
+            Volatile.Write(ref target.Sequence, sequence);
+        }
+
+        private void RequestTelemetryDump(ref RingVaultViews views, uint reason)
+        {
+            NativeArray<byte> dumpBytes = views.DumpBytes;
+            NativeArray<AudioBridgeTelemetryEntry> telemetry = views.Telemetry;
+            if (!dumpBytes.IsCreated ||
+                !telemetry.IsCreated ||
+                dumpBytes.Length < TelemetryDumpBytes)
+                return;
+
+            if (UnsafeUtility.SizeOf<AudioBridgeTelemetryEntry>() != TelemetryEntryBytes ||
+                UnsafeUtility.SizeOf<AudioBridgeTelemetryDumpHeader>() != TelemetryHeaderBytes)
+                return;
+
+            if (Interlocked.CompareExchange(ref _telemetryDumpQueued, 1, 0) != 0)
+                return;
+
+            byte* snapshotPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(dumpBytes);
+            UnsafeUtility.MemClear(snapshotPtr, TelemetryDumpBytes);
+            WriteTelemetryDumpHeader(snapshotPtr, 0, reason);
+
+            WriteTelemetrySnapshot(telemetry, snapshotPtr, reason);
+            TryMirrorTelemetryToDataVault(ref views);
+
+            if (!HectonSensoryKernelNativeBridge.TryDumpAudioBridgeTelemetry(snapshotPtr, TelemetryDumpBytes))
+                Volatile.Write(ref _telemetryDumpQueued, 0);
+        }
+
+        private void TryMirrorTelemetryToDataVault(ref RingVaultViews views)
+        {
+            NativeArray<AudioBridgeTelemetryEntry> source = views.Telemetry;
+            if (!source.IsCreated ||
+                !TryAcquireTelemetryWriteView(out NativeArray<AudioBridgeTelemetryEntry> destination, out IDataVault vault))
+            {
+                return;
+            }
+
+            try
+            {
+                int count = math.min(math.min(TelemetryCapacity, source.Length), destination.Length);
+                AudioBridgeTelemetryEntry* sourcePtr = (AudioBridgeTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                if (sourcePtr == null)
+                    return;
+
+                for (int i = 0; i < count; i++)
+                {
+                    if (TryReadTelemetryEntryStable(sourcePtr + i, out AudioBridgeTelemetryEntry entry))
+                        destination[i] = entry;
+                    else
+                        destination[i] = default;
+                }
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _telemetryHandle, VaultOwner);
+            }
+        }
+
+        private bool TryAcquireTelemetryWriteView(out NativeArray<AudioBridgeTelemetryEntry> telemetry, out IDataVault vault)
+        {
+            telemetry = default;
+            vault = _dataVault;
+            if (vault == null ||
+                _telemetryHandle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in _telemetryHandle, VaultOwner, out telemetry))
+            {
+                return false;
+            }
+
+            if (telemetry.IsCreated)
+                return true;
+
+            vault.ReleaseWriteLock(in _telemetryHandle, VaultOwner);
+            return false;
+        }
+
+        private void WriteTelemetrySnapshot(NativeArray<AudioBridgeTelemetryEntry> telemetry, byte* snapshotPtr, uint reason)
+        {
+            if (!telemetry.IsCreated || telemetry.Length <= 0 || snapshotPtr == null)
+                return;
+
+            int count = math.min(TelemetryCapacity, telemetry.Length);
+            WriteTelemetryDumpHeader(snapshotPtr, count, reason);
+            byte* entryPtr = snapshotPtr + TelemetryHeaderBytes;
+            AudioBridgeTelemetryEntry* telemetryPtr = (AudioBridgeTelemetryEntry*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
+            if (telemetryPtr == null)
+                return;
+
+            int currentWrite = Volatile.Read(ref _telemetryWriteIndex);
+            int start = currentWrite >= count ? currentWrite % count : 0;
+            for (int i = 0; i < count; i++)
+            {
+                int sourceIndex = start + i;
+                if (sourceIndex >= count)
+                    sourceIndex -= count;
+
+                if (!TryReadTelemetryEntryStable(telemetryPtr + sourceIndex, out AudioBridgeTelemetryEntry entry))
+                    entry = default;
+
+                UnsafeUtility.MemCpy(entryPtr + i * TelemetryEntryBytes, &entry, TelemetryEntryBytes);
+            }
+        }
+
+        private static bool TryReadTelemetryEntryStable(
+            AudioBridgeTelemetryEntry* source,
+            out AudioBridgeTelemetryEntry entry)
+        {
+            entry = default;
+            if (source == null)
+                return false;
+
+            uint sequenceBefore = Volatile.Read(ref source->Sequence);
+            if (sequenceBefore == 0u)
+                return false;
+
+            AudioBridgeTelemetryEntry copy = default;
+            UnsafeUtility.MemCpy(&copy, source, TelemetryEntryBytes);
+            uint sequenceAfter = Volatile.Read(ref source->Sequence);
+            if (sequenceBefore != sequenceAfter ||
+                sequenceAfter == 0u ||
+                copy.Sequence != sequenceAfter)
+            {
+                entry = default;
+                return false;
+            }
+
+            entry = copy;
+
+            uint expectedHash = HashTelemetryState(
+                entry.ReadIndex,
+                entry.WriteIndex,
+                entry.BufferedFrames,
+                entry.WritableFrames,
+                entry.DroppedSampleCount,
+                entry.StatusBits,
+                sequenceAfter);
+            if (entry.StateHash != expectedHash)
+            {
+                entry = default;
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void WriteTelemetryDumpHeader(byte* snapshotPtr, int count, uint reason)
+        {
+            if (snapshotPtr == null)
+                return;
+
+            AudioBridgeTelemetryDumpHeader header = default;
+            header.Magic = TelemetryMagic;
+            header.EntryCount = (uint)count;
+            header.StructSizeBytes = (uint)TelemetryEntryBytes;
+            header.Reason = reason;
+            UnsafeUtility.MemCpy(snapshotPtr, &header, TelemetryHeaderBytes);
+        }
+
+        private static uint HashTelemetryState(
+            int readIndex,
+            int writeIndex,
+            int bufferedFrames,
+            int writableFrames,
+            int droppedSamples,
+            int statusBits,
+            uint sequence)
+        {
+            uint hash = 2166136261u;
+            hash = HashStep(hash, (uint)readIndex);
+            hash = HashStep(hash, (uint)writeIndex);
+            hash = HashStep(hash, (uint)bufferedFrames);
+            hash = HashStep(hash, (uint)writableFrames);
+            hash = HashStep(hash, (uint)droppedSamples);
+            hash = HashStep(hash, (uint)statusBits);
+            return HashStep(hash, sequence);
+        }
+
+        private static uint HashStep(uint hash, uint value)
+        {
+            hash ^= value;
+            return hash * 16777619u;
+        }
+
         private void WriteSharedMetadata(ref RingVaultViews views)
         {
-            AssertPowerOfTwoCapacity(_capacityFrames, _capacityMask);
+            if (!HasPowerOfTwoCapacity(_capacityFrames, _capacityMask))
+                return;
+
             WriteSharedIndex(ref views, NativeAudioKernelRingBufferDescriptor.CapacityFramesSlot, _capacityFrames);
             WriteSharedIndex(ref views, NativeAudioKernelRingBufferDescriptor.CapacityMaskSlot, _capacityMask);
             WriteSharedIndex(
@@ -353,6 +923,7 @@ namespace Hecton8.Audio
                 ref views,
                 NativeAudioKernelRingBufferDescriptor.GuardValueSlotB,
                 NativeAudioKernelRingBufferDescriptor.SharedStateGuardValueB);
+            WriteSharedIndex(ref views, NativeAudioKernelRingBufferDescriptor.SourceChannelsSlot, _sourceChannels);
         }
 
         private bool HasValidPowerOfTwoState()
@@ -378,12 +949,6 @@ namespace Hecton8.Audio
             return power;
         }
 
-        private static void AssertPowerOfTwoCapacity(int capacityFrames, int capacityMask)
-        {
-            if (!HasPowerOfTwoCapacity(capacityFrames, capacityMask))
-                throw new InvalidOperationException("Audio frame SPSC ring capacity must stay power-of-two for mask wrapping.");
-        }
-
         private static bool HasPowerOfTwoCapacity(int capacityFrames, int capacityMask)
         {
             return capacityFrames > 1 &&
@@ -394,6 +959,27 @@ namespace Hecton8.Audio
         private static bool IsPowerOfTwo(int value)
         {
             return value > 0 && (value & (value - 1)) == 0;
+        }
+
+        [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        internal struct GenerateMockAudioSamplesJob : IJobParallelFor
+        {
+            [NoAlias] public NativeArray<float> Samples;
+            public uint Seed;
+            public float Gain;
+
+            public void Execute(int index)
+            {
+                if (!Samples.IsCreated || (uint)index >= (uint)Samples.Length)
+                    return;
+
+                uint hash = (uint)index ^ Seed;
+                hash = hash * 747796405u + 2891336453u;
+                uint word = ((hash >> (int)((hash >> 28) + 4u)) ^ hash) * 277803737u;
+                word = (word >> 22) ^ word;
+                float sample = ((word & 0x00FFFFFFu) * (1f / 8388607.5f)) - 1f;
+                Samples[index] = sample * math.saturate(Gain);
+            }
         }
     }
 }

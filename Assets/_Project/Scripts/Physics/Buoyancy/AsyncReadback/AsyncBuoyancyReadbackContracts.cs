@@ -13,7 +13,9 @@ namespace Hecton8.Physics
         public const int MockLatencyFrames = 3;
         public const int MaxFreshAgeFrames = 5;
         public const int VehicleProfileCapacity = 64;
+#if UNITY_EDITOR
         public const int CsvScratchBytes = 65536;
+#endif
         public const int WaveCapacity = 2;
         public const int ReadbackRequestBytes = 16;
         public const int ReadbackResolvedHeightBytes = 32;
@@ -22,8 +24,9 @@ namespace Hecton8.Physics
         public const int ReadbackTelemetryBytes = 64;
         public const int VehicleSamplingProfileBytes = 32;
         public const int WaveParametersBytes = 64;
-        public const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_264.bin";
+#if UNITY_EDITOR
         public const string CsvRelativePath = "Data/Physics/vehicle_sampling_profiles.csv";
+#endif
 
         public const uint FlagActive = 1u << 0;
         public const uint FlagGpuPath = 1u << 1;
@@ -49,7 +52,9 @@ namespace Hecton8.Physics
         public const BufferID MockRing = (BufferID)71827;
         public const BufferID FallbackWaves = (BufferID)71828;
         public const BufferID VehicleSamplingProfiles = (BufferID)71829;
+#if UNITY_EDITOR
         public const BufferID CsvScratch = (BufferID)71830;
+#endif
         public const BufferID Counter = (BufferID)71831;
     }
 

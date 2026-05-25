@@ -16,18 +16,18 @@ namespace Hecton8.Core
 {
     public static partial class GlobalSignals
     {
-        private static NativeQueue<TSignal>.ParallelWriter OpenSignalWriterForProducerPhase<TSignal>()
+        private static global::Hecton8.Core.MpscSignalRingBuffer<TSignal>.ParallelWriter OpenSignalWriterForProducerPhase<TSignal>()
             where TSignal : unmanaged, ISignal
         {
             return SignalBus<TSignal>.OpenParallelWriter();
         }
 
-        // Compatibility writer properties below preserve existing sibling-domain ABI.
-        // Maintained Core producer code uses thread-local scratch or OpenSignalWriterForProducerPhase<TSignal>() only as a legacy bridge.
+        // Compatibility writer properties below preserve source-level bridge names while returning bounded first-party MPSC writers.
+        // Maintained Core producer code uses SignalBus<T>.OpenParallelWriter() or owner-local scratch.
 
-        /// <summary>Damage routing legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<CombatDamageSignal>.ParallelWriter DamageSignalWriter
+        /// <summary>Damage routing bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<CombatDamageSignal>.ParallelWriter DamageSignalWriter
         {
             get
             {
@@ -35,9 +35,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Physics impact legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<ImpactSignal>.ParallelWriter ImpactSignalWriter
+        /// <summary>Physics impact bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<ImpactSignal>.ParallelWriter ImpactSignalWriter
         {
             get
             {
@@ -45,9 +45,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>AUP pre-shift legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<AupPreShiftSignal>.ParallelWriter AupPreShiftSignalWriter
+        /// <summary>AUP pre-shift bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<AupPreShiftSignal>.ParallelWriter AupPreShiftSignalWriter
         {
             get
             {
@@ -55,9 +55,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>AUP shift legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<AupShiftSignal>.ParallelWriter AupShiftSignalWriter
+        /// <summary>AUP shift bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<AupShiftSignal>.ParallelWriter AupShiftSignalWriter
         {
             get
             {
@@ -65,9 +65,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Logistics brownout legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<BrownoutSignal>.ParallelWriter BrownoutSignalWriter
+        /// <summary>Logistics brownout bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<BrownoutSignal>.ParallelWriter BrownoutSignalWriter
         {
             get
             {
@@ -75,9 +75,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Armor deflection legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<DeflectSignal>.ParallelWriter DeflectSignalWriter
+        /// <summary>Armor deflection bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<DeflectSignal>.ParallelWriter DeflectSignalWriter
         {
             get
             {
@@ -85,9 +85,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Entity death legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<EntityDeathSignal>.ParallelWriter EntityDeathSignalWriter
+        /// <summary>Entity death bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<EntityDeathSignal>.ParallelWriter EntityDeathSignalWriter
         {
             get
             {
@@ -95,9 +95,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Runtime anomaly legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<AnomalySignal>.ParallelWriter AnomalySignalWriter
+        /// <summary>Runtime anomaly bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<AnomalySignal>.ParallelWriter AnomalySignalWriter
         {
             get
             {
@@ -105,9 +105,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Acoustic ping legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<AcousticPingSignal>.ParallelWriter AcousticPingSignalWriter
+        /// <summary>Acoustic ping bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<AcousticPingSignal>.ParallelWriter AcousticPingSignalWriter
         {
             get
             {
@@ -115,9 +115,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Movement acoustic legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<MovementAcousticSignal>.ParallelWriter MovementAcousticSignalWriter
+        /// <summary>Movement acoustic bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<MovementAcousticSignal>.ParallelWriter MovementAcousticSignalWriter
         {
             get
             {
@@ -125,9 +125,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Hypoxia legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<HypoxiaSignal>.ParallelWriter HypoxiaSignalWriter
+        /// <summary>Hypoxia bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<HypoxiaSignal>.ParallelWriter HypoxiaSignalWriter
         {
             get
             {
@@ -135,9 +135,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Scan completion legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<ScanCompleteSignal>.ParallelWriter ScanCompleteSignalWriter
+        /// <summary>Scan completion bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<ScanCompleteSignal>.ParallelWriter ScanCompleteSignalWriter
         {
             get
             {
@@ -145,9 +145,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Blueprint unlock legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<BlueprintUnlockedSignal>.ParallelWriter BlueprintUnlockedSignalWriter
+        /// <summary>Blueprint unlock bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<BlueprintUnlockedSignal>.ParallelWriter BlueprintUnlockedSignalWriter
         {
             get
             {
@@ -155,9 +155,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Crafting-start legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<CraftingStartedSignal>.ParallelWriter CraftingStartedSignalWriter
+        /// <summary>Crafting-start bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<CraftingStartedSignal>.ParallelWriter CraftingStartedSignalWriter
         {
             get
             {
@@ -165,9 +165,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Crafting-completed legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<CraftingCompletedSignal>.ParallelWriter CraftingCompletedSignalWriter
+        /// <summary>Crafting-completed bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<CraftingCompletedSignal>.ParallelWriter CraftingCompletedSignalWriter
         {
             get
             {
@@ -175,9 +175,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Tool acoustic legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<ToolAcousticSignal>.ParallelWriter ToolAcousticSignalWriter
+        /// <summary>Tool acoustic bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<ToolAcousticSignal>.ParallelWriter ToolAcousticSignalWriter
         {
             get
             {
@@ -185,9 +185,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Tool state legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<ToolStateChangedSignal>.ParallelWriter ToolStateChangedSignalWriter
+        /// <summary>Tool state bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<ToolStateChangedSignal>.ParallelWriter ToolStateChangedSignalWriter
         {
             get
             {
@@ -195,9 +195,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Power-drain legacy bridge writer for low-frequency crafting and power-network producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<PowerDrainSignal>.ParallelWriter PowerDrainSignalWriter
+        /// <summary>Power-drain bounded ring writer for low-frequency crafting and power-network producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<PowerDrainSignal>.ParallelWriter PowerDrainSignalWriter
         {
             get
             {
@@ -205,9 +205,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Habitat deconstruction request legacy bridge writer for low-frequency tool producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<DeconstructRequestSignal>.ParallelWriter DeconstructRequestSignalWriter
+        /// <summary>Habitat deconstruction request bounded ring writer for low-frequency tool producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<DeconstructRequestSignal>.ParallelWriter DeconstructRequestSignalWriter
         {
             get
             {
@@ -215,9 +215,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Habitat deconstruction result legacy bridge writer for low-frequency validation/execution producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<DeconstructResultSignal>.ParallelWriter DeconstructResultSignalWriter
+        /// <summary>Habitat deconstruction result bounded ring writer for low-frequency validation/execution producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<DeconstructResultSignal>.ParallelWriter DeconstructResultSignalWriter
         {
             get
             {
@@ -225,9 +225,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Tool trigger legacy bridge writer for low-frequency device bridge producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<ToolTriggerSignal>.ParallelWriter ToolTriggerSignalWriter
+        /// <summary>Tool trigger bounded ring writer for low-frequency device bridge producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<ToolTriggerSignal>.ParallelWriter ToolTriggerSignalWriter
         {
             get
             {
@@ -235,9 +235,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>HUD notification legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<HUDNotificationSignal>.ParallelWriter HUDNotificationSignalWriter
+        /// <summary>HUD notification bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<HUDNotificationSignal>.ParallelWriter HUDNotificationSignalWriter
         {
             get
             {
@@ -245,9 +245,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Rigidbody sleep-state legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<RigidbodySleepSignal>.ParallelWriter RigidbodySleepSignalWriter
+        /// <summary>Rigidbody sleep-state bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<RigidbodySleepSignal>.ParallelWriter RigidbodySleepSignalWriter
         {
             get
             {
@@ -255,9 +255,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Fluid pipe rupture legacy bridge writer for low-frequency graph bridge producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<PipeRuptureSignal>.ParallelWriter PipeRuptureSignalWriter
+        /// <summary>Fluid pipe rupture bounded ring writer for low-frequency graph bridge producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<PipeRuptureSignal>.ParallelWriter PipeRuptureSignalWriter
         {
             get
             {
@@ -265,9 +265,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Scanner-active legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<ScannerToolActiveSignal>.ParallelWriter ScannerToolActiveSignalWriter
+        /// <summary>Scanner-active bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<ScannerToolActiveSignal>.ParallelWriter ScannerToolActiveSignalWriter
         {
             get
             {
@@ -275,9 +275,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Global time synchronization legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<GlobalTimeSyncSignal>.ParallelWriter GlobalTimeSyncSignalWriter
+        /// <summary>Global time synchronization bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<GlobalTimeSyncSignal>.ParallelWriter GlobalTimeSyncSignalWriter
         {
             get
             {
@@ -285,9 +285,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Deterministic seismic shake legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<SeismicSignal>.ParallelWriter SeismicSignalWriter
+        /// <summary>Deterministic seismic shake bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<SeismicSignal>.ParallelWriter SeismicSignalWriter
         {
             get
             {
@@ -295,9 +295,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Ore/resource yield legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<ItemAcquiredSignal>.ParallelWriter ItemAcquiredSignalWriter
+        /// <summary>Ore/resource yield bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<ItemAcquiredSignal>.ParallelWriter ItemAcquiredSignalWriter
         {
             get
             {
@@ -305,9 +305,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Radiation dose legacy bridge writer for low-frequency physiology and hazard-grid producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<RadiationDoseSignal>.ParallelWriter RadiationDoseSignalWriter
+        /// <summary>Radiation dose bounded ring writer for low-frequency physiology and hazard-grid producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<RadiationDoseSignal>.ParallelWriter RadiationDoseSignalWriter
         {
             get
             {
@@ -315,9 +315,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Ore depletion delta legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<ResourceDepletionDeltaSignal>.ParallelWriter ResourceDepletionDeltaSignalWriter
+        /// <summary>Ore depletion delta bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<ResourceDepletionDeltaSignal>.ParallelWriter ResourceDepletionDeltaSignalWriter
         {
             get
             {
@@ -325,9 +325,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Narrative progression legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<ProgressionEventSignal>.ParallelWriter ProgressionEventSignalWriter
+        /// <summary>Narrative progression bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<ProgressionEventSignal>.ParallelWriter ProgressionEventSignalWriter
         {
             get
             {
@@ -335,9 +335,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Global narrative state legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<GlobalWorldStateSignal>.ParallelWriter GlobalWorldStateSignalWriter
+        /// <summary>Global narrative state bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<GlobalWorldStateSignal>.ParallelWriter GlobalWorldStateSignalWriter
         {
             get
             {
@@ -345,9 +345,9 @@ namespace Hecton8.Core
             }
         }
 
-        /// <summary>Biome transition legacy bridge writer for low-frequency compatibility producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<BiomeChangedSignal>.ParallelWriter BiomeChangedSignalWriter
+        /// <summary>Biome transition bounded ring writer for low-frequency compatibility producers.</summary>
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<BiomeChangedSignal>.ParallelWriter BiomeChangedSignalWriter
         {
             get
             {
@@ -356,8 +356,8 @@ namespace Hecton8.Core
         }
 
         /// <summary>Crash/postmortem telemetry writer for watchdog producers.</summary>
-        [global::System.Obsolete("Legacy writer properties are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
-        public static NativeQueue<CrashTelemetrySignal>.ParallelWriter CrashTelemetrySignalWriter
+        [global::System.Obsolete("Legacy property names are retired. Use SignalBus<T>.OpenParallelWriter or an owner route writer.", true)]
+        public static global::Hecton8.Core.MpscSignalRingBuffer<CrashTelemetrySignal>.ParallelWriter CrashTelemetrySignalWriter
         {
             get
             {

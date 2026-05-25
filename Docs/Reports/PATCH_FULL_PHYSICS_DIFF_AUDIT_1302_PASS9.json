@@ -1,0 +1,324 @@
+﻿{
+    "schema":  "PATCH_FULL_PHYSICS_DIFF_AUDIT_1302_PASS9_V2",
+    "generatedUtc":  "2026-05-25T18:37:53.3623831Z",
+    "addedForbiddenTokenHits":  17,
+    "inScopePlayerForbiddenTokenLines":  0,
+    "editorGuardedForbiddenTokenLines":  0,
+    "excludedTetherCableForbiddenTokenLines":  17,
+    "inScopePlayerForbiddenHits":  [
+
+                                   ],
+    "editorGuardedHits":  [
+
+                          ],
+    "excludedHits":  [
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics/Cable132/CablePhysicsSolver132.cs",
+                             "line":  730,
+                             "token":  "new",
+                             "editorGuarded":  false,
+                             "excludedDomain":  true,
+                             "playerInScope":  false,
+                             "text":  "JobHandle uploadHandle = new CableSplineGpuMemcpyJob"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics/Cable132/CablePhysicsSolver132.cs",
+                             "line":  738,
+                             "token":  "new",
+                             "editorGuarded":  false,
+                             "excludedDomain":  true,
+                             "playerInScope":  false,
+                             "text":  "upload = new CableSplineUploadTicket132"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics/Cable132/CablePhysicsSolver132.cs",
+                             "line":  834,
+                             "token":  "new",
+                             "editorGuarded":  false,
+                             "excludedDomain":  true,
+                             "playerInScope":  false,
+                             "text":  "JobHandle uploadHandle = new CableSplineIndirectArgsJob"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics/Cable132/CablePhysicsSolver132.cs",
+                             "line":  841,
+                             "token":  "new",
+                             "editorGuarded":  false,
+                             "excludedDomain":  true,
+                             "playerInScope":  false,
+                             "text":  "upload = new CableSplineIndirectArgsUploadTicket132"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics/TetherAupVerletJobs.cs",
+                             "line":  923,
+                             "token":  "new",
+                             "editorGuarded":  false,
+                             "excludedDomain":  true,
+                             "playerInScope":  false,
+                             "text":  "var job = new TetherSplineGpuMemcpyJob"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                             "line":  255,
+                             "token":  "ManagedIOOrText",
+                             "editorGuarded":  false,
+                             "excludedDomain":  true,
+                             "playerInScope":  false,
+                             "text":  "catch (IOException)"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                             "line":  258,
+                             "token":  "ManagedIOOrText",
+                             "editorGuarded":  false,
+                             "excludedDomain":  true,
+                             "playerInScope":  false,
+                             "text":  "catch (UnauthorizedAccessException)"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                             "line":  285,
+                             "token":  "new",
+                             "editorGuarded":  false,
+                             "excludedDomain":  true,
+                             "playerInScope":  false,
+                             "text":  "signal = new AutoResetEvent(false);"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                             "line":  292,
+                             "token":  "new",
+                             "editorGuarded":  false,
+                             "excludedDomain":  true,
+                             "playerInScope":  false,
+                             "text":  "worker = new Thread(DumpWorkerLoop)"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                             "line":  482,
+                             "token":  "ManagedIOOrText",
+                             "editorGuarded":  false,
+                             "excludedDomain":  true,
+                             "playerInScope":  false,
+                             "text":  "TryWriteQueuedDumpFile(primaryPath, FileMode.Create);"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                             "line":  486,
+                             "token":  "ManagedIOOrText",
+                             "editorGuarded":  false,
+                             "excludedDomain":  true,
+                             "playerInScope":  false,
+                             "text":  "TryWriteQueuedDumpFile(legacyPath, FileMode.Append);"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                             "line":  492,
+                             "token":  "ManagedIOOrText",
+                             "editorGuarded":  false,
+                             "excludedDomain":  true,
+                             "playerInScope":  false,
+                             "text":  "private static bool TryWriteQueuedDumpFile(string path, FileMode mode)"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                             "line":  506,
+                             "token":  "new",
+                             "editorGuarded":  false,
+                             "excludedDomain":  true,
+                             "playerInScope":  false,
+                             "text":  "using (FileStream stream = new FileStream("
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                             "line":  509,
+                             "token":  "ManagedIOOrText",
+                             "editorGuarded":  false,
+                             "excludedDomain":  true,
+                             "playerInScope":  false,
+                             "text":  "FileAccess.Write,"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                             "line":  510,
+                             "token":  "ManagedIOOrText",
+                             "editorGuarded":  false,
+                             "excludedDomain":  true,
+                             "playerInScope":  false,
+                             "text":  "FileShare.Read,"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                             "line":  512,
+                             "token":  "ManagedIOOrText",
+                             "editorGuarded":  false,
+                             "excludedDomain":  true,
+                             "playerInScope":  false,
+                             "text":  "FileOptions.WriteThrough))"
+                         },
+                         {
+                             "file":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                             "line":  727,
+                             "token":  "new",
+                             "editorGuarded":  true,
+                             "excludedDomain":  true,
+                             "playerInScope":  false,
+                             "text":  "worker = new System.Threading.Thread("
+                         }
+                     ],
+    "allHits":  [
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Cable132/CablePhysicsSolver132.cs",
+                        "line":  730,
+                        "token":  "new",
+                        "editorGuarded":  false,
+                        "excludedDomain":  true,
+                        "playerInScope":  false,
+                        "text":  "JobHandle uploadHandle = new CableSplineGpuMemcpyJob"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Cable132/CablePhysicsSolver132.cs",
+                        "line":  738,
+                        "token":  "new",
+                        "editorGuarded":  false,
+                        "excludedDomain":  true,
+                        "playerInScope":  false,
+                        "text":  "upload = new CableSplineUploadTicket132"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Cable132/CablePhysicsSolver132.cs",
+                        "line":  834,
+                        "token":  "new",
+                        "editorGuarded":  false,
+                        "excludedDomain":  true,
+                        "playerInScope":  false,
+                        "text":  "JobHandle uploadHandle = new CableSplineIndirectArgsJob"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Cable132/CablePhysicsSolver132.cs",
+                        "line":  841,
+                        "token":  "new",
+                        "editorGuarded":  false,
+                        "excludedDomain":  true,
+                        "playerInScope":  false,
+                        "text":  "upload = new CableSplineIndirectArgsUploadTicket132"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/TetherAupVerletJobs.cs",
+                        "line":  923,
+                        "token":  "new",
+                        "editorGuarded":  false,
+                        "excludedDomain":  true,
+                        "playerInScope":  false,
+                        "text":  "var job = new TetherSplineGpuMemcpyJob"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                        "line":  255,
+                        "token":  "ManagedIOOrText",
+                        "editorGuarded":  false,
+                        "excludedDomain":  true,
+                        "playerInScope":  false,
+                        "text":  "catch (IOException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                        "line":  258,
+                        "token":  "ManagedIOOrText",
+                        "editorGuarded":  false,
+                        "excludedDomain":  true,
+                        "playerInScope":  false,
+                        "text":  "catch (UnauthorizedAccessException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                        "line":  285,
+                        "token":  "new",
+                        "editorGuarded":  false,
+                        "excludedDomain":  true,
+                        "playerInScope":  false,
+                        "text":  "signal = new AutoResetEvent(false);"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                        "line":  292,
+                        "token":  "new",
+                        "editorGuarded":  false,
+                        "excludedDomain":  true,
+                        "playerInScope":  false,
+                        "text":  "worker = new Thread(DumpWorkerLoop)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                        "line":  482,
+                        "token":  "ManagedIOOrText",
+                        "editorGuarded":  false,
+                        "excludedDomain":  true,
+                        "playerInScope":  false,
+                        "text":  "TryWriteQueuedDumpFile(primaryPath, FileMode.Create);"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                        "line":  486,
+                        "token":  "ManagedIOOrText",
+                        "editorGuarded":  false,
+                        "excludedDomain":  true,
+                        "playerInScope":  false,
+                        "text":  "TryWriteQueuedDumpFile(legacyPath, FileMode.Append);"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                        "line":  492,
+                        "token":  "ManagedIOOrText",
+                        "editorGuarded":  false,
+                        "excludedDomain":  true,
+                        "playerInScope":  false,
+                        "text":  "private static bool TryWriteQueuedDumpFile(string path, FileMode mode)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                        "line":  506,
+                        "token":  "new",
+                        "editorGuarded":  false,
+                        "excludedDomain":  true,
+                        "playerInScope":  false,
+                        "text":  "using (FileStream stream = new FileStream("
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                        "line":  509,
+                        "token":  "ManagedIOOrText",
+                        "editorGuarded":  false,
+                        "excludedDomain":  true,
+                        "playerInScope":  false,
+                        "text":  "FileAccess.Write,"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                        "line":  510,
+                        "token":  "ManagedIOOrText",
+                        "editorGuarded":  false,
+                        "excludedDomain":  true,
+                        "playerInScope":  false,
+                        "text":  "FileShare.Read,"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                        "line":  512,
+                        "token":  "ManagedIOOrText",
+                        "editorGuarded":  false,
+                        "excludedDomain":  true,
+                        "playerInScope":  false,
+                        "text":  "FileOptions.WriteThrough))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                        "line":  727,
+                        "token":  "new",
+                        "editorGuarded":  true,
+                        "excludedDomain":  true,
+                        "playerInScope":  false,
+                        "text":  "worker = new System.Threading.Thread("
+                    }
+                ]
+}

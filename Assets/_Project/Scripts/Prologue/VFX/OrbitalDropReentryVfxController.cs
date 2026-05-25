@@ -340,7 +340,7 @@ namespace Hecton8.Prologue.VFX
 
         private void RefreshQualityPolicyCold()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             _qualityRefreshFrame = frame;
             CacheQualityPolicy(ResolveGlobalQualityWeight());
         }
@@ -360,7 +360,7 @@ namespace Hecton8.Prologue.VFX
 
         private void ConsumeAtmosphericSignals()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastProcessedAtmosphericFrame == frame)
                 return;
 
@@ -410,7 +410,7 @@ namespace Hecton8.Prologue.VFX
 
         private void ConsumePrologueCompleteSignals()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastProcessedCompleteFrame == frame)
                 return;
 
@@ -876,7 +876,7 @@ namespace Hecton8.Prologue.VFX
             catch (Exception exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[OrbitalDropReentryVfxController] Black box dump failed: " + exception.Message);
+                Hecton8.Core.H8Debug.LogError("[OrbitalDropReentryVfxController] Black box dump failed: " + exception.Message);
 #endif
             }
         }
@@ -891,7 +891,7 @@ namespace Hecton8.Prologue.VFX
                     return dispatcherDelta > MaxPresentationDeltaSeconds ? MaxPresentationDeltaSeconds : (float)dispatcherDelta;
             }
 
-            float fallback = Time.unscaledDeltaTime;
+            float fallback = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             return math.isfinite(fallback) && fallback > 0f ? math.min(fallback, MaxPresentationDeltaSeconds) : 0f;
         }
 

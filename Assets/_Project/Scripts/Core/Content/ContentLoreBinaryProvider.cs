@@ -131,7 +131,7 @@ namespace Hecton8.Core.Content
             if (!TryResolveDictionaryPath(dictionaryRelativePath, out string path))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[ContentLoreBinaryProvider] Babel dictionary missing.", this);
+                Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Babel dictionary missing.", this);
 #endif
                 return false;
             }
@@ -154,7 +154,7 @@ namespace Hecton8.Core.Content
             {
                 Dispose();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[ContentLoreBinaryProvider] Failed to open Babel dictionary.", this);
+                Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Failed to open Babel dictionary.", this);
 #endif
                 return false;
             }
@@ -403,42 +403,42 @@ namespace Hecton8.Core.Content
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void LogRejectedZeroHashRead()
         {
-            Debug.LogError("[ContentLoreBinaryProvider] Rejected zero hash lore read.", this);
+            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Rejected zero hash lore read.", this);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void LogMissingLoreBlock(uint hash)
         {
-            Debug.LogError("[ContentLoreBinaryProvider] Missing lore block.", this);
+            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Missing lore block.", this);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void LogUnreadableLoreBlock(uint hash, long offset, int length, long fileLength)
         {
-            Debug.LogError("[ContentLoreBinaryProvider] Unreadable lore block.", this);
+            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Unreadable lore block.", this);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void LogLoreDestinationTooSmall(uint hash, int destinationLength, int requiredLength)
         {
-            Debug.LogError("[ContentLoreBinaryProvider] Destination span too small for lore.", this);
+            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Destination span too small for lore.", this);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void LogLoreStreamUnavailable(uint hash)
         {
-            Debug.LogError("[ContentLoreBinaryProvider] No readable Babel dictionary stream.", this);
+            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] No readable Babel dictionary stream.", this);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void LogPartialLoreRead(uint hash, int readLength, int requiredLength)
         {
-            Debug.LogError("[ContentLoreBinaryProvider] Partial lore read.", this);
+            Hecton8.Core.H8Debug.LogError("[ContentLoreBinaryProvider] Partial lore read.", this);
         }
 
 #if UNITY_EDITOR

@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
 namespace Hecton8.Logistics
@@ -58,9 +59,29 @@ namespace Hecton8.Logistics
         [FieldOffset(34)]
         public ushort Reserved;
         [FieldOffset(36)]
-        private uint _pad0;
+        private byte _pad0;
+        [FieldOffset(37)]
+        private byte _pad1;
+        [FieldOffset(38)]
+        private byte _pad2;
+        [FieldOffset(39)]
+        private byte _pad3;
         [FieldOffset(40)]
-        private ulong _pad1;
+        private byte _pad4;
+        [FieldOffset(41)]
+        private byte _pad5;
+        [FieldOffset(42)]
+        private byte _pad6;
+        [FieldOffset(43)]
+        private byte _pad7;
+        [FieldOffset(44)]
+        private byte _pad8;
+        [FieldOffset(45)]
+        private byte _pad9;
+        [FieldOffset(46)]
+        private byte _pad10;
+        [FieldOffset(47)]
+        private byte _pad11;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -120,6 +141,41 @@ namespace Hecton8.Logistics
         public static float SanitizeFiniteNonNegative(float value)
         {
             return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+    }
+
+    internal static class FluidPipeGraphLayoutSentinel
+    {
+        internal static bool ValidateRuntimeDtos()
+        {
+            return UnsafeUtility.SizeOf<FluidPipeRuptureRecord>() == 48 &&
+                   OffsetOf<FluidPipeRuptureRecord>(nameof(FluidPipeRuptureRecord.NodeIndex)) == 0 &&
+                   OffsetOf<FluidPipeRuptureRecord>(nameof(FluidPipeRuptureRecord.NetworkId)) == 4 &&
+                   OffsetOf<FluidPipeRuptureRecord>(nameof(FluidPipeRuptureRecord.RoomIndex)) == 8 &&
+                   OffsetOf<FluidPipeRuptureRecord>(nameof(FluidPipeRuptureRecord.FrameIndex)) == 12 &&
+                   OffsetOf<FluidPipeRuptureRecord>(nameof(FluidPipeRuptureRecord.PressureKPa)) == 16 &&
+                   OffsetOf<FluidPipeRuptureRecord>(nameof(FluidPipeRuptureRecord.Contents)) == 20 &&
+                   OffsetOf<FluidPipeRuptureRecord>(nameof(FluidPipeRuptureRecord.Flow01)) == 24 &&
+                   OffsetOf<FluidPipeRuptureRecord>(nameof(FluidPipeRuptureRecord.NodeHash)) == 28 &&
+                   OffsetOf<FluidPipeRuptureRecord>(nameof(FluidPipeRuptureRecord.ContentKind)) == 32 &&
+                   OffsetOf<FluidPipeRuptureRecord>(nameof(FluidPipeRuptureRecord.Flags)) == 33 &&
+                   OffsetOf<FluidPipeRuptureRecord>(nameof(FluidPipeRuptureRecord.Reserved)) == 34 &&
+                   OffsetOf<FluidPipeRuptureRecord>("_pad0") == 36 &&
+                   OffsetOf<FluidPipeRuptureRecord>("_pad11") == 47 &&
+                   UnsafeUtility.SizeOf<FluidPipeTelemetryEntry>() == 32 &&
+                   OffsetOf<FluidPipeTelemetryEntry>(nameof(FluidPipeTelemetryEntry.FrameIndex)) == 0 &&
+                   OffsetOf<FluidPipeTelemetryEntry>(nameof(FluidPipeTelemetryEntry.NodeCount)) == 4 &&
+                   OffsetOf<FluidPipeTelemetryEntry>(nameof(FluidPipeTelemetryEntry.RuptureCount)) == 8 &&
+                   OffsetOf<FluidPipeTelemetryEntry>(nameof(FluidPipeTelemetryEntry.NanCount)) == 12 &&
+                   OffsetOf<FluidPipeTelemetryEntry>(nameof(FluidPipeTelemetryEntry.TotalWater)) == 16 &&
+                   OffsetOf<FluidPipeTelemetryEntry>(nameof(FluidPipeTelemetryEntry.TotalOxygen)) == 20 &&
+                   OffsetOf<FluidPipeTelemetryEntry>(nameof(FluidPipeTelemetryEntry.MaxPressureKPa)) == 24 &&
+                   OffsetOf<FluidPipeTelemetryEntry>(nameof(FluidPipeTelemetryEntry.StateHash)) == 28;
+        }
+
+        private static int OffsetOf<T>(string fieldName)
+        {
+            return Marshal.OffsetOf(typeof(T), fieldName).ToInt32();
         }
     }
 }

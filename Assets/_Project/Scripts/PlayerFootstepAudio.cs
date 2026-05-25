@@ -91,6 +91,7 @@ namespace Hecton8.Audio
     public sealed class PlayerFootstepAudio : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int MaxPendingFootstepCues = 8;
+        private const uint KccVelocityFootstepAudioMaxAgeFrames = 12u;
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -174,7 +175,6 @@ namespace Hecton8.Audio
         //  CACHED
         // ══════════════════════════════════════════════════════════
 
-        private Rigidbody _playerRb;
         private float _lastStepTime;
         private HectonPlayerMovement.PlayerMovementSurfaceHit _surfaceHit;
         private bool _surfaceHitValid;
@@ -195,11 +195,6 @@ namespace Hecton8.Audio
 
         private void Awake()
         {
-            if (Application.isPlaying && playerMovement != null && !_registeredUpdate)
-            {
-                playerMovement.TryGetComponent(out _playerRb);
-            }
-
             uint entitySeed = unchecked((uint)EntityId.ToULong(GetEntityId()));
             _footstepRandomState = entitySeed != 0u ? entitySeed : 0xA511E9B3u;
             _footstepClockSeconds = 0f;
@@ -371,9 +366,11 @@ namespace Hecton8.Audio
 
             float finalVolume = baseVolume * surfaceVolumeMult * locomotionVolumeMultiplier;
 
-            if (scaleVolumeBySpeed && _playerRb != null)
+            if (scaleVolumeBySpeed)
             {
-                Vector3 vel = _playerRb.linearVelocity;
+                Vector3 vel = TryResolveKccVelocity(out Vector3 kccVelocity)
+                    ? kccVelocity
+                    : Vector3.zero;
                 float hSpeed = ApproximatePlanarMagnitude(vel.x, vel.z);
                 float maxSpeed = playerMovement.CurrentSuit != null
                     ? playerMovement.CurrentSuit.maxWalkSpeed
@@ -391,6 +388,16 @@ namespace Hecton8.Audio
             IAudioService sam = _audioService;
             if (sam != null)
                 sam.PlayAtPoint(clip, playPosition, finalVolume, pitch);
+        }
+
+        private static bool TryResolveKccVelocity(out Vector3 velocity)
+        {
+            velocity = Vector3.zero;
+            if (!CoreDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityFootstepAudioMaxAgeFrames, out float3 velocity3))
+                return false;
+
+            velocity = new Vector3(velocity3.x, velocity3.y, velocity3.z);
+            return true;
         }
 
         private int NextFootstepIndex(int exclusiveMax)
@@ -594,7 +601,7 @@ namespace Hecton8.Audio
 
         private void RefreshColdRegistryReferences()
         {
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _mapMagic = GlobalRegistry.MapMagic;
         }
 

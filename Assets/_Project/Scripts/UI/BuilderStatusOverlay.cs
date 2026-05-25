@@ -229,7 +229,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedEnvironmentContext = GlobalRegistry.Environment;
         }
 
@@ -270,14 +270,12 @@ namespace Hecton8.UI
             IEnvironmentRuntimeContext environmentContext = _cachedEnvironmentContext;
             if (environmentContext == null)
             {
-                _constructionLogistics = GlobalRegistry.Logistics;
-
                 return;
             }
 
             if (forceAssign || _constructionLogistics == null)
             {
-                _constructionLogistics = environmentContext.Logistics ?? GlobalRegistry.Logistics;
+                _constructionLogistics = environmentContext.Logistics ?? _constructionLogistics;
             }
         }
 
@@ -838,7 +836,7 @@ namespace Hecton8.UI
             if (label == null || destination == null)
                 return;
 
-            if (!LocNumericBuffer.TryWrite(new ReadOnlySpan<char>(ModuleIndexTemplateChars), destination.AsSpan(), value0, value1, value2, out int length))
+            if (!LocNumericBuffer.TryWrite(ModuleIndexTemplateChars.AsSpan(), destination.AsSpan(), value0, value1, value2, out int length))
             {
                 length = 0;
             }

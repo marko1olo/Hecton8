@@ -32,9 +32,9 @@ namespace Hecton8.Physics
     /// </remarks>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-10000)]
-    public sealed class RaycastBatchHelper : MonoBehaviour, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
+    public sealed class RaycastBatchHelper : MonoBehaviour, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IPhysicsQueryTelemetryReadModel, IGlobalRegistryHotSwapListener
     {
-        public static int TotalRaycastsProcessed;
+        public static int TotalLegacySurfaceQueriesProcessed;
 
         private const int MaxQueries = 512;
         private const float DirectionLengthMinSq = 0.000001f;
@@ -66,7 +66,7 @@ namespace Hecton8.Physics
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            TotalRaycastsProcessed = 0;
+            TotalLegacySurfaceQueriesProcessed = 0;
         }
 
         private void Awake()
@@ -145,7 +145,7 @@ namespace Hecton8.Physics
                 if (!_queryOverflowLogged)
                 {
                     _queryOverflowLogged = true;
-                    Debug.LogWarning("[RaycastBatchHelper] Query buffer overflow. Excess legacy queries are dropped for this frame.");
+                    Hecton8.Core.H8Debug.LogWarning("[RaycastBatchHelper] Query buffer overflow. Excess legacy queries are dropped for this frame.");
                 }
 #endif
                 return -1;
@@ -161,6 +161,7 @@ namespace Hecton8.Physics
 
             int index = _queryCount;
             _queryCount++;
+            TotalLegacySurfaceQueriesProcessed++;
             return index;
         }
 
@@ -209,9 +210,19 @@ namespace Hecton8.Physics
 
         public bool WasExecuted => _batchExecuted;
 
+        public int LegacySurfaceQueriesProcessed => TotalLegacySurfaceQueriesProcessed;
+
+        public int PlayerLookQueryCacheHits => QueryCacheContext.CacheHits;
+
+        public void ResetPhysicsQueryTelemetryCounters()
+        {
+            TotalLegacySurfaceQueriesProcessed = 0;
+            QueryCacheContext.CacheHits = 0;
+        }
+
         private bool PrepareForQueryWrite()
         {
-            int currentFrame = Time.frameCount;
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastFramePrepared == currentFrame)
                 return true;
 

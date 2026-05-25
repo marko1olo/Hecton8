@@ -1,0 +1,120 @@
+# Status_UNKNOWN
+
+Scope: last-three-day architecture audit requested 2026-05-25. No XML agent id was supplied; UNKNOWN is used only as an audit bucket.
+
+- [x] Read missing prior UNKNOWN status/rationale state.
+  - DOD: verified files were absent before creating this tracking artifact.
+  - Rejected alternative: relying on chat memory.
+  - Microsecond estimate: not claimed; audit-only.
+- [x] Read `AGENTS.md` current authority rules.
+  - DOD: loaded root instructions and current ledger excerpt before analysis.
+  - Rejected alternative: using user prompt alone.
+  - Microsecond estimate: not claimed; audit-only.
+- [x] Establish exact last-three-day baseline and diff scope.
+  - DOD: selected `3d9c1023e413eb96c32fbddb4fe99c95738c9a87` with git `--before=2026-05-22T00:00:00+04:00`; counted `237` commits to HEAD and dirty-inclusive diffs.
+  - Rejected alternative: using "last 3 days" from memory or doc ledger prose.
+  - Microsecond estimate: 0 claimed; git metadata only.
+- [x] Verify claimed cleanup metrics against current dirty tree.
+  - DOD: reran broad source counters for `GlobalRegistry`, `TryGet`, `?? GlobalRegistry`, `SignalBus`, `GlobalSignals.Publish`, `HectonEventBus.Publish`, `TryGetLatestCreated`, `Time.frameCount`, and `.Complete`.
+  - Rejected alternative: accepting loop ledger "zero" claims without current source grep.
+  - Microsecond estimate: 0 claimed; static grep only.
+- [x] Verify GlobalRegistry routes, hot polling, command sinks, route-card evidence.
+  - DOD: checked command sink call sites, fauna static helper registry reads, mutating read model implementation, managed callback read model, and missing route-card proof.
+  - Rejected alternative: treating new interfaces as architecture-safe merely because they reduce concrete references.
+  - Microsecond estimate: 0 claimed; route correctness audit only.
+- [x] Verify SignalBus / GlobalSignals / HectonEventBus lane compliance.
+  - DOD: confirmed runtime `GlobalSignals.Publish` zero, ModdingAPI confinement for `HectonEventBus.Publish`, SignalBus layout scan result, and lazy initialization allocation path.
+  - Rejected alternative: declaring SignalBus GREEN from payload layout alone.
+  - Microsecond estimate: 0 claimed; no profiler.
+- [x] Verify GlobalDataVault ownership, handle safety, job pinning, and diagnostic fallback use.
+  - DOD: checked owner check paths, write-lock vs block pin split, defrag/growth relocation, HazardZone scheduled view path, PathFunnel mutable read handle, stale release risk, and `TryGetLatestCreated` classification.
+  - Rejected alternative: treating `TryAcquireWriteLock` as relocation pin without matching defrag lock bits.
+  - Microsecond estimate: 0 claimed; memory safety audit only.
+- [x] Verify frame authority and `Time.frameCount` residuals.
+  - DOD: confirmed dispatcher frame route exists and recorded current raw `Time.frameCount` residual examples in signal/payload-style writers.
+  - Rejected alternative: equating touched-scope loop closure with global frame authority closure.
+  - Microsecond estimate: 0 claimed; static source only.
+- [x] Verify continuous `GlobalQualityWeight` compliance and quality-truth leaks.
+  - DOD: checked remaining discrete tier branches and quality-dependent writes in cartography discovery, foundation snapping, and habitat graph flood/integrity.
+  - Rejected alternative: accepting any continuous quality usage as compliant even when it may affect save-visible or gameplay truth.
+  - Microsecond estimate: 0 claimed; no runtime measurement.
+- [x] Append detailed proof report to `Docs/AgentLogs/LOG_UNKNOWN.md`.
+  - DOD: appended deep audit with evidence classes, commands, source file:line proofs, corrections to stale findings, priority fixes, and explicit no-microsecond claim.
+  - Rejected alternative: chat-only answer.
+  - Microsecond estimate: 0 claimed; reporting only.
+- [x] Fix loop 1: convert audit red zones into code changes.
+  - DOD: changed 30+ source files across DataVault, registry route consumers, relay read model, SignalBus lane prewarm, quality-truth leaks, and dispatcher frame stamps; static checks rerun for targeted patterns.
+  - Rejected alternative: more audit prose without touching architecture surfaces.
+  - Microsecond estimate: 0 claimed; no Unity profiler/player capture was run.
+- [x] Compile verification after dotnet/csc gate clears.
+  - DOD: `dotnet build Hecton8.Core.csproj --no-restore -m:1 -v:minimal` passed with 0 warnings/0 errors; `dotnet build Assembly-CSharp.csproj --no-restore -m:1 -v:minimal` passed with 0 errors and 2 pre-existing missing `Hecton8.Input.csproj` reference warnings.
+  - Rejected alternative: treating the full `Hecton8.slnx` failure as source failure; it failed on missing `project.assets.json` for unrelated editor/package projects while `Hecton8.Core` and `Assembly-CSharp` compiled.
+  - Microsecond estimate: 0 claimed.
+- [x] Loop 2 task 1-5: reread authority docs and mandate registry before code.
+  - DOD: reread `AGENTS.md`, `TASTE.md`, and selected mandates `ARCH_Global_Registry_ServiceLocator_DI_Init`, `ARCH_Signal_Lane_Segregation`, `MATH_AUP_Determinism_Sync`, `DBG_Telemetry_Crash_Reporting_PostMortem`, `OPT_Zero_GC_Policy_AllocFree_Mandate`, `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First`.
+  - Rejected alternative: broad style cleanup without mandate match.
+  - Microsecond estimate: 0 claimed; authority read only.
+- [x] Loop 2 task 6-15: convert dispatcher-owned telemetry/cache/warning frames away from raw `Time.frameCount`.
+  - DOD: changed construction logistics, drone/docking, ItemCatalog, raycast batching, QA endurance, atmosphere/weather/celestial, fluid, fauna, Sargassum, biolum, destructible organic, LOD/scatter/debris, VR somatic, input watchdog, replay, noise, scan, submarine, voxel delta, player kinematics, scatter helper, and performance monitor files; left XR input latency and floating-origin same-frame gates on Unity frame because those are local render/origin-shift semantics.
+  - Rejected alternative: replacing all `Time.frameCount` blindly, including render-frame and origin-shift gates.
+  - Microsecond estimate: 0 claimed; no profiler/player capture.
+- [x] Loop 2 task 16-20: compile verification after CPU/dotnet gate clears.
+  - DOD: waited until CPU dropped below 50% and no `dotnet`/`csc` process was active, then ran exactly one `dotnet build Assembly-CSharp.csproj --no-restore -m:1 -v:minimal`; build passed with 0 errors and 2 pre-existing `Hecton8.Input.csproj` missing-reference warnings.
+  - Rejected alternative: launching while CPU was 72-97% or while another compiler process was active.
+  - Microsecond estimate: 0 claimed.
+- [x] Loop 2 task 21-25: static residual review and report append.
+  - DOD: reran targeted `rg -n "Time\.frameCount"` across the 36 edited source files; only deliberate residuals remain in `InputDispatcher` input-to-render latency pairing and `FaunaBrain` floating-origin same-frame lock semantics. Appended proof report to `Docs/AgentLogs/LOG_UNKNOWN.md`.
+  - Rejected alternative: blindly replacing render-frame/origin-shift frame semantics with dispatcher frames.
+  - Microsecond estimate: 0 claimed.
+- [x] Loop 3 task 1-5: reread authority docs and select mandates.
+  - DOD: reread `AGENTS.md`, `TASTE.md`, domain map, and mandates `ARCH_Execution_Phases`, `OPT_Native_Memory_Collections_JobSystem_Protocol`, `OPT_Zero_GC_Policy_AllocFree_Mandate`, `MATH_AUP_Determinism_Sync`, `DBG_Telemetry_Crash_Reporting_PostMortem`, `ARCH_Global_Registry_ServiceLocator_DI_Init`.
+  - Rejected alternative: continuing previous frame cleanup without revalidating rules.
+  - Microsecond estimate: 0 claimed; authority read only.
+- [x] Loop 3 task 6-20: migrate dispatcher-owned frame stamps and counters.
+  - DOD: changed 26 source files across Core, ModdingAPI, QA headless, prologue VFX, voxel, save, inventory, vegetation, impostor, residency, and light-shaft signal paths; converted signal/telemetry/quota/snapshot/cadence stamps to `SystemDispatcher.CurrentFrameId` or `CurrentFrameIndex`.
+  - Rejected alternative: replacing visual-only triangle-wave stutter frame use in `ScreenSpaceLightShaftRuntime`.
+  - Microsecond estimate: 0 claimed; no profiler/player capture.
+- [x] Loop 3 task 21-30: fix compile contract namespace wall.
+  - DOD: `Hecton8.Core` initially failed on `IPhysicsImpactMaterialProvider`; fixed owner contract resolution by explicitly implementing/querying `Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider` in item/module/physics consumers and restoring `BuoyancyObject` namespace imports where needed.
+  - Rejected alternative: moving the contract into `Hecton8.Physics` or adding a duplicate physics-domain interface.
+  - Microsecond estimate: 0 claimed; compile correctness only.
+- [x] Loop 3 task 31-35: verification and proof append.
+  - DOD: targeted `rg -n "Time\.frameCount"` across 31 edited source files leaves only the intentional brownout triangle-wave visual fake; `git diff --check` reports no whitespace errors; `Hecton8.Core.csproj` passed 0 warnings/0 errors; `Assembly-CSharp.csproj` passed 0 errors with the pre-existing two `Hecton8.Input.csproj` warnings.
+  - Rejected alternative: calling full Unity/player/profiler verified without runtime artifacts.
+  - Microsecond estimate: 0 claimed.
+- [x] Loop 4 task 1-5: reread status/rationale and target remaining architecture risks.
+  - DOD: selected verified fourth-pass scope: direct job completion outside the fence helper, binary outpost quality paths, debug draw quality step, and sonar refresh branch.
+  - Rejected alternative: touching Flora/Tether/Visor enum quality paths without ABI/consumer proof.
+  - Microsecond estimate: 0 claimed; source review only.
+- [x] Loop 4 task 6-13: apply focused source fixes.
+  - DOD: changed 8 source files: `MarauderOutpostJobs`, `MarauderOutpostGenerationService`, `ChemicalInfluenceGrid`, `VoxelSurfaceNetsGpuUploadDispatcher`, `ModuloSimulationBucketer`, `H8Memory`, `HectonVoxelVolume`, and `HectonSubmarineOS`.
+  - Rejected alternative: broad rename/refactor churn across quality enums.
+  - Microsecond estimate: 0 claimed; no profiler/player capture.
+- [x] Loop 4 task 14-20: fix compile walls exposed by gated builds.
+  - DOD: fixed `CoreDeterminismSignals` ABI use, bootstrap contract logger dependency, gameplay/physics namespace leaks, `IPhysicsService` pressure impulse routing, FirstHour cooldown clock scope, and CrashTelemetry player-pose interface access.
+  - Rejected alternative: restoring direct `Hecton8.Physics` static access or widening contract assemblies to runtime logger/physics implementation types.
+  - Microsecond estimate: 0 claimed; compile correctness only.
+- [x] Loop 4 task 21-25: static verification.
+  - DOD: `.Complete()` scan under runtime scripts leaves only `DispatcherJobFence`; targeted residual scan found no `PhysicsDeterminismSignals`, `PhysicsFrame.Current`, or `PhysicsApplySystem.Trigger*` in the repaired gameplay/contract files; `git diff --check` on the loop target set reports no whitespace errors, only line-ending warnings.
+  - Rejected alternative: claiming whole-tree cleanliness from a dirty 660-file shared worktree.
+  - Microsecond estimate: 0 claimed.
+- [x] Loop 4 task 26-30: compile verification after build gate clears.
+  - DOD: `dotnet build Hecton8.Core.csproj --no-restore -m:1 -v:minimal /p:UseSharedCompilation=false` passed with 0 warnings/0 errors; `dotnet build Hecton8.Bootstrap.Contracts.csproj --no-restore -m:1 -v:minimal /p:UseSharedCompilation=false` passed with 0 warnings/0 errors; `dotnet build Assembly-CSharp.csproj --no-restore -m:1 -v:minimal /p:UseSharedCompilation=false` passed with 0 errors and 2 pre-existing missing `Hecton8.Input.csproj` warnings.
+  - Rejected alternative: launching builds while CPU was over 50% or while `dotnet/csc` processes were active.
+  - Microsecond estimate: 0 claimed.
+- [x] Loop 5 task 1-5: reread authority docs, extract current batch boundary, and select mandates.
+  - DOD: reread `AGENTS.md`, `TASTE.md`, current status/rationale, project domain map, and selected mandates `ARCH_Execution_Phases`, `ARCH_Global_Registry_ServiceLocator_DI_Init`, `ARCH_Signal_Lane_Segregation`, `OPT_Native_Memory_Collections_JobSystem_Protocol`, `OPT_Zero_GC_Policy_AllocFree_Mandate`, `MATH_AUP_Determinism_Sync`, `DBG_Telemetry_Crash_Reporting_PostMortem`, `OPT_Cinematic_Cheat_Protocol_Visual_Fake_First`; extracted active batch boundary and aligned with X_007 continuous scalability constraints while staying UNKNOWN/project-wide.
+  - Rejected alternative: coding from previous-memory assumptions without re-reading the authority spine.
+  - Microsecond estimate: 0 claimed.
+- [x] Loop 5 task 6-20: repair runtime frame/physics facade/DataVault fallback residuals.
+  - DOD: changed runtime frame and facade call sites in `SystemDispatcher`, `HectonFloatingOrigin`, `FaunaBrain`, `PhysicsApplySystem`, `HydrodynamicKccRuntime`, `PlayerSwimBlockoutRig`, `SaveThumbnailSystem`, `SceneRuntimeService`, `HectonVoxelVolume`, `MapMagicRuntimeBridge`, `HectonCrestOceanDepthCacheBootstrap`, `RuntimeDiagnosticsTrace`, and `RuntimePerformanceProfiler`; targeted scan now shows no `Time.frameCount`, `PhysicsDeterminismSignals`, or `PhysicsFrame.Current` in that repaired set.
+  - Rejected alternative: leaving floating-origin same-frame locks on Unity frame while moving consumers to dispatcher frames.
+  - Microsecond estimate: 0 claimed.
+- [x] Loop 5 task 21-35: repair continuous-quality residuals in presentation/simulation payloads.
+  - DOD: changed `SomaticKinematicsRuntime`, `ThermodynamicsHazardGridRuntime`, `TetherManager`, `TetherInstance`, `SargassumMicroFaunaBoids`, `ModEventProjectionBridge`, and `HeadlessStressFractureBot`; discrete low-tier writes were replaced with continuous Q8/quality-weight sources or smoothed visual thresholds without changing payload sizes.
+  - Rejected alternative: renaming ABI fields globally or changing persisted signal layouts without route-card proof.
+  - Microsecond estimate: 0 claimed.
+- [x] Loop 5 task 36-40: static verification, gated compile, rationale, and log append.
+  - DOD: static scans passed for non-editor runtime `Time.frameCount`, direct physics facade calls, and `.Complete()` outside `DispatcherJobFence`; `git diff --check` on the loop target set reports no whitespace errors, only line-ending warnings. First gated `Hecton8.Core.csproj` compile exposed missing `SdfSqueezeJob.cs` project-map inclusion and residual headless `.Complete()` calls. Added the missing KCC compile include and routed Jacobi fuzzer forced completions through `DispatcherJobFence`. Final gated compile passed: `Hecton8.Core.csproj` 0 warnings/0 errors; `Assembly-CSharp.csproj` 0 errors and 2 pre-existing missing `Hecton8.Input.csproj` warnings. Rationale and LOG appended.
+  - Rejected alternative: treating the compile wall as unrelated because it was in generated project metadata, or leaving QA forced job completions outside the same fence route.
+  - Microsecond estimate: 0 claimed.

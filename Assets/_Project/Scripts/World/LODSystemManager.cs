@@ -202,7 +202,7 @@ namespace Hecton8.World
             if (registered != null && registered != this)
             {
                 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[LODSystemManager] Duplicate registry owner detected. Destroying duplicate.");
+                Hecton8.Core.H8Debug.LogWarning("[LODSystemManager] Duplicate registry owner detected. Destroying duplicate.");
                 #endif
                 Destroy(gameObject);
                 return;
@@ -364,7 +364,7 @@ namespace Hecton8.World
                 _impostorSystem = GlobalRegistry.Impostors;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
         }
 
         private void ClearCachedRegistryServices()
@@ -528,7 +528,7 @@ namespace Hecton8.World
             else
             {
                 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[LODSystemManager] Invalid quality preset value. Using default (Medium).");
+                Hecton8.Core.H8Debug.LogWarning("[LODSystemManager] Invalid quality preset value. Using default (Medium).");
                 #endif
                 ApplyQualityPreset(LODQualityPreset.Medium);
             }
@@ -561,7 +561,7 @@ namespace Hecton8.World
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_registeredLODGroups.Count > _maxLODGroupsPerFrame)
             {
-                Debug.LogWarning("[LODSystemManager] Registered LOD groups exceeds max capacity. Consider increasing capacity.");
+                Hecton8.Core.H8Debug.LogWarning("[LODSystemManager] Registered LOD groups exceeds max capacity. Consider increasing capacity.");
             }
             #endif
         }
@@ -765,14 +765,15 @@ namespace Hecton8.World
 
         private void PublishLODPerformanceWarningIfNeeded(float elapsedMilliseconds)
         {
-            if (elapsedMilliseconds <= LODSolveBudgetWarningMs || Time.frameCount < _nextLODPerformanceWarningFrame)
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (elapsedMilliseconds <= LODSolveBudgetWarningMs || currentFrame < _nextLODPerformanceWarningFrame)
                 return;
 
             GlobalTelemetryBus.PublishPerformanceWarning(
                 LODSolveBudgetWarningHash,
                 LODSystemContextHash,
                 elapsedMilliseconds);
-            _nextLODPerformanceWarningFrame = Time.frameCount + LODPerformanceWarningCooldownFrames;
+            _nextLODPerformanceWarningFrame = currentFrame + LODPerformanceWarningCooldownFrames;
         }
 
         private int ResolveHotPathLODGroupBatchCount()
@@ -829,7 +830,7 @@ namespace Hecton8.World
 
         private AbsoluteUniversePosition ResolveViewerAup()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_viewerAupCacheFrame == frame)
                 return _viewerAupCache;
 

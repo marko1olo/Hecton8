@@ -215,7 +215,7 @@ namespace Hecton8.Graphics.Culling
         public NativeArray<MockQualityWeightSignal> QualitySignal;
 
         [ReadOnly, NoAlias]
-        public NativeArray<MockCameraMatrix> Camera;
+        public NativeArray<MockCameraMatrix> CameraData;
 
         [ReadOnly, NoAlias]
         public NativeArray<float4> SourcePlanes;
@@ -246,9 +246,9 @@ namespace Hecton8.Graphics.Culling
             float squeezeDegrees = math.clamp(stress * MaxSqueezeDegrees, 0f, 15f);
             float squeezeRadians = math.radians(squeezeDegrees);
             float3 forward = new float3(0f, 0f, 1f);
-            if (Camera.IsCreated && Camera.Length > 0)
+            if (CameraData.IsCreated && CameraData.Length > 0)
             {
-                float3 candidate = Camera[0].ForwardFov.xyz;
+                float3 candidate = CameraData[0].ForwardFov.xyz;
                 if (math.all(math.isfinite(candidate)) && math.lengthsq(candidate) > 0.000001f)
                     forward = math.normalize(candidate);
             }

@@ -187,7 +187,7 @@ namespace Hecton8.Physics
             }
 
             double heightAupY = CameraAupY + localHeight;
-            bool finite = math.isfinite(localHeight) && math.isfinite((float)heightAupY);
+            bool finite = math.isfinite(localHeight) && math.isfinite(heightAupY);
             if (!finite)
             {
                 localHeight = 0f;

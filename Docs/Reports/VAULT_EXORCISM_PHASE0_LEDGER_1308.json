@@ -1,0 +1,144 @@
+﻿{
+    "schema":  "hecton8.agent1308.native_alias_ledger.v2",
+    "agentId":  "1308",
+    "declaredDomain":  "Assets/Project/Scripts/Audio/Synthesis",
+    "actualDomain":  "Assets/_Project/Scripts/Audio/Synthesis",
+    "rawRoslynReport":  "Docs/Reports/VAULT_EXORCISM_REPORT_1308.json",
+    "dtoOffsetMapReport":  "Docs/Reports/AUDIO_SYNTHESIS_DTO_OFFSET_MAP_1308.md",
+    "lineAuditReport":  "Docs/Reports/AUDIO_SYNTHESIS_APEX_LINE_AUDIT_1308.md",
+    "sourceHashSha256":  "6bfbc5b6a59b0a7a9107c097b50ebde636dabcbf04035100030766333bb78174",
+    "sourceHashFreshness":  "STALE_AFTER_APEX_LOOP_11_AUDIOCLIP_CREATE_EXCISION_GATE_BLOCKED",
+    "sourceHashRerunProof":  "Roslyn audit tool was rebuilt and rerun in Apex Loop 2 only after CPU gate was 41.1% and no dotnet/csc process was active. Apex Loop 4 source edits were rerun with dotnet run --no-build only after CPU gate was 9.17% and no dotnet/csc process was active. Apex Loop 5 runtime log surface removal was rerun with dotnet run --no-build only after CPU gate was 15.48% and no dotnet/csc process was active. Apex Loop 7 changed editor validator source and did not rerun Roslyn because CPU gate reported 94%, then 73% on recheck, with no dotnet/csc active. Apex Loop 8 reran Roslyn with dotnet run --no-build after CPU gate reported 29.72% and no dotnet/csc process was active. Apex Loop 9 changed runtime bootstrap code and did not rerun Roslyn because CPU gate reported 96.57%, with no dotnet/csc active. Apex Loop 10 rechecked the gate before no-build Roslyn and did not run because CPU was 66%, then 61%, with no dotnet/csc active. Apex Loop 11 changed runtime/editor source and did not rerun Roslyn because CPU was 96%, then 99%, then 100%, with no dotnet/csc active.",
+    "scannedFiles":  10,
+    "parseFailures":  0,
+    "rawRoslynNativeOrPointerFieldCount":  65,
+    "transientJobFieldCount":  47,
+    "stackOnlyRefStructViewFields":  18,
+    "persistentNativeContainerFieldsInMonoBehaviour":  0,
+    "forbiddenPersistentCandidates":  0,
+    "persistentRawPointerFieldsInMonoBehaviour":  0,
+    "layoutSequentialMatchesInSynthesis":  0,
+    "confirmedOffenderCount":  0,
+    "resolvedOffenders":  [
+                              {
+                                  "path":  "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs",
+                                  "removedFields":  [
+                                                        "_statePtr",
+                                                        "_codecPtr",
+                                                        "_telemetryPtr",
+                                                        "_countersPtr",
+                                                        "_waveformPtr",
+                                                        "_mockBankPtr",
+                                                        "_bankPtr",
+                                                        "_mmfPointer"
+                                                    ],
+                                  "removedColdAliases":  [
+                                                             "_mmf",
+                                                             "_mmfAccessor"
+                                                         ],
+                                  "replacement":  "VaultGenerationHandle descriptors plus phase-local NativeArray views acquired from IDataVault; hot DSP resolves raw pointers inside OnAudioFilterRead only after successful lock acquisition.",
+                                  "proof":  "Roslyn audit hash 6bfbc5b6a59b0a7a9107c097b50ebde636dabcbf04035100030766333bb78174 reports forbiddenPersistentCandidates=0 and forbiddenMonoBehaviourCandidates=0."
+                              }
+                          ],
+    "remainingCandidates":  [
+                                {
+                                    "ownerTypes":  [
+                                                       "DynamicMusicVaultViews",
+                                                       "VocalVaultViews"
+                                                   ],
+                                    "count":  18,
+                                    "classification":  "allowed_stack_only_ref_struct_view",
+                                    "disposition":  "Accepted by refined Roslyn classification. These are ref struct view bundles, so the C# compiler forbids heap fields, boxing, async capture, and long-lived storage; they remain method-local DataVault view carriers."
+                                }
+                            ],
+    "hotPathPolicy":  {
+                          "persistentRawPointers":  "forbidden",
+                          "phaseLocalPointers":  "allowed only inside callback/job dispatch scope after vault resolution",
+                          "audioFailureMode":  "zero output buffer and write existing vocal telemetry fault when a required view or bank length is invalid",
+                          "mmfPolicy":  "removed from vocal runtime; bank bytes are copied once into DataVault-owned native storage",
+                          "dumpRoute":  "Docs/AgentLogs/Dump_1308_Synthesis.bin",
+                          "hotPathTokenAudit":  "Apex Loop 9 full runtime scan under Assets/_Project/Scripts/Audio/Synthesis found no direct new, string.Format, ToString, LINQ, foreach, interpolation, string concatenation, Complete, scene search, GetComponent, StartCoroutine, Debug.Log, H8Debug.Log, throw new, NativeList, NativeHashMap, NativeQueue, UnsafeList, AddComponent, or LayoutKind.Sequential hits. Remaining managed surfaces are five cold file/dump catch(Exception) branches outside audio callbacks/jobs.",
+                          "authoredBootstrapRoute":  "Player.prefab now owns VocalBankPlaybackRuntime and DynamicMusicGranularSynthesizer on the Main Camera/AudioListener host. Runtime bootstrap fails closed when the authored components are absent instead of allocating them through AddComponent.",
+                          "viewBundlePolicy":  "VocalVaultViews and DynamicMusicVaultViews are ref struct stack-only carriers; no MonoBehaviour can persist them as fields.",
+                          "readOnlyResolvability":  "Broad mutable TryResolveViews and TryResolveSynthViews helpers were deleted. Cold readiness checks now use TryReadOnlyHandle and minimum-length validation.",
+                          "dynamicMusicVaultLocking":  "Dynamic music audio-copy locks the ready output buffer. Scheduled granular jobs lock voices, scalar, tuning, biquad, grain bank, telemetry ring, telemetry cursor, shared state, and target output buffer with same-vault release in finally. Publish resolves only through _synthJobLockedVault and requires the publish lock bitset before writing telemetry/shared state; no NativeArray or raw pointer is stored as a persistent field. Editor read accessors no longer flush or finalize jobs, and biquad low-pass state now finite-sanitizes z1/z2/output."
+                      },
+    "dtoPaddingPolicy":  {
+                             "publicPaddingFieldMatches":  0,
+                             "privatePaddingNameofOrDotAccessMatches":  0,
+                             "audioDspTelemetryEntryOffset60":  "OutputSampleCount",
+                             "roslynRerunAfterPaddingClosure":  1,
+                             "roslynRerunBlocker":  ""
+                         },
+    "apexLoop4Closure":  {
+                             "dynamicMusicPublishLockedVaultClosure":  1,
+                             "roslynRerunExecuted":  1,
+                             "roslynAuditHashSha256":  "1bcadaea49d6dafb36fc5ec4ca65ebbe2ba680e4e8713a6a4c09d816969a481f",
+                             "hullStressRuntimeNewKeywordMatches":  0,
+                             "generateMockSynthesisLoadJobPresent":  1,
+                             "mockLoadIterationsConfigured":  4096,
+                             "runtimeColdManagedExceptionCatches":  5,
+                             "runtimeColdManagedLogWarnings":  0
+                         },
+    "apexLoop7ValidatorScopeExpansion":  {
+                                            "editorValidatorSourceScopeExpanded":  1,
+                                            "runtimeFilesScannedByShell":  6,
+                                            "runtimeForbiddenTokenMatches":  0,
+                                            "runtimeManagedBootstrapCalls":  3,
+                                            "runtimeColdCatchBranches":  5,
+                                            "runtimeBroadMutableViewSymbolMatches":  0,
+                                            "roslynRerunExecuted":  0,
+                                            "roslynRerunBlocker":  "CPU gate reported 94%, then 73% on recheck; project policy forbids dotnet/Roslyn rerun while CPU >50%. No dotnet/csc process was active."
+                                        },
+    "apexLoop8FreshRoslynAudit":  {
+                                     "roslynRerunExecuted":  1,
+                                     "roslynRerunCommand":  "dotnet run --no-build --project Tools/VaultNativeAliasRoslynAudit/VaultNativeAliasRoslynAudit.csproj -- --repo . --root Assets/_Project/Scripts/Audio/Synthesis --output Docs/Reports/VAULT_EXORCISM_REPORT_1308.json --agent-id 1308",
+                                     "roslynRerunGate":  "CPU 29.72%, no dotnet/csc process active.",
+                                     "sourceHashSha256":  "6bfbc5b6a59b0a7a9107c097b50ebde636dabcbf04035100030766333bb78174",
+                                     "forbiddenPersistentCandidates":  0,
+                                     "forbiddenMonoBehaviourCandidates":  0
+                                 },
+    "apexLoop9BootstrapExcision":  {
+                                     "runtimeAddComponentMatches":  0,
+                                     "runtimeNewKeywordMatches":  0,
+                                     "runtimeForbiddenTokenMatches":  0,
+                                     "runtimeColdCatchBranches":  5,
+                                     "authoredPrefab":  "Assets/_Project/Prefabs/Player.prefab",
+                                     "authoredPrefabLines":  "139-140, 374-405",
+                                     "roslynRerunExecuted":  0,
+                                     "roslynRerunBlocker":  "CPU gate reported 96.57%; project policy forbids dotnet/Roslyn rerun while CPU >50%. No dotnet/csc process was active."
+                                 },
+    "apexLoop10PrefabSanity":  {
+                                     "agentsRootGameObjectCheck":  0,
+                                     "agentsRootGameObjectDisposition":  "Select-String m_RootGameObject returned false because Player.prefab is prefab YAML, not scene YAML.",
+                                     "rootGameObjectFileId":  "2193605564943894971",
+                                     "rootGameObjectLine":  126,
+                                     "componentListLines":  "139-140",
+                                     "audioListenerAudioSourceLines":  "225-284",
+                                     "synthesisComponentLines":  "374-405",
+                                     "scriptGuidProof":  [
+                                                            "VocalBankPlaybackRuntime.cs.meta:2 guid acfd32c0ce821314fbd470b2ff615f5d",
+                                                            "DynamicMusicGranularSynthesizer.cs.meta:2 guid 265100ac4b374295a6b78bb7a4753f2e"
+                                                        ],
+                                     "runtimeFilesScannedByShell":  6,
+                                     "runtimeForbiddenTokenMatches":  0,
+                                     "roslynRerunExecuted":  0,
+                                     "roslynRerunBlocker":  "CPU gate reported 66%, then 61%; project policy forbids dotnet/Roslyn rerun while CPU >50%. No dotnet/csc process was active."
+                                 },
+    "apexLoop11AudioDriverClipRoute":  {
+                                     "audioClipCreateMatches":  0,
+                                     "destroyDriverClipMatches":  0,
+                                     "runtimeForbiddenManagedTokenMatches":  0,
+                                     "driverClipCodeLines":  "DynamicMusicGranularSynthesizer.cs:265,1090-1093",
+                                     "driverClipPrefabLine":  "Assets/_Project/Prefabs/Player.prefab:406",
+                                     "driverClipAssetGuid":  "0d1a03d1d70c9dd448ad1fbab16de520",
+                                     "driverClipAssetProof":  "Assets/_Project/Audio/Underwater Ambient.wav.meta:2",
+                                     "editorValidatorFactoryTokenBan":  [
+                                                                            "AudioClip.Create",
+                                                                            "Resources.Load",
+                                                                            "Instantiate("
+                                                                        ],
+                                     "roslynRerunExecuted":  0,
+                                     "roslynRerunBlocker":  "CPU gate reported 96%, then 99%, then 100%; project policy forbids dotnet/Roslyn rerun while CPU >50%. No dotnet/csc process was active."
+                                 }
+}

@@ -281,7 +281,7 @@ namespace Hecton8.Gameplay
             if (listener == null || !_listeners.Contains(listener))
                 return;
 
-            Debug.LogError($"[BaseAirlockEvents] {ownerName} was destroyed while still registered as an IBaseAirlockEventListener.");
+            Hecton8.Core.H8Debug.LogError($"[BaseAirlockEvents] {ownerName} was destroyed while still registered as an IBaseAirlockEventListener.");
 #endif
         }
 

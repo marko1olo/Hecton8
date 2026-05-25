@@ -1,5 +1,7 @@
 using System;
+#if UNITY_EDITOR
 using System.IO;
+#endif
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
@@ -28,6 +30,10 @@ namespace Hecton8.Physics
         private const int LockSleepSdfDensity = 1 << 10;
         private const int LockSleepSdfConfig = 1 << 11;
         private const int LockMaterialSettlingProfiles = 1 << 12;
+        private const uint BuoyancyFaultEventHash = 0x42554654u; // BUFT
+        private const uint BuoyancyFaultDumpHash = 0x42554450u; // BUDP
+        private const uint BuoyancySimdFaultEventHash = 0x42534654u; // BSFT
+        private const uint BuoyancySimdFaultDumpHash = 0x42534450u; // BSDP
 
         [Header("Vault Capacity")]
         [SerializeField, Range(1, BuoyancyDisplacementConstants.StateCapacity)]
@@ -43,6 +49,7 @@ namespace Hecton8.Physics
         [Tooltip("Seeds 1000 deterministic synthetic buoyant objects when no inventory drop stream is present.")]
         private bool _seedEmergencyMockObjects = true;
 
+#if UNITY_EDITOR
         [SerializeField]
         [Tooltip("Loads item_volume_specs.csv into the Vault-backed material volume table during cold startup.")]
         private bool _loadCsvOnEnable = true;
@@ -62,6 +69,7 @@ namespace Hecton8.Physics
         [SerializeField]
         [Tooltip("Project-relative material settling CSV path.")]
         private string _materialSettlingProfilesCsvRelativePath = BuoyancyDisplacementConstants.MaterialSettlingProfilesCsvRelativePath;
+#endif
 
         private IDataVault _dataVault;
         private VaultGenerationHandle<BuoyancyStateDTO> _statesHandle;
@@ -72,7 +80,9 @@ namespace Hecton8.Physics
         private VaultGenerationHandle<int> _telemetryCursorHandle;
         private VaultGenerationHandle<BuoyancyMaterialVolumeDTO> _materialVolumesHandle;
         private VaultGenerationHandle<BuoyancyMaterialSettlingProfileDTO> _materialSettlingProfilesHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
         private VaultGenerationHandle<BuoyancyDebugForceDTO> _debugForcesHandle;
         private VaultGenerationHandle<BuoyancyCounterDTO> _countersHandle;
         private VaultGenerationHandle<BuoyancyBodyBindingDTO> _bodyBindingsHandle;
@@ -106,6 +116,7 @@ namespace Hecton8.Physics
         private bool _coldBuffersInitialized;
         private bool _coldBootCompleted;
         private bool _dumpedFault;
+        private bool _coreBlackboxWarmed;
         private bool _forcePacketsReadyToDrain;
 
 #if UNITY_EDITOR
@@ -369,6 +380,7 @@ namespace Hecton8.Physics
             CompletePendingSolverForTeardown();
             RefreshColdDependencies();
             EnsureColdBooted();
+            WarmCoreBlackboxRoute();
             TryRegister();
             TryRegisterOriginShiftListener();
         }
@@ -382,6 +394,7 @@ namespace Hecton8.Physics
             TryUnregisterOriginShiftListener();
             CompletePendingSolverForTeardown();
             _forcePacketsReadyToDrain = false;
+            _coreBlackboxWarmed = false;
         }
 
         private void OnDestroy()
@@ -394,6 +407,7 @@ namespace Hecton8.Physics
             TryUnregisterOriginShiftListener();
             CompletePendingSolverForTeardown();
             ReleaseVaultHandles(_dataVault);
+            _coreBlackboxWarmed = false;
         }
 
         public void FixedTick(float fixedDeltaTime)
@@ -624,8 +638,13 @@ namespace Hecton8.Physics
             if (!ReferenceEquals(previousVault, currentVault))
                 ReleaseVaultHandles(previousVault);
             _dataVault = currentVault;
+            _coreBlackboxWarmed = false;
             if (!HandlesReady() && currentVault != null && !currentVault.IsAllocationLocked)
+            {
                 EnsureColdBooted();
+            }
+            if (currentVault != null)
+                WarmCoreBlackboxRoute();
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -793,7 +812,7 @@ namespace Hecton8.Physics
                 !math.isfinite(vectorMicros) ||
                 !math.isfinite(scalarMicros))
             {
-                TryDumpSimdTelemetry(telemetry);
+                TryDumpSimdTelemetry(telemetry, cursor);
             }
             return true;
         }
@@ -958,7 +977,9 @@ namespace Hecton8.Physics
                    EnsureVaultDescriptor(vault, ref _sleepSdfConfigHandle, BuoyancyDisplacementBufferIds.SleepSdfConfig, 1, NativeArrayOptions.UninitializedMemory) &&
                    EnsureVaultDescriptor(vault, ref _materialVolumesHandle, BuoyancyDisplacementBufferIds.MaterialVolumes, BuoyancyDisplacementConstants.MaterialVolumeCapacity, NativeArrayOptions.UninitializedMemory) &&
                    EnsureVaultDescriptor(vault, ref _materialSettlingProfilesHandle, BuoyancyDisplacementBufferIds.MaterialSettlingProfiles, BuoyancyDisplacementConstants.MaterialSettlingProfileCapacity, NativeArrayOptions.UninitializedMemory) &&
+#if UNITY_EDITOR
                    EnsureVaultDescriptor(vault, ref _csvScratchHandle, BuoyancyDisplacementBufferIds.CsvScratch, BuoyancyDisplacementConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory) &&
+#endif
                    EnsureVaultDescriptor(vault, ref _debugForcesHandle, BuoyancyDisplacementBufferIds.DebugForces, stateCapacity, NativeArrayOptions.UninitializedMemory) &&
                    EnsureVaultDescriptor(vault, ref _countersHandle, BuoyancyDisplacementBufferIds.Counters, BuoyancyDisplacementConstants.CounterCapacity, NativeArrayOptions.ClearMemory) &&
                    EnsureVaultDescriptor(vault, ref _bodyBindingsHandle, BuoyancyDisplacementBufferIds.BodyBindings, stateCapacity, NativeArrayOptions.UninitializedMemory) &&
@@ -997,7 +1018,9 @@ namespace Hecton8.Physics
                    HasHandle(in _sleepSdfConfigHandle) &&
                    HasHandle(in _materialVolumesHandle) &&
                    HasHandle(in _materialSettlingProfilesHandle) &&
+#if UNITY_EDITOR
                    HasHandle(in _csvScratchHandle) &&
+#endif
                    HasHandle(in _debugForcesHandle) &&
                    HasHandle(in _countersHandle) &&
                    HasHandle(in _bodyBindingsHandle) &&
@@ -1420,7 +1443,7 @@ namespace Hecton8.Physics
                 cursor[0] = math.select(nextCursor, 0, nextCursor >= telemetry.Length);
 
                 if ((entry.Flags & SimdVectorizationConstants.FlagNonFinite) != 0u || throughputDrop > 0.5f)
-                    TryDumpSimdTelemetry(telemetry);
+                    TryDumpSimdTelemetry(telemetry, cursor);
             }
             finally
             {
@@ -1603,7 +1626,9 @@ namespace Hecton8.Physics
                 ReleaseVaultHandle(vault, ref _sleepSdfConfigHandle);
                 ReleaseVaultHandle(vault, ref _materialVolumesHandle);
                 ReleaseVaultHandle(vault, ref _materialSettlingProfilesHandle);
+#if UNITY_EDITOR
                 ReleaseVaultHandle(vault, ref _csvScratchHandle);
+#endif
                 ReleaseVaultHandle(vault, ref _debugForcesHandle);
                 ReleaseVaultHandle(vault, ref _countersHandle);
                 ReleaseVaultHandle(vault, ref _bodyBindingsHandle);
@@ -1648,7 +1673,9 @@ namespace Hecton8.Physics
             _sleepSdfConfigHandle = default;
             _materialVolumesHandle = default;
             _materialSettlingProfilesHandle = default;
+#if UNITY_EDITOR
             _csvScratchHandle = default;
+#endif
             _debugForcesHandle = default;
             _countersHandle = default;
             _bodyBindingsHandle = default;
@@ -1799,6 +1826,7 @@ namespace Hecton8.Physics
             return math.max(0f, math.select(0f, value, math.isfinite(value)));
         }
 
+#if UNITY_EDITOR
         private static string ResolveProjectPath(string relativePath)
         {
             if (string.IsNullOrEmpty(relativePath))
@@ -1836,80 +1864,25 @@ namespace Hecton8.Physics
                 return 0;
             }
         }
+#endif
 
         private void DumpBlackBoxOnce()
         {
-            // FAULT PATH ONLY: writes postmortem telemetry after non-finite/counter fault detection.
             IDataVault vault = _dataVault;
-            if (vault == null)
+            if (vault == null || !_coreBlackboxWarmed || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
                 return;
 
             NativeArray<BuoyancyTelemetryEntry> telemetry = ResolveVaultBuffer(vault, in _telemetryRingHandle);
+            NativeArray<int> cursor = ResolveVaultBuffer(vault, in _telemetryCursorHandle);
             if (!telemetry.IsCreated || telemetry.Length <= 0)
                 return;
 
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            TryWriteTelemetryDump(projectRoot, BuoyancyDisplacementConstants.DumpRelativePath, telemetry);
-            TryWriteTelemetryDump(projectRoot, BuoyancyDisplacementConstants.AgentDumpRelativePath, telemetry);
-
-            NativeArray<SleepStateTelemetryEntry> sleepTelemetry = ResolveVaultBuffer(vault, in _sleepTelemetryRingHandle);
-            TryWriteSleepTelemetryDump(projectRoot, BuoyancyDisplacementConstants.SleepStateDumpRelativePath, sleepTelemetry);
-        }
-
-        private static void TryWriteTelemetryDump(string projectRoot, string relativePath, NativeArray<BuoyancyTelemetryEntry> telemetry)
-        {
-            if (string.IsNullOrEmpty(projectRoot) || string.IsNullOrEmpty(relativePath) || !telemetry.IsCreated || telemetry.Length <= 0)
-                return;
-
-            string dumpPath = Path.Combine(projectRoot, relativePath);
-            string directory = Path.GetDirectoryName(dumpPath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-
-            try
-            {
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    int bytes = telemetry.Length * UnsafeUtility.SizeOf<BuoyancyTelemetryEntry>();
-                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                    ReadOnlySpan<byte> source = new ReadOnlySpan<byte>(ptr, bytes);
-                    stream.Write(source);
-                }
-            }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
-        }
-
-        private static void TryWriteSleepTelemetryDump(string projectRoot, string relativePath, NativeArray<SleepStateTelemetryEntry> telemetry)
-        {
-            if (string.IsNullOrEmpty(projectRoot) || string.IsNullOrEmpty(relativePath) || !telemetry.IsCreated || telemetry.Length <= 0)
-                return;
-
-            string dumpPath = Path.Combine(projectRoot, relativePath);
-            string directory = Path.GetDirectoryName(dumpPath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
-
-            try
-            {
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    int bytes = telemetry.Length * UnsafeUtility.SizeOf<SleepStateTelemetryEntry>();
-                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                    ReadOnlySpan<byte> source = new ReadOnlySpan<byte>(ptr, bytes);
-                    stream.Write(source);
-                }
-            }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
+            int cursorValue = cursor.IsCreated && cursor.Length > 0 ? math.max(0, cursor[0]) : 0;
+            int latestIndex = cursorValue > 0 ? (cursorValue - 1) % telemetry.Length : 0;
+            BuoyancyTelemetryEntry latest = telemetry[latestIndex];
+            float scalar = math.max(math.abs(latest.TotalBuoyantForce), math.abs(latest.TotalDragForce));
+            GlobalTelemetryBus.PushEvent(BuoyancyFaultEventHash, scalar, latest.LastEntityHashID);
+            _ = GlobalTelemetryBus.TryDumpBlackboxNow(BuoyancyFaultDumpHash);
         }
 
         private static float ResolveSimdThroughputDrop(float vectorMicros, float scalarMicros)
@@ -1920,34 +1893,26 @@ namespace Hecton8.Physics
             return math.select(0f, drop, (safeScalarMicros > 0.0001f) & math.isfinite(drop));
         }
 
-        private static unsafe void TryDumpSimdTelemetry(NativeArray<SimdTelemetryEntry> telemetry)
+        private void TryDumpSimdTelemetry(NativeArray<SimdTelemetryEntry> telemetry, NativeArray<int> cursor)
         {
-            // FAULT/BENCHMARK PATH ONLY: SIMD X-Ray dump is outside the steady-state solver cadence.
-            if (!telemetry.IsCreated || telemetry.Length <= 0)
+            if (!telemetry.IsCreated || telemetry.Length <= 0 || !_coreBlackboxWarmed || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
                 return;
 
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string dumpPath = Path.Combine(projectRoot, SimdVectorizationConstants.SimdAgentDumpRelativePath);
-            string directory = Path.GetDirectoryName(dumpPath);
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-                Directory.CreateDirectory(directory);
+            int cursorValue = cursor.IsCreated && cursor.Length > 0 ? math.max(0, cursor[0]) : 0;
+            int latestIndex = cursorValue > 0 ? (cursorValue - 1) % telemetry.Length : 0;
+            SimdTelemetryEntry latest = telemetry[latestIndex];
+            float scalar = math.max(latest.VectorMicros, latest.ScalarMicros);
+            GlobalTelemetryBus.PushEvent(BuoyancySimdFaultEventHash, scalar, latest.LastStateHash);
+            _ = GlobalTelemetryBus.TryDumpBlackboxNow(BuoyancySimdFaultDumpHash);
+        }
 
-            try
-            {
-                using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    int bytes = telemetry.Length * UnsafeUtility.SizeOf<SimdTelemetryEntry>();
-                    byte* ptr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                    ReadOnlySpan<byte> source = new ReadOnlySpan<byte>(ptr, bytes);
-                    stream.Write(source);
-                }
-            }
-            catch (IOException)
-            {
-            }
-            catch (UnauthorizedAccessException)
-            {
-            }
+        private void WarmCoreBlackboxRoute()
+        {
+            if (_coreBlackboxWarmed)
+                return;
+
+            GlobalTelemetryBus.Initialize();
+            _coreBlackboxWarmed = GlobalTelemetryBus.BlackboxActiveFrameCount > 0;
         }
 
 #if UNITY_EDITOR

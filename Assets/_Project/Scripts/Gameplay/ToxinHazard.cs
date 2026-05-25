@@ -43,12 +43,12 @@ namespace Hecton8.Gameplay
             if (_triggerCollider != null)
                 _triggerCollider.isTrigger = true;
             _cachedVolume = CachedTriggerVolume.FromCollider(_triggerCollider, fallbackDetectionRadius);
-            _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntime = GlobalRegistry.Player;
         }
 
         private void OnEnable()
         {
-            _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntime = GlobalRegistry.Player;
             TryRegister();
             TryRegisterHotSwapListener();
         }

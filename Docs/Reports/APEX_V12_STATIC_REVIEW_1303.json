@@ -1,0 +1,159 @@
+﻿{
+    "schema":  "hecton8.apex_static_review_1303.v12",
+    "agentId":  "1303",
+    "generatedAtUtc":  "2026-05-25T18:53:12.1129060Z",
+    "prompt":  {
+                   "file":  "Docs/Tasks/CURRENT_BATCH.md",
+                   "taskCount":  20,
+                   "rawUtf8Sha256":  "6a477d1c3c9f2028d788ea18d9fa530be4c4852ce05d44792c82133ad30482c0"
+               },
+    "patch":  {
+                  "file":  "Assets/_Project/Scripts/TetherInstance.cs",
+                  "lines":  "119-172,4287-4486,4487-5279",
+                  "summary":  "removed ten per-instance fixed managed scratch arrays; replaced bend/anchor/segment scratch with scalar slots and ref index accessors"
+              },
+    "zeroGc":  {
+                   "rawNewCount":  7,
+                   "forbiddenPatternCount":  0,
+                   "managedHeapNewInAuditedSolverFrameHotRanges":  0,
+                   "rawUnsafeMallocCount":  1,
+                   "sentinelRegisters":  1,
+                   "sentinelUnregisters":  1,
+                   "roslynHash":  "36ea55fdeaf0273f6950f4ff9746bc998cbd0c2449722d26df5708e9029f5434",
+                   "roslynSummary":  {
+                                         "scannedFiles":  4,
+                                         "parseFailures":  0,
+                                         "totalFindings":  6,
+                                         "objectCreations":  6,
+                                         "valueTypeCreations":  1,
+                                         "managedRiskCreations":  5,
+                                         "nativeTempJobAllocations":  0,
+                                         "nativePersistentAllocations":  0,
+                                         "nativeOtherAllocations":  0,
+                                         "stringFormatCalls":  0,
+                                         "toStringCalls":  0,
+                                         "linqCalls":  0,
+                                         "foreachStatements":  0,
+                                         "interpolatedStrings":  0,
+                                         "stringConcatSuspects":  0
+                                     },
+                   "removedManagedScratchArrays":  [
+                                                       "Vector3[4] bend points",
+                                                       "Vector3[4] bend normals",
+                                                       "Vector3[6] anchor positions",
+                                                       "Vector3[6] anchor velocities",
+                                                       "Vector3[6] solver anchor positions",
+                                                       "Vector3[6] solver anchor velocities",
+                                                       "float[5] segment rest lengths",
+                                                       "float[5] segment lengths",
+                                                       "HectonVoxelVolume[4] bend volumes",
+                                                       "int[4] bend runtime stamps"
+                                                   ]
+               },
+    "nativeAlias":  {
+                        "strictHash":  "254906112e60fba00917c34dafe995f2cc66cd70ff89c10a0df3faa68edf7087",
+                        "strictForbidden":  0,
+                        "wholeHash":  "2320e4632c846b77c9daa0a4a316599dd9f303ac94b8e8b48198a99446fcb4f5",
+                        "wholeForbidden":  1820,
+                        "ownedForbidden":  0,
+                        "parseFailures":  0
+                    },
+    "jobCompletion":  {
+                          "schema":  "hecton8.tether_job_completion_audit.v12",
+                          "agentId":  "1303",
+                          "files":  [
+                                        "Assets/_Project/Scripts/TetherInstance.cs",
+                                        "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                                        "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                                        "Assets/_Project/Scripts/Core/Contracts/Physics/CableGpuContracts.cs"
+                                    ],
+                          "ownedFindings":  [
+                                                {
+                                                    "file":  "Assets/_Project/Scripts/TetherInstance.cs",
+                                                    "line":  3075,
+                                                    "text":  "if (!DispatcherJobFence.TryComplete(ref handle, forceComplete: true))",
+                                                    "classification":  "RuntimeDispatcherBarrier",
+                                                    "editorOnly":  false
+                                                },
+                                                {
+                                                    "file":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                                                    "line":  748,
+                                                    "text":  "DispatcherJobFence.TryComplete(ref loadHandle, forceComplete: true);",
+                                                    "classification":  "EditorFuzzerForcedComplete",
+                                                    "editorOnly":  true
+                                                },
+                                                {
+                                                    "file":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                                                    "line":  768,
+                                                    "text":  "DispatcherJobFence.TryComplete(ref integrationHandle, forceComplete: true);",
+                                                    "classification":  "EditorFuzzerForcedComplete",
+                                                    "editorOnly":  true
+                                                },
+                                                {
+                                                    "file":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                                                    "line":  787,
+                                                    "text":  "DispatcherJobFence.TryComplete(ref solverHandle, forceComplete: true);",
+                                                    "classification":  "EditorFuzzerForcedComplete",
+                                                    "editorOnly":  true
+                                                }
+                                            ],
+                          "ownedFindingCount":  4,
+                          "framePathBlockerCount":  0,
+                          "framePathBlockers":  [
+
+                                                ],
+                          "note":  "TetherInstance barrier remains explicit dispatcher-owned forceComplete; TetherVerletJobs completions are editor fuzzer only."
+                      },
+    "signalBus":  {
+                      "errors":  2,
+                      "confirmedErrors":  2,
+                      "ownedFindingCount":  1,
+                      "ownedFindings":  [
+                                            {
+                                                "severity":  "WARN",
+                                                "rule":  "SIGNAL_LAYOUT_REVIEW",
+                                                "confidence":  65,
+                                                "classification":  "NAME_BASED_REVIEW",
+                                                "evidenceKind":  "ANCHORED_STRUCT_DECLARATION",
+                                                "path":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                                                "line":  438,
+                                                "symbol":  "TetherVerletTelemetryJob",
+                                                "evidence":  "internal struct TetherVerletTelemetryJob : IJob",
+                                                "requiredAction":  "Confirm whether this signal-like struct crosses native/Burst boundaries; if yes, add explicit layout.",
+                                                "tags":  {
+                                                             "isEditor":  false,
+                                                             "implementsISignal":  false
+                                                         }
+                                            }
+                                        ]
+                  },
+    "aup":  {
+                "formula":  "anchorLocal64 = anchorAup - localOriginAup; payloadLocal64 = payloadAup - localOriginAup; deltaLocal64 = payloadLocal64 - anchorLocal64; direction = (float)(deltaLocal64 * rsqrt(lengthsq(deltaLocal64)))",
+                "source":  "Assets/_Project/Scripts/TetherInstance.cs force route, unchanged by v12",
+                "directAbsoluteAupToFloatCastInOwnedForcePath":  false
+            },
+    "dto":  {
+                "map":  "Docs/Reports/TETHER_DTO_ARM64_BYTE_OFFSET_MAP_1303.json",
+                "explicitStructs":  24,
+                "sizeMultipleOf8Failures":  0,
+                "legacyAbiOrderExceptions":  [
+                                                 "TetherAupTelemetryEntry",
+                                                 "TetherTelemetryEntry"
+                                             ]
+            },
+    "forceRoute":  {
+                       "directRigidbodyAddForceInOwnedFiles":  0,
+                       "route":  "TetherInstance -\u003e TetherAupForcePacketBridge / PhysicsForceRouter queue; PhysicsApplySystem owns AddForce application phase"
+                   },
+    "verification":  {
+                         "dotnetBuildLaunched":  false,
+                         "unityEditorFuzzerExecuted":  false,
+                         "reason":  "User explicitly requested rare dotnet/build usage; Unity MCP tools/Editor execution unavailable in this session."
+                     },
+    "fileHashes":  {
+                       "Assets/_Project/Scripts/TetherInstance.cs":  "a405d876ac365d6f7ab068dc32d4d75723f1aff02b4d1ce7db791c3c6e75dc9f",
+                       "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs":  "1046ee2bd19e922de4e5897e3b9b1608cb007363419c0aade99f4e9978b85fb5",
+                       "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs":  "c9d10b099466269a46db3f2a8f107578027dca0d21571734a77fafa5107447a8",
+                       "Assets/_Project/Scripts/Core/Contracts/Physics/CableGpuContracts.cs":  "7f256ff0e32f2be3dd19dd8b0f5a8462368d9a3e276437ec9a800a9c8c7089e5"
+                   }
+}

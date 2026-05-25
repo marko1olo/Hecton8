@@ -563,10 +563,11 @@ namespace Hecton8.Visor
         {
             long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - setupStartTimestamp;
             double elapsedMilliseconds = elapsedTicks * 1000.0d / System.Diagnostics.Stopwatch.Frequency;
-            if (elapsedMilliseconds <= VolumetricSetupBudgetWarningMilliseconds || Time.frameCount < _nextPerformanceWarningFrame)
+            int frame = SystemDispatcher.CurrentFrameIndex;
+            if (elapsedMilliseconds <= VolumetricSetupBudgetWarningMilliseconds || frame < _nextPerformanceWarningFrame)
                 return;
 
-            _nextPerformanceWarningFrame = Time.frameCount + VolumetricPerformanceWarningCooldownFrames;
+            _nextPerformanceWarningFrame = frame + VolumetricPerformanceWarningCooldownFrames;
             GlobalTelemetryBus.PublishPerformanceWarning(
                 TelemetryWarningVolumetricSetupOverBudgetHash,
                 TelemetryContextVolumetricLightFeatureHash,

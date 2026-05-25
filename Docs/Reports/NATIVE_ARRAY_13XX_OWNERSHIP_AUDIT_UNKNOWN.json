@@ -1,0 +1,211 @@
+﻿{
+    "schema":  "hecton8.native_array_13xx_ownership_audit.v1",
+    "date":  "2026-05-25",
+    "agentId":  "UNKNOWN",
+    "evidenceClass":  "STATIC_SOURCE_ONLY",
+    "sourceMutation":  false,
+    "freshHeavyRoslynAuditRun":  false,
+    "freshHeavyRoslynAuditBlockedReason":  "CPU samples after recheck were 74.2 percent, 62.8 percent, and 72.3 percent; heavy Roslyn/build load was not launched under current guard.",
+    "ledgerTrend":  {
+                        "previousLedger":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1304_FULL.json",
+                        "previousForbiddenPersistentCandidates":  1947,
+                        "previousForbiddenMonoBehaviourCandidates":  432,
+                        "latestLedger":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_UNKNOWN_CURRENT_20260526_0052.json",
+                        "latestScannedFiles":  2421,
+                        "latestForbiddenPersistentCandidates":  1770,
+                        "latestForbiddenMonoBehaviourCandidates":  358,
+                        "latestParseFailures":  0,
+                        "persistentCandidateDelta":  -177,
+                        "monoBehaviourCandidateDelta":  -74,
+                        "latestLedgerNotFullyFresh":  true,
+                        "intermediateLedger":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_1307_PROJECT_PARSE_CHECK.json",
+                        "intermediateForbiddenPersistentCandidates":  1778,
+                        "intermediateForbiddenMonoBehaviourCandidates":  358,
+                        "deltaFromIntermediatePersistent":  -8,
+                        "deltaFromIntermediateMonoBehaviour":  0,
+                        "rateReport":  "Docs/Reports/FORBIDDEN_NATIVE_BURNDOWN_RATE_QUALITY_UNKNOWN.md"
+                    },
+    "verdict":  {
+                    "direction":  "CORRECT",
+                    "releaseClean":  false,
+                    "summary":  "Scoped 13XX fixes are real, but project-wide native ownership remains incomplete."
+                },
+    "agents":  [
+                   {
+                       "id":  "1300",
+                       "domain":  "AI Cognition",
+                       "oldComplaint":  "Persistent NativeArray telemetry cache in AIAnxietyTunerWindow; mutable vault views without explicit write-lock/finally; missing 1300-owned dump route.",
+                       "proofReports":  [
+                                            "Docs/Reports/VAULT_EXORCISM_REPORT_1300.json"
+                                        ],
+                       "sourceProof":  [
+                                           "Assets/_Project/Scripts/AI/Cognition/Editor/AIAnxietyTunerWindow.cs:365-366",
+                                           "Assets/_Project/Scripts/AI/Cognition/Editor/AIAnxietyTunerWindow.cs:398",
+                                           "Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault_AnxietyDecay.cs:297-336"
+                                       ],
+                       "fixed":  true,
+                       "residual":  "Runtime Unity/profiler proof absent; scoped remaining NativeArray fields are transient views/job parameters."
+                   },
+                   {
+                       "id":  "1301",
+                       "domain":  "AI Ecology Spatial Grid",
+                       "oldComplaint":  "Spatial query retained native views across relocation; dump path had unsafe/fault edge cases and a long-lived raw snapshot pointer.",
+                       "proofReports":  [
+                                            "Docs/Reports/VAULT_EXORCISM_APEX_REAUDIT_1301.json"
+                                        ],
+                       "sourceProof":  [
+                                           "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs:328-330",
+                                           "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs:571-573",
+                                           "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs:1563-1616",
+                                           "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs:1744-1778"
+                                       ],
+                       "fixed":  true,
+                       "residual":  "Scoped native alias fixed, but dump worker still uses managed FileStream rather than native plugin IO."
+                   },
+                   {
+                       "id":  "1302",
+                       "domain":  "Physics Vehicles",
+                       "oldComplaint":  "Raw physics scan found one forbidden alias in VerletCableNodeBuffer, outside 1302 scope; local vehicle dump writers existed.",
+                       "proofReports":  [
+                                            "Docs/Reports/VAULT_EXORCISM_REPORT_1302.json"
+                                        ],
+                       "sourceProof":  [
+                                           "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs:625-627",
+                                           "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs:884-913"
+                                       ],
+                       "fixed":  "PARTIAL",
+                       "residual":  "Scoped vehicle alias count was zero; broader physics dump/native-only route debt remains, and Core GlobalTelemetryBus writer is still managed IO internally."
+                   },
+                   {
+                       "id":  "1304",
+                       "domain":  "Voxel / SurfaceNets",
+                       "oldComplaint":  "HectonVoxelVolume, VoxelDeltaProcessor, ScheduledCompactionRequest, SurfaceNets buffers, and GPU upload code retained persistent native aliases/views.",
+                       "proofReports":  [
+                                            "Docs/Reports/VAULT_EXORCISM_REPORT_1304.json",
+                                            "Docs/Reports/VAULT_EXORCISM_APEX_REVIEW_1304.md"
+                                        ],
+                       "sourceProof":  [
+                                           "Assets/_Project/Scripts/VoxelDeltaProcessor.cs:140",
+                                           "Assets/_Project/Scripts/VoxelDeltaProcessor.cs:1048-1085",
+                                           "Assets/_Project/Scripts/VoxelDeltaProcessor.cs:6057-6065"
+                                       ],
+                       "fixed":  true,
+                       "residual":  "Target route mostly fixed, but 1312 conflicts with current 1304 owner route."
+                   },
+                   {
+                       "id":  "1305",
+                       "domain":  "World Streaming / Residency",
+                       "oldComplaint":  "TerrainChunkPagerRuntime retained raw pointers derived from DataVault views; WorldChunkResidencyManager retained persistent native arrays/maps/queues/lists.",
+                       "proofReports":  [
+                                            "Docs/Reports/VAULT_EXORCISM_REPORT_1305.json"
+                                        ],
+                       "sourceProof":  [
+                                           "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs:100-116",
+                                           "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs:652-680",
+                                           "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs:749-775",
+                                           "Assets/_Project/Scripts/World/TerrainChunkPagerRuntime.cs:2305",
+                                           "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_UNKNOWN_CURRENT_20260526_0052.json reports WorldChunkResidencyManager.cs=0 and TerrainChunkPagerRuntime.cs=0 forbidden persistent candidates"
+                                       ],
+                       "fixed":  "PARTIAL",
+                       "residual":  "Field-level forbidden persistent candidates are currently 0 for WorldChunkResidencyManager.cs and TerrainChunkPagerRuntime.cs. Terrain pager lifetime DataVault locks, unsafe alias strategy, and managed FileStream routes still need owner/fence/runtime proof."
+                   },
+                   {
+                       "id":  "1310",
+                       "domain":  "Core Memory",
+                       "oldComplaint":  "GlobalDataVault writer/pin/compaction ordering could race if active bits and block locks were published in the wrong order.",
+                       "proofReports":  [
+                                            "Docs/Reports/MEMORY_SENTRY_OPTIMIZATION_REPORT_1310.json"
+                                        ],
+                       "sourceProof":  [
+                                           "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs"
+                                       ],
+                       "fixed":  true,
+                       "residual":  "Static checks pass with checkCount=50 and failedCount=0; runtime compaction stress proof absent."
+                   },
+                   {
+                       "id":  "1312",
+                       "domain":  "Voxel Paging",
+                       "oldComplaint":  "Voxel paging needed owner dump path, layout validator, AUP/directory correctness, and dense fallback math.",
+                       "proofReports":  [
+                                            "Docs/Reports/VOXEL_PAGING_OPTIMIZATION_REPORT_1312.json"
+                                        ],
+                       "sourceProof":  [
+                                           "Assets/_Project/Scripts/VoxelDeltaProcessor.cs:140"
+                                       ],
+                       "fixed":  false,
+                       "residual":  "Report success=false because current source uses 1304 dump/validator route."
+                   },
+                   {
+                       "id":  "1313",
+                       "domain":  "Data Monolith",
+                       "oldComplaint":  "Boot/fatal paths used temporary NativeArray\u003cbyte\u003e, generic text/UTF8/substrings, and stale monolith ABI/schema.",
+                       "proofReports":  [
+                                            "Docs/Reports/DATA_MONOLITH_APEX_RECHECK_1313.json",
+                                            "Docs/Reports/DATA_MONOLITH_APEX_PARANOID_PASS5_1313.json",
+                                            "Docs/Reports/DATA_MONOLITH_APEX_PARANOID_PASS6_1313.json",
+                                            "Docs/Reports/DATA_MONOLITH_APEX_PARANOID_PASS7_1313.json"
+                                        ],
+                       "sourceProof":  [
+                                           "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5048-5060",
+                                           "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs:5367-5370",
+                                           "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs:595-613",
+                                           "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs:669"
+                                       ],
+                       "fixed":  "PARTIAL",
+                       "residual":  "NativeArray temp residues, section pointer helper, and runtime Encoding.UTF8 active release calls are fixed. Strict validator now PASSes active h8bin/text artifact checks, but overall release verdict remains rejected pending platform PAL, Unity player, and profiler proof."
+                   },
+                   {
+                       "id":  "1314",
+                       "domain":  "Audio Bridge",
+                       "oldComplaint":  "Native plugin descriptor exported DataVault-resolved NativeArray pointers that could become stale after relocation; first long-lived pin repair was rejected.",
+                       "proofReports":  [
+                                            "Docs/Reports/AUDIO_BRIDGE_OPTIMIZATION_REPORT_1314.json"
+                                        ],
+                       "sourceProof":  [
+                                           "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:483-506",
+                                           "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:522-545",
+                                           "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:561-575",
+                                           "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:624-635",
+                                           "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:704-715",
+                                           "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:730-743"
+                                       ],
+                       "fixed":  true,
+                       "residual":  "Static pass only with hot telemetry raw ring proof; compile and live fuzzer proof absent."
+                   }
+               ],
+    "highestPriorityResiduals":  [
+                                     "1305 WorldChunkResidencyManager persistent native fields plus TerrainChunkPagerRuntime lifetime locks and managed FileStream dump",
+                                     "1304/1312 voxel owner conflict",
+                                     "1302 broader physics dump/native-only export debt",
+                                     "1313 release still rejected pending platform PAL, Unity player, and profiler proof"
+                                 ],
+    "currentRecheck":  {
+                           "checkedLocal":  "2026-05-26 00:55 +04:00",
+                           "newestFullLedger":  "Docs/Reports/VAULT_NATIVE_ALIAS_LEDGER_UNKNOWN_CURRENT_20260526_0052.json",
+                           "fullLedgerScannedFiles":  2421,
+                           "fullLedgerForbiddenPersistentCandidates":  1770,
+                           "fullLedgerForbiddenMonoBehaviourCandidates":  358,
+                           "fullLedgerParseFailures":  0,
+                           "materialChanges":  [
+                                                   "1305 TerrainChunkPagerRuntime raw pointer fields removed; remainingTerrainPagerPointerFields=0",
+                                                   "UNKNOWN fresh ledger excludes stale X_000 00:47 artifact because it contradicted current source line checks",
+                                                   "1305 current full ledger has WorldChunkResidencyManager=0 and TerrainChunkPagerRuntime=0 forbidden persistent candidates; TerrainChunkPagerRuntime still needs lifetime lock/alias proof",
+                                                   "1306 current full ledger has DroneFleetManager=0, FluidPipeGraphRuntime=0, LogisticsPipeTransportScheduler=0, LogisticsRouteScratchMemory=0, DroneFleetManager_Transactions=0; HabitatGraphManager remains 13 view-bundle fields",
+                                                   "1310 Memory Sentry report now has checkCount=50 and failedCount=0",
+                                                   "1313 GetSectionDataPointer removed and normal Data Monolith reads converted to ReadOnlySpan\u003cT\u003e",
+                                                   "1313 strict validator PASSes active h8bin/text artifact checks, but overall release remains rejected pending platform PAL/player/profiler proof",
+                                                   "Scripts folder map generated as markdown/json/tsv; source changed again after snapshot under concurrent agents"
+                                               ]
+                       },
+    "scriptsFolderMap":  {
+                             "markdown":  "Docs/Reports/SCRIPTS_FOLDER_MAP_UNKNOWN.md",
+                             "json":  "Docs/Reports/SCRIPTS_FOLDER_MAP_UNKNOWN.json",
+                             "tsv":  "Docs/Reports/SCRIPTS_FILE_INDEX_UNKNOWN.tsv",
+                             "directories":  326,
+                             "files":  5579,
+                             "csFiles":  2420,
+                             "csLines":  1765753,
+                             "asmdefFiles":  162,
+                             "snapshotCaveat":  "Snapshot files were written at 2026-05-25 23:01:22. Scripts changed again after that time during concurrent agent work."
+                         }
+}

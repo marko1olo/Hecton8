@@ -1,5 +1,7 @@
 using System;
+#if UNITY_EDITOR
 using System.IO;
+#endif
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Collections;
@@ -15,7 +17,9 @@ namespace Hecton8.Physics.Vehicles
     {
         private static int s_x001DirectSignalPushDropCount_SubmarineDynamicsRuntime_Gyroscopes;
 
+#if UNITY_EDITOR
         private const long MaxGyroProfileCsvBytes = 4096L;
+#endif
         private static readonly int s_GyroVisualBufferId = Shader.PropertyToID("_H8SubmarineGyroVisuals");
         private static readonly int s_GyroVisualCountId = Shader.PropertyToID("_H8SubmarineGyroVisualCount");
 
@@ -36,21 +40,27 @@ namespace Hecton8.Physics.Vehicles
         private VaultGenerationHandle<SubmarineGyroVisualStateDTO> _gyroVisualHandle;
         private VaultGenerationHandle<SubmarineGyroProfileDTO> _gyroProfileHandle;
         private VaultGenerationHandle<SubmarineGyroCounterDTO> _gyroCounterHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _gyroCsvScratchHandle;
+#endif
         private GraphicsBuffer _gyroVisualBufferA;
         private GraphicsBuffer _gyroVisualBufferB;
         private int _gyroVisualBufferCapacity;
         private int _gyroVisualBufferWriteIndex;
         private long _gyroScheduleTicks;
+#if UNITY_EDITOR
         private long _gyroProfilesCsvLastWriteTicks;
         private string _gyroProfilesCsvPath;
+#endif
         private uint _gyroLastVisualUploadFrame;
         private bool _gyroDumpWritten;
 
+#if UNITY_EDITOR
         private void InitializeGyroRuntimePaths()
         {
             _gyroProfilesCsvPath = Path.Combine(_projectRoot, "Data", "Physics", "vehicle_gyro_profiles.csv");
         }
+#endif
 
         private bool EnsureGyroVaultBuffers(int capacity)
         {
@@ -65,7 +75,9 @@ namespace Hecton8.Physics.Vehicles
             _gyroVisualHandle = _dataVault.EnsureGenerationHandle<SubmarineGyroVisualStateDTO>(BufferID.Shinobu332GyroVisualStates, safeCapacity, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
             _gyroProfileHandle = _dataVault.EnsureGenerationHandle<SubmarineGyroProfileDTO>(BufferID.Shinobu332GyroProfiles, safeCapacity, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
             _gyroCounterHandle = _dataVault.EnsureGenerationHandle<SubmarineGyroCounterDTO>(BufferID.Shinobu332GyroCounters, 1, SystemID.VehiclesPhysics, NativeArrayOptions.ClearMemory);
+#if UNITY_EDITOR
             _gyroCsvScratchHandle = _dataVault.EnsureGenerationHandle<byte>(BufferID.Shinobu332GyroCsvScratch, (int)MaxGyroProfileCsvBytes, SystemID.VehiclesPhysics, NativeArrayOptions.UninitializedMemory);
+#endif
 
             if (!IsGenerationHandleCreated(in _gyroHandle) ||
                 !IsGenerationHandleCreated(in _gyroErrorHandle) ||
@@ -73,8 +85,11 @@ namespace Hecton8.Physics.Vehicles
                 !IsGenerationHandleCreated(in _gyroTelemetryHandle) ||
                 !IsGenerationHandleCreated(in _gyroVisualHandle) ||
                 !IsGenerationHandleCreated(in _gyroProfileHandle) ||
-                !IsGenerationHandleCreated(in _gyroCounterHandle) ||
-                !IsGenerationHandleCreated(in _gyroCsvScratchHandle))
+                !IsGenerationHandleCreated(in _gyroCounterHandle)
+#if UNITY_EDITOR
+                || !IsGenerationHandleCreated(in _gyroCsvScratchHandle)
+#endif
+                )
             {
                 return false;
             }
@@ -362,23 +377,13 @@ namespace Hecton8.Physics.Vehicles
             if (!fatal)
                 return false;
 
-            string logRoot = Path.Combine(_projectRoot, "Docs", "AgentLogs");
-            try
-            {
-                Directory.CreateDirectory(logRoot);
-            }
-            catch (IOException)
-            {
-                return true;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return true;
-            }
-
-            TryWriteGyroBlackBoxDump(Path.Combine(logRoot, "Dump_SHINOBU_332.bin"), telemetry);
+            bool written = TryDumpCoreBlackbox(
+                SubmarineGyroFaultEventHash,
+                latest.MaxErrorMagnitude,
+                latest.StateHash,
+                SubmarineGyroFaultDumpHash);
             PublishGyroFaultSignal(in latest);
-            _gyroDumpWritten = true;
+            _gyroDumpWritten |= written;
             return true;
         }
 
@@ -395,43 +400,6 @@ namespace Hecton8.Physics.Vehicles
             signal.Flags = latest.NonFiniteCount > 0u ? (byte)1 : (byte)0;
             if (!SignalBus<SystemGlitchSignal>.TryPushTracked(in signal, ref s_x001DirectSignalPushDropCount_SubmarineDynamicsRuntime_Gyroscopes))
                 IncrementDroppedSignalCount();
-        }
-
-        private static unsafe bool TryWriteGyroBlackBoxDump(string path, NativeArray<GyroTelemetryEntry> telemetry)
-        {
-            if (!telemetry.IsCreated || telemetry.Length == 0)
-                return false;
-
-            int entrySize = UnsafeUtility.SizeOf<GyroTelemetryEntry>();
-            long payloadBytes64 = (long)telemetry.Length * entrySize;
-            if (entrySize <= 0 || payloadBytes64 <= 0L || payloadBytes64 > int.MaxValue)
-                return false;
-
-            try
-            {
-                uint* header = stackalloc uint[4];
-                header[0] = 0x47333332u; // G332
-                header[1] = (uint)telemetry.Length;
-                header[2] = (uint)SubmarineDynamicsConstants.BlackBoxFrames;
-                header[3] = (uint)entrySize;
-
-                void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    stream.Write(new ReadOnlySpan<byte>(header, 16));
-                    stream.Write(new ReadOnlySpan<byte>(telemetryPtr, (int)payloadBytes64));
-                }
-
-                return true;
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
         }
 
         public bool TryReadGyroTuning(out SubmarineGyroDTO tuning)
@@ -560,14 +528,19 @@ namespace Hecton8.Physics.Vehicles
             }
 
             NativeArray<SubmarineGyroVisualStateDTO> mapped = writeBuffer.LockBufferForWrite<SubmarineGyroVisualStateDTO>(0, count);
-            unsafe
+            try
             {
-                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(visuals);
-                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)SubmarineDynamicsConstants.GyroVisualStateBytes * count);
+                unsafe
+                {
+                    void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(visuals);
+                    void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                    UnsafeUtility.MemCpy(destinationPtr, sourcePtr, (long)SubmarineDynamicsConstants.GyroVisualStateBytes * count);
+                }
             }
-
-            writeBuffer.UnlockBufferAfterWrite<SubmarineGyroVisualStateDTO>(count);
+            finally
+            {
+                writeBuffer.UnlockBufferAfterWrite<SubmarineGyroVisualStateDTO>(count);
+            }
             Shader.SetGlobalBuffer(s_GyroVisualBufferId, writeBuffer);
             Shader.SetGlobalInt(s_GyroVisualCountId, count);
             _gyroVisualBufferWriteIndex ^= 1;

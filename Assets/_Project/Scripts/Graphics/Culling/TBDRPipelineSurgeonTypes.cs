@@ -1634,12 +1634,23 @@ namespace Hecton8.Graphics.Culling
                 return dependency;
             }
 
-            lockedMatrices = buffer.LockBufferForWrite<float4x4>(0, safeCount);
-            return new PopulateLockedMatrixBufferJob
+            try
             {
-                Source = source,
-                Destination = lockedMatrices
-            }.Schedule(safeCount, 64, dependency);
+                lockedMatrices = buffer.LockBufferForWrite<float4x4>(0, safeCount);
+                return new PopulateLockedMatrixBufferJob
+                {
+                    Source = source,
+                    Destination = lockedMatrices
+                }.Schedule(safeCount, 64, dependency);
+            }
+            catch
+            {
+                if (lockedMatrices.IsCreated)
+                    TryUnlockLockedMatrices(buffer, safeCount);
+
+                lockedMatrices = default;
+                return dependency;
+            }
         }
 
         public static void UnlockAfterWrite(GraphicsBuffer buffer, int count)
@@ -1647,7 +1658,18 @@ namespace Hecton8.Graphics.Culling
             if (buffer == null || count <= 0)
                 return;
 
-            buffer.UnlockBufferAfterWrite<float4x4>(math.min(count, buffer.count));
+            TryUnlockLockedMatrices(buffer, math.min(count, buffer.count));
+        }
+
+        private static void TryUnlockLockedMatrices(GraphicsBuffer buffer, int count)
+        {
+            try
+            {
+                buffer.UnlockBufferAfterWrite<float4x4>(count);
+            }
+            catch
+            {
+            }
         }
     }
 }

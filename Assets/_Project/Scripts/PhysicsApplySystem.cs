@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Physics;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Environment;
@@ -93,133 +94,6 @@ namespace Hecton8.Physics
         private ulong _padding1;
         [FieldOffset(56)]
         private ulong _padding2;
-    }
-
-    /// <summary>
-    /// Pressure blowout payload emitted when a bulkhead opens across a large pressure differential.
-    /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
-    public struct PressureImpulseEvent
-    {
-        /// <summary>
-        /// Creates a pressure blowout payload.
-        /// </summary>
-        public PressureImpulseEvent(
-            int doorIndex,
-            Vector3 runtimePosition,
-            Vector3 direction,
-            float doorAreaSquareMeters,
-            float highPressureKPa,
-            float lowPressureKPa,
-            Vector3 forceVectorNewtons,
-            Vector3 impulseVectorNewtonSeconds,
-            float influenceRadiusMeters)
-        {
-            this = default;
-            DoorIndex = doorIndex;
-            RuntimePosition = runtimePosition;
-            Direction = direction;
-            DoorAreaSquareMeters = doorAreaSquareMeters;
-            HighPressureKPa = highPressureKPa;
-            LowPressureKPa = lowPressureKPa;
-            PressureDeltaKPa = math.abs(highPressureKPa - lowPressureKPa);
-            ForceVectorNewtons = forceVectorNewtons;
-            ImpulseVectorNewtonSeconds = impulseVectorNewtonSeconds;
-            InfluenceRadiusMeters = influenceRadiusMeters;
-        }
-
-        /// <summary>Bulkhead edge index inside the submarine compartment graph.</summary>
-        [FieldOffset(68)]
-        public int DoorIndex;
-
-        /// <summary>Runtime-space midpoint of the opened bulkhead.</summary>
-        [FieldOffset(0)]
-        public Vector3 RuntimePosition;
-
-        /// <summary>Normalized airflow direction from the high-pressure room toward the low-pressure room.</summary>
-        [FieldOffset(12)]
-        public Vector3 Direction;
-
-        /// <summary>Cross-sectional doorway area used by the blowout force calculation.</summary>
-        [FieldOffset(48)]
-        public float DoorAreaSquareMeters;
-
-        /// <summary>Pressure of the source room at the moment of opening.</summary>
-        [FieldOffset(52)]
-        public float HighPressureKPa;
-
-        /// <summary>Pressure of the destination room at the moment of opening.</summary>
-        [FieldOffset(56)]
-        public float LowPressureKPa;
-
-        /// <summary>Absolute pressure delta across the opened bulkhead.</summary>
-        [FieldOffset(60)]
-        public float PressureDeltaKPa;
-
-        /// <summary>Raw force vector in newtons derived from the pressure differential.</summary>
-        [FieldOffset(24)]
-        public Vector3 ForceVectorNewtons;
-
-        /// <summary>One-shot impulse vector in newton-seconds routed into the deferred physics system.</summary>
-        [FieldOffset(36)]
-        public Vector3 ImpulseVectorNewtonSeconds;
-
-        /// <summary>World-space influence radius used by the local overlap dispatch.</summary>
-        [FieldOffset(64)]
-        public float InfluenceRadiusMeters;
-        [FieldOffset(72)]
-        private ulong _pad0;
-        [FieldOffset(80)]
-        private ulong _pad1;
-        [FieldOffset(88)]
-        private ulong _pad2;
-        [FieldOffset(96)]
-        private ulong _pad3;
-        [FieldOffset(104)]
-        private ulong _pad4;
-        [FieldOffset(112)]
-        private ulong _pad5;
-        [FieldOffset(120)]
-        private ulong _pad6;
-    }
-
-    /// <summary>
-    /// Electromagnetic pulse payload emitted by fauna or environmental hazards.
-    /// </summary>
-    [StructLayout(LayoutKind.Explicit, Size = 32)]
-    public struct ElectromagneticPulseEvent
-    {
-        public ElectromagneticPulseEvent(
-            Vector3 runtimePosition,
-            float radiusMeters,
-            float durationSeconds,
-            float claritySuppression01,
-            uint damageType,
-            ushort sourceId)
-        {
-            this = default;
-            RuntimePosition = runtimePosition;
-            RadiusMeters = radiusMeters;
-            DurationSeconds = durationSeconds;
-            ClaritySuppression01 = claritySuppression01;
-            DamageType = damageType;
-            SourceId = sourceId;
-        }
-
-        [FieldOffset(0)]
-        public Vector3 RuntimePosition;
-        [FieldOffset(12)]
-        public float RadiusMeters;
-        [FieldOffset(16)]
-        public float DurationSeconds;
-        [FieldOffset(20)]
-        public float ClaritySuppression01;
-        [FieldOffset(24)]
-        public uint DamageType;
-        [FieldOffset(28)]
-        public ushort SourceId;
-        [FieldOffset(30)]
-        private ushort _pad0;
     }
 
     /// <summary>
@@ -500,22 +374,6 @@ namespace Hecton8.Physics
         private ulong _pad4;
         [FieldOffset(120)]
         private ulong _pad5;
-    }
-
-    /// <summary>
-    /// Listener for deferred pressure impulse events.
-    /// </summary>
-    public interface IPressureImpulseEventListener
-    {
-        void OnPressureImpulse(in PressureImpulseEvent pressureEvent);
-    }
-
-    /// <summary>
-    /// Listener for deferred electromagnetic pulse events.
-    /// </summary>
-    public interface IElectromagneticPulseEventListener
-    {
-        void OnElectromagneticPulse(in ElectromagneticPulseEvent pulseEvent);
     }
 
     /// <summary>
@@ -816,9 +674,6 @@ namespace Hecton8.Physics
 
         public static bool TryNotifyElectromagneticPulse(in ElectromagneticPulseEvent pulseEvent)
         {
-            if (_empListenerCount <= 0)
-                return false;
-
             return Enqueue(new PhysicsEventPayload
             {
                 RuntimePosition = pulseEvent.RuntimePosition,
@@ -846,9 +701,6 @@ namespace Hecton8.Physics
 
         public static bool TryNotifyAcousticPing(in AcousticPingEvent pingEvent)
         {
-            if (_acousticListenerCount <= 0)
-                return false;
-
             return Enqueue(new PhysicsEventPayload
             {
                 RuntimePosition = pingEvent.RuntimePosition,
@@ -1612,17 +1464,20 @@ namespace Hecton8.Physics
                 maximumImpulseNewtonSeconds);
         }
 
-        internal static void PrepareTrackedBodiesForOriginShift()
+        /// <inheritdoc />
+        public void PrepareTrackedBodiesForOriginShift()
         {
             GlobalPhysicsStateManager.PrepareTrackedBodiesForOriginShift();
         }
 
-        internal static void CommitTrackedBodiesForOriginShift(Vector3 shiftOffset)
+        /// <inheritdoc />
+        public void CommitTrackedBodiesForOriginShift(Vector3 shiftOffset)
         {
             GlobalPhysicsStateManager.CommitTrackedBodiesForOriginShift(shiftOffset);
         }
 
-        internal static void FinalizeTrackedBodiesAfterOriginShift()
+        /// <inheritdoc />
+        public void FinalizeTrackedBodiesAfterOriginShift()
         {
             GlobalPhysicsStateManager.FinalizeTrackedBodiesAfterOriginShift();
         }
@@ -1635,6 +1490,24 @@ namespace Hecton8.Physics
         internal static void ArmSafeTeleportSpeculativeCcdForSafeTeleport()
         {
             GlobalPhysicsStateManager.ArmSafeTeleportSpeculativeCcdForSafeTeleport();
+        }
+
+        /// <inheritdoc />
+        public void ResetTrackedBodiesForSafeTeleportState()
+        {
+            GlobalPhysicsStateManager.ResetTrackedBodiesForSafeTeleport();
+        }
+
+        /// <inheritdoc />
+        public void ArmSafeTeleportSpeculativeCcd()
+        {
+            GlobalPhysicsStateManager.ArmSafeTeleportSpeculativeCcdForSafeTeleport();
+        }
+
+        /// <inheritdoc />
+        public bool ApplyKinematicWeldSnap(Rigidbody body, Vector3 targetPosition, Quaternion targetRotation)
+        {
+            return PhysicsForceRouter.ApplyKinematicWeldSnap(body, targetPosition, targetRotation);
         }
 
         /// <inheritdoc />
@@ -1878,6 +1751,48 @@ namespace Hecton8.Physics
             return QueuePoseSet(body, position, rotation, ForcePacketPriority.Critical, wake);
         }
 
+        /// <inheritdoc />
+        public bool QueueAmbientForce(Rigidbody body, Vector3 force, ForceMode mode, bool wake = true)
+        {
+            if (!MathGuard.TryAcceptFinite(force, out Vector3 acceptedForce))
+                return false;
+
+            Vector3 safeForce = PhysicsForceRouter.ClampUpwardAcceleration(acceptedForce, mode);
+            ForcePacketFlags extraFlags = PhysicsForceRouter.ResolveBiomeBuoyancyFlags(safeForce, mode);
+            Vector3 routeForce = ApplyActiveBiomeBuoyancyGravityMultiplier(safeForce, mode, extraFlags);
+            if (TryRouteToCachedPlayerForceSink(body, routeForce, mode))
+                return true;
+
+            return QueueForce(body, safeForce, mode, ForcePacketPriority.Ambient, wake, extraFlags);
+        }
+
+        /// <inheritdoc />
+        public bool QueueAmbientForceAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition, ForceMode mode, bool wake = true)
+        {
+            if (!MathGuard.TryAcceptFinite(force, out Vector3 acceptedForce) ||
+                !MathGuard.TryAcceptFinite(worldPosition, out Vector3 acceptedWorldPosition))
+            {
+                return false;
+            }
+
+            Vector3 safeForce = PhysicsForceRouter.ClampUpwardAcceleration(acceptedForce, mode);
+            ForcePacketFlags extraFlags = PhysicsForceRouter.ResolveBiomeBuoyancyFlags(safeForce, mode);
+            Vector3 routeForce = ApplyActiveBiomeBuoyancyGravityMultiplier(safeForce, mode, extraFlags);
+            if (TryRouteToCachedPlayerForceSinkAtPosition(body, routeForce, acceptedWorldPosition, mode))
+                return true;
+
+            return QueueForceAtPosition(body, safeForce, acceptedWorldPosition, mode, ForcePacketPriority.Ambient, wake, extraFlags);
+        }
+
+        /// <inheritdoc />
+        public bool QueueAmbientTorque(Rigidbody body, Vector3 torque, ForceMode mode, bool wake = true)
+        {
+            if (!MathGuard.TryAcceptFinite(torque, out Vector3 acceptedTorque))
+                return false;
+
+            return QueueTorque(body, acceptedTorque, mode, ForcePacketPriority.Ambient, wake);
+        }
+
         /// <summary>
         /// Queues a critically damped tractor-beam pull using reduced-mass PD velocity-change math.
         /// </summary>
@@ -1929,11 +1844,12 @@ namespace Hecton8.Physics
             if (!IsFiniteNonZero(payloadVelocityChange))
                 return false;
 
-            bool payloadQueued = PhysicsForceRouter.QueueForceAtPosition(
+            bool payloadQueued = QueueForceAtPosition(
                 payloadBody,
                 payloadVelocityChange,
                 currentPosition,
                 ForceMode.VelocityChange,
+                ForcePacketPriority.Critical,
                 wake);
             if (applyReactionForce && anchorBody != null && !anchorBody.isKinematic)
             {
@@ -1941,16 +1857,39 @@ namespace Hecton8.Physics
                 Vector3 anchorVelocityChange = -payloadVelocityChange * anchorVelocityScale;
                 if (IsFiniteNonZero(anchorVelocityChange))
                 {
-                    PhysicsForceRouter.QueueForceAtPosition(
+                    QueueForceAtPosition(
                         anchorBody,
                         anchorVelocityChange,
                         targetPosition,
                         ForceMode.VelocityChange,
+                        ForcePacketPriority.Critical,
                         wake);
                 }
             }
 
             return payloadQueued;
+        }
+
+        /// <inheritdoc />
+        public int PendingLateFrameEventCount => PhysicsEventBus.PendingCount + FluidFeedbackEvents.PendingCount;
+
+        /// <inheritdoc />
+        public void FlushLateFrameEvents()
+        {
+            PhysicsEventBus.FlushPending();
+            FluidFeedbackEvents.FlushPending();
+        }
+
+        /// <inheritdoc />
+        public void RegisterElectromagneticPulseListener(IElectromagneticPulseEventListener listener)
+        {
+            PhysicsEventBus.Register(listener);
+        }
+
+        /// <inheritdoc />
+        public void UnregisterElectromagneticPulseListener(IElectromagneticPulseEventListener listener)
+        {
+            PhysicsEventBus.Unregister(listener);
         }
 
         private bool TryEnqueueBackPacket(in ForcePacket packet, string saturationMessage)
@@ -1978,11 +1917,11 @@ namespace Hecton8.Physics
 
             _nextForcePacketSaturationWarningFrame = frame + ForcePacketWarningCooldownFrames;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning(saturationMessage);
+            Hecton8.Core.H8Debug.LogWarning(saturationMessage);
 #endif
         }
 
-        private bool QueueDepressurizationVortex(
+        public bool QueueDepressurizationVortex(
             Vector3 roomCenter,
             Vector3 breachPosition,
             float radiusMeters,
@@ -2033,6 +1972,20 @@ namespace Hecton8.Physics
                 RemainingSeconds = math.max(0f, durationSeconds)
             };
             return true;
+        }
+
+        /// <inheritdoc />
+        public bool QueueImplosionImpulse(
+            Vector3 roomCenter,
+            float radiusMeters,
+            float baseImpulseNewtonSeconds,
+            float maximumImpulseNewtonSeconds)
+        {
+            return ApplyImplosionImpulse(
+                roomCenter,
+                radiusMeters,
+                baseImpulseNewtonSeconds,
+                maximumImpulseNewtonSeconds);
         }
 
         /// <inheritdoc />
@@ -2648,7 +2601,7 @@ namespace Hecton8.Physics
             if (!TryResolveAupFromRuntimeOrigin(runtimePosition, out AbsoluteUniversePosition lightAup))
                 return;
 
-            int key = unchecked((sourceBodyInstanceId * 397) ^ PhysicsFrame.Current ^ 0x5EC7A11);
+            int key = unchecked((sourceBodyInstanceId * 397) ^ SystemDispatcher.CurrentFrameIndex ^ 0x5EC7A11);
             ProxyLightData light = ProxyLightData.CreateTransientPoint(
                 lightAup,
                 new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
@@ -2785,8 +2738,6 @@ namespace Hecton8.Physics
                     {
                         if (forceSink != null)
                             forceSink.QueueExternalAcceleration(acceleration);
-                        else if (playerBody != null)
-                            PhysicsForceRouter.QueueForce(playerBody, acceleration, ForceMode.Acceleration);
                     }
                 }
             }
@@ -2887,10 +2838,6 @@ namespace Hecton8.Physics
                         if (forceSink != null)
                         {
                             forceSink.QueueExternalVelocityChange(impulse / HydrodynamicPlayerEquivalentMassKg);
-                        }
-                        else if (playerBody != null)
-                        {
-                            QueueForce(playerBody, impulse, ForceMode.Impulse);
                         }
                     }
                 }
@@ -3477,7 +3424,7 @@ namespace Hecton8.Physics
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[PhysicsApplySystem] Rigidbody slot capacity exceeded.");
+            Hecton8.Core.H8Debug.LogWarning("[PhysicsApplySystem] Rigidbody slot capacity exceeded.");
 #endif
             return -1;
         }
@@ -3722,7 +3669,7 @@ namespace Hecton8.Physics
 
         private static bool TryResolveCachedPlayerVelocity(IPlayerRuntimeContext playerContext, out Vector3 velocity)
         {
-            if (PhysicsDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityForceSinkMaxAgeFrames, out velocity))
+            if (CoreDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityForceSinkMaxAgeFrames, out velocity))
                 return true;
 
             if (playerContext != null &&
@@ -3860,7 +3807,7 @@ namespace Hecton8.Physics
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             NativeAllocationTrackerRuntimeBridge.ReportLeak(message);
-            Debug.LogError(message);
+            Hecton8.Core.H8Debug.LogError(message);
 #endif
         }
 
@@ -3870,7 +3817,7 @@ namespace Hecton8.Physics
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             NativeAllocationTrackerRuntimeBridge.ReportLeak(ToxicVectorLog);
-            Debug.LogError(ToxicVectorLog);
+            Hecton8.Core.H8Debug.LogError(ToxicVectorLog);
 #endif
         }
 
@@ -4145,14 +4092,14 @@ namespace Hecton8.Physics
             return system != null && system.TrySuppressCachedPlayerAngularVelocitySet(body);
         }
 
-        private static ForcePacketFlags ResolveBiomeBuoyancyFlags(Vector3 force, ForceMode mode)
+        internal static ForcePacketFlags ResolveBiomeBuoyancyFlags(Vector3 force, ForceMode mode)
         {
             return mode == ForceMode.Acceleration && force.y > 0f
                 ? ForcePacketFlags.BiomeBuoyancy
                 : ForcePacketFlags.None;
         }
 
-        private static Vector3 ClampUpwardAcceleration(Vector3 force, ForceMode mode)
+        internal static Vector3 ClampUpwardAcceleration(Vector3 force, ForceMode mode)
         {
             if (mode == ForceMode.Acceleration && force.y > MaxSafeAcceleration)
                 force.y = MaxSafeAcceleration;

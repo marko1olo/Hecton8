@@ -12,6 +12,25 @@ namespace Hecton8.Core.Contracts
         byte ImpactAudioMaterialId { get; }
     }
 
+    /// <summary>
+    /// Optional rigidbody-side metadata provider for procedural impact material synthesis.
+    /// </summary>
+    public interface IPhysicsImpactMaterialProvider : IImpactMaterialProvider
+    {
+    }
+
+    /// <summary>
+    /// Runtime-owned collider LOD participant controlled by the global physics hysteresis gate.
+    /// </summary>
+    public interface IPhysicsColliderLodHysteresisSink
+    {
+        /// <summary>
+        /// Enables or disables simplified collider LOD based on distance hysteresis.
+        /// </summary>
+        /// <param name="allowSimplifiedColliderLod">True after the body stays outside the LOD0 radius long enough.</param>
+        void SetColliderLodDistanceGate(bool allowSimplifiedColliderLod);
+    }
+
     public static class HectonPhysicsContract
     {
         public const double AupSectorSizeMetersDouble = 5000.0d;

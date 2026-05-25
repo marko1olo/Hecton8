@@ -1,7 +1,6 @@
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -158,7 +157,7 @@ namespace Hecton8.Gameplay
         private static bool TryResolveKccVelocity(out Vector3 velocity)
         {
             velocity = Vector3.zero;
-            if (!PhysicsDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal) || signal.Sequence == 0u)
+            if (!CoreDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal) || signal.Sequence == 0u)
                 return false;
 
             uint currentFrame = SystemDispatcher.CurrentFrameId;
@@ -247,7 +246,7 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)

@@ -73,7 +73,7 @@ namespace Hecton8.Gameplay
             AutoResolve();
             if (toolManager == null || scanLogSystem == null || probeTarget == null || playerRoot == null)
             {
-                Debug.LogWarning($"[ScanSmoke] Missing references refs={DescribeRefs()}");
+                Hecton8.Core.H8Debug.LogWarning($"[ScanSmoke] Missing references refs={DescribeRefs()}");
                 return;
             }
 
@@ -114,7 +114,7 @@ namespace Hecton8.Gameplay
                 int scannerSlot = toolManager.FindAssignedSlotForToolType<ScannerTool>();
                 if (scannerSlot < 0)
                 {
-                    Debug.LogWarning("[ScanSmoke] ScannerTool is not assigned to any quick slot.");
+                    Hecton8.Core.H8Debug.LogWarning("[ScanSmoke] ScannerTool is not assigned to any quick slot.");
                     return;
                 }
 
@@ -130,7 +130,7 @@ namespace Hecton8.Gameplay
 
                 if (!(toolManager.CurrentTool is ScannerTool scanner))
                 {
-                    Debug.LogWarning("[ScanSmoke] ScannerTool did not become active.");
+                    Hecton8.Core.H8Debug.LogWarning("[ScanSmoke] ScannerTool did not become active.");
                     return;
                 }
 
@@ -176,7 +176,7 @@ namespace Hecton8.Gameplay
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"[ScanSmoke] EXCEPTION {label}: {ex}");
+                    Hecton8.Core.H8Debug.LogError($"[ScanSmoke] EXCEPTION {label}: {ex}");
                     return false;
                 }
 
@@ -186,7 +186,7 @@ namespace Hecton8.Gameplay
                 await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
             }
 
-            Debug.LogWarning("[ScanSmoke] TIMEOUT " + label + " after " + timeout.ToString("0.00", CultureInfo.InvariantCulture) + "s");
+            Hecton8.Core.H8Debug.LogWarning("[ScanSmoke] TIMEOUT " + label + " after " + timeout.ToString("0.00", CultureInfo.InvariantCulture) + "s");
             return false;
         }
 

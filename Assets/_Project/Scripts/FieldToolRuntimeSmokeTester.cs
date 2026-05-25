@@ -90,13 +90,13 @@ namespace Hecton8.Gameplay
             AutoResolveSceneReferences();
             if (toolManager == null || playerInventory == null || playerBuilder == null || _constructionLogistics == null)
             {
-                Debug.LogWarning($"[FieldToolSmoke] Missing references refs={DescribeRefs()}");
+                Hecton8.Core.H8Debug.LogWarning($"[FieldToolSmoke] Missing references refs={DescribeRefs()}");
                 return;
             }
 
             if (salvageProbeItem == null)
             {
-                Debug.LogWarning("[FieldToolSmoke] Missing salvage probe item.");
+                Hecton8.Core.H8Debug.LogWarning("[FieldToolSmoke] Missing salvage probe item.");
                 return;
             }
 
@@ -148,7 +148,7 @@ namespace Hecton8.Gameplay
                 else
                 {
                     _debugLastPhase = "Failed";
-                    Debug.LogWarning($"[FieldToolSmoke] FAIL salvage={salvagePass} cutter={cutterPass}");
+                    Hecton8.Core.H8Debug.LogWarning($"[FieldToolSmoke] FAIL salvage={salvagePass} cutter={cutterPass}");
                 }
             }
             catch (OperationCanceledException)
@@ -161,7 +161,7 @@ namespace Hecton8.Gameplay
             {
                 _debugLastPhase = "Exception";
                 _debugLastIssue = "Unhandled exception";
-                Debug.LogError($"[FieldToolSmoke] UNHANDLED EXCEPTION: {ex}");
+                Hecton8.Core.H8Debug.LogError($"[FieldToolSmoke] UNHANDLED EXCEPTION: {ex}");
             }
             finally
             {
@@ -177,14 +177,14 @@ namespace Hecton8.Gameplay
             if (salvagePrefab == null)
             {
                 _debugLastIssue = "Missing SalvageSamplerTool prefab registration";
-                Debug.LogWarning("[FieldToolSmoke] Missing SalvageSamplerTool prefab registration.");
+                Hecton8.Core.H8Debug.LogWarning("[FieldToolSmoke] Missing SalvageSamplerTool prefab registration.");
                 return false;
             }
 
             if (!salvagePrefab.TryGetComponent(out PlayerTool salvagePrefabTool) || salvagePrefabTool.ToolData == null)
             {
                 _debugLastIssue = "Salvage sampler prefab missing ToolData";
-                Debug.LogWarning("[FieldToolSmoke] Salvage sampler prefab is missing ToolData.");
+                Hecton8.Core.H8Debug.LogWarning("[FieldToolSmoke] Salvage sampler prefab is missing ToolData.");
                 return false;
             }
 
@@ -197,7 +197,7 @@ namespace Hecton8.Gameplay
             if (probe == null)
             {
                 _debugLastIssue = "Failed to create salvage probe";
-                Debug.LogWarning("[FieldToolSmoke] Could not create salvage probe.");
+                Hecton8.Core.H8Debug.LogWarning("[FieldToolSmoke] Could not create salvage probe.");
                 return false;
             }
 
@@ -228,7 +228,7 @@ namespace Hecton8.Gameplay
                 if (!(toolManager.CurrentTool is SalvageSamplerTool sampler))
                 {
                     _debugLastIssue = "Salvage sampler did not become active";
-                    Debug.LogWarning("[FieldToolSmoke] Salvage sampler did not become active.");
+                    Hecton8.Core.H8Debug.LogWarning("[FieldToolSmoke] Salvage sampler did not become active.");
                     return false;
                 }
 
@@ -243,7 +243,7 @@ namespace Hecton8.Gameplay
                 if (!recovered)
                 {
                     _debugLastIssue = $"Salvage failed inventory={beforeCount}->{afterCount} probeActive={probe.activeSelf}";
-                    Debug.LogWarning($"[FieldToolSmoke] Salvage failed inventory={beforeCount}->{afterCount} probeActive={probe.activeSelf}");
+                    Hecton8.Core.H8Debug.LogWarning($"[FieldToolSmoke] Salvage failed inventory={beforeCount}->{afterCount} probeActive={probe.activeSelf}");
                     return false;
                 }
 
@@ -265,14 +265,14 @@ namespace Hecton8.Gameplay
             if (cutterPrefab == null)
             {
                 _debugLastIssue = "Missing LaserCutter prefab registration";
-                Debug.LogWarning("[FieldToolSmoke] Missing LaserCutter prefab registration.");
+                Hecton8.Core.H8Debug.LogWarning("[FieldToolSmoke] Missing LaserCutter prefab registration.");
                 return false;
             }
 
             if (!cutterPrefab.TryGetComponent(out PlayerTool cutterPrefabTool) || cutterPrefabTool.ToolData == null)
             {
                 _debugLastIssue = "Laser cutter prefab missing ToolData";
-                Debug.LogWarning("[FieldToolSmoke] Laser cutter prefab is missing ToolData.");
+                Hecton8.Core.H8Debug.LogWarning("[FieldToolSmoke] Laser cutter prefab is missing ToolData.");
                 return false;
             }
 
@@ -282,7 +282,7 @@ namespace Hecton8.Gameplay
             if (playerBuilder.ActiveBuildable == null || playerBuilder.ActiveBuildable.finalPrefab == null)
             {
                 _debugLastIssue = "Builder has no active buildable";
-                Debug.LogWarning("[FieldToolSmoke] Builder has no active buildable.");
+                Hecton8.Core.H8Debug.LogWarning("[FieldToolSmoke] Builder has no active buildable.");
                 return false;
             }
 
@@ -294,7 +294,7 @@ namespace Hecton8.Gameplay
             if (!deployed)
             {
                 _debugLastIssue = "Could not deploy module for cutter pass";
-                Debug.LogWarning("[FieldToolSmoke] Could not deploy module for cutter pass.");
+                Hecton8.Core.H8Debug.LogWarning("[FieldToolSmoke] Could not deploy module for cutter pass.");
                 return false;
             }
 
@@ -302,7 +302,7 @@ namespace Hecton8.Gameplay
             if (module == null)
             {
                 _debugLastIssue = "No spawned module found after deploy";
-                Debug.LogWarning("[FieldToolSmoke] No spawned module found after deploy.");
+                Hecton8.Core.H8Debug.LogWarning("[FieldToolSmoke] No spawned module found after deploy.");
                 return false;
             }
 
@@ -331,7 +331,7 @@ namespace Hecton8.Gameplay
             if (!(toolManager.CurrentTool is LaserCutter cutter))
             {
                 _debugLastIssue = "Laser cutter did not become active";
-                Debug.LogWarning("[FieldToolSmoke] Laser cutter did not become active.");
+                Hecton8.Core.H8Debug.LogWarning("[FieldToolSmoke] Laser cutter did not become active.");
                 return false;
             }
 
@@ -347,7 +347,7 @@ namespace Hecton8.Gameplay
             if (!recovered || afterModuleCount >= beforeModuleCount + 1 || !moduleGone)
             {
                 _debugLastIssue = $"Cutter failed recovered={recovered} registry={beforeModuleCount}->{afterModuleCount} moduleGone={moduleGone}";
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     $"[FieldToolSmoke] Cutter failed recovered={recovered} registry={beforeModuleCount}->{afterModuleCount} moduleGone={moduleGone}");
                 return false;
             }
@@ -492,7 +492,7 @@ namespace Hecton8.Gameplay
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"[FieldToolSmoke] EXCEPTION {label}: {ex}");
+                    Hecton8.Core.H8Debug.LogError($"[FieldToolSmoke] EXCEPTION {label}: {ex}");
                     return false;
                 }
 
@@ -503,7 +503,7 @@ namespace Hecton8.Gameplay
             }
 
             _debugLastIssue = $"TIMEOUT {label}";
-            Debug.LogWarning($"[FieldToolSmoke] TIMEOUT {label} after {timeout:0.00}s");
+            Hecton8.Core.H8Debug.LogWarning($"[FieldToolSmoke] TIMEOUT {label} after {timeout:0.00}s");
             return false;
         }
 

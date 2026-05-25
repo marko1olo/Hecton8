@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Hecton8;
 using Hecton8.AI;
 using Hecton8.Audio;
@@ -21,10 +20,8 @@ namespace Hecton8.UI
     /// Temporary runtime overlay that surfaces the core Subnautica-gap systems during play mode.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class SubnauticaSystemsDebugUI : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class SubnauticaSystemsDebugUI : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
-        // COLD ALLOC: List<SuitHUDV4CanvasOverlay>(4) â€” overlay canvas resolution buffer â€” owner: SubnauticaSystemsDebugUI
-        private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
         private static SubnauticaSystemsDebugUI s_activeRuntimeInstance;
         private static bool s_isBootstrappingRuntimeOverlay;
 
@@ -146,7 +143,6 @@ namespace Hecton8.UI
         private TextMeshProUGUI _underwaterBudgetValue;
         private TextMeshProUGUI _cameraBudgetValue;
         private TextMeshProUGUI _stressValue;
-        private bool _registered;
         private bool _slowTickRegistered;
         private bool _lateFrameRegistered;
         private bool _hotSwapListenerRegistered;
@@ -248,7 +244,7 @@ namespace Hecton8.UI
 #endif
             SceneManager.activeSceneChanged += HandleActiveSceneChanged;
             TryRegisterHotSwapListener();
-            if (!_registered || !_slowTickRegistered)
+            if (!_slowTickRegistered || !_lateFrameRegistered)
                 TryRegister();
             QueueRuntimeBootstrap(forceManagerResolve: true);
         }
@@ -283,7 +279,6 @@ namespace Hecton8.UI
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && isActiveAndEnabled)
             {
-                _registered = false;
                 _slowTickRegistered = false;
                 _lateFrameRegistered = false;
                 TryRegister();
@@ -294,11 +289,6 @@ namespace Hecton8.UI
         {
             if (!Application.isPlaying)
                 return;
-
-            if (!_registered)
-            {
-                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
-            }
 
             if (_slowTickRegistered)
             {
@@ -314,12 +304,6 @@ namespace Hecton8.UI
 
         private void TryUnregister()
         {
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registered = false;
-            }
-
             if (_slowTickRegistered)
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
@@ -333,7 +317,7 @@ namespace Hecton8.UI
             }
         }
 
-        public void Tick(float dt)
+        private void AdvanceDiagnosticsRefreshTimer(float dt)
         {
             if (!Application.isPlaying)
                 return;
@@ -356,6 +340,8 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            AdvanceDiagnosticsRefreshTimer(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (!_slowVisualRefreshRequested)
                 return;
 
@@ -393,7 +379,7 @@ namespace Hecton8.UI
             if (!_bootstrapPending)
                 return;
 
-            float now = Time.unscaledTime;
+            float now = ResolvePresentationClockSeconds();
             if (now < _nextBootstrapAttemptTime)
                 return;
 
@@ -427,10 +413,9 @@ namespace Hecton8.UI
         {
             if (targetCanvas == null)
             {
-                SuitHUDV4CanvasOverlay.CopyActiveOverlaysTo(s_overlayResolveBuffer);
-                for (int i = 0; i < s_overlayResolveBuffer.Count; i++)
+                for (int i = 0; i < SuitHUDV4CanvasOverlay.ActiveOverlayCount; i++)
                 {
-                    SuitHUDV4CanvasOverlay overlay = s_overlayResolveBuffer[i];
+                    SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.GetActiveOverlay(i);
                     Canvas candidate = overlay != null ? overlay.TargetCanvas : null;
                     if (candidate == null)
                         continue;
@@ -812,6 +797,11 @@ namespace Hecton8.UI
             _canvasGroup.blocksRaycasts = false;
         }
 
+        private static float ResolvePresentationClockSeconds()
+        {
+            return (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+        }
+
         private void ResetVisualTreeState()
         {
             _root = null;
@@ -906,7 +896,7 @@ namespace Hecton8.UI
             if (AllResolvedManagersReady())
                 return;
 
-            float now = Time.unscaledTime;
+            float now = ResolvePresentationClockSeconds();
             if (!force && now < _nextManagerResolveAttemptTime)
                 return;
 

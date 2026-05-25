@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Burst;
@@ -18,34 +19,35 @@ namespace Hecton8.Construction
     {
         private const int InitialNodeCapacity = 32;
         private const int CycleWarningCadenceFrames = 300;
-        private const string NativeMemoryOwner = nameof(LogisticsPipeTransportScheduler);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+        private const SystemID OwnerSystemId = SystemID.Construction;
+        private const BufferID EdgeOffsetsBufferId = (BufferID)72054;
+        private const BufferID EdgeDestinationsBufferId = (BufferID)72055;
+        private const BufferID InputIndegreesBufferId = (BufferID)72056;
+        private const BufferID WorkIndegreesBufferId = (BufferID)72057;
+        private const BufferID QueueBufferId = (BufferID)72058;
+        private const BufferID SortedOrderBufferId = (BufferID)72059;
+        private const BufferID SortedCountBufferId = (BufferID)72060;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const string CycleRepairWarningMessage = "LogisticsPipeTransportScheduler dropped cyclic edge to keep pipe DAG valid.";
 #endif
-        // COLD ALLOC: List<LogisticsPipeNode>[32] — active pipe-node registry for shared DAG transport scheduling — owner: LogisticsPipeTransportScheduler
+        // COLD ALLOC: List<LogisticsPipeNode>[32] - managed pipe-node registry for shared DAG transport scheduling.
         private static readonly List<LogisticsPipeNode> _activeNodes = new List<LogisticsPipeNode>(InitialNodeCapacity);
-        // COLD ALLOC: NativeArray<int>[capacity] — visited-mark scratch for ordered fallback replay without managed heap churn — owner: LogisticsPipeTransportScheduler
-        private static NativeArray<int> _visitMarks;
-        // COLD ALLOC: NativeArray<int>[capacity] — cycle-repair suppressed edge source scratch for deterministic Kahn recovery — owner: LogisticsPipeTransportScheduler
-        private static NativeArray<int> _suppressedEdgeSources;
-        // COLD ALLOC: NativeArray<int>[capacity] — cycle-repair suppressed edge destination scratch for deterministic Kahn recovery — owner: LogisticsPipeTransportScheduler
-        private static NativeArray<int> _suppressedEdgeDestinations;
+        private static IDataVault _dataVault;
+        private static VaultGenerationHandle<int> _edgeOffsetsHandle;
+        private static VaultGenerationHandle<int> _edgeDestinationsHandle;
 
-        private static NativeArray<int> _edgeOffsets;
-        private static NativeArray<int> _edgeDestinations;
-        private static NativeArray<int> _inputIndegrees;
-        private static NativeArray<int> _workIndegrees;
-        private static NativeArray<int> _queue;
-        private static NativeArray<int> _sortedOrder;
-        private static NativeArray<int> _sortedCount;
+        private static VaultGenerationHandle<int> _inputIndegreesHandle;
+        private static VaultGenerationHandle<int> _workIndegreesHandle;
+        private static VaultGenerationHandle<int> _queueHandle;
+        private static VaultGenerationHandle<int> _sortedOrderHandle;
+        private static VaultGenerationHandle<int> _sortedCountHandle;
+        private static bool _sortLocksHeld;
 
         private static JobHandle _pendingSortHandle;
         private static bool _pendingSort;
         private static int _scheduledSortedCount;
         private static int _scheduledNodeCount;
         private static int _lastProcessedFrame = -1;
-        private static int _visitStamp = 1;
         private static int _nextCycleWarningFrame;
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -102,30 +104,20 @@ namespace Hecton8.Construction
         private static void ResetStaticState()
         {
             Shutdown();
-            EnsureVisitCapacity(InitialNodeCapacity);
-            EnsureSuppressionCapacity(InitialNodeCapacity);
         }
 
         internal static void Shutdown()
         {
             JobHandle teardownDependency = CancelPendingSortForTeardown();
-            teardownDependency = DisposeNativeArray(ref _edgeOffsets, teardownDependency);
-            teardownDependency = DisposeNativeArray(ref _edgeDestinations, teardownDependency);
-            teardownDependency = DisposeNativeArray(ref _inputIndegrees, teardownDependency);
-            teardownDependency = DisposeNativeArray(ref _workIndegrees, teardownDependency);
-            teardownDependency = DisposeNativeArray(ref _queue, teardownDependency);
-            teardownDependency = DisposeNativeArray(ref _sortedOrder, teardownDependency);
-            teardownDependency = DisposeNativeArray(ref _sortedCount, teardownDependency);
-            teardownDependency = DisposeNativeArray(ref _visitMarks, teardownDependency);
-            teardownDependency = DisposeNativeArray(ref _suppressedEdgeSources, teardownDependency);
-            teardownDependency = DisposeNativeArray(ref _suppressedEdgeDestinations, teardownDependency);
             JobHandle.ScheduleBatchedJobs();
             DispatcherJobSwap.TryComplete(ref teardownDependency, forceComplete: true);
+            IDataVault vault = CacheDataVault();
+            ReleaseSortWriteLocks(vault);
+            ReleaseVaultHandles(vault);
             _activeNodes.Clear();
             _scheduledSortedCount = 0;
             _scheduledNodeCount = 0;
             _lastProcessedFrame = -1;
-            _visitStamp = 1;
             _nextCycleWarningFrame = 0;
         }
 
@@ -168,7 +160,7 @@ namespace Hecton8.Construction
             if (_activeNodes.Count <= 0)
                 return false;
 
-            int currentFrame = Time.frameCount;
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastProcessedFrame == currentFrame)
                 return false;
 
@@ -200,49 +192,59 @@ namespace Hecton8.Construction
 
         private static void ReplayCurrentOrder(int activeCount)
         {
-            EnsureVisitCapacity(activeCount);
-            _visitStamp++;
-            if (_visitStamp == int.MaxValue)
-            {
-                ClearVisitMarks();
-                _visitStamp = 1;
-            }
-
             for (int nodeIndex = 0; nodeIndex < activeCount; nodeIndex++)
                 _activeNodes[nodeIndex].SchedulerRefresh();
 
-            if (_scheduledSortedCount == activeCount && _sortedOrder.IsCreated)
+            if (_scheduledSortedCount == activeCount &&
+                TryReadBuffer(CacheDataVault(), in _sortedOrderHandle, activeCount, out NativeArray<int>.ReadOnly sortedOrder))
             {
                 for (int sortedIndex = 0; sortedIndex < _scheduledSortedCount; sortedIndex++)
                 {
-                    int nodeIndex = _sortedOrder[sortedIndex];
+                    int nodeIndex = sortedOrder[sortedIndex];
                     if (nodeIndex < 0 || nodeIndex >= activeCount)
                         continue;
 
-                    _visitMarks[nodeIndex] = _visitStamp;
                     _activeNodes[nodeIndex].ExecuteCoordinatedSlowTick();
                 }
+
+                return;
             }
 
             for (int nodeIndex = 0; nodeIndex < activeCount; nodeIndex++)
-            {
-                if (_visitMarks[nodeIndex] == _visitStamp)
-                    continue;
-
                 _activeNodes[nodeIndex].ExecuteCoordinatedSlowTick();
-            }
         }
 
         private static void ScheduleNextOrder(int activeCount)
         {
             int edgeCount = CountEdges(activeCount);
-            EnsureNativeCapacity(activeCount, edgeCount);
+            IDataVault vault = CacheDataVault();
+            if (!TryAcquireSortWriteBuffers(
+                    vault,
+                    activeCount,
+                    edgeCount,
+                    out NativeArray<int> edgeOffsets,
+                    out NativeArray<int> edgeDestinations,
+                    out NativeArray<int> inputIndegrees,
+                    out NativeArray<int> workIndegrees,
+                    out NativeArray<int> queue,
+                    out NativeArray<int> sortedOrder,
+                    out NativeArray<int> sortedCount))
+            {
+                _scheduledSortedCount = 0;
+                _scheduledNodeCount = 0;
+                return;
+            }
 
+            bool scheduled = false;
+            try
+            {
             for (int nodeIndex = 0; nodeIndex <= activeCount; nodeIndex++)
-                _edgeOffsets[nodeIndex] = 0;
+                edgeOffsets[nodeIndex] = 0;
 
             for (int nodeIndex = 0; nodeIndex < activeCount; nodeIndex++)
-                _inputIndegrees[nodeIndex] = 0;
+                inputIndegrees[nodeIndex] = 0;
+
+            sortedCount[0] = 0;
 
             for (int sourceIndex = 0; sourceIndex < activeCount; sourceIndex++)
             {
@@ -266,17 +268,17 @@ namespace Hecton8.Construction
                         continue;
 
                     outDegree++;
-                    _inputIndegrees[destinationIndex] = _inputIndegrees[destinationIndex] + 1;
+                    inputIndegrees[destinationIndex] = inputIndegrees[destinationIndex] + 1;
                 }
 
-                _edgeOffsets[sourceIndex + 1] = outDegree;
+                edgeOffsets[sourceIndex + 1] = outDegree;
             }
 
             for (int nodeIndex = 1; nodeIndex <= activeCount; nodeIndex++)
-                _edgeOffsets[nodeIndex] = _edgeOffsets[nodeIndex] + _edgeOffsets[nodeIndex - 1];
+                edgeOffsets[nodeIndex] = edgeOffsets[nodeIndex] + edgeOffsets[nodeIndex - 1];
 
             for (int nodeIndex = 0; nodeIndex < activeCount; nodeIndex++)
-                _workIndegrees[nodeIndex] = _edgeOffsets[nodeIndex];
+                workIndegrees[nodeIndex] = edgeOffsets[nodeIndex];
 
             for (int sourceIndex = 0; sourceIndex < activeCount; sourceIndex++)
             {
@@ -298,28 +300,36 @@ namespace Hecton8.Construction
                     if (!ReferenceEquals(destinationCrate, _activeNodes[destinationIndex].SourceCrate))
                         continue;
 
-                    int writeIndex = _workIndegrees[sourceIndex];
-                    _workIndegrees[sourceIndex] = writeIndex + 1;
-                    _edgeDestinations[writeIndex] = destinationIndex;
+                    int writeIndex = workIndegrees[sourceIndex];
+                    workIndegrees[sourceIndex] = writeIndex + 1;
+                    edgeDestinations[writeIndex] = destinationIndex;
                 }
             }
 
             BuildPipeTopologicalOrderJob job = new BuildPipeTopologicalOrderJob
             {
                 NodeCount = activeCount,
-                EdgeOffsets = _edgeOffsets,
-                EdgeDestinations = _edgeDestinations,
-                InputIndegrees = _inputIndegrees,
-                WorkIndegrees = _workIndegrees,
-                Queue = _queue,
-                SortedOrder = _sortedOrder,
-                SortedCount = _sortedCount
+                EdgeOffsets = edgeOffsets,
+                EdgeDestinations = edgeDestinations,
+                InputIndegrees = inputIndegrees,
+                WorkIndegrees = workIndegrees,
+                Queue = queue,
+                SortedOrder = sortedOrder,
+                SortedCount = sortedCount
             };
 
-            _pendingSortHandle = job.Schedule();
-            _pendingSort = true;
-            _scheduledSortedCount = 0;
-            _scheduledNodeCount = activeCount;
+                _pendingSortHandle = job.Schedule();
+                _pendingSort = true;
+                _sortLocksHeld = true;
+                _scheduledSortedCount = 0;
+                _scheduledNodeCount = activeCount;
+                scheduled = true;
+            }
+            finally
+            {
+                if (!scheduled)
+                    ReleaseSortWriteLocks(vault, true, true, true, true, true, true, true);
+            }
         }
 
         private static int CountEdges(int activeCount)
@@ -359,9 +369,33 @@ namespace Hecton8.Construction
                 return;
 
             _pendingSort = false;
-            _scheduledSortedCount = _sortedCount.IsCreated ? _sortedCount[0] : 0;
+            IDataVault vault = CacheDataVault();
+            if (!TryResolveSortBuffers(
+                    vault,
+                    _scheduledNodeCount,
+                    out _,
+                    out _,
+                    out _,
+                    out _,
+                    out _,
+                    out _,
+                    out NativeArray<int> sortedCount))
+            {
+                _scheduledSortedCount = 0;
+                _scheduledNodeCount = 0;
+                ReleaseSortWriteLocks(vault);
+                return;
+            }
+
+            _scheduledSortedCount = sortedCount[0];
             if (_scheduledSortedCount < _scheduledNodeCount)
-                RepairCycleOrder(_scheduledNodeCount);
+            {
+                LogCycleRepairWarning(-1, -1);
+                sortedCount[0] = 0;
+                _scheduledSortedCount = 0;
+            }
+
+            ReleaseSortWriteLocks(vault);
         }
 
         private static JobHandle CancelPendingSortForTeardown()
@@ -377,231 +411,247 @@ namespace Hecton8.Construction
             return dependency;
         }
 
-        private static void ClearVisitMarks()
+        private static IDataVault CacheDataVault()
         {
-            if (!_visitMarks.IsCreated)
-                return;
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
 
-            for (int i = 0; i < _visitMarks.Length; i++)
-                _visitMarks[i] = 0;
+            return _dataVault;
         }
 
-        private static void EnsureVisitCapacity(int requiredCount)
+        private static bool TryReadBuffer(
+            IDataVault vault,
+            in VaultGenerationHandle<int> handle,
+            int requiredLength,
+            out NativeArray<int>.ReadOnly buffer)
         {
-            if (_visitMarks.IsCreated && _visitMarks.Length >= requiredCount)
-                return;
-
-            int currentCapacity = _visitMarks.IsCreated ? _visitMarks.Length : 0;
-            int nextCapacity = math.max(currentCapacity, InitialNodeCapacity);
-            while (nextCapacity < requiredCount)
-                nextCapacity <<= 1;
-
-            NativeArray<int> nextVisitMarks = new NativeArray<int>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[capacity] - visited-mark scratch for ordered pipe replay - owner: LogisticsPipeTransportScheduler
-            for (int i = 0; i < currentCapacity; i++)
-                nextVisitMarks[i] = _visitMarks[i];
-
-            DisposeNativeArray(ref _visitMarks);
-            _visitMarks = nextVisitMarks;
-            RegisterNativeArray(_visitMarks, nameof(_visitMarks));
+            buffer = default;
+            return vault != null &&
+                   handle.BufferID != 0u &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.Length >= math.max(1, requiredLength);
         }
 
-        private static void EnsureSuppressionCapacity(int requiredCount)
+        private static bool TryAcquireSortWriteBuffers(
+            IDataVault vault,
+            int nodeCount,
+            int edgeCount,
+            out NativeArray<int> edgeOffsets,
+            out NativeArray<int> edgeDestinations,
+            out NativeArray<int> inputIndegrees,
+            out NativeArray<int> workIndegrees,
+            out NativeArray<int> queue,
+            out NativeArray<int> sortedOrder,
+            out NativeArray<int> sortedCount)
         {
-            if (_suppressedEdgeSources.IsCreated &&
-                _suppressedEdgeDestinations.IsCreated &&
-                _suppressedEdgeSources.Length >= requiredCount &&
-                _suppressedEdgeDestinations.Length >= requiredCount)
-                return;
+            edgeOffsets = default;
+            edgeDestinations = default;
+            inputIndegrees = default;
+            workIndegrees = default;
+            queue = default;
+            sortedOrder = default;
+            sortedCount = default;
 
-            int currentCapacity = _suppressedEdgeSources.IsCreated ? _suppressedEdgeSources.Length : 0;
-            int nextCapacity = math.max(currentCapacity, InitialNodeCapacity);
-            while (nextCapacity < requiredCount)
-                nextCapacity <<= 1;
+            bool edgeOffsetsLocked = false;
+            bool edgeDestinationsLocked = false;
+            bool inputIndegreesLocked = false;
+            bool workIndegreesLocked = false;
+            bool queueLocked = false;
+            bool sortedOrderLocked = false;
+            bool sortedCountLocked = false;
 
-            NativeArray<int> nextSources = new NativeArray<int>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[capacity] - cycle-repair suppressed edge sources - owner: LogisticsPipeTransportScheduler
-            NativeArray<int> nextDestinations = new NativeArray<int>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[capacity] - cycle-repair suppressed edge destinations - owner: LogisticsPipeTransportScheduler
-            int destinationCapacity = _suppressedEdgeDestinations.IsCreated ? _suppressedEdgeDestinations.Length : 0;
-            int copyCount = math.min(currentCapacity, destinationCapacity);
-            for (int i = 0; i < copyCount; i++)
+            if (!TryAcquireWriteBuffer(vault, EdgeOffsetsBufferId, nodeCount + 1, ref _edgeOffsetsHandle, out edgeOffsets))
+                return false;
+            edgeOffsetsLocked = true;
+
+            if (!TryAcquireWriteBuffer(vault, EdgeDestinationsBufferId, edgeCount, ref _edgeDestinationsHandle, out edgeDestinations))
             {
-                nextSources[i] = _suppressedEdgeSources[i];
-                nextDestinations[i] = _suppressedEdgeDestinations[i];
+                ReleaseSortWriteLocks(vault, edgeOffsetsLocked, edgeDestinationsLocked, inputIndegreesLocked, workIndegreesLocked, queueLocked, sortedOrderLocked, sortedCountLocked);
+                return false;
+            }
+            edgeDestinationsLocked = true;
+
+            if (!TryAcquireWriteBuffer(vault, InputIndegreesBufferId, nodeCount, ref _inputIndegreesHandle, out inputIndegrees))
+            {
+                ReleaseSortWriteLocks(vault, edgeOffsetsLocked, edgeDestinationsLocked, inputIndegreesLocked, workIndegreesLocked, queueLocked, sortedOrderLocked, sortedCountLocked);
+                return false;
+            }
+            inputIndegreesLocked = true;
+
+            if (!TryAcquireWriteBuffer(vault, WorkIndegreesBufferId, nodeCount, ref _workIndegreesHandle, out workIndegrees))
+            {
+                ReleaseSortWriteLocks(vault, edgeOffsetsLocked, edgeDestinationsLocked, inputIndegreesLocked, workIndegreesLocked, queueLocked, sortedOrderLocked, sortedCountLocked);
+                return false;
+            }
+            workIndegreesLocked = true;
+
+            if (!TryAcquireWriteBuffer(vault, QueueBufferId, nodeCount, ref _queueHandle, out queue))
+            {
+                ReleaseSortWriteLocks(vault, edgeOffsetsLocked, edgeDestinationsLocked, inputIndegreesLocked, workIndegreesLocked, queueLocked, sortedOrderLocked, sortedCountLocked);
+                return false;
+            }
+            queueLocked = true;
+
+            if (!TryAcquireWriteBuffer(vault, SortedOrderBufferId, nodeCount, ref _sortedOrderHandle, out sortedOrder))
+            {
+                ReleaseSortWriteLocks(vault, edgeOffsetsLocked, edgeDestinationsLocked, inputIndegreesLocked, workIndegreesLocked, queueLocked, sortedOrderLocked, sortedCountLocked);
+                return false;
+            }
+            sortedOrderLocked = true;
+
+            if (!TryAcquireWriteBuffer(vault, SortedCountBufferId, 1, ref _sortedCountHandle, out sortedCount))
+            {
+                ReleaseSortWriteLocks(vault, edgeOffsetsLocked, edgeDestinationsLocked, inputIndegreesLocked, workIndegreesLocked, queueLocked, sortedOrderLocked, sortedCountLocked);
+                return false;
             }
 
-            DisposeNativeArray(ref _suppressedEdgeSources);
-            DisposeNativeArray(ref _suppressedEdgeDestinations);
-            _suppressedEdgeSources = nextSources;
-            _suppressedEdgeDestinations = nextDestinations;
-            RegisterNativeArray(_suppressedEdgeSources, nameof(_suppressedEdgeSources));
-            RegisterNativeArray(_suppressedEdgeDestinations, nameof(_suppressedEdgeDestinations));
+            return true;
         }
 
-        private static void EnsureNativeCapacity(int nodeCount, int edgeCount)
+        private static bool TryResolveSortBuffers(
+            IDataVault vault,
+            int nodeCount,
+            out NativeArray<int> edgeOffsets,
+            out NativeArray<int> edgeDestinations,
+            out NativeArray<int> inputIndegrees,
+            out NativeArray<int> workIndegrees,
+            out NativeArray<int> queue,
+            out NativeArray<int> sortedOrder,
+            out NativeArray<int> sortedCount)
         {
-            EnsureNativeArray(ref _edgeOffsets, nodeCount + 1, nameof(_edgeOffsets));
-            EnsureNativeArray(ref _edgeDestinations, edgeCount, nameof(_edgeDestinations));
-            EnsureNativeArray(ref _inputIndegrees, nodeCount, nameof(_inputIndegrees));
-            EnsureNativeArray(ref _workIndegrees, nodeCount, nameof(_workIndegrees));
-            EnsureNativeArray(ref _queue, nodeCount, nameof(_queue));
-            EnsureNativeArray(ref _sortedOrder, nodeCount, nameof(_sortedOrder));
-            EnsureNativeArray(ref _sortedCount, 1, nameof(_sortedCount));
+            edgeOffsets = default;
+            edgeDestinations = default;
+            inputIndegrees = default;
+            workIndegrees = default;
+            queue = default;
+            sortedOrder = default;
+            sortedCount = default;
+
+            return vault != null &&
+                   TryResolveBuffer(vault, in _edgeOffsetsHandle, nodeCount + 1, out edgeOffsets) &&
+                   TryResolveBuffer(vault, in _edgeDestinationsHandle, 0, out edgeDestinations) &&
+                   TryResolveBuffer(vault, in _inputIndegreesHandle, nodeCount, out inputIndegrees) &&
+                   TryResolveBuffer(vault, in _workIndegreesHandle, nodeCount, out workIndegrees) &&
+                   TryResolveBuffer(vault, in _queueHandle, nodeCount, out queue) &&
+                   TryResolveBuffer(vault, in _sortedOrderHandle, nodeCount, out sortedOrder) &&
+                   TryResolveBuffer(vault, in _sortedCountHandle, 1, out sortedCount);
         }
 
-        private static void EnsureNativeArray(ref NativeArray<int> array, int requiredLength, string label)
+        private static bool TryAcquireWriteBuffer(
+            IDataVault vault,
+            BufferID bufferId,
+            int requiredLength,
+            ref VaultGenerationHandle<int> handle,
+            out NativeArray<int> buffer)
         {
+            buffer = default;
             int safeLength = math.max(1, requiredLength);
-            if (array.IsCreated && array.Length >= safeLength)
-                return;
+            if (vault == null)
+                return false;
 
-            DisposeNativeArray(ref array);
-            array = new NativeArray<int>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            RegisterNativeArray(array, label);
-        }
-
-        private static void RepairCycleOrder(int activeCount)
-        {
-            if (activeCount <= 0 || !_sortedOrder.IsCreated || !_inputIndegrees.IsCreated || !_workIndegrees.IsCreated || !_queue.IsCreated)
-                return;
-
-            EnsureVisitCapacity(activeCount);
-            EnsureSuppressionCapacity(activeCount);
-
-            int suppressedEdgeCount = 0;
-            int repairedCount = _scheduledSortedCount;
-            while (repairedCount < activeCount && suppressedEdgeCount < activeCount)
+            if (handle.BufferID == 0u ||
+                !vault.TryResolveHandle(in handle, out NativeArray<int> existing) ||
+                !existing.IsCreated ||
+                existing.Length < safeLength)
             {
-                StampVisitedNodes(repairedCount);
-                if (!TrySelectCycleEdge(activeCount, suppressedEdgeCount, out int suppressedSourceIndex, out int suppressedDestinationIndex))
-                    break;
-
-                _suppressedEdgeSources[suppressedEdgeCount] = suppressedSourceIndex;
-                _suppressedEdgeDestinations[suppressedEdgeCount] = suppressedDestinationIndex;
-                suppressedEdgeCount++;
-                LogCycleRepairWarning(suppressedSourceIndex, suppressedDestinationIndex);
-
-                // COLD SYNC REPAIR: cyclic player-authored pipe loops are exceptional invalid topology.
-                repairedCount = BuildSynchronousOrder(activeCount, suppressedEdgeCount);
+                handle = vault.EnsureGenerationHandle<int>(bufferId, safeLength, OwnerSystemId, NativeArrayOptions.ClearMemory);
             }
 
-            _scheduledSortedCount = repairedCount;
-            if (_sortedCount.IsCreated)
-                _sortedCount[0] = repairedCount;
-        }
-
-        private static void StampVisitedNodes(int sortedCount)
-        {
-            _visitStamp++;
-            if (_visitStamp == int.MaxValue)
+            if (handle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in handle, OwnerSystemId, out buffer))
             {
-                ClearVisitMarks();
-                _visitStamp = 1;
+                return false;
             }
 
-            int safeSortedCount = math.min(sortedCount, _scheduledNodeCount);
-            for (int sortedIndex = 0; sortedIndex < safeSortedCount; sortedIndex++)
-            {
-                int nodeIndex = _sortedOrder[sortedIndex];
-                if (nodeIndex < 0 || nodeIndex >= _scheduledNodeCount)
-                    continue;
+            if (buffer.IsCreated && buffer.Length >= safeLength)
+                return true;
 
-                _visitMarks[nodeIndex] = _visitStamp;
-            }
-        }
-
-        private static bool TrySelectCycleEdge(int activeCount, int suppressedEdgeCount, out int suppressedSourceIndex, out int suppressedDestinationIndex)
-        {
-            suppressedSourceIndex = -1;
-            suppressedDestinationIndex = -1;
-
-            for (int sourceIndex = activeCount - 1; sourceIndex >= 0; sourceIndex--)
-            {
-                if (_visitMarks[sourceIndex] == _visitStamp)
-                    continue;
-
-                int edgeStart = _edgeOffsets[sourceIndex];
-                int edgeEnd = _edgeOffsets[sourceIndex + 1];
-                for (int edgeIndex = edgeEnd - 1; edgeIndex >= edgeStart; edgeIndex--)
-                {
-                    int destinationIndex = _edgeDestinations[edgeIndex];
-                    if (destinationIndex < 0 || destinationIndex >= activeCount)
-                        continue;
-
-                    if (_visitMarks[destinationIndex] == _visitStamp)
-                        continue;
-
-                    if (IsSuppressedEdge(sourceIndex, destinationIndex, suppressedEdgeCount))
-                        continue;
-
-                    suppressedSourceIndex = sourceIndex;
-                    suppressedDestinationIndex = destinationIndex;
-                    return true;
-                }
-            }
-
+            vault.ReleaseWriteLock(in handle, OwnerSystemId);
+            buffer = default;
             return false;
         }
 
-        private static int BuildSynchronousOrder(int activeCount, int suppressedEdgeCount)
+        private static bool TryResolveBuffer(
+            IDataVault vault,
+            in VaultGenerationHandle<int> handle,
+            int requiredLength,
+            out NativeArray<int> buffer)
         {
-            int queueCount = 0;
-            for (int nodeIndex = 0; nodeIndex < activeCount; nodeIndex++)
-            {
-                int indegree = _inputIndegrees[nodeIndex];
-                for (int suppressedIndex = 0; suppressedIndex < suppressedEdgeCount; suppressedIndex++)
-                {
-                    if (_suppressedEdgeDestinations[suppressedIndex] == nodeIndex && indegree > 0)
-                        indegree--;
-                }
-
-                _workIndegrees[nodeIndex] = indegree;
-                if (indegree == 0)
-                    _queue[queueCount++] = nodeIndex;
-            }
-
-            int queueReadIndex = 0;
-            int sortedCount = 0;
-            while (queueReadIndex < queueCount)
-            {
-                int nodeIndex = _queue[queueReadIndex++];
-                _sortedOrder[sortedCount++] = nodeIndex;
-
-                int edgeStart = _edgeOffsets[nodeIndex];
-                int edgeEnd = _edgeOffsets[nodeIndex + 1];
-                for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
-                {
-                    int destinationIndex = _edgeDestinations[edgeIndex];
-                    if (IsSuppressedEdge(nodeIndex, destinationIndex, suppressedEdgeCount))
-                        continue;
-
-                    int nextIndegree = _workIndegrees[destinationIndex] - 1;
-                    _workIndegrees[destinationIndex] = nextIndegree;
-                    if (nextIndegree == 0)
-                        _queue[queueCount++] = destinationIndex;
-                }
-            }
-
-            return sortedCount;
+            buffer = default;
+            return handle.BufferID != 0u &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= math.max(1, requiredLength);
         }
 
-        private static bool IsSuppressedEdge(int sourceIndex, int destinationIndex, int suppressedEdgeCount)
+        private static void ReleaseSortWriteLocks(IDataVault vault)
         {
-            for (int suppressedIndex = 0; suppressedIndex < suppressedEdgeCount; suppressedIndex++)
-            {
-                if (_suppressedEdgeSources[suppressedIndex] != sourceIndex)
-                    continue;
+            if (!_sortLocksHeld)
+                return;
 
-                if (_suppressedEdgeDestinations[suppressedIndex] == destinationIndex)
-                    return true;
+            ReleaseSortWriteLocks(vault, true, true, true, true, true, true, true);
+            _sortLocksHeld = false;
+        }
+
+        private static void ReleaseSortWriteLocks(
+            IDataVault vault,
+            bool edgeOffsetsLocked,
+            bool edgeDestinationsLocked,
+            bool inputIndegreesLocked,
+            bool workIndegreesLocked,
+            bool queueLocked,
+            bool sortedOrderLocked,
+            bool sortedCountLocked)
+        {
+            if (vault == null)
+                return;
+
+            if (sortedCountLocked)
+                vault.ReleaseWriteLock(in _sortedCountHandle, OwnerSystemId);
+            if (sortedOrderLocked)
+                vault.ReleaseWriteLock(in _sortedOrderHandle, OwnerSystemId);
+            if (queueLocked)
+                vault.ReleaseWriteLock(in _queueHandle, OwnerSystemId);
+            if (workIndegreesLocked)
+                vault.ReleaseWriteLock(in _workIndegreesHandle, OwnerSystemId);
+            if (inputIndegreesLocked)
+                vault.ReleaseWriteLock(in _inputIndegreesHandle, OwnerSystemId);
+            if (edgeDestinationsLocked)
+                vault.ReleaseWriteLock(in _edgeDestinationsHandle, OwnerSystemId);
+            if (edgeOffsetsLocked)
+                vault.ReleaseWriteLock(in _edgeOffsetsHandle, OwnerSystemId);
+        }
+
+        private static void ReleaseVaultHandles(IDataVault vault)
+        {
+            if (vault != null)
+            {
+                ReleaseVaultHandle(vault, ref _sortedCountHandle);
+                ReleaseVaultHandle(vault, ref _sortedOrderHandle);
+                ReleaseVaultHandle(vault, ref _queueHandle);
+                ReleaseVaultHandle(vault, ref _workIndegreesHandle);
+                ReleaseVaultHandle(vault, ref _inputIndegreesHandle);
+                ReleaseVaultHandle(vault, ref _edgeDestinationsHandle);
+                ReleaseVaultHandle(vault, ref _edgeOffsetsHandle);
             }
 
-            return false;
+            _dataVault = null;
+        }
+
+        private static void ReleaseVaultHandle(IDataVault vault, ref VaultGenerationHandle<int> handle)
+        {
+            if (handle.BufferID == 0u)
+                return;
+
+            vault.ReleaseBuffer(in handle);
+            handle = default;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogCycleRepairWarning(int sourceIndex, int destinationIndex)
         {
-            int currentFrame = Time.frameCount;
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (currentFrame < _nextCycleWarningFrame)
                 return;
 
@@ -611,30 +661,5 @@ namespace Hecton8.Construction
 #endif
         }
 
-        private static void DisposeNativeArray(ref NativeArray<int> array)
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
-        }
-
-        private static JobHandle DisposeNativeArray(ref NativeArray<int> array, JobHandle dependency)
-        {
-            if (!array.IsCreated)
-                return dependency;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            JobHandle disposeHandle = array.Dispose(dependency);
-            array = default;
-            return disposeHandle;
-        }
-
-        private static void RegisterNativeArray(NativeArray<int> array, string label)
-        {
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
-        }
     }
 }

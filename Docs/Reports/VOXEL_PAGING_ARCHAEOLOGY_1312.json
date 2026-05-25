@@ -1,0 +1,95 @@
+{
+  "agent": "1312",
+  "status": "PENDING_VERIFICATION",
+  "source_prompt": "Docs/Tasks/CURRENT_BATCH.md <AGENT_PROMPT id=\"1312\">",
+  "scope": {
+    "assigned_files": [
+      "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs",
+      "Assets/_Project/Scripts/VoxelDeltaProcessor.cs"
+    ],
+    "critical_live_route_dependency": [
+      "Assets/_Project/Scripts/SaveSystem/VoxelDeltaCompressionArchitecture.cs"
+    ],
+    "dependency_reason": "The requested VoxelRleEncoderJob and VoxelDeltaRleFinalizeJob are declared in VoxelDeltaCompressionArchitecture.cs, not in the two assigned source files."
+  },
+  "mandates": [
+    "DATA_Runtime_Struct_Layout_ARM64",
+    "DATA_Save_Persistence_Binary_Delta_Checksum",
+    "DBG_Telemetry_Crash_Reporting_PostMortem",
+    "OPT_Native_Memory_Collections_JobSystem_Protocol",
+    "OPT_Zero_GC_Policy_AllocFree_Mandate",
+    "VOX_Voxel_World_Logic_Carving_Persistence",
+    "STRM_World_Streaming_Residency_Chunk_Management",
+    "MATH_Coordinate_Precision_AUP_FloatingOrigin"
+  ],
+  "directory_slot_audit": {
+    "file": "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs",
+    "directory_bytes_line": 35,
+    "header_bytes_line": 36,
+    "entry_bytes_line": 37,
+    "slot_count_line": 38,
+    "resolver_lines": [1703, 1709],
+    "current_expression": "mixed & (DirectorySlotCount - 1)",
+    "directory_slot_count": 252,
+    "invalid_mask": 251,
+    "reachable_slots_with_mask": 128,
+    "dead_slots": 124,
+    "dead_slot_percent": 49.206349,
+    "pair_collision_probability_old": 0.0078125,
+    "pair_collision_probability_modulo_252": 0.003968254,
+    "pair_collision_probability_increase_percent": 96.875,
+    "required_fix": "Replace the non-power-of-two mask with modulo 252. Expanding to 256 entries would not fit the 4096-byte directory page without changing the sector base offset."
+  },
+  "pager_pipeline": {
+    "enqueue_write_lines": [194, 205],
+    "payload_rejection_line": 202,
+    "process_write_lines": [1297, 1385],
+    "pager_byte_rle_lines": [2153, 2175],
+    "pager_byte_rle_record_bytes": 3,
+    "page_payload_bytes": 262080,
+    "directory_write_lines": [1769, 1792],
+    "telemetry_lines": [2497, 2521],
+    "dump_lines": [2545, 2578],
+    "data_vault_buffers_lines": [777, 826]
+  },
+  "voxel_native_snapshot_audit": {
+    "file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+    "copy_snapshot_lines": [2176, 2273],
+    "measure_snapshot_lines": [2276, 2344],
+    "dense_payload_lines": [2356, 2362],
+    "dense_payload_bytes": 135168,
+    "dense_record_with_aligned_header_bytes": 135208,
+    "sparse_fallback_decision_line": 2364,
+    "dirty_sparse_write_lines": [2482, 2562],
+    "compacted_sparse_write_lines": [2688, 2760],
+    "native_snapshot_scratch_allocation_lines": [4802, 4823],
+    "compaction_scratch_allocation_lines": [4705, 4728],
+    "existing_problem": "Native snapshot and compaction scratch are cold persistent NativeArray fields instead of DataVault-owned generation handles."
+  },
+  "vxrl_job_route_audit": {
+    "file": "Assets/_Project/Scripts/SaveSystem/VoxelDeltaCompressionArchitecture.cs",
+    "max_payload_line": 195,
+    "header_bytes_line": 196,
+    "run_bytes_line": 197,
+    "max_runs_line": 198,
+    "vault_prealloc_lines": [266, 281],
+    "schedule_encoder_lines": [472, 484],
+    "schedule_finalize_lines": [486, 497],
+    "encoder_lines": [1195, 1283],
+    "finalize_lines": [1287, 1377],
+    "pack_lines": [1380, 1425],
+    "wal_enqueue_lines": [558, 592],
+    "worst_case_checkerboard_runs": 32768,
+    "worst_case_checkerboard_bytes_with_header": 262176,
+    "page_payload_limit_bytes": 262080,
+    "overflow_bytes": 96,
+    "max_safe_runs": 32756,
+    "current_behavior": "Encoder flags overflow and finalize sets CounterFailure, which prevents the write instead of falling back to dense payload."
+  },
+  "impossible_prompt_claims": [
+    {
+      "claim": "A fuzzer with 10000 modified sectors should never record a directory collision.",
+      "why_impossible": "A 252-slot directory cannot hold 10000 distinct sector metadata entries without collisions by the pigeonhole principle. The valid objective is all-slot reachability, uniform distribution, and explicit collision telemetry/fail-closed handling."
+    }
+  ]
+}

@@ -427,7 +427,7 @@ namespace Hecton8.Input
             if (templateAsset == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[InputManager] No InputActionAsset template available.");
+                Hecton8.Core.H8Debug.LogError("[InputManager] No InputActionAsset template available.");
 #endif
                 return;
             }
@@ -436,7 +436,7 @@ namespace Hecton8.Input
             if (_runtimeInputActionAsset == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[InputManager] Failed to create runtime InputActionAsset clone.");
+                Hecton8.Core.H8Debug.LogError("[InputManager] Failed to create runtime InputActionAsset clone.");
 #endif
                 return;
             }
@@ -451,7 +451,7 @@ namespace Hecton8.Input
             if (_playerActionMap == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[InputManager] Player action map not found in InputActionAsset!");
+                Hecton8.Core.H8Debug.LogError("[InputManager] Player action map not found in InputActionAsset!");
 #endif
                 return;
             }
@@ -459,7 +459,7 @@ namespace Hecton8.Input
             if (_uiActionMap == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[InputManager] UI action map not found in InputActionAsset!");
+                Hecton8.Core.H8Debug.LogError("[InputManager] UI action map not found in InputActionAsset!");
 #endif
                 return;
             }
@@ -583,7 +583,7 @@ namespace Hecton8.Input
             catch (Exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[InputManager] Runtime InputActionAsset clone failed.");
+                Hecton8.Core.H8Debug.LogError("[InputManager] Runtime InputActionAsset clone failed.");
 #endif
                 return null;
             }
@@ -615,7 +615,7 @@ namespace Hecton8.Input
             catch (Exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[InputManager] Generated InputAction fallback unavailable.");
+                Hecton8.Core.H8Debug.LogWarning("[InputManager] Generated InputAction fallback unavailable.");
 #endif
             }
 

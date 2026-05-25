@@ -66,6 +66,7 @@ namespace Hecton8.Core.Memory
         MetaCampaign = 355,
         WorldProceduralFieldSampler = 356,
         WorldOutposts = 357,
+        GameplayHazards = 358,
         EndgameAnomaly = 197,
         GraphicsMaterials = 198,
         ModSandbox = 199,
@@ -507,6 +508,7 @@ namespace Hecton8.Core.Memory
         FloraScatterVisualPayload = 382,
         AudioFrameRingFrames = 383,
         AudioFrameRingSharedState = 384,
+        AudioFrameRingTelemetry = 72700,
         AudioStemState = 70800,
         AudioStemCommands = 70801,
         AudioStemMixFrame = 70802,
@@ -539,6 +541,23 @@ namespace Hecton8.Core.Memory
         AudioVocalSynthesisMockBankRecords = 72427,
         AudioVocalSynthesisCsvMetadata = 72428,
         AudioVocalSynthesisCsvScratch = 72429,
+        SpatialAudioVirtualVoiceTuning = 72430,
+        SpatialAudioVirtualVoiceWritePool = 72431,
+        SpatialAudioVirtualVoiceSortPool = 72432,
+        SpatialAudioVirtualVoiceDtoPool = 72433,
+        SpatialAudioVirtualVoiceSortKeyPool = 72434,
+        SpatialAudioAcousticSourceWritePool = 72435,
+        SpatialAudioAcousticSourceSortPool = 72436,
+        SpatialAudioAcousticPreviousAupWritePool = 72437,
+        SpatialAudioAcousticPreviousAupSortPool = 72438,
+        SpatialAudioAcousticDspOutputPool = 72439,
+        SpatialAudioAcousticMaterialRows = 72440,
+        SpatialAudioAcousticSelectedSourcePool = 72441,
+        SpatialAudioAcousticSelectedPreviousAupPool = 72442,
+        SpatialAudioPortalOpenSet = 72443,
+        SpatialAudioPortalClosedSet = 72444,
+        SpatialAudioPreviousVelocityAups = 72445,
+        SpatialAudioPreviousVelocityAupFrames = 72446,
         Shinobu303SteeringParams = 72500,
         Shinobu303SteeringAvoidance = 72501,
         Shinobu303SteeringWhiskers = 72502,
@@ -790,6 +809,9 @@ namespace Hecton8.Core.Memory
         VehicleMotorReserved558 = 558,
         VaultSovereigntyTelemetryRing = 559,
         VoxelSdfPayloadDescriptor = 620,
+        VoxelSdfAudioMaterialIds = 621,
+        VoxelMarchingCubesEdgeTable = 644,
+        VoxelMarchingCubesTriTable = 645,
         MarineSnowTuningConstants = 622,
         MarineSnowDynamicWakes = 623,
         MarineSnowMockFlowField = 624,
@@ -1039,6 +1061,16 @@ namespace Hecton8.Core.Memory
         SaveMacroDatabaseHydrationScratch = 70375,
         SaveMacroDatabaseBlackBox = 70376,
         SaveMacroDatabasePayloadCopyScratch = 70377,
+        SaveVoxelDeltaCompactionSourceSdfScratch = 70380,
+        SaveVoxelDeltaCompactionDirtyMaskScratch = 70381,
+        SaveVoxelDeltaCompactionDeltaSdfScratch = 70382,
+        SaveVoxelDeltaCompactionMaterialScratch = 70383,
+        SaveVoxelDeltaCompactionFlagsScratch = 70384,
+        SaveVoxelDeltaCompactionOutputSdfScratch = 70385,
+        SaveVoxelDeltaCompactionOutputMaterialsScratch = 70386,
+        SaveVoxelDeltaCompactionOutputFlagsScratch = 70387,
+        SaveVoxelDeltaCompactionUniformFlagScratch = 70388,
+        SaveVoxelDeltaNativeSnapshotScratch = 70389,
         BiolumGlowStates = 70300,
         BiolumGlowGpuColorFront = 70301,
         BiolumGlowGpuColorBack = 70302,
@@ -1087,6 +1119,7 @@ namespace Hecton8.Core.Memory
         ShinobuDeltaCrusherSdfBitsPool = 70133,
         ShinobuDeltaCrusherMaterialPool = 70134,
         ShinobuDeltaCrusherCellFlagsPool = 70135,
+        ShinobuDeltaCrusherCarveEventQueue = 70136,
         ShinobuAmbientEntities = 70400,
         ShinobuAmbientAups = 70401,
         ShinobuAmbientEntitySnapshot = 70402,
@@ -1144,6 +1177,7 @@ namespace Hecton8.Core.Memory
         ShinobuFlockingThreatCount = 70458,
         ShinobuFlockingTelemetryRing = 70459,
         ShinobuFlockingCounters64 = 70474,
+        ShinobuSpatialGridDumpSnapshot = 70475,
         ShinobuNutrientDriftCellFront = 70460,
         ShinobuNutrientDriftCellBack = 70461,
         ShinobuNutrientDriftFlowField = 70462,
@@ -1336,6 +1370,19 @@ namespace Hecton8.Core.Memory
         HectonWorldGeneratorWestSlopeLut = 74385,
         HectonWorldGeneratorEastSlopeLut = 74386,
         HectonWorldGeneratorBiomeLut = 74387,
+        HazardZoneVolumes = 74388,
+        HazardZoneVolumeIds = 74389,
+        HazardZoneSpatialHandles = 74390,
+        HazardZoneCurveLutSamples = 74391,
+        HazardZoneJobVolumes = 74392,
+        HazardZoneCandidateVolumeFlags = 74393,
+        HazardZoneSpatialQueryHandles = 74394,
+        GasDynamicsTelemetryRing = 74395,
+        IndirectVegetationFloraGrowthTelemetryRing = 74396,
+        IndirectVegetationScatterCullTelemetryRing = 74397,
+        SargassumGlobalDragDensityBuildSources = 74403,
+        SargassumGlobalDragScavengerMatrices = 74404,
+        SargassumGlobalDragBatchMetadata = 74405,
         ShinobuLogisticsNodes = 70180,
         ShinobuLogisticsEdges = 70181,
         ShinobuLogisticsStateFlags = 70182,
@@ -2036,9 +2083,9 @@ namespace Hecton8.Core.Memory
         [FieldOffset(28)] public int Generation;
         [FieldOffset(32)] public SystemID Owner;
         [FieldOffset(34)] public ushort Flags;
-        [FieldOffset(36)] public byte State;
-        [FieldOffset(37)] public byte Reserved;
-        [FieldOffset(38)] public ushort Reserved2;
+        [FieldOffset(36)] public ushort Reserved2;
+        [FieldOffset(38)] public byte State;
+        [FieldOffset(39)] public byte Reserved;
     }
 
     /// <summary>
@@ -2078,9 +2125,9 @@ namespace Hecton8.Core.Memory
         [FieldOffset(44)] public int TransitionSequence;
         [FieldOffset(48)] public int LastTransitionReleasedCount;
         [FieldOffset(52)] public int FatalLeakPreventedCount;
-        [FieldOffset(56)] public ushort Owner;
-        [FieldOffset(58)] public ushort Flags;
-        [FieldOffset(60)] public uint Frame;
+        [FieldOffset(56)] public uint Frame;
+        [FieldOffset(60)] public ushort Owner;
+        [FieldOffset(62)] public ushort Flags;
     }
 
     public sealed class FatalMemoryException : InvalidOperationException
@@ -2164,7 +2211,7 @@ namespace Hecton8.Core.Memory
         private const int H8AllocationRecordSizeBytes = 48;
         private const int H8MemoryTelemetryEntrySizeBytes = 64;
         private const ulong FatalLeakDumpMagic = 0x3130444D454D3848UL; // H8MEMD01
-        private const int FatalLeakDumpVersion = 4;
+        private const int FatalLeakDumpVersion = 5;
         private const ulong AddressFingerprintSeed = 14695981039346656037UL;
         private const ulong AddressFingerprintPrime = 1099511628211UL;
         private const byte BlackBoxRingKindHeartbeat = 1;
@@ -2213,6 +2260,9 @@ namespace Hecton8.Core.Memory
 
         /// <summary>Tracked allocation count.</summary>
         public static int ActiveAllocationCount => _recordCount;
+
+        /// <summary>True while H8Memory tracking tables are live.</summary>
+        public static bool IsInitialized => _initialized;
 
         /// <summary>Total tracked bytes.</summary>
         public static long TotalBytes => _totalBytes;
@@ -2305,7 +2355,8 @@ namespace Hecton8.Core.Memory
             if (_initialized)
                 return;
 
-            ValidateAbiLayout();
+            if (!ValidateAbiLayout())
+                return;
             int safeCapacity = ResolveTrackingCapacity(capacity);
             // COLD ALLOC: NativeParallelHashMap<long,SystemID>[capacity] - pointer to owner registry - owner: H8Memory
             _allocationOwners = new NativeParallelHashMap<long, SystemID>(safeCapacity, Allocator.Persistent);
@@ -2358,7 +2409,7 @@ namespace Hecton8.Core.Memory
 #endif
         }
 
-        private static void ValidateAbiLayout()
+        private static bool ValidateAbiLayout()
         {
             bool valid =
                 UnsafeUtility.SizeOf<BlockDescriptor>() == BlockDescriptorSizeBytes &&
@@ -2367,11 +2418,7 @@ namespace Hecton8.Core.Memory
                 ValidateBlockDescriptorAbiOffsets() &&
                 ValidateAllocationRecordAbiOffsets() &&
                 ValidateTelemetryEntryAbiOffsets();
-
-            if (!valid)
-            {
-                FatalMemoryException.ThrowAbiLayoutMismatch();
-            }
+            return valid;
         }
 
         private static bool ValidateBlockDescriptorAbiOffsets()
@@ -2387,9 +2434,9 @@ namespace Hecton8.Core.Memory
                 ByteOffset(descriptorBase, &descriptor.Generation) == 28 &&
                 ByteOffset(descriptorBase, &descriptor.Owner) == 32 &&
                 ByteOffset(descriptorBase, &descriptor.Flags) == 34 &&
-                ByteOffset(descriptorBase, &descriptor.State) == 36 &&
-                ByteOffset(descriptorBase, &descriptor.Reserved) == 37 &&
-                ByteOffset(descriptorBase, &descriptor.Reserved2) == 38;
+                ByteOffset(descriptorBase, &descriptor.Reserved2) == 36 &&
+                ByteOffset(descriptorBase, &descriptor.State) == 38 &&
+                ByteOffset(descriptorBase, &descriptor.Reserved) == 39;
         }
 
         private static bool ValidateAllocationRecordAbiOffsets()
@@ -2429,9 +2476,9 @@ namespace Hecton8.Core.Memory
                 ByteOffset(telemetryBase, &telemetry.TransitionSequence) == 44 &&
                 ByteOffset(telemetryBase, &telemetry.LastTransitionReleasedCount) == 48 &&
                 ByteOffset(telemetryBase, &telemetry.FatalLeakPreventedCount) == 52 &&
-                ByteOffset(telemetryBase, &telemetry.Owner) == 56 &&
-                ByteOffset(telemetryBase, &telemetry.Flags) == 58 &&
-                ByteOffset(telemetryBase, &telemetry.Frame) == 60;
+                ByteOffset(telemetryBase, &telemetry.Frame) == 56 &&
+                ByteOffset(telemetryBase, &telemetry.Owner) == 60 &&
+                ByteOffset(telemetryBase, &telemetry.Flags) == 62;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2469,13 +2516,21 @@ namespace Hecton8.Core.Memory
         {
             if (!_initialized)
                 Initialize();
+            if (!_initialized)
+                return default;
 
             if (length <= 0)
                 return default;
             if (owner == SystemID.Unknown)
-                FatalMemoryException.ThrowUnknownAllocationOwner();
+            {
+                RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
+                return default;
+            }
             if (RuntimeHelpers.IsReferenceOrContainsReferences<T>() || !UnsafeUtility.IsBlittable<T>())
-                FatalMemoryException.ThrowNonBlittableAllocation();
+            {
+                RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
+                return default;
+            }
 
             int stride = UnsafeUtility.SizeOf<T>();
             long bytes = (long)stride * length;
@@ -2487,7 +2542,7 @@ namespace Hecton8.Core.Memory
             if (!RegisterPointer(pointer, bytes, length, stride, UnsafeUtility.AlignOf<T>(), owner, allocator, H8AllocationFlags.NativeArray))
             {
                 array.Dispose();
-                FatalMemoryException.ThrowAllocationTrackingFailed();
+                RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
                 return default;
             }
 
@@ -2502,12 +2557,19 @@ namespace Hecton8.Core.Memory
             if (!array.IsCreated)
                 return;
             if (owner == SystemID.Unknown)
-                FatalMemoryException.ThrowUnknownFreeOwner();
+            {
+                RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
+                return;
+            }
             if (!_initialized)
-                FatalMemoryException.ThrowUntrackedPointer();
+            {
+                RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
+                return;
+            }
 
             void* pointer = NativeArrayUnsafeUtility.GetUnsafePtr(array);
-            UnregisterPointer(pointer, owner);
+            if (!UnregisterPointer(pointer, owner))
+                return;
             array.Dispose();
             array = default;
         }
@@ -2520,12 +2582,19 @@ namespace Hecton8.Core.Memory
             if (!array.IsCreated)
                 return dependency;
             if (owner == SystemID.Unknown)
-                FatalMemoryException.ThrowUnknownFreeOwner();
+            {
+                RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
+                return dependency;
+            }
             if (!_initialized)
-                FatalMemoryException.ThrowUntrackedPointer();
+            {
+                RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
+                return dependency;
+            }
 
             void* pointer = NativeArrayUnsafeUtility.GetUnsafePtr(array);
-            UnregisterPointer(pointer, owner);
+            if (!UnregisterPointer(pointer, owner))
+                return dependency;
             JobHandle disposeHandle = array.Dispose(dependency);
             RegisterActiveJob(owner, disposeHandle);
             array = default;
@@ -2540,9 +2609,14 @@ namespace Hecton8.Core.Memory
         public static void RegisterActiveJob(SystemID owner, JobHandle handle)
         {
             if (owner == SystemID.Unknown)
-                FatalMemoryException.ThrowUnknownAllocationOwner();
+            {
+                RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
+                return;
+            }
             if (!_initialized)
                 Initialize();
+            if (!_initialized)
+                return;
 
             if (!_ownerJobHandles.IsCreated)
                 return;
@@ -2556,7 +2630,10 @@ namespace Hecton8.Core.Memory
             }
 
             if (!_ownerJobKeys.IsCreated || !_ownerJobHandles.TryAdd(ownerKey, handle))
-                FatalMemoryException.ThrowAllocationTrackingFailed();
+            {
+                RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
+                return;
+            }
 
             AddOwnerJobKey(ownerKey);
         }
@@ -2660,11 +2737,16 @@ namespace Hecton8.Core.Memory
         {
             if (!_initialized)
                 Initialize();
+            if (!_initialized)
+                return null;
 
             if (bytes <= 0L)
                 return null;
             if (owner == SystemID.Unknown)
-                FatalMemoryException.ThrowUnknownAllocationOwner();
+            {
+                RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
+                return null;
+            }
 
             int safeAlignment = ResolveSafeAlignment(alignment);
             if (!TryReserveBytes(owner, bytes) || !EnsureTrackingCapacity())
@@ -2680,7 +2762,7 @@ namespace Hecton8.Core.Memory
             if (!RegisterPointer(pointer, bytes, 0, 0, safeAlignment, owner, allocator, H8AllocationFlags.Raw | extraFlags))
             {
                 UnsafeUtility.Free(pointer, allocator);
-                FatalMemoryException.ThrowAllocationTrackingFailed();
+                RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
                 return null;
             }
 
@@ -2702,18 +2784,27 @@ namespace Hecton8.Core.Memory
         {
             if (!_initialized)
                 Initialize();
+            if (!_initialized)
+                return null;
 
             if (newBytes <= 0L)
                 return null;
             if (owner == SystemID.Unknown)
-                FatalMemoryException.ThrowUnknownAllocationOwner();
+            {
+                RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
+                return null;
+            }
 
             if (oldPointer == null)
                 return AllocateRaw(newBytes, alignment, owner, allocator, clearExtendedBytes, extraFlags);
 
-            long trackedOldBytes = ValidateTrackedPointerOwner(oldPointer, owner);
+            if (!ValidateTrackedPointerOwner(oldPointer, owner, out long trackedOldBytes))
+                return null;
             if (oldBytes > 0L && oldBytes != trackedOldBytes)
-                FatalMemoryException.ThrowAllocationSizeMismatch();
+            {
+                RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
+                return null;
+            }
 
             int safeAlignment = ResolveSafeAlignment(alignment);
             if (!TryReserveReplacementBytes(trackedOldBytes, newBytes) || !EnsureTrackingCapacity())
@@ -2731,11 +2822,16 @@ namespace Hecton8.Core.Memory
             if (!RegisterPointer(newPointer, newBytes, 0, 0, safeAlignment, owner, allocator, H8AllocationFlags.Raw | extraFlags))
             {
                 UnsafeUtility.Free(newPointer, allocator);
-                FatalMemoryException.ThrowAllocationTrackingFailed();
+                RecordBlackBox(owner, H8MemoryTelemetryFlags.Fault);
                 return null;
             }
 
-            UnregisterPointer(oldPointer, owner);
+            if (!UnregisterPointer(oldPointer, owner))
+            {
+                UnregisterPointer(newPointer, owner, requireOwnerMatch: false);
+                UnsafeUtility.Free(newPointer, allocator);
+                return null;
+            }
             UnsafeUtility.Free(oldPointer, allocator);
 
             return newPointer;
@@ -2758,11 +2854,18 @@ namespace Hecton8.Core.Memory
             if (pointer == null)
                 return;
             if (requester == SystemID.Unknown)
-                FatalMemoryException.ThrowUnknownFreeOwner();
+            {
+                RecordBlackBox(requester, H8MemoryTelemetryFlags.Fault);
+                return;
+            }
             if (!_initialized)
-                FatalMemoryException.ThrowUntrackedPointer();
+            {
+                RecordBlackBox(requester, H8MemoryTelemetryFlags.Fault);
+                return;
+            }
 
-            UnregisterPointer(pointer, requester);
+            if (!UnregisterPointer(pointer, requester))
+                return;
             UnsafeUtility.Free(pointer, allocator);
         }
 
@@ -2794,7 +2897,10 @@ namespace Hecton8.Core.Memory
         public static NativeArray<T>.ReadOnly CreateAlias<T>(NativeArray<T> source, SystemID reader) where T : struct
         {
             if (reader == SystemID.Unknown)
-                FatalMemoryException.ThrowUnknownAliasReader();
+            {
+                RecordBlackBox(reader, H8MemoryTelemetryFlags.Fault);
+                return default;
+            }
 
             if (!source.IsCreated)
                 return default;
@@ -2808,7 +2914,10 @@ namespace Hecton8.Core.Memory
         internal static NativeArray<T>.ReadOnly CreateAlias<T>(void* pointer, int length, SystemID reader) where T : struct
         {
             if (reader == SystemID.Unknown)
-                FatalMemoryException.ThrowUnknownAliasReader();
+            {
+                RecordBlackBox(reader, H8MemoryTelemetryFlags.Fault);
+                return default;
+            }
 
             return CreateReadOnlyNativeArrayView<T>(pointer, length);
         }
@@ -3477,41 +3586,109 @@ namespace Hecton8.Core.Memory
             bool baselineMismatch)
         {
             using (FileStream stream = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
             {
-                writer.Write("[FATAL LEAK: SystemID]");
-                writer.Write(FatalLeakDumpMagic);
-                writer.Write(FatalLeakDumpVersion);
-                writer.Write(H8MemoryTelemetryEntrySizeBytes);
-                writer.Write(H8AllocationRecordSizeBytes);
-                writer.Write(BlackBoxFrameCount);
-                writer.Write((ushort)owner);
-                writer.Write(_transitionSequence);
-                writer.Write(releaseCount);
-                writer.Write(releasedBytes);
-                writer.Write(_totalBytes);
-                writer.Write(_transitionBaselineBytes);
-                writer.Write(_transitionExpectedBytes);
-                writer.Write(baselineMismatch ? 1 : 0);
-                WriteBlackBoxEntries(writer);
-                writer.Write(_recordCount);
+                WriteFatalLeakMarker(stream);
+                WriteUInt64LittleEndian(stream, FatalLeakDumpMagic);
+                WriteInt32LittleEndian(stream, FatalLeakDumpVersion);
+                WriteInt32LittleEndian(stream, H8MemoryTelemetryEntrySizeBytes);
+                WriteInt32LittleEndian(stream, H8AllocationRecordSizeBytes);
+                WriteInt32LittleEndian(stream, BlackBoxFrameCount);
+                WriteUInt16LittleEndian(stream, (ushort)owner);
+                WriteInt32LittleEndian(stream, _transitionSequence);
+                WriteInt32LittleEndian(stream, releaseCount);
+                WriteInt64LittleEndian(stream, releasedBytes);
+                WriteInt64LittleEndian(stream, _totalBytes);
+                WriteInt64LittleEndian(stream, _transitionBaselineBytes);
+                WriteInt64LittleEndian(stream, _transitionExpectedBytes);
+                WriteInt32LittleEndian(stream, baselineMismatch ? 1 : 0);
+                WriteBlackBoxEntries(stream);
+                WriteInt32LittleEndian(stream, _recordCount);
                 int dumpCount = _recordCount < 300 ? _recordCount : 300;
-                writer.Write(dumpCount);
+                WriteInt32LittleEndian(stream, dumpCount);
                 for (int i = 0; i < dumpCount; i++)
                 {
                     H8AllocationRecord record = _records[i];
-                    writer.Write(ComputeAllocationAddressFingerprint(in record));
-                    writer.Write(record.Bytes);
-                    writer.Write(record.Length);
-                    writer.Write(record.Stride);
-                    writer.Write(record.Alignment);
-                    writer.Write(record.AllocationIndex);
-                    writer.Write(record.Generation);
-                    writer.Write((ushort)record.Owner);
-                    writer.Write((int)record.Allocator);
-                    writer.Write(record.Flags);
+                    WriteUInt64LittleEndian(stream, ComputeAllocationAddressFingerprint(in record));
+                    WriteInt64LittleEndian(stream, record.Bytes);
+                    WriteInt32LittleEndian(stream, record.Length);
+                    WriteInt32LittleEndian(stream, record.Stride);
+                    WriteInt32LittleEndian(stream, record.Alignment);
+                    WriteInt32LittleEndian(stream, record.AllocationIndex);
+                    WriteInt32LittleEndian(stream, record.Generation);
+                    WriteUInt16LittleEndian(stream, (ushort)record.Owner);
+                    WriteInt32LittleEndian(stream, (int)record.Allocator);
+                    WriteUInt16LittleEndian(stream, record.Flags);
                 }
             }
+        }
+
+        private static void WriteFatalLeakMarker(FileStream stream)
+        {
+            stream.WriteByte(22);
+            stream.WriteByte((byte)'[');
+            stream.WriteByte((byte)'F');
+            stream.WriteByte((byte)'A');
+            stream.WriteByte((byte)'T');
+            stream.WriteByte((byte)'A');
+            stream.WriteByte((byte)'L');
+            stream.WriteByte((byte)' ');
+            stream.WriteByte((byte)'L');
+            stream.WriteByte((byte)'E');
+            stream.WriteByte((byte)'A');
+            stream.WriteByte((byte)'K');
+            stream.WriteByte((byte)':');
+            stream.WriteByte((byte)' ');
+            stream.WriteByte((byte)'S');
+            stream.WriteByte((byte)'y');
+            stream.WriteByte((byte)'s');
+            stream.WriteByte((byte)'t');
+            stream.WriteByte((byte)'e');
+            stream.WriteByte((byte)'m');
+            stream.WriteByte((byte)'I');
+            stream.WriteByte((byte)'D');
+            stream.WriteByte((byte)']');
+        }
+
+        private static void WriteUInt16LittleEndian(FileStream stream, ushort value)
+        {
+            Span<byte> bytes = stackalloc byte[2];
+            bytes[0] = (byte)value;
+            bytes[1] = (byte)(value >> 8);
+            stream.Write(bytes);
+        }
+
+        private static void WriteInt32LittleEndian(FileStream stream, int value)
+        {
+            WriteUInt32LittleEndian(stream, unchecked((uint)value));
+        }
+
+        private static void WriteUInt32LittleEndian(FileStream stream, uint value)
+        {
+            Span<byte> bytes = stackalloc byte[4];
+            bytes[0] = (byte)value;
+            bytes[1] = (byte)(value >> 8);
+            bytes[2] = (byte)(value >> 16);
+            bytes[3] = (byte)(value >> 24);
+            stream.Write(bytes);
+        }
+
+        private static void WriteInt64LittleEndian(FileStream stream, long value)
+        {
+            WriteUInt64LittleEndian(stream, unchecked((ulong)value));
+        }
+
+        private static void WriteUInt64LittleEndian(FileStream stream, ulong value)
+        {
+            Span<byte> bytes = stackalloc byte[8];
+            bytes[0] = (byte)value;
+            bytes[1] = (byte)(value >> 8);
+            bytes[2] = (byte)(value >> 16);
+            bytes[3] = (byte)(value >> 24);
+            bytes[4] = (byte)(value >> 32);
+            bytes[5] = (byte)(value >> 40);
+            bytes[6] = (byte)(value >> 48);
+            bytes[7] = (byte)(value >> 56);
+            stream.Write(bytes);
         }
 
         private static void RecordBlackBox(SystemID owner, H8MemoryTelemetryFlags flags)
@@ -3576,16 +3753,16 @@ namespace Hecton8.Core.Memory
             entry.TransitionSequence = _transitionSequence;
             entry.LastTransitionReleasedCount = _lastTransitionReleasedCount;
             entry.FatalLeakPreventedCount = _fatalLeakPreventedCount;
+            entry.Frame = ResolveTelemetryFrame(sequence);
             entry.Owner = (ushort)owner;
             entry.Flags = (ushort)flags;
-            entry.Frame = ResolveTelemetryFrame(sequence);
             return entry;
         }
 
-        private static void WriteBlackBoxEntries(BinaryWriter writer)
+        private static void WriteBlackBoxEntries(FileStream stream)
         {
-            WriteBlackBoxRing(writer, BlackBoxRingKindHeartbeat, _blackBox, _blackBoxRecordedCount, _blackBoxCursor);
-            WriteBlackBoxRing(writer, BlackBoxRingKindLifecycleEvent, _eventBlackBox, _eventBlackBoxRecordedCount, _eventBlackBoxCursor);
+            WriteBlackBoxRing(stream, BlackBoxRingKindHeartbeat, _blackBox, _blackBoxRecordedCount, _blackBoxCursor);
+            WriteBlackBoxRing(stream, BlackBoxRingKindLifecycleEvent, _eventBlackBox, _eventBlackBoxRecordedCount, _eventBlackBoxCursor);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3608,19 +3785,19 @@ namespace Hecton8.Core.Memory
         }
 
         private static void WriteBlackBoxRing(
-            BinaryWriter writer,
+            FileStream stream,
             byte ringKind,
             NativeArray<H8MemoryTelemetryEntry> ring,
             int recordedCount,
             int cursor)
         {
-            writer.Write(ringKind);
-            writer.Write(ring.IsCreated ? ring.Length : 0);
-            writer.Write(H8MemoryTelemetryEntrySizeBytes);
+            stream.WriteByte(ringKind);
+            WriteInt32LittleEndian(stream, ring.IsCreated ? ring.Length : 0);
+            WriteInt32LittleEndian(stream, H8MemoryTelemetryEntrySizeBytes);
 
             if (!ring.IsCreated || ring.Length == 0)
             {
-                writer.Write(0);
+                WriteInt32LittleEndian(stream, 0);
                 return;
             }
 
@@ -3628,7 +3805,7 @@ namespace Hecton8.Core.Memory
                 recordedCount = 0;
             if (recordedCount > ring.Length)
                 recordedCount = ring.Length;
-            writer.Write(recordedCount);
+            WriteInt32LittleEndian(stream, recordedCount);
 
             int start = recordedCount < ring.Length ? 0 : cursor;
             for (int i = 0; i < recordedCount; i++)
@@ -3638,20 +3815,20 @@ namespace Hecton8.Core.Memory
                     index -= ring.Length;
 
                 H8MemoryTelemetryEntry entry = ring[index];
-                writer.Write(entry.TotalBytes);
-                writer.Write(entry.TransitionBaselineBytes);
-                writer.Write(entry.LastTransitionReleasedBytes);
-                writer.Write(entry.Sequence);
-                writer.Write(entry.ActiveAllocationCount);
-                writer.Write(entry.BlockDescriptorCount);
-                writer.Write(entry.AllocationGeneration);
-                writer.Write(entry.TransitionCutoffGeneration);
-                writer.Write(entry.TransitionSequence);
-                writer.Write(entry.LastTransitionReleasedCount);
-                writer.Write(entry.FatalLeakPreventedCount);
-                writer.Write(entry.Owner);
-                writer.Write(entry.Flags);
-                writer.Write(entry.Frame);
+                WriteInt64LittleEndian(stream, entry.TotalBytes);
+                WriteInt64LittleEndian(stream, entry.TransitionBaselineBytes);
+                WriteInt64LittleEndian(stream, entry.LastTransitionReleasedBytes);
+                WriteUInt32LittleEndian(stream, entry.Sequence);
+                WriteInt32LittleEndian(stream, entry.ActiveAllocationCount);
+                WriteInt32LittleEndian(stream, entry.BlockDescriptorCount);
+                WriteInt32LittleEndian(stream, entry.AllocationGeneration);
+                WriteInt32LittleEndian(stream, entry.TransitionCutoffGeneration);
+                WriteInt32LittleEndian(stream, entry.TransitionSequence);
+                WriteInt32LittleEndian(stream, entry.LastTransitionReleasedCount);
+                WriteInt32LittleEndian(stream, entry.FatalLeakPreventedCount);
+                WriteUInt32LittleEndian(stream, entry.Frame);
+                WriteUInt16LittleEndian(stream, entry.Owner);
+                WriteUInt16LittleEndian(stream, entry.Flags);
             }
         }
 
@@ -3829,73 +4006,99 @@ namespace Hecton8.Core.Memory
             return false;
         }
 
-        private static void UnregisterPointer(void* pointer, SystemID requester)
+        private static bool UnregisterPointer(void* pointer, SystemID requester)
         {
-            UnregisterPointer(pointer, requester, requireOwnerMatch: true);
+            return UnregisterPointer(pointer, requester, requireOwnerMatch: true);
         }
 
-        private static void UnregisterPointer(void* pointer, SystemID requester, bool requireOwnerMatch)
+        private static bool UnregisterPointer(void* pointer, SystemID requester, bool requireOwnerMatch)
         {
             if (!_initialized || pointer == null)
-                return;
+                return false;
 
             if (requireOwnerMatch && requester == SystemID.Unknown)
-                FatalMemoryException.ThrowUnknownFreeOwner();
+            {
+                RecordBlackBox(requester, H8MemoryTelemetryFlags.Fault);
+                return false;
+            }
 
             long pointerKey = ((IntPtr)pointer).ToInt64();
-            ValidateOwnerMap(pointerKey, requester, requireOwnerMatch);
+            if (!ValidateOwnerMap(pointerKey, requester, requireOwnerMatch))
+                return false;
             for (int i = _recordCount - 1; i >= 0; i--)
             {
                 if (_records[i].Pointer.ToInt64() != pointerKey)
                     continue;
 
                 if (requireOwnerMatch && _records[i].Owner != requester)
-                    FatalMemoryException.ThrowWrongFreeOwner();
+                {
+                    RecordBlackBox(requester, H8MemoryTelemetryFlags.Fault);
+                    return false;
+                }
 
                 RemoveRecordAt(i);
-                return;
+                return true;
             }
 
             if (requireOwnerMatch)
-                FatalMemoryException.ThrowUntrackedPointer();
+                RecordBlackBox(requester, H8MemoryTelemetryFlags.Fault);
+            return false;
         }
 
-        private static long ValidateTrackedPointerOwner(void* pointer, SystemID requester)
+        private static bool ValidateTrackedPointerOwner(void* pointer, SystemID requester, out long trackedBytes)
         {
+            trackedBytes = 0L;
             if (!_initialized || pointer == null)
-                return 0L;
+                return false;
             if (requester == SystemID.Unknown)
-                FatalMemoryException.ThrowUnknownFreeOwner();
+            {
+                RecordBlackBox(requester, H8MemoryTelemetryFlags.Fault);
+                return false;
+            }
 
             long pointerKey = ((IntPtr)pointer).ToInt64();
-            ValidateOwnerMap(pointerKey, requester, requireOwnerMatch: true);
+            if (!ValidateOwnerMap(pointerKey, requester, requireOwnerMatch: true))
+                return false;
             for (int i = _recordCount - 1; i >= 0; i--)
             {
                 if (_records[i].Pointer.ToInt64() != pointerKey)
                     continue;
 
                 if (_records[i].Owner != requester)
-                    FatalMemoryException.ThrowWrongFreeOwner();
+                {
+                    RecordBlackBox(requester, H8MemoryTelemetryFlags.Fault);
+                    return false;
+                }
 
-                return _records[i].Bytes;
+                trackedBytes = _records[i].Bytes;
+                return true;
             }
 
-            FatalMemoryException.ThrowUntrackedPointer();
-            return 0L;
+            RecordBlackBox(requester, H8MemoryTelemetryFlags.Fault);
+            return false;
         }
 
-        private static void ValidateOwnerMap(long pointerKey, SystemID requester, bool requireOwnerMatch)
+        private static bool ValidateOwnerMap(long pointerKey, SystemID requester, bool requireOwnerMatch)
         {
             if (!_allocationOwners.IsCreated ||
                 !_allocationOwners.TryGetValue(pointerKey, out SystemID mappedOwner))
             {
                 if (requireOwnerMatch)
-                    FatalMemoryException.ThrowUntrackedPointer();
-                return;
+                {
+                    RecordBlackBox(requester, H8MemoryTelemetryFlags.Fault);
+                    return false;
+                }
+
+                return true;
             }
 
             if (requireOwnerMatch && mappedOwner != requester)
-                FatalMemoryException.ThrowWrongFreeOwner();
+            {
+                RecordBlackBox(requester, H8MemoryTelemetryFlags.Fault);
+                return false;
+            }
+
+            return true;
         }
 
         private static int AdvanceDescriptorGeneration(int generation)

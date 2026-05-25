@@ -4,9 +4,9 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
-using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -14,6 +14,8 @@ using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
+
+using DeterminismSignals = Hecton8.Core.CoreDeterminismSignals;
 
 namespace Hecton8.QA
 {
@@ -85,6 +87,7 @@ namespace Hecton8.QA
         private QAEnduranceCsvWriter _csvWriter;
         private IDataVault _dataVault;
         private ISaveService _saveService;
+        private IPhysicsService _physicsService;
         private VaultGenerationHandle<QAEnduranceBlackBoxEntry> _blackBoxHandle;
         private AbsoluteUniversePosition _lastAup;
         private AbsoluteUniversePosition _currentAup;
@@ -308,7 +311,8 @@ namespace Hecton8.QA
             _blackBoxCursor = 0;
             _blackBoxCount = 0;
             EnsureBlackBox();
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
+            _physicsService = GlobalRegistry.Physics;
             _originShiftCount = 0;
             _trapCount = 0;
             _saveRequestCount = 0;
@@ -332,10 +336,11 @@ namespace Hecton8.QA
             if (!_active || _faulted || _completed)
                 return;
 
-            if (Time.frameCount < MinimumFrameBeforeSampling || _lastFrame == Time.frameCount)
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (currentFrame < MinimumFrameBeforeSampling || _lastFrame == currentFrame)
                 return;
 
-            _lastFrame = Time.frameCount;
+            _lastFrame = currentFrame;
             PublishAutomationInput();
 
             if (!TryResolvePlayerState(out PlayerRuntimeContext runtimeContext, out PlayerMovementRuntimeState movementState))
@@ -465,6 +470,9 @@ namespace Hecton8.QA
                 case GlobalRegistryServiceSlot.Save:
                     _saveService = currentService as ISaveService;
                     break;
+                case GlobalRegistryServiceSlot.Physics:
+                    _physicsService = currentService as IPhysicsService;
+                    break;
             }
         }
 
@@ -495,7 +503,7 @@ namespace Hecton8.QA
             state.LookDelta = new Vector2(0f, -0.012f);
             state.VerticalDelta = 0.15f;
             state.ActionsBitmask = (uint)PlayerInputAction.Sprint;
-            PhysicsDeterminismSignals.TryPublishInputOverride(in state, (uint)Time.frameCount);
+            DeterminismSignals.TryPublishInputOverride(in state, Hecton8.Core.SystemDispatcher.CurrentFrameId);
             _automationInputPublished = true;
         }
 
@@ -596,8 +604,8 @@ namespace Hecton8.QA
                     return;
 
                 body.position = nextPosition;
-                PhysicsForceRouter.QueueLinearVelocitySet(body, Vector3.zero, wake: false);
-                PhysicsForceRouter.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
+                _physicsService?.QueueLinearVelocitySet(body, Vector3.zero, wake: false);
+                _physicsService?.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
                 body.WakeUp();
                 if (runtimeContext.PlayerTransform != null)
                     QueueRecoveryTransformPosition(runtimeContext.PlayerTransform, nextPosition);
@@ -767,7 +775,7 @@ namespace Hecton8.QA
 
         private void StopRun(bool flush, uint eventHash)
         {
-            PhysicsDeterminismSignals.ClearInputOverride();
+            DeterminismSignals.ClearInputOverride();
 
             UnregisterTickLanes();
             TryUnregisterHotSwapListener();
@@ -829,7 +837,7 @@ namespace Hecton8.QA
                 RuleHash = ruleHash,
                 SystemHash = SourceHash,
                 ContextHash = AgentIdHash,
-                Frame = (uint)Time.frameCount,
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 Severity = severity,
                 Flags = 1,
             };
@@ -900,7 +908,7 @@ namespace Hecton8.QA
 
                 QAEnduranceBlackBoxEntry entry = new QAEnduranceBlackBoxEntry
                 {
-                    Frame = Time.frameCount,
+                    Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                     DistanceMeters = _distanceMeters,
                     RuntimePosition = _currentRuntimePosition,
                     Velocity = _currentVelocity,
@@ -946,7 +954,7 @@ namespace Hecton8.QA
 
             QAEnduranceCsvRecord record = new QAEnduranceCsvRecord
             {
-                Frame = Time.frameCount,
+                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                 DistanceMeters = _distanceMeters,
                 AverageFps = ResolveAverageFps(),
                 TotalMemoryBytes = _lastTotalMemoryBytes,

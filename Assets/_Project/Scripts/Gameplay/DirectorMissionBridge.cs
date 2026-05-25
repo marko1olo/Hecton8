@@ -37,8 +37,8 @@ namespace Hecton8.Gameplay
         private int _lastMissionIndex;
         private uint _rareDiscoveryHash;
         private bool _hotSwapRegistered;
-        private MissionManager _missionManager;
-        private FirstHourDirector _firstHourDirector;
+        private IQuestSystem _missionManager;
+        private IFirstHourReadModel _firstHourDirector;
 
         private void OnEnable()
         {
@@ -111,7 +111,7 @@ namespace Hecton8.Gameplay
             if (directorMissionIds == null || directorMissionIds.Length == 0)
                 return;
 
-            MissionManager mm = _missionManager;
+            IQuestSystem mm = _missionManager;
             if (mm == null) return;
 
             // Cycle through configured missions.
@@ -121,11 +121,11 @@ namespace Hecton8.Gameplay
                 string missionId = directorMissionIds[idx];
 
                 if (string.IsNullOrEmpty(missionId)) continue;
-                if (mm.IsMissionCompleted(missionId)) continue;
-                if (mm.GetActiveMission(missionId) != null) continue;
+                if (mm.IsCompleted(missionId)) continue;
+                if (mm.IsActive(missionId)) continue;
 
-                mm.StartMission(missionId);
-                if (mm.GetActiveMission(missionId) == null)
+                mm.ActivateQuest(missionId);
+                if (!mm.IsActive(missionId))
                     continue;
 
                 _lastMissionIndex = (idx + 1) % directorMissionIds.Length;
@@ -183,11 +183,11 @@ namespace Hecton8.Gameplay
 
         private bool CanServeDirectorContent()
         {
-            FirstHourDirector firstHourDirector = _firstHourDirector;
+            IFirstHourReadModel firstHourDirector = _firstHourDirector;
             if (firstHourDirector == null)
                 return true;
 
-            return firstHourDirector.IsMilestoneComplete(minimumMilestone);
+            return firstHourDirector.IsFirstHourMilestoneComplete((int)minimumMilestone);
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -198,18 +198,18 @@ namespace Hecton8.Gameplay
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.MissionRuntime:
-                    _missionManager = currentService as MissionManager;
+                    _missionManager = currentService as IQuestSystem;
                     break;
                 case GlobalRegistryServiceSlot.FirstHourRuntime:
-                    _firstHourDirector = currentService as FirstHourDirector;
+                    _firstHourDirector = currentService as IFirstHourReadModel;
                     break;
             }
         }
 
         private void CacheRegistryServicesCold()
         {
-            _missionManager = MissionManager.Instance;
-            _firstHourDirector = GlobalRegistry.FirstHour;
+            _missionManager = GlobalRegistry.QuestSystem;
+            _firstHourDirector = GlobalRegistry.FirstHourReadModel;
         }
 
         private void TryRegisterHotSwapListener()

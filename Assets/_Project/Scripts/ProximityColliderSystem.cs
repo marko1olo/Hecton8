@@ -186,7 +186,7 @@ namespace Hecton8.Core
         {
             if (worldPositions == null)
             {
-                Debug.LogError("[ProximityColliderSystem] Initialize: worldPositions is null!");
+                Hecton8.Core.H8Debug.LogError("[ProximityColliderSystem] Initialize: worldPositions is null!");
                 return;
             }
 
@@ -198,7 +198,7 @@ namespace Hecton8.Core
 
             if (worldPositions.Length < count)
             {
-                Debug.LogError("[ProximityColliderSystem] Initialize: count exceeds buffer length!");
+                Hecton8.Core.H8Debug.LogError("[ProximityColliderSystem] Initialize: count exceeds buffer length!");
                 return;
             }
 
@@ -262,7 +262,7 @@ namespace Hecton8.Core
         {
             if (!worldPositions.IsCreated)
             {
-                Debug.LogError("[ProximityColliderSystem] Initialize: invalid NativeArray!");
+                Hecton8.Core.H8Debug.LogError("[ProximityColliderSystem] Initialize: invalid NativeArray!");
                 return;
             }
 
@@ -357,7 +357,7 @@ namespace Hecton8.Core
             // ── Validatsiya ──
             if (colliderPrefab == null)
             {
-                Debug.LogError("[ProximityColliderSystem] colliderPrefab is not assigned! " +
+                Hecton8.Core.H8Debug.LogError("[ProximityColliderSystem] colliderPrefab is not assigned! " +
                                "System will not function.");
                 enabled = false;
                 return;
@@ -365,13 +365,13 @@ namespace Hecton8.Core
 
             if (playerTransform == null)
             {
-                Debug.LogWarning("[ProximityColliderSystem] playerTransform is not ready during OnEnable. Runtime retry will continue.");
+                Hecton8.Core.H8Debug.LogWarning("[ProximityColliderSystem] playerTransform is not ready during OnEnable. Runtime retry will continue.");
             }
 
             // ── Validatsiya radiusov ──
             if (deactivateRadius <= activateRadius)
             {
-                Debug.LogWarning("[ProximityColliderSystem] deactivateRadius should be > " +
+                Hecton8.Core.H8Debug.LogWarning("[ProximityColliderSystem] deactivateRadius should be > " +
                                  "activateRadius for proper hysteresis. Auto-correcting.");
                 deactivateRadius = activateRadius + 5f;
             }
@@ -534,9 +534,10 @@ namespace Hecton8.Core
                 TryResolvePlayerTransform();
                 if (playerTransform == null)
                 {
-                    if (Time.unscaledTime >= _nextPlayerResolveWarningTime)
+                    float now = (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds;
+                    if (now >= _nextPlayerResolveWarningTime)
                     {
-                        _nextPlayerResolveWarningTime = Time.unscaledTime + 5f;
+                        _nextPlayerResolveWarningTime = now + 5f;
                         LogPlayerResolveRetryFailed();
                     }
 
@@ -585,7 +586,7 @@ namespace Hecton8.Core
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogPlayerResolveRetryFailed()
         {
-            Debug.LogWarning("[ProximityColliderSystem] playerTransform still unresolved after runtime retry.");
+            Hecton8.Core.H8Debug.LogWarning("[ProximityColliderSystem] playerTransform still unresolved after runtime retry.");
         }
 
         // ══════════════════════════════════════════════════════════
@@ -600,7 +601,7 @@ namespace Hecton8.Core
                     out NativeArray<byte> results))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[ProximityColliderSystem] Proximity DataVault buffers are invalid. Clearing runtime data.");
+                Hecton8.Core.H8Debug.LogError("[ProximityColliderSystem] Proximity DataVault buffers are invalid. Clearing runtime data.");
 #endif
                 ClearRuntimeData();
                 return;

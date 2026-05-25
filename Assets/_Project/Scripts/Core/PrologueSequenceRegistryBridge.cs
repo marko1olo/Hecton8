@@ -195,7 +195,7 @@ namespace Hecton8.Core
         public bool TryConsumeAtmosphericReentry(out PrologueAtmosphericReentrySnapshot snapshot)
         {
             ReadOnlySpan<AtmosphericReentrySignal> signals = SignalBus<AtmosphericReentrySignal>.GetFrameSnapshot();
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_atmosphereSnapshotFrame != frame)
             {
                 _atmosphereSnapshotFrame = frame;
@@ -225,7 +225,7 @@ namespace Hecton8.Core
         public bool TryConsumePrologueComplete(out PrologueCompleteSnapshot snapshot)
         {
             ReadOnlySpan<PrologueCompleteSignal> signals = SignalBus<PrologueCompleteSignal>.GetFrameSnapshot();
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_completeSnapshotFrame != frame)
             {
                 _completeSnapshotFrame = frame;
@@ -270,7 +270,7 @@ namespace Hecton8.Core
             }
 
             ReadOnlySpan<SectorResidencyHydratedSignal> signals = SignalBus<SectorResidencyHydratedSignal>.GetFrameSnapshot();
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_residencySnapshotFrame != frame)
             {
                 _residencySnapshotFrame = frame;
@@ -630,7 +630,7 @@ namespace Hecton8.Core
 
         private bool ResolveLowTierWithHysteresis()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             bool forcedLowMemory;
             bool requestedLowTier = ResolveObservedLowTierPolicy(frame, out forcedLowMemory);
 

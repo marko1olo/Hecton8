@@ -976,9 +976,15 @@ namespace Hecton8.Power
                 return false;
 
             NativeArray<ThermalGridVisualStateDTO> mapped = targetBuffer.LockBufferForWrite<ThermalGridVisualStateDTO>(0, count);
-            for (int i = 0; i < count; i++)
-                mapped[i] = visual[i];
-            targetBuffer.UnlockBufferAfterWrite<ThermalGridVisualStateDTO>(count);
+            try
+            {
+                for (int i = 0; i < count; i++)
+                    mapped[i] = visual[i];
+            }
+            finally
+            {
+                targetBuffer.UnlockBufferAfterWrite<ThermalGridVisualStateDTO>(count);
+            }
             Shader.SetGlobalInt(s_ThermalGridNodeCountId, count);
             return true;
         }

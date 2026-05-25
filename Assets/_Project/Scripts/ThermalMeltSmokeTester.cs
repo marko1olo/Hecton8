@@ -229,7 +229,7 @@ namespace Hecton8.Dev
         {
             _debugLastIssue = issue;
             if (verboseLogging)
-                Debug.LogError("[ThermalMeltSmoke] " + issue, this);
+                Hecton8.Core.H8Debug.LogError("[ThermalMeltSmoke] " + issue, this);
             return false;
         }
 

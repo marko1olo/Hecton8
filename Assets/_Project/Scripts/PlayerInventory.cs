@@ -20,7 +20,6 @@ namespace Hecton8.Inventory
     using Hecton8.Inventory.Corrosion;
     using Hecton8.Inventory.Corrosion.Contracts;
     using Hecton8.Items;
-    using Hecton8.Physics;
     using Hecton8.SaveSystem;
     using Hecton8.World;
     using Unity.Burst;
@@ -63,6 +62,7 @@ namespace Hecton8.Inventory
         private const float RadioactiveHalfLifeBaseSeconds = 1800f;
         private const float Ln2 = 0.6931471805599453f;
         private const float KineticDamageThresholdG = 50f;
+        private const double KineticInventoryImpactRadiusMeters = 2.25;
         private const float PlayerEquivalentMassKg = 80f;
         private const float InventoryLoadMinimumMovementMultiplier = 0.5f;
         private const float VolumeM3ToLiters = 1000f;
@@ -579,7 +579,6 @@ namespace Hecton8.Inventory
         private bool _massVolumeJobScheduled;
         private bool _massCacheDirty = true;
         private int _massVolumeJobInventoryVersion;
-        private ulong _playerImpactBodyId;
         private TraumaDispatcher _traumaDispatcher;
         private int _pressurizedContainerProtectionCount;
         private InventoryDTO _lastCommittedInventoryDto;
@@ -611,11 +610,13 @@ namespace Hecton8.Inventory
         private int _lastDefragTimeMicroseconds;
         private float _currentWeightKg;
         private float _currentVolumeLiters;
-        private PersistentWorldRegistry _cachedPersistentWorldRegistry;
+        private IPersistentDroppedItemRegistry _cachedPersistentWorldRegistry;
         private IPlayerRuntimeContext _cachedPlayerContext;
         private IAudioService _cachedAudioService;
         private ISaveService _cachedSaveService;
         private IDataVault _cachedDataVault;
+        private IPhysicsStateEventService _cachedPhysicsStateEvents;
+        private bool _physicsImpactRegistered;
         private bool _hotSwapListenerRegistered;
         private bool _saveRegistered;
 
@@ -745,13 +746,12 @@ namespace Hecton8.Inventory
             TryRegisterSaveParticipant();
             TryRegisterSlowTick();
             TryRegisterLateFrameTick();
-            PhysicsEvents.Register(this);
-            ResolvePlayerImpactBodyId();
+            TryRegisterPhysicsImpactListener();
         }
 
         private void OnDisable()
         {
-            PhysicsEvents.Unregister(this);
+            TryUnregisterPhysicsImpactListener();
             TryUnregisterSaveParticipant();
             TryUnregisterSlowTick();
             TryUnregisterLateFrameTick();
@@ -761,6 +761,7 @@ namespace Hecton8.Inventory
 
         private void OnDestroy()
         {
+            TryUnregisterPhysicsImpactListener();
             TryUnregisterSaveParticipant();
             TryUnregisterLateFrameTick();
             TryUnregisterHotSwapListener();
@@ -833,12 +834,10 @@ namespace Hecton8.Inventory
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.PersistentWorldRegistry:
-                    _cachedPersistentWorldRegistry = currentService as PersistentWorldRegistry;
+                    _cachedPersistentWorldRegistry = currentService as IPersistentDroppedItemRegistry;
                     break;
                 case GlobalRegistryServiceSlot.Player:
                     _cachedPlayerContext = currentService as IPlayerRuntimeContext;
-                    _playerImpactBodyId = 0ul;
-                    ResolvePlayerImpactBodyId();
                     break;
                 case GlobalRegistryServiceSlot.Audio:
                     _cachedAudioService = currentService as IAudioService;
@@ -852,6 +851,9 @@ namespace Hecton8.Inventory
                     _cachedDataVault = currentService as IDataVault;
                     TryBindSoaQueryVault(_cachedDataVault, columns * rows);
                     PublishSoaQueryVaultSnapshotOwnerPhase();
+                    break;
+                case GlobalRegistryServiceSlot.PhysicsStateManager:
+                    RebindPhysicsStateEventService(currentService as IPhysicsStateEventService);
                     break;
             }
         }
@@ -875,17 +877,54 @@ namespace Hecton8.Inventory
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPersistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            _cachedPersistentWorldRegistry = GlobalRegistry.PersistentDroppedItems;
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             if (!ReferenceEquals(_cachedPlayerContext, playerContext))
-            {
                 _cachedPlayerContext = playerContext;
-                _playerImpactBodyId = 0ul;
+
+            _cachedAudioService = GlobalRegistry.Audio;
+            _cachedSaveService = GlobalRegistry.Save;
+            _cachedDataVault = GlobalRegistry.DataVault;
+            _cachedPhysicsStateEvents = GlobalRegistry.PhysicsStateEvents;
+        }
+
+        private void TryRegisterPhysicsImpactListener()
+        {
+            if (_physicsImpactRegistered)
+                return;
+
+            RebindPhysicsStateEventService(_cachedPhysicsStateEvents ?? GlobalRegistry.PhysicsStateEvents);
+        }
+
+        private void TryUnregisterPhysicsImpactListener()
+        {
+            if (!_physicsImpactRegistered)
+            {
+                _cachedPhysicsStateEvents = null;
+                return;
             }
 
-            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
-            _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
-            _cachedDataVault = GlobalRegistry.DataVault;
+            _cachedPhysicsStateEvents?.UnregisterImpactListener(this);
+            _cachedPhysicsStateEvents = null;
+            _physicsImpactRegistered = false;
+        }
+
+        private void RebindPhysicsStateEventService(IPhysicsStateEventService physicsStateEvents)
+        {
+            if (ReferenceEquals(_cachedPhysicsStateEvents, physicsStateEvents) && _physicsImpactRegistered)
+                return;
+
+            if (_physicsImpactRegistered)
+                _cachedPhysicsStateEvents?.UnregisterImpactListener(this);
+
+            _cachedPhysicsStateEvents = physicsStateEvents;
+            _physicsImpactRegistered = false;
+
+            if (_cachedPhysicsStateEvents == null || !isActiveAndEnabled)
+                return;
+
+            _cachedPhysicsStateEvents.RegisterImpactListener(this);
+            _physicsImpactRegistered = true;
         }
 
         private void TryRegisterSaveParticipant()
@@ -894,7 +933,7 @@ namespace Hecton8.Inventory
                 return;
 
             if (_cachedSaveService == null)
-                _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _cachedSaveService = GlobalRegistry.Save;
 
             if (_cachedSaveService == null)
                 return;
@@ -1119,7 +1158,7 @@ namespace Hecton8.Inventory
                 return false;
             }
 
-            PersistentWorldRegistry persistentWorldRegistry = _cachedPersistentWorldRegistry;
+            IPersistentDroppedItemRegistry persistentWorldRegistry = _cachedPersistentWorldRegistry;
             if (persistentWorldRegistry == null ||
                 !persistentWorldRegistry.TryRegisterDroppedItemWithState(droppedItem, 1, runtimePosition, geneticsMask, qualityMilli))
             {
@@ -2133,7 +2172,7 @@ namespace Hecton8.Inventory
 
         public void RequestSortInventory()
         {
-            int frame = Mathf.Max(0, Time.frameCount);
+            int frame = SystemDispatcher.CurrentFrameIndex;
             SignalBus<InventoryCommandSignal>.TryPushTracked(new InventoryCommandSignal
             {
                 InventoryHash = ResolveInventorySignalHash(),
@@ -4510,7 +4549,7 @@ namespace Hecton8.Inventory
         private void PublishEncumbranceChanged()
         {
             float carryCapacityKg = ResolveCarryCapacityKilograms();
-            UIStateStore.WriteInventoryLoadState(TotalMassKg, carryCapacityKg, CachedInventoryLoad01, Time.unscaledTime);
+            UIStateStore.WriteInventoryLoadState(TotalMassKg, carryCapacityKg, CachedInventoryLoad01, (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds);
             InventoryEvents.TryNotifyEncumbranceChanged(new EncumbranceChangedEvent(
                 this,
                 TotalMassKg,
@@ -5713,16 +5752,6 @@ namespace Hecton8.Inventory
                    itemCatalog.TryGetRuntimeDescriptor(itemHashId, out runtimeDescriptor);
         }
 
-        private void ResolvePlayerImpactBodyId()
-        {
-            if (_playerImpactBodyId != 0ul)
-                return;
-
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
-            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
-            _playerImpactBodyId = playerBody != null ? EntityId.ToULong(playerBody.GetEntityId()) : 0ul;
-        }
-
         void IPhysicsImpactEventListener.OnPhysicsImpact(in PhysicsImpactSignal impactSignal)
         {
             HandlePhysicsImpact(in impactSignal);
@@ -5730,12 +5759,8 @@ namespace Hecton8.Inventory
 
         private void HandlePhysicsImpact(in PhysicsImpactSignal impactSignal)
         {
-            ResolvePlayerImpactBodyId();
-            if (_playerImpactBodyId == 0ul ||
-                (impactSignal.PrimaryBodyId != _playerImpactBodyId && impactSignal.SecondaryBodyId != _playerImpactBodyId))
-            {
+            if (!IsPlayerProximateImpact(in impactSignal))
                 return;
-            }
 
             float impactAccelerationG = EstimateImpactAccelerationInG(impactSignal);
             if (impactAccelerationG < KineticDamageThresholdG)
@@ -5747,6 +5772,19 @@ namespace Hecton8.Inventory
         private float EstimateImpactAccelerationInG(PhysicsImpactSignal impactSignal)
         {
             return math.max(0f, impactSignal.Force * math.rcp(PlayerEquivalentMassKg * HectonPhysicsContract.GravityMetersPerSecondSquaredConst));
+        }
+
+        private bool IsPlayerProximateImpact(in PhysicsImpactSignal impactSignal)
+        {
+            if (!TryResolveInventoryPlayerAup(out AbsoluteUniversePosition playerAup))
+                return false;
+
+            AbsoluteUniversePosition impactAup = impactSignal.ResolvePointAup();
+            if (!impactAup.IsFinite())
+                return false;
+
+            double maxDistanceSq = KineticInventoryImpactRadiusMeters * KineticInventoryImpactRadiusMeters;
+            return AbsoluteUniversePosition.DistanceSq(in playerAup, in impactAup) <= maxDistanceSq;
         }
 
         private void ApplyKineticInventoryDamage()

@@ -27,13 +27,13 @@ namespace Hecton8.Editor
             if (report.IndexOf("[BLOCKED]", StringComparison.Ordinal) >= 0)
                 throw new BuildFailedException(report);
 
-            UnityEngine.Debug.Log(report);
+            Hecton8.Core.H8Debug.Log(report);
         }
 
         [MenuItem("Hecton8/Diagnostics/Run ARM64 Layout Source Fixer Report")]
         public static void RunReportOnly()
         {
-            UnityEngine.Debug.Log(RunInternal(strict: false));
+            Hecton8.Core.H8Debug.Log(RunInternal(strict: false));
         }
 
         private static string RunInternal(bool strict)

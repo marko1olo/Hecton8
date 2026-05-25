@@ -11,7 +11,7 @@ namespace Hecton8.World
     /// This is a local lighting proxy, not an authoritative world-voxel streamer.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HectonCaveVoxelLightingVolume : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class HectonCaveVoxelLightingVolume : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private static int s_x001HectonCaveVoxelLightingVolumeSignalPushDropCount;
         private const int MaxOverlapHits = 8;
@@ -94,7 +94,6 @@ namespace Hecton8.World
         [SerializeField] private Vector3 _debugPublishedCenterWs;
         [SerializeField] private float _debugPublishedSdfRange;
 
-        private bool _registered;
         private bool _registeredLateFrameTick;
         private bool _hotSwapListenerRegistered;
         private bool _scanInProgress;
@@ -171,7 +170,7 @@ namespace Hecton8.World
         /// Incrementally rebuilds and publishes the local cave-lighting SDF volume.
         /// </summary>
         /// <param name="deltaTime">Dispatcher delta.</param>
-        public void Tick(float deltaTime)
+        private void AdvanceLightingVolumeState()
         {
             ResolveFollowTarget();
             if (!HasRequiredResources())
@@ -231,6 +230,8 @@ namespace Hecton8.World
         /// </summary>
         public void LateFrameTick()
         {
+            AdvanceLightingVolumeState();
+
             if (_resourceRefreshRequested)
             {
                 EnsureResources();
@@ -315,11 +316,6 @@ namespace Hecton8.World
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_registered)
-            {
-                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-            }
-
             if (!_registeredLateFrameTick)
             {
                 _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -334,11 +330,6 @@ namespace Hecton8.World
                 _registeredLateFrameTick = false;
             }
 
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registered = false;
-            }
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -355,7 +346,6 @@ namespace Hecton8.World
 
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher && currentService != null && isActiveAndEnabled)
             {
-                _registered = false;
                 _registeredLateFrameTick = false;
                 TryRegister();
             }
@@ -776,7 +766,7 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastLightLevelSignalFrame >= 0 && frame - _lastLightLevelSignalFrame < LightLevelSignalFrameStride)
                 return;
 

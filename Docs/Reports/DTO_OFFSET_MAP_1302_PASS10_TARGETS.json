@@ -1,0 +1,2287 @@
+﻿{
+    "schema":  "DTO_OFFSET_MAP_1302_PASS10_TARGETS",
+    "generatedUtc":  "2026-05-25T18:45:23.7298232Z",
+    "sourceEvidence":  "Docs/Reports/DTO_OFFSET_MAP_1302_PASS7_TARGETS.json",
+    "dotnetBuildExecuted":  false,
+    "unityBuildExecuted":  false,
+    "evidenceClass":  "STATIC_SOURCE_FIELD_OFFSET_PARSE_REUSED_NO_DTO_SOURCE_CHANGE_IN_PASS8_PASS9_PASS10",
+    "targetCount":  17,
+    "foundCount":  17,
+    "missing":  [
+
+                ],
+    "violationCount":  0,
+    "violations":  [
+
+                   ],
+    "structs":  [
+                    {
+                        "struct":  "FluidIncursionTelemetryEntry",
+                        "file":  "Assets/_Project/Scripts/Core/Contracts/Physics/HabitatFluidIncursionContracts.cs",
+                        "line":  129,
+                        "declaredSizeExpression":  "64",
+                        "declaredSizeBytes":  64,
+                        "computedMaxFieldEndBytes":  64,
+                        "sizeMultipleOf8":  true,
+                        "fieldCount":  16,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "uint",
+                                           "name":  "Frame",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  131
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "type":  "uint",
+                                           "name":  "StateHash",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  132
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "type":  "float",
+                                           "name":  "TotalWaterM3",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  133
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "float",
+                                           "name":  "TotalWaterMassKg",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  134
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "float",
+                                           "name":  "MaxFill01",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  135
+                                       },
+                                       {
+                                           "offset":  20,
+                                           "type":  "float",
+                                           "name":  "AverageFill01",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  136
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "float",
+                                           "name":  "PeakIngressRate",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  137
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "ushort",
+                                           "name":  "CompartmentCount",
+                                           "sizeBytes":  2,
+                                           "visibility":  "public",
+                                           "line":  138
+                                       },
+                                       {
+                                           "offset":  30,
+                                           "type":  "ushort",
+                                           "name":  "FloodedCount",
+                                           "sizeBytes":  2,
+                                           "visibility":  "public",
+                                           "line":  139
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "ushort",
+                                           "name":  "BreachedCount",
+                                           "sizeBytes":  2,
+                                           "visibility":  "public",
+                                           "line":  140
+                                       },
+                                       {
+                                           "offset":  34,
+                                           "type":  "ushort",
+                                           "name":  "EdgeCount",
+                                           "sizeBytes":  2,
+                                           "visibility":  "public",
+                                           "line":  141
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  142
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "float3",
+                                           "name":  "CenterOfMassLocal",
+                                           "sizeBytes":  12,
+                                           "visibility":  "public",
+                                           "line":  143
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "uint",
+                                           "name":  "InvalidCount",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  144
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "uint",
+                                           "name":  "SolverWallMicroseconds",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  145
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "uint",
+                                           "name":  "Reserved0",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  146
+                                       }
+                                   ]
+                    },
+                    {
+                        "struct":  "VehicleDamageStateDTO",
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageContracts.cs",
+                        "line":  119,
+                        "declaredSizeExpression":  "128",
+                        "declaredSizeBytes":  128,
+                        "computedMaxFieldEndBytes":  128,
+                        "sizeMultipleOf8":  true,
+                        "fieldCount":  24,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "float",
+                                           "name":  "MaxThrustScalar",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  121
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "type":  "float",
+                                           "name":  "BuoyancyScalar",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  122
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "type":  "float",
+                                           "name":  "SensorScalar",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  123
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "float",
+                                           "name":  "DragScalar",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  124
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "float",
+                                           "name":  "FloodWaterMassKg",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  125
+                                       },
+                                       {
+                                           "offset":  20,
+                                           "type":  "float",
+                                           "name":  "IngressRateKgPerSecond",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  126
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "float",
+                                           "name":  "FireSeverity01",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  127
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "float",
+                                           "name":  "StructuralIntegrity01",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  128
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "uint",
+                                           "name":  "ActiveBreaches",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  129
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "uint",
+                                           "name":  "BurningCells",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  130
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "uint",
+                                           "name":  "DestroyedCells",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  131
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "uint",
+                                           "name":  "DamagedCells",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  132
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "uint",
+                                           "name":  "Frame",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  133
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  134
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "uint",
+                                           "name":  "StateHash",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  135
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "uint",
+                                           "name":  "SignalCount",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  136
+                                       },
+                                       {
+                                           "offset":  64,
+                                           "type":  "double3",
+                                           "name":  "LastImpactAup",
+                                           "sizeBytes":  24,
+                                           "visibility":  "public",
+                                           "line":  137
+                                       },
+                                       {
+                                           "offset":  88,
+                                           "type":  "float3",
+                                           "name":  "LastImpactLocal",
+                                           "sizeBytes":  12,
+                                           "visibility":  "public",
+                                           "line":  138
+                                       },
+                                       {
+                                           "offset":  100,
+                                           "type":  "float",
+                                           "name":  "TotalDamage01",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  139
+                                       },
+                                       {
+                                           "offset":  104,
+                                           "type":  "float",
+                                           "name":  "EstimatedCostUs",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  140
+                                       },
+                                       {
+                                           "offset":  108,
+                                           "type":  "float",
+                                           "name":  "QualityWeight",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  141
+                                       },
+                                       {
+                                           "offset":  112,
+                                           "type":  "uint",
+                                           "name":  "Reserved0",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  142
+                                       },
+                                       {
+                                           "offset":  116,
+                                           "type":  "uint",
+                                           "name":  "Reserved1",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  143
+                                       },
+                                       {
+                                           "offset":  120,
+                                           "type":  "ulong",
+                                           "name":  "Reserved2",
+                                           "sizeBytes":  8,
+                                           "visibility":  "public",
+                                           "line":  144
+                                       }
+                                   ]
+                    },
+                    {
+                        "struct":  "VehicleDamageTelemetryEntry",
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageContracts.cs",
+                        "line":  173,
+                        "declaredSizeExpression":  "128",
+                        "declaredSizeBytes":  128,
+                        "computedMaxFieldEndBytes":  128,
+                        "sizeMultipleOf8":  true,
+                        "fieldCount":  20,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "double3",
+                                           "name":  "RootAup",
+                                           "sizeBytes":  24,
+                                           "visibility":  "public",
+                                           "line":  175
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "double3",
+                                           "name":  "LastImpactAup",
+                                           "sizeBytes":  24,
+                                           "visibility":  "public",
+                                           "line":  176
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "float3",
+                                           "name":  "LastImpactLocal",
+                                           "sizeBytes":  12,
+                                           "visibility":  "public",
+                                           "line":  177
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "float",
+                                           "name":  "StructuralIntegrity01",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  178
+                                       },
+                                       {
+                                           "offset":  64,
+                                           "type":  "float",
+                                           "name":  "MaxThrustScalar",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  179
+                                       },
+                                       {
+                                           "offset":  68,
+                                           "type":  "float",
+                                           "name":  "BuoyancyScalar",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  180
+                                       },
+                                       {
+                                           "offset":  72,
+                                           "type":  "float",
+                                           "name":  "FloodWaterMassKg",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  181
+                                       },
+                                       {
+                                           "offset":  76,
+                                           "type":  "float",
+                                           "name":  "IngressRateKgPerSecond",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  182
+                                       },
+                                       {
+                                           "offset":  80,
+                                           "type":  "float",
+                                           "name":  "FireSeverity01",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  183
+                                       },
+                                       {
+                                           "offset":  84,
+                                           "type":  "float",
+                                           "name":  "EstimatedCostUs",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  184
+                                       },
+                                       {
+                                           "offset":  88,
+                                           "type":  "uint",
+                                           "name":  "Frame",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  185
+                                       },
+                                       {
+                                           "offset":  92,
+                                           "type":  "uint",
+                                           "name":  "StateHash",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  186
+                                       },
+                                       {
+                                           "offset":  96,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  187
+                                       },
+                                       {
+                                           "offset":  100,
+                                           "type":  "uint",
+                                           "name":  "ActiveBreaches",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  188
+                                       },
+                                       {
+                                           "offset":  104,
+                                           "type":  "uint",
+                                           "name":  "BurningCells",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  189
+                                       },
+                                       {
+                                           "offset":  108,
+                                           "type":  "uint",
+                                           "name":  "DestroyedCells",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  190
+                                       },
+                                       {
+                                           "offset":  112,
+                                           "type":  "uint",
+                                           "name":  "DamagedCells",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  191
+                                       },
+                                       {
+                                           "offset":  116,
+                                           "type":  "uint",
+                                           "name":  "SignalCount",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  192
+                                       },
+                                       {
+                                           "offset":  120,
+                                           "type":  "float",
+                                           "name":  "TotalDamage01",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  193
+                                       },
+                                       {
+                                           "offset":  124,
+                                           "type":  "uint",
+                                           "name":  "Reserved0",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  194
+                                       }
+                                   ]
+                    },
+                    {
+                        "struct":  "SubmarineKinematicState",
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                        "line":  92,
+                        "declaredSizeExpression":  "192",
+                        "declaredSizeBytes":  192,
+                        "computedMaxFieldEndBytes":  192,
+                        "sizeMultipleOf8":  true,
+                        "fieldCount":  24,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "double3",
+                                           "name":  "Aup",
+                                           "sizeBytes":  24,
+                                           "visibility":  "public",
+                                           "line":  94
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "quaternion",
+                                           "name":  "Rotation",
+                                           "sizeBytes":  16,
+                                           "visibility":  "public",
+                                           "line":  95
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "float3",
+                                           "name":  "LocalPosition",
+                                           "sizeBytes":  12,
+                                           "visibility":  "public",
+                                           "line":  96
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "float3",
+                                           "name":  "LinearVelocity",
+                                           "sizeBytes":  12,
+                                           "visibility":  "public",
+                                           "line":  97
+                                       },
+                                       {
+                                           "offset":  64,
+                                           "type":  "float3",
+                                           "name":  "AngularVelocity",
+                                           "sizeBytes":  12,
+                                           "visibility":  "public",
+                                           "line":  98
+                                       },
+                                       {
+                                           "offset":  76,
+                                           "type":  "float3",
+                                           "name":  "CenterOfMassLocal",
+                                           "sizeBytes":  12,
+                                           "visibility":  "public",
+                                           "line":  99
+                                       },
+                                       {
+                                           "offset":  88,
+                                           "type":  "float3",
+                                           "name":  "CenterOfBuoyancyLocal",
+                                           "sizeBytes":  12,
+                                           "visibility":  "public",
+                                           "line":  100
+                                       },
+                                       {
+                                           "offset":  100,
+                                           "type":  "float3",
+                                           "name":  "InertiaTensor",
+                                           "sizeBytes":  12,
+                                           "visibility":  "public",
+                                           "line":  101
+                                       },
+                                       {
+                                           "offset":  112,
+                                           "type":  "float",
+                                           "name":  "TotalMassKg",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  102
+                                       },
+                                       {
+                                           "offset":  116,
+                                           "type":  "float",
+                                           "name":  "BallastRatio01",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  103
+                                       },
+                                       {
+                                           "offset":  120,
+                                           "type":  "float",
+                                           "name":  "GyroDisabledSeconds",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  104
+                                       },
+                                       {
+                                           "offset":  124,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  105
+                                       },
+                                       {
+                                           "offset":  128,
+                                           "type":  "uint",
+                                           "name":  "TelemetryCursor",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  106
+                                       },
+                                       {
+                                           "offset":  132,
+                                           "type":  "uint",
+                                           "name":  "EntityId",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  107
+                                       },
+                                       {
+                                           "offset":  136,
+                                           "type":  "uint",
+                                           "name":  "ShiftFrameId",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  108
+                                       },
+                                       {
+                                           "offset":  140,
+                                           "type":  "byte",
+                                           "name":  "MathLod",
+                                           "sizeBytes":  1,
+                                           "visibility":  "public",
+                                           "line":  109
+                                       },
+                                       {
+                                           "offset":  141,
+                                           "type":  "byte",
+                                           "name":  "QualityWeightByte",
+                                           "sizeBytes":  1,
+                                           "visibility":  "public",
+                                           "line":  110
+                                       },
+                                       {
+                                           "offset":  142,
+                                           "type":  "ushort",
+                                           "name":  "_pad0",
+                                           "sizeBytes":  2,
+                                           "visibility":  "private",
+                                           "line":  111
+                                       },
+                                       {
+                                           "offset":  144,
+                                           "type":  "ulong",
+                                           "name":  "_pad1",
+                                           "sizeBytes":  8,
+                                           "visibility":  "private",
+                                           "line":  112
+                                       },
+                                       {
+                                           "offset":  152,
+                                           "type":  "ulong",
+                                           "name":  "_pad2",
+                                           "sizeBytes":  8,
+                                           "visibility":  "private",
+                                           "line":  113
+                                       },
+                                       {
+                                           "offset":  160,
+                                           "type":  "ulong",
+                                           "name":  "_pad3",
+                                           "sizeBytes":  8,
+                                           "visibility":  "private",
+                                           "line":  114
+                                       },
+                                       {
+                                           "offset":  168,
+                                           "type":  "ulong",
+                                           "name":  "_pad4",
+                                           "sizeBytes":  8,
+                                           "visibility":  "private",
+                                           "line":  115
+                                       },
+                                       {
+                                           "offset":  176,
+                                           "type":  "ulong",
+                                           "name":  "_pad5",
+                                           "sizeBytes":  8,
+                                           "visibility":  "private",
+                                           "line":  116
+                                       },
+                                       {
+                                           "offset":  184,
+                                           "type":  "ulong",
+                                           "name":  "_pad6",
+                                           "sizeBytes":  8,
+                                           "visibility":  "private",
+                                           "line":  117
+                                       }
+                                   ]
+                    },
+                    {
+                        "struct":  "SubmarineHydrodynamicsTelemetry",
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                        "line":  266,
+                        "declaredSizeExpression":  "128",
+                        "declaredSizeBytes":  128,
+                        "computedMaxFieldEndBytes":  128,
+                        "sizeMultipleOf8":  true,
+                        "fieldCount":  19,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "double3",
+                                           "name":  "Aup",
+                                           "sizeBytes":  24,
+                                           "visibility":  "public",
+                                           "line":  268
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "float",
+                                           "name":  "DepthMeters",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  269
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "float",
+                                           "name":  "FluidDensityKgPerM3",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  270
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "float",
+                                           "name":  "DisplacedWaterMassKg",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  271
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "float",
+                                           "name":  "FloodWaterMassKg",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  272
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "float3",
+                                           "name":  "LinearDiagKg",
+                                           "sizeBytes":  12,
+                                           "visibility":  "public",
+                                           "line":  273
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "float3",
+                                           "name":  "AngularDiagKgm2",
+                                           "sizeBytes":  12,
+                                           "visibility":  "public",
+                                           "line":  274
+                                       },
+                                       {
+                                           "offset":  64,
+                                           "type":  "float",
+                                           "name":  "MatrixBlend01",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  275
+                                       },
+                                       {
+                                           "offset":  68,
+                                           "type":  "float",
+                                           "name":  "RotationalDamping",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  276
+                                       },
+                                       {
+                                           "offset":  72,
+                                           "type":  "uint",
+                                           "name":  "Frame",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  277
+                                       },
+                                       {
+                                           "offset":  76,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  278
+                                       },
+                                       {
+                                           "offset":  80,
+                                           "type":  "uint",
+                                           "name":  "StateHash",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  279
+                                       },
+                                       {
+                                           "offset":  84,
+                                           "type":  "uint",
+                                           "name":  "TensorHash",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  280
+                                       },
+                                       {
+                                           "offset":  88,
+                                           "type":  "float",
+                                           "name":  "BurstElapsedUs",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  281
+                                       },
+                                       {
+                                           "offset":  92,
+                                           "type":  "float",
+                                           "name":  "DepthDensityScalar",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  282
+                                       },
+                                       {
+                                           "offset":  96,
+                                           "type":  "ulong",
+                                           "name":  "_pad0",
+                                           "sizeBytes":  8,
+                                           "visibility":  "private",
+                                           "line":  283
+                                       },
+                                       {
+                                           "offset":  104,
+                                           "type":  "ulong",
+                                           "name":  "_pad1",
+                                           "sizeBytes":  8,
+                                           "visibility":  "private",
+                                           "line":  284
+                                       },
+                                       {
+                                           "offset":  112,
+                                           "type":  "ulong",
+                                           "name":  "_pad2",
+                                           "sizeBytes":  8,
+                                           "visibility":  "private",
+                                           "line":  285
+                                       },
+                                       {
+                                           "offset":  120,
+                                           "type":  "ulong",
+                                           "name":  "_pad3",
+                                           "sizeBytes":  8,
+                                           "visibility":  "private",
+                                           "line":  286
+                                       }
+                                   ]
+                    },
+                    {
+                        "struct":  "GyroTelemetryEntry",
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                        "line":  377,
+                        "declaredSizeExpression":  "SubmarineDynamicsConstants.GyroTelemetryBytes",
+                        "declaredSizeBytes":  64,
+                        "computedMaxFieldEndBytes":  64,
+                        "sizeMultipleOf8":  true,
+                        "fieldCount":  14,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "uint",
+                                           "name":  "Frame",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  379
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "type":  "int",
+                                           "name":  "ActiveControllers",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  380
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "type":  "float",
+                                           "name":  "AveragePitchError",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  381
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "float",
+                                           "name":  "AverageRollError",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  382
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "float",
+                                           "name":  "MaxCorrectiveTorque",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  383
+                                       },
+                                       {
+                                           "offset":  20,
+                                           "type":  "float",
+                                           "name":  "BurstElapsedUs",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  384
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  385
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "uint",
+                                           "name":  "StateHash",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  386
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "float",
+                                           "name":  "MaxErrorMagnitude",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  387
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "float",
+                                           "name":  "GlobalQualityWeight",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  388
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "uint",
+                                           "name":  "NonFiniteCount",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  389
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "uint",
+                                           "name":  "LastTargetEntityHash",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  390
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "ulong",
+                                           "name":  "_pad0",
+                                           "sizeBytes":  8,
+                                           "visibility":  "private",
+                                           "line":  391
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "ulong",
+                                           "name":  "_pad1",
+                                           "sizeBytes":  8,
+                                           "visibility":  "private",
+                                           "line":  392
+                                       }
+                                   ]
+                    },
+                    {
+                        "struct":  "AutopilotTelemetryEntry",
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                        "line":  162,
+                        "declaredSizeExpression":  "64",
+                        "declaredSizeBytes":  64,
+                        "computedMaxFieldEndBytes":  64,
+                        "sizeMultipleOf8":  true,
+                        "fieldCount":  9,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "double3",
+                                           "name":  "FirstAUP",
+                                           "sizeBytes":  24,
+                                           "visibility":  "public",
+                                           "line":  164
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "float3",
+                                           "name":  "AverageRepulsion",
+                                           "sizeBytes":  12,
+                                           "visibility":  "public",
+                                           "line":  165
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "float",
+                                           "name":  "AverageRepulsionMagnitude",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  166
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "uint",
+                                           "name":  "Frame",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  167
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "uint",
+                                           "name":  "ActiveAutopilots",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  168
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "uint",
+                                           "name":  "FeelerCount",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  169
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  170
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "float",
+                                           "name":  "EstimatedBurstMicroseconds",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  171
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "uint",
+                                           "name":  "StateHash",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  172
+                                       }
+                                   ]
+                    },
+                    {
+                        "struct":  "ShockwaveTelemetryEntry",
+                        "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationContracts.cs",
+                        "line":  232,
+                        "declaredSizeExpression":  "80",
+                        "declaredSizeBytes":  80,
+                        "computedMaxFieldEndBytes":  80,
+                        "sizeMultipleOf8":  true,
+                        "fieldCount":  14,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "double3",
+                                           "name":  "EpicenterAUP",
+                                           "sizeBytes":  24,
+                                           "visibility":  "public",
+                                           "line":  234
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "float",
+                                           "name":  "CurrentRadius",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  235
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "float",
+                                           "name":  "PeakPressure",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  236
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "float",
+                                           "name":  "PeakForce",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  237
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "float",
+                                           "name":  "GlobalQualityWeight",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  238
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "uint",
+                                           "name":  "FrameIndex",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  239
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "uint",
+                                           "name":  "StateHash",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  240
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "int",
+                                           "name":  "ActiveShockwaves",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  241
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "int",
+                                           "name":  "CandidateCount",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  242
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "int",
+                                           "name":  "AffectedEntities",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  243
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "int",
+                                           "name":  "EpsilonClampCount",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  244
+                                       },
+                                       {
+                                           "offset":  64,
+                                           "type":  "float",
+                                           "name":  "CpuMicroseconds",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  245
+                                       },
+                                       {
+                                           "offset":  68,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  246
+                                       },
+                                       {
+                                           "offset":  72,
+                                           "type":  "ulong",
+                                           "name":  "_pad0",
+                                           "sizeBytes":  8,
+                                           "visibility":  "public",
+                                           "line":  247
+                                       }
+                                   ]
+                    },
+                    {
+                        "struct":  "ExosuitTelemetryEntry",
+                        "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsContracts.cs",
+                        "line":  107,
+                        "declaredSizeExpression":  "64",
+                        "declaredSizeBytes":  64,
+                        "computedMaxFieldEndBytes":  64,
+                        "sizeMultipleOf8":  true,
+                        "fieldCount":  9,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "double3",
+                                           "name":  "AUP",
+                                           "sizeBytes":  24,
+                                           "visibility":  "public",
+                                           "line":  109
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "float3",
+                                           "name":  "Velocity",
+                                           "sizeBytes":  12,
+                                           "visibility":  "public",
+                                           "line":  110
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "float",
+                                           "name":  "ThrusterHeat",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  111
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "float",
+                                           "name":  "HydraulicPressure",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  112
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "float",
+                                           "name":  "SdfPushOutMagnitude",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  113
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "float",
+                                           "name":  "SolverComputeTimeMs",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  114
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "uint",
+                                           "name":  "Frame",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  115
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  116
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "uint",
+                                           "name":  "StateHash",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  117
+                                       }
+                                   ]
+                    },
+                    {
+                        "struct":  "KinematicTelemetryEntry",
+                        "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                        "line":  108,
+                        "declaredSizeExpression":  "64",
+                        "declaredSizeBytes":  64,
+                        "computedMaxFieldEndBytes":  64,
+                        "sizeMultipleOf8":  true,
+                        "fieldCount":  9,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "double3",
+                                           "name":  "AupPosition",
+                                           "sizeBytes":  24,
+                                           "visibility":  "public",
+                                           "line":  110
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "float3",
+                                           "name":  "Velocity",
+                                           "sizeBytes":  12,
+                                           "visibility":  "public",
+                                           "line":  111
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "float",
+                                           "name":  "Speed",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  112
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "float",
+                                           "name":  "TurbulenceScalar",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  113
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "float",
+                                           "name":  "ComputeMicroseconds",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  114
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "uint",
+                                           "name":  "Frame",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  115
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "uint",
+                                           "name":  "StateHash",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  116
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  117
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "uint",
+                                           "name":  "Iterations",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  118
+                                       }
+                                   ]
+                    },
+                    {
+                        "struct":  "KccEnvironmentTelemetryEntry",
+                        "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                        "line":  206,
+                        "declaredSizeExpression":  "64",
+                        "declaredSizeBytes":  64,
+                        "computedMaxFieldEndBytes":  64,
+                        "sizeMultipleOf8":  true,
+                        "fieldCount":  9,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "double3",
+                                           "name":  "AupPosition",
+                                           "sizeBytes":  24,
+                                           "visibility":  "public",
+                                           "line":  208
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "float3",
+                                           "name":  "AppliedFlow",
+                                           "sizeBytes":  12,
+                                           "visibility":  "public",
+                                           "line":  209
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "float",
+                                           "name":  "SlopeAngleDegrees",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  210
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "float",
+                                           "name":  "ExhaustionPenalty",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  211
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "float",
+                                           "name":  "ComputeMicroseconds",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  212
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "uint",
+                                           "name":  "Frame",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  213
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "uint",
+                                           "name":  "StateHash",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  214
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  215
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "uint",
+                                           "name":  "SampleMode",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  216
+                                       }
+                                   ]
+                    },
+                    {
+                        "struct":  "SeaglideTelemetryEntry",
+                        "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsContracts.cs",
+                        "line":  158,
+                        "declaredSizeExpression":  "SeaglideHydrodynamicsConstants.TelemetryBytes",
+                        "declaredSizeBytes":  64,
+                        "computedMaxFieldEndBytes":  64,
+                        "sizeMultipleOf8":  true,
+                        "fieldCount":  15,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "ulong",
+                                           "name":  "FrameAndRequestCountPacked",
+                                           "sizeBytes":  8,
+                                           "visibility":  "public",
+                                           "line":  160
+                                       },
+                                       {
+                                           "offset":  0,
+                                           "type":  "uint",
+                                           "name":  "FrameIndex",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  161
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "type":  "int",
+                                           "name":  "EvaluatedRequests",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  162
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "type":  "int",
+                                           "name":  "ForcePackets",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  163
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "int",
+                                           "name":  "NonFiniteCount",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  164
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "float",
+                                           "name":  "TotalThrustForce",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  165
+                                       },
+                                       {
+                                           "offset":  20,
+                                           "type":  "float",
+                                           "name":  "TotalDragForce",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  166
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "float",
+                                           "name":  "TotalFlowForce",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  167
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "float",
+                                           "name":  "MaxForceMagnitude",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  168
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "float",
+                                           "name":  "ComputeMicros",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  169
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "float",
+                                           "name":  "GlobalQualityWeight",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  170
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  171
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "uint",
+                                           "name":  "LastTargetEntityHash",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  172
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "float3",
+                                           "name":  "LastFlowForce",
+                                           "sizeBytes":  12,
+                                           "visibility":  "public",
+                                           "line":  173
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "float",
+                                           "name":  "LastBatteryLevel",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  174
+                                       }
+                                   ]
+                    },
+                    {
+                        "struct":  "WaveMathTelemetryEntry",
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveContracts.cs",
+                        "line":  161,
+                        "declaredSizeExpression":  "AnalyticalGerstnerWaveConstants.TelemetryBytes",
+                        "declaredSizeBytes":  64,
+                        "computedMaxFieldEndBytes":  64,
+                        "sizeMultipleOf8":  true,
+                        "fieldCount":  16,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "uint",
+                                           "name":  "FrameIndex",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  163
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "type":  "int",
+                                           "name":  "EvaluatedCoordinates",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  164
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "type":  "int",
+                                           "name":  "ActiveOctaves",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  165
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "int",
+                                           "name":  "CoarseGridSamples",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  166
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "float",
+                                           "name":  "BurstMicros",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  167
+                                       },
+                                       {
+                                           "offset":  20,
+                                           "type":  "float",
+                                           "name":  "GlobalQualityWeight",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  168
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  169
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "int",
+                                           "name":  "NonFiniteCount",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  170
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "uint",
+                                           "name":  "LastEntityHashID",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  171
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "float",
+                                           "name":  "MaxAbsHeight",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  172
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "int",
+                                           "name":  "MacroGridResolution",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  173
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "int",
+                                           "name":  "RequestCount",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  174
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "uint",
+                                           "name":  "KernelHash",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  175
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "uint",
+                                           "name":  "ProfileHash",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  176
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "uint",
+                                           "name":  "OriginShiftSequence",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  177
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "uint",
+                                           "name":  "_pad0",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  178
+                                       }
+                                   ]
+                    },
+                    {
+                        "struct":  "ReadbackTelemetryEntry",
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackContracts.cs",
+                        "line":  111,
+                        "declaredSizeExpression":  "AsyncBuoyancyReadbackConstants.ReadbackTelemetryBytes",
+                        "declaredSizeBytes":  64,
+                        "computedMaxFieldEndBytes":  64,
+                        "sizeMultipleOf8":  true,
+                        "fieldCount":  16,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "uint",
+                                           "name":  "FrameIndex",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  113
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "type":  "int",
+                                           "name":  "RequestedSamples",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  114
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "type":  "int",
+                                           "name":  "CompletedSamples",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  115
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "int",
+                                           "name":  "ActiveRingSlots",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  116
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "int",
+                                           "name":  "ReadbackLatencyFrames",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  117
+                                       },
+                                       {
+                                           "offset":  20,
+                                           "type":  "int",
+                                           "name":  "DroppedRequests",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  118
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "int",
+                                           "name":  "FailedRequests",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  119
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "int",
+                                           "name":  "MaxStaleFrames",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  120
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "float",
+                                           "name":  "GlobalQualityWeight",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  121
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "float",
+                                           "name":  "ApplyMicros",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  122
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "float",
+                                           "name":  "DispatchMicros",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  123
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "float",
+                                           "name":  "SmoothedAlpha",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  124
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  125
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "uint",
+                                           "name":  "LastEntityHash",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  126
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "float",
+                                           "name":  "LastLocalHeight",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  127
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "uint",
+                                           "name":  "_pad0",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  128
+                                       }
+                                   ]
+                    },
+                    {
+                        "struct":  "SleepStateTelemetryEntry",
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementContracts.cs",
+                        "line":  155,
+                        "declaredSizeExpression":  "BuoyancyDisplacementConstants.SleepTelemetryBytes",
+                        "declaredSizeBytes":  64,
+                        "computedMaxFieldEndBytes":  64,
+                        "sizeMultipleOf8":  true,
+                        "fieldCount":  16,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "uint",
+                                           "name":  "FrameIndex",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  157
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "type":  "int",
+                                           "name":  "ActiveObjects",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  158
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "type":  "int",
+                                           "name":  "SleepingObjects",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  159
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "int",
+                                           "name":  "ForcedAwakeObjects",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  160
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "int",
+                                           "name":  "StaticPromotionCandidates",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  161
+                                       },
+                                       {
+                                           "offset":  20,
+                                           "type":  "int",
+                                           "name":  "NonFiniteCount",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  162
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "float",
+                                           "name":  "ComputeMicros",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  163
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "float",
+                                           "name":  "GlobalQualityWeight",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  164
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "float",
+                                           "name":  "SleepEnergyThreshold",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  165
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "int",
+                                           "name":  "SdfGroundedObjects",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  166
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "int",
+                                           "name":  "WakeRequestCount",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  167
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "int",
+                                           "name":  "AmbientCurrentWakes",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  168
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  169
+                                       },
+                                       {
+                                           "offset":  52,
+                                           "type":  "uint",
+                                           "name":  "LastEntityHashID",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  170
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "float",
+                                           "name":  "MaxEnergy",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  171
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "uint",
+                                           "name":  "_pad0",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  172
+                                       }
+                                   ]
+                    },
+                    {
+                        "struct":  "BuoyancyTelemetryEntry",
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementContracts.cs",
+                        "line":  275,
+                        "declaredSizeExpression":  "BuoyancyDisplacementConstants.TelemetryBytes",
+                        "declaredSizeBytes":  64,
+                        "computedMaxFieldEndBytes":  64,
+                        "sizeMultipleOf8":  true,
+                        "fieldCount":  14,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "uint",
+                                           "name":  "FrameIndex",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  277
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "type":  "int",
+                                           "name":  "EvaluatedObjects",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  278
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "type":  "int",
+                                           "name":  "SleepingObjects",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  279
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "int",
+                                           "name":  "ForcePackets",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  280
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "float",
+                                           "name":  "TotalBuoyantForce",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  281
+                                       },
+                                       {
+                                           "offset":  20,
+                                           "type":  "float",
+                                           "name":  "TotalDragForce",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  282
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "float",
+                                           "name":  "ComputeMicros",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  283
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "float",
+                                           "name":  "GlobalQualityWeight",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  284
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  285
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "int",
+                                           "name":  "NonFiniteCount",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  286
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "uint",
+                                           "name":  "LastEntityHashID",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  287
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "float",
+                                           "name":  "MaxDepthMeters",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  288
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "float3",
+                                           "name":  "LastNetForce",
+                                           "sizeBytes":  12,
+                                           "visibility":  "public",
+                                           "line":  289
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "type":  "uint",
+                                           "name":  "_pad0",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  290
+                                       }
+                                   ]
+                    },
+                    {
+                        "struct":  "SimdTelemetryEntry",
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                        "line":  38,
+                        "declaredSizeExpression":  "64",
+                        "declaredSizeBytes":  64,
+                        "computedMaxFieldEndBytes":  64,
+                        "sizeMultipleOf8":  true,
+                        "fieldCount":  14,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "type":  "uint",
+                                           "name":  "FrameIndex",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  40
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "type":  "uint",
+                                           "name":  "KernelHash",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  41
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "type":  "int",
+                                           "name":  "EntityCount",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  42
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "type":  "float",
+                                           "name":  "VectorMicros",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  43
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "type":  "float",
+                                           "name":  "ScalarMicros",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  44
+                                       },
+                                       {
+                                           "offset":  20,
+                                           "type":  "float",
+                                           "name":  "EntitiesPerMillisecond",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  45
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "type":  "float",
+                                           "name":  "ThroughputDrop01",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  46
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "type":  "float",
+                                           "name":  "GlobalQualityWeight",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  47
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "type":  "uint",
+                                           "name":  "Flags",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  48
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "type":  "uint",
+                                           "name":  "LastStateHash",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  49
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "type":  "float",
+                                           "name":  "MaxError",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  50
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "type":  "float",
+                                           "name":  "MaxSpeedSq",
+                                           "sizeBytes":  4,
+                                           "visibility":  "public",
+                                           "line":  51
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "type":  "ulong",
+                                           "name":  "_pad0",
+                                           "sizeBytes":  8,
+                                           "visibility":  "private",
+                                           "line":  52
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "type":  "ulong",
+                                           "name":  "_pad1",
+                                           "sizeBytes":  8,
+                                           "visibility":  "private",
+                                           "line":  53
+                                       }
+                                   ]
+                    }
+                ]
+}

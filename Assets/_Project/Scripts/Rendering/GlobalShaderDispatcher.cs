@@ -325,7 +325,7 @@ namespace Hecton8.Core
 
             GenerateEmergencyMockShaderGlobalsNoIo(vault);
 
-            float deltaTime = math.max(0f, Time.unscaledDeltaTime);
+            float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime);
             _shaderTime += deltaTime;
             if (_shaderTime >= ShaderTimeModuloSeconds)
                 _shaderTime -= Math.Floor(_shaderTime / ShaderTimeModuloSeconds) * ShaderTimeModuloSeconds;
@@ -1231,7 +1231,7 @@ namespace Hecton8.Core
             }
             catch (Exception exception)
             {
-                UnityEngine.Debug.LogWarning("[GlobalShaderDispatcher] Failed CBuffer telemetry dump: " + exception.Message);
+                Hecton8.Core.H8Debug.LogWarning("[GlobalShaderDispatcher] Failed CBuffer telemetry dump: " + exception.Message);
             }
         }
 
@@ -1270,7 +1270,7 @@ namespace Hecton8.Core
             catch (Exception exception)
             {
                 s_csvOverrideActive = false;
-                UnityEngine.Debug.LogWarning("[GlobalShaderDispatcher] CSV override parse failed: " + exception.Message);
+                Hecton8.Core.H8Debug.LogWarning("[GlobalShaderDispatcher] CSV override parse failed: " + exception.Message);
             }
         }
 

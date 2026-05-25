@@ -214,8 +214,14 @@ namespace Hecton8.Visor
                     return false;
 
                 NativeArray<SootGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<SootGlobalsDTO>(0, 1);
-                mapped[0] = globals;
-                writeBuffer.UnlockBufferAfterWrite<SootGlobalsDTO>(1);
+                try
+                {
+                    mapped[0] = globals;
+                }
+                finally
+                {
+                    writeBuffer.UnlockBufferAfterWrite<SootGlobalsDTO>(1);
+                }
                 _sootGlobalsBuffer = writeBuffer;
                 _sootGlobalsWriteIndex ^= 1;
                 _lastSootGlobals = globals;
@@ -320,7 +326,7 @@ namespace Hecton8.Visor
 
             RecreateMaterial(ref _material, shader);
             TryRegisterHotSwapListener();
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
         }
 
         /// <inheritdoc />

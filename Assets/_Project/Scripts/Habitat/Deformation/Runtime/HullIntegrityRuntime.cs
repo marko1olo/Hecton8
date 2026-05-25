@@ -830,7 +830,7 @@ namespace Hecton8.Habitat.Deformation
             GenerateEmergencyMockIntegrity();
             BuildEmergencyScratchProof();
             BindInitialShaderState();
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
             RefreshBreachJetCameraCold();
             _initialized = 1;
             _forceGpuUpload = 1;
@@ -1404,12 +1404,18 @@ namespace Hecton8.Habitat.Deformation
             GraphicsBuffer writeBuffer = writeIndex == 0 ? _dentBufferA : _dentBufferB;
             NativeArray<HullDentDTO> mapped = writeBuffer.LockBufferForWrite<HullDentDTO>(0, uploadCount);
 
-            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(dents);
-            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-            long bytes = (long)UnsafeUtility.SizeOf<HullDentDTO>() * uploadCount;
-            if (sourcePtr != null && destinationPtr != null && bytes > 0)
-                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, bytes);
-            writeBuffer.UnlockBufferAfterWrite<HullDentDTO>(uploadCount);
+            try
+            {
+                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(dents);
+                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                long bytes = (long)UnsafeUtility.SizeOf<HullDentDTO>() * uploadCount;
+                if (sourcePtr != null && destinationPtr != null && bytes > 0)
+                    UnsafeUtility.MemCpy(destinationPtr, sourcePtr, bytes);
+            }
+            finally
+            {
+                writeBuffer.UnlockBufferAfterWrite<HullDentDTO>(uploadCount);
+            }
 
             _gpuReadIndex = writeIndex;
             GraphicsBuffer readBuffer = _gpuReadIndex == 0 ? _dentBufferA : _dentBufferB;
@@ -1441,12 +1447,18 @@ namespace Hecton8.Habitat.Deformation
             GraphicsBuffer writeBuffer = writeIndex == 0 ? _deformationBufferA : _deformationBufferB;
 
             NativeArray<DeformationStateDTO> mapped = writeBuffer.LockBufferForWrite<DeformationStateDTO>(0, uploadCount);
-            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(deformations);
-            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-            long bytes = (long)UnsafeUtility.SizeOf<DeformationStateDTO>() * uploadCount;
-            if (sourcePtr != null && destinationPtr != null && bytes > 0)
-                UnsafeUtility.MemCpy(destinationPtr, sourcePtr, bytes);
-            writeBuffer.UnlockBufferAfterWrite<DeformationStateDTO>(uploadCount);
+            try
+            {
+                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(deformations);
+                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                long bytes = (long)UnsafeUtility.SizeOf<DeformationStateDTO>() * uploadCount;
+                if (sourcePtr != null && destinationPtr != null && bytes > 0)
+                    UnsafeUtility.MemCpy(destinationPtr, sourcePtr, bytes);
+            }
+            finally
+            {
+                writeBuffer.UnlockBufferAfterWrite<DeformationStateDTO>(uploadCount);
+            }
 
             float maxDepth = ResolveMaxDeformationDepth(deformations, activeCount, out _);
             _deformationPendingParams = new Vector4(activeCount, _cachedShaderDentLimit, maxDepth, _cachedGlobalQualityWeight);
@@ -1493,20 +1505,32 @@ namespace Hecton8.Habitat.Deformation
             GraphicsBuffer argsWriteBuffer = writeIndex == 0 ? _breachJetArgsBufferA : _breachJetArgsBufferB;
 
             NativeArray<BreachJetDTO> mappedJets = jetWriteBuffer.LockBufferForWrite<BreachJetDTO>(0, uploadCount);
-            void* sourceJets = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(jets);
-            void* destinationJets = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mappedJets);
-            long jetBytes = (long)UnsafeUtility.SizeOf<BreachJetDTO>() * uploadCount;
-            if (sourceJets != null && destinationJets != null && jetBytes > 0)
-                UnsafeUtility.MemCpy(destinationJets, sourceJets, jetBytes);
-            jetWriteBuffer.UnlockBufferAfterWrite<BreachJetDTO>(uploadCount);
+            try
+            {
+                void* sourceJets = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(jets);
+                void* destinationJets = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mappedJets);
+                long jetBytes = (long)UnsafeUtility.SizeOf<BreachJetDTO>() * uploadCount;
+                if (sourceJets != null && destinationJets != null && jetBytes > 0)
+                    UnsafeUtility.MemCpy(destinationJets, sourceJets, jetBytes);
+            }
+            finally
+            {
+                jetWriteBuffer.UnlockBufferAfterWrite<BreachJetDTO>(uploadCount);
+            }
 
             NativeArray<BreachJetIndirectArgsDTO> mappedArgs = argsWriteBuffer.LockBufferForWrite<BreachJetIndirectArgsDTO>(0, 1);
-            void* sourceArgs = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(args);
-            void* destinationArgs = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mappedArgs);
-            long argsBytes = UnsafeUtility.SizeOf<BreachJetIndirectArgsDTO>();
-            if (sourceArgs != null && destinationArgs != null && argsBytes > 0)
-                UnsafeUtility.MemCpy(destinationArgs, sourceArgs, argsBytes);
-            argsWriteBuffer.UnlockBufferAfterWrite<BreachJetIndirectArgsDTO>(1);
+            try
+            {
+                void* sourceArgs = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(args);
+                void* destinationArgs = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mappedArgs);
+                long argsBytes = UnsafeUtility.SizeOf<BreachJetIndirectArgsDTO>();
+                if (sourceArgs != null && destinationArgs != null && argsBytes > 0)
+                    UnsafeUtility.MemCpy(destinationArgs, sourceArgs, argsBytes);
+            }
+            finally
+            {
+                argsWriteBuffer.UnlockBufferAfterWrite<BreachJetIndirectArgsDTO>(1);
+            }
 
             _breachGpuReadIndex = writeIndex;
             GraphicsBuffer jetReadBuffer = _breachGpuReadIndex == 0 ? _breachJetBufferA : _breachJetBufferB;

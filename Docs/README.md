@@ -1,6 +1,6 @@
 ﻿# HECTON-8 Documentation Index
 
-Date: 2026-05-25
+Date: 2026-05-26
 Status: PENDING VERIFICATION
 Owner: X_012 DOCUMENTATION_CLEANUP_AND_ACTUALIZATION_ENGINE
 Evidence class: STATIC_DOC / STATIC_SOURCE / CLI_COMPILE where artifact cited
@@ -29,7 +29,7 @@ Dated reports and archived files are evidence snapshots. They are not active sys
 | AUP | `AbsoluteUniversePosition`/blit layout is `48` bytes. Distance checks subtract `double3` sector/local coordinates first, then cast the local delta to `float3` | `Docs/ARCHITECTURE/AUP_PRECISION_STANDARDS.md` |
 | Netcode | `HectonNetworkManager.cs` is a compile-visible placeholder. Merkle/rollback protocol is static design pending transport, loopback, packet fuzz, profiler, and GC proof | `Docs/ARCHITECTURE/COOP_MERKLE_STATE_DELTA_PROTOCOL.md` |
 | Terrain geography | Active world template is infinite-paging flooded terrestrial geography: 2 km deluge, mountain-crest volcanic islands, 0-400 m shelves, submerged river canyons, and hadal trenches | `Docs/ARCHITECTURE/FLOODED_TERRESTRIAL_GEOGRAPHY.md` |
-| Last CLI compile PASS | 2026-05-24 latest zero-warning pass: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup122_tick_registration.log`. Latest compile attempt: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log`; failed before C# with `NETSDK1004` missing `Temp/obj/Hecton8.Editor/project.assets.json`, 0 warnings, no `CS*`; latest retry blocked by `BUILD_GUARD cpu=100 compiler_count=2`. Loop165 source gates cover loop134/139/141/142 log cleanup, HectonVoxelVolume sonar DataVault owner-cache cleanup, pure Environment/Ocean/PlayerSensory context getters, Dispatcher/DataVault/service hot-swap coverage, cached Save/Player/PlayerInventory ownership in `PersistentWorldRegistry`, UI/audio/construction Dispatcher tails through loop156, UI/Construction singleton tail removal in loop157, world/environment/AI Dispatcher tails in loop158, singleton / `?? GlobalRegistry` / `GlobalRegistry.TryGet` cleanup in loop159, Dispatcher stale-registration tails through loop161, frame-authority/Biolum owner-cache cleanup in loop162, frame-id payload cleanup in loop163, and unsigned `Time.frameCount` runtime payload cast cleanup through loop165; touched-file frame-cast greps are clean, project-wide unsigned `Time.frameCount` cast remainder is 21 in SystemDispatcher/GlobalRegistry/Editor/QA surfaces; Unity import/Play Mode/player/profiler proof still pending. | `Docs/Tasks/Status_EXTERNAL_CODEX.md`, `Docs/AgentLogs/Rationale_EXTERNAL_CODEX.md`, `Docs/AgentLogs/LOG_EXTERNAL_CODEX.md` |
+| Last CLI compile PASS | 2026-05-26 full-solution pass: `Docs/Reports/BUILD_UNKNOWN_RECHECK_20260526_020504.log`; command `dotnet build .\Hecton8.slnx -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false`; exit `0`; `0 Warning(s)`; `0 Error(s)`. CLI_COMPILE only. Unity import, Play Mode, player build, profiler, GC, scene wiring, and visual proof still pending. | `Docs/Reports/BUILD_REPAIR_UNKNOWN_20260526.md`, `Docs/AgentLogs/LOG_UNKNOWN.md` |
 
 Older prompt/report constants are subordinate to current source. Documentation follows source.
 
@@ -94,6 +94,7 @@ Reports:
 - `Docs/Reports/ARCHITECTURE_31WORD_DENSITY_AUDIT_X_012.json`
 - `Docs/Reports/ARCHITECTURE_30WORD_DENSITY_AUDIT_X_012.json`
 - `Docs/Reports/ARCHITECTURE_29WORD_DENSITY_AUDIT_X_012.json`
+- `Docs/Reports/ARCHITECTURE_28WORD_DENSITY_AUDIT_X_012.json`
 
 Archives:
 
@@ -167,8 +168,9 @@ APEX validation:
 - Exact current 31-word density gate: `Docs/Reports/ARCHITECTURE_31WORD_DENSITY_AUDIT_X_012.json`.
 - Exact current 30-word density gate: `Docs/Reports/ARCHITECTURE_30WORD_DENSITY_AUDIT_X_012.json`.
 - Exact current 29-word density gate: `Docs/Reports/ARCHITECTURE_29WORD_DENSITY_AUDIT_X_012.json`.
+- Exact current 28-word density gate: `Docs/Reports/ARCHITECTURE_28WORD_DENSITY_AUDIT_X_012.json`.
 - Required scanner state: `finalPass=true`; source sync pass `true`; stale parameter files `0`; reduction at least `30%`; architecture marker hits `0`; long narrative paragraphs `0`.
-- Required density state: architecture paragraphs/sentences/structured lines `>=30` words `0`; document-voice marker hits `0`; max architecture file words `<2500`.
+- Required density state: architecture paragraphs/sentences/structured lines `>=28` words `0`; document-voice marker hits `0`; max architecture file words `<2500`.
 - Required structure state: `pass=true`; root text docs `3`; broken links `0`; duplicate headers `0`; fence issues `0`; stale parameter files `0`; active non-BOM files `0`.
 
 ## 2026-05-24 X_012 APEX Strict Architecture Paragraph Pass
@@ -246,7 +248,8 @@ Actions:
 - Exact 31-word density artifact: `Docs/Reports/ARCHITECTURE_31WORD_DENSITY_AUDIT_X_012.json`.
 - Exact 30-word density artifact: `Docs/Reports/ARCHITECTURE_30WORD_DENSITY_AUDIT_X_012.json`.
 - Exact 29-word density artifact: `Docs/Reports/ARCHITECTURE_29WORD_DENSITY_AUDIT_X_012.json`.
-- `Tools/OOP_Doc_Scanner.py` now fails on architecture paragraphs, sentences, or structured lines over `29` words.
+- Exact 28-word density artifact: `Docs/Reports/ARCHITECTURE_28WORD_DENSITY_AUDIT_X_012.json`.
+- `Tools/OOP_Doc_Scanner.py` now fails on architecture paragraphs, sentences, or structured lines over `27` words.
 - It also fails active architecture `.diff` and non-contract text files.
 
 Required residual-prose state:

@@ -21,7 +21,6 @@
 // ============================================================================
 
 using System;
-using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Narrative;
@@ -35,11 +34,9 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Data Log Tab")]
-    public sealed class PDADataLogTab : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IAudioLogEventListener, IPDAEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public sealed class PDADataLogTab : MonoBehaviour, ILateFrameTickable, IAudioLogEventListener, IPDAEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         private const string PlaybackTimerTemplate = "{0:00}:{1:00}";
-        // COLD ALLOC: char[11] - playback timer template characters - owner: PDADataLogTab
-        private static readonly char[] PlaybackTimerTemplateChars = PlaybackTimerTemplate.ToCharArray();
         private const int MaxRegisteredCatalogTabs = 4;
         private const float InvTwoPi = 0.15915494f;
         private const float Inv360 = 0.0027777778f;
@@ -61,7 +58,7 @@ namespace Hecton8.UI
             new Quaternion(0f, 0.38268343f, 0f, -0.9238795f)
         };
         private static ILocalizationMadnessPresentationReadModel s_cachedLocalization;
-        private static LoreDatabaseManager s_cachedLoreDatabase;
+        private static ILoreDatabaseReadModel s_cachedLoreDatabase;
         private static AudioLogSystem s_cachedAudioLogs;
         private static IPlayerRuntimeContext s_cachedPlayerContext;
 
@@ -120,9 +117,40 @@ namespace Hecton8.UI
         private LocalizedTextMadnessFx _summaryMadnessFx;
         private LocalizedTextMadnessFx _subtitleMadnessFx;
 
-        // List rows â€” pre-allocated
-        // COLD ALLOC: List<LogRow>[32] - pre-allocated audio-log row cache - owner: PDADataLogTab
-        private readonly List<LogRow> _rows = new List<LogRow>(32);
+        // List rows: fixed fields avoid a managed row-cache array allocation.
+        private LogRow _row0;
+        private LogRow _row1;
+        private LogRow _row2;
+        private LogRow _row3;
+        private LogRow _row4;
+        private LogRow _row5;
+        private LogRow _row6;
+        private LogRow _row7;
+        private LogRow _row8;
+        private LogRow _row9;
+        private LogRow _row10;
+        private LogRow _row11;
+        private LogRow _row12;
+        private LogRow _row13;
+        private LogRow _row14;
+        private LogRow _row15;
+        private LogRow _row16;
+        private LogRow _row17;
+        private LogRow _row18;
+        private LogRow _row19;
+        private LogRow _row20;
+        private LogRow _row21;
+        private LogRow _row22;
+        private LogRow _row23;
+        private LogRow _row24;
+        private LogRow _row25;
+        private LogRow _row26;
+        private LogRow _row27;
+        private LogRow _row28;
+        private LogRow _row29;
+        private LogRow _row30;
+        private LogRow _row31;
+        private int _rowCount;
         private const int MaxDynamicTextBufferChars = 4096;
         private const int CategoryLabelCapacity = 32;
         private static readonly char[] SharedOversizedTextBuffer = new char[MaxDynamicTextBufferChars]; // COLD ALLOC: char[4096] - no-GC fallback for unusually long PDA data-log strings - owner: PDADataLogTab
@@ -143,7 +171,6 @@ namespace Hecton8.UI
         // State
         private int _selectedIndex = -1;
         private bool _built;
-        private bool _registered;
         private bool _registeredLateFrame;
         private bool _pdaEventsRegistered;
         private bool _catalogTabRegistered;
@@ -406,7 +433,7 @@ namespace Hecton8.UI
         //  ITickable
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        public void Tick(float deltaTime)
+        private void AdvanceVisualPlaybackState(float deltaTime)
         {
             if (_dirty)
                 _visualLateFrameDirty = true;
@@ -426,6 +453,8 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            AdvanceVisualPlaybackState(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (!_visualLateFrameDirty && !_dirty)
                 return;
 
@@ -568,7 +597,7 @@ namespace Hecton8.UI
                         _subtitleLabel,
                         data,
                         "subtitle",
-                        new ReadOnlySpan<char>(_prevSubtitleBuffer, 0, _prevSubtitleLength),
+                        _prevSubtitleBuffer.AsSpan(0, _prevSubtitleLength),
                         ref _summaryTextBuffer);
                 else
                     ApplyDynamicText(_subtitleLabel, Array.Empty<char>(), 0);
@@ -626,8 +655,6 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            if (!_registered)
-                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
@@ -640,11 +667,6 @@ namespace Hecton8.UI
                 _registeredLateFrame = false;
             }
 
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registered = false;
-            }
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -656,7 +678,6 @@ namespace Hecton8.UI
             {
                 if (currentService == null)
                 {
-                    _registered = false;
                     _registeredLateFrame = false;
                     return;
                 }
@@ -689,7 +710,7 @@ namespace Hecton8.UI
 
             if (serviceSlot == GlobalRegistryServiceSlot.LoreDatabaseRuntime)
             {
-                s_cachedLoreDatabase = currentService as LoreDatabaseManager;
+                s_cachedLoreDatabase = currentService as ILoreDatabaseReadModel;
                 _catalogLoreBindingsDirty = true;
                 _dirty = true;
                 return;
@@ -719,9 +740,9 @@ namespace Hecton8.UI
         private static void CacheRegistryServicesCold()
         {
             s_cachedLocalization = GlobalRegistry.LocalizationMadnessPresentation;
-            s_cachedLoreDatabase = GlobalRegistry.LoreDatabase;
+            s_cachedLoreDatabase = GlobalRegistry.LoreDatabaseReadModel;
             s_cachedAudioLogs = GlobalRegistry.AudioLogs;
-            s_cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            s_cachedPlayerContext = GlobalRegistry.Player;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -782,13 +803,13 @@ namespace Hecton8.UI
             // COLD ALLOC: up to 32 rows
             BuildLogRows();
 
-            if (_rows.Count == 0)
+            if (_rowCount == 0)
                 BuildEmptyState();
         }
 
         private void BuildLogRows()
         {
-            _rows.Clear();
+            ClearRows();
             float rowH = 44f;
             float y = 0f;
             int logCount = CatalogCount;
@@ -828,18 +849,105 @@ namespace Hecton8.UI
                 int capturedIndex = i;
                 btn.Init(this, capturedIndex, rowBg, colorDim, colorSelected);
 
-                _rows.Add(new LogRow
-                {
-                    Root = rowRoot,
-                    Background = rowBg,
-                    IndexLabel = idxLabel,
-                    TitleLabel = titleLabel,
-                    CategoryLabel = catLabel,
-                    Button = btn,
-                    LogIndex = i
-                });
+                LogRow row = default;
+                row.Root = rowRoot;
+                row.Background = rowBg;
+                row.IndexLabel = idxLabel;
+                row.TitleLabel = titleLabel;
+                row.CategoryLabel = catLabel;
+                row.Button = btn;
+                row.LogIndex = i;
+                SetRow(_rowCount, row);
+                _rowCount++;
 
                 y += rowH;
+            }
+        }
+
+        private void ClearRows()
+        {
+            for (int i = 0; i < _rowCount; i++)
+                SetRow(i, default);
+
+            _rowCount = 0;
+        }
+
+        private LogRow GetRow(int index)
+        {
+            switch (index)
+            {
+                case 0: return _row0;
+                case 1: return _row1;
+                case 2: return _row2;
+                case 3: return _row3;
+                case 4: return _row4;
+                case 5: return _row5;
+                case 6: return _row6;
+                case 7: return _row7;
+                case 8: return _row8;
+                case 9: return _row9;
+                case 10: return _row10;
+                case 11: return _row11;
+                case 12: return _row12;
+                case 13: return _row13;
+                case 14: return _row14;
+                case 15: return _row15;
+                case 16: return _row16;
+                case 17: return _row17;
+                case 18: return _row18;
+                case 19: return _row19;
+                case 20: return _row20;
+                case 21: return _row21;
+                case 22: return _row22;
+                case 23: return _row23;
+                case 24: return _row24;
+                case 25: return _row25;
+                case 26: return _row26;
+                case 27: return _row27;
+                case 28: return _row28;
+                case 29: return _row29;
+                case 30: return _row30;
+                case 31: return _row31;
+                default: return default;
+            }
+        }
+
+        private void SetRow(int index, LogRow row)
+        {
+            switch (index)
+            {
+                case 0: _row0 = row; break;
+                case 1: _row1 = row; break;
+                case 2: _row2 = row; break;
+                case 3: _row3 = row; break;
+                case 4: _row4 = row; break;
+                case 5: _row5 = row; break;
+                case 6: _row6 = row; break;
+                case 7: _row7 = row; break;
+                case 8: _row8 = row; break;
+                case 9: _row9 = row; break;
+                case 10: _row10 = row; break;
+                case 11: _row11 = row; break;
+                case 12: _row12 = row; break;
+                case 13: _row13 = row; break;
+                case 14: _row14 = row; break;
+                case 15: _row15 = row; break;
+                case 16: _row16 = row; break;
+                case 17: _row17 = row; break;
+                case 18: _row18 = row; break;
+                case 19: _row19 = row; break;
+                case 20: _row20 = row; break;
+                case 21: _row21 = row; break;
+                case 22: _row22 = row; break;
+                case 23: _row23 = row; break;
+                case 24: _row24 = row; break;
+                case 25: _row25 = row; break;
+                case 26: _row26 = row; break;
+                case 27: _row27 = row; break;
+                case 28: _row28 = row; break;
+                case 29: _row29 = row; break;
+                case 30: _row30 = row; break;
+                case 31: _row31 = row; break;
             }
         }
 
@@ -944,7 +1052,7 @@ namespace Hecton8.UI
 
         private void RefreshList()
         {
-            LoreDatabaseManager database = s_cachedLoreDatabase;
+            ILoreDatabaseReadModel database = s_cachedLoreDatabase;
             int discovered = database != null ? database.UnlockedCount : 0;
             int logCount = CatalogCount;
 
@@ -970,9 +1078,9 @@ namespace Hecton8.UI
                 return;
             }
 
-            for (int i = 0; i < _rows.Count; i++)
+            for (int i = 0; i < _rowCount; i++)
             {
-                LogRow row = _rows[i];
+                LogRow row = GetRow(i);
                 AudioLogData log = GetLog(row.LogIndex);
                 bool isDiscovered = log != null && IsCatalogLogUnlocked(row.LogIndex);
 
@@ -995,7 +1103,7 @@ namespace Hecton8.UI
                                 row.TitleLabel,
                                 log,
                                 "row.title",
-                                new ReadOnlySpan<char>(_dynamicTextBuffer, 0, rowTitleLength),
+                                _dynamicTextBuffer.AsSpan(0, rowTitleLength),
                                 ref _summaryTextBuffer);
                         }
                         else
@@ -1041,11 +1149,11 @@ namespace Hecton8.UI
                     int titleLength = ResolveLogStressReactiveTextToBuffer(
                         log,
                         "detail.title",
-                        new ReadOnlySpan<char>(_dynamicTextBuffer, 0, rawTitleLength),
+                        _dynamicTextBuffer.AsSpan(0, rawTitleLength),
                         ref _summaryTextBuffer);
                     SetUppercaseLabelText(
                         _titleLabel,
-                        new ReadOnlySpan<char>(_summaryTextBuffer, 0, titleLength),
+                        _summaryTextBuffer.AsSpan(0, titleLength),
                         ref _detailTitleBuffer);
                 }
                 else
@@ -1068,7 +1176,7 @@ namespace Hecton8.UI
                         _authorLabel,
                         log,
                         "detail.author",
-                        new ReadOnlySpan<char>(_dynamicTextBuffer, 0, authorLength),
+                        _dynamicTextBuffer.AsSpan(0, authorLength),
                         ref _summaryTextBuffer);
                 }
                 else
@@ -1089,7 +1197,7 @@ namespace Hecton8.UI
                         _dateLabel,
                         log,
                         "detail.date",
-                        new ReadOnlySpan<char>(_dynamicTextBuffer, 0, dateLength),
+                        _dynamicTextBuffer.AsSpan(0, dateLength),
                         ref _summaryTextBuffer);
                 }
                 else
@@ -1109,7 +1217,7 @@ namespace Hecton8.UI
                     ApplySummaryNarrativePresentation(
                         log,
                         true,
-                        new ReadOnlySpan<char>(_summaryTextBuffer, 0, summaryLength));
+                        _summaryTextBuffer.AsSpan(0, summaryLength));
                 }
                 else
                 {
@@ -1140,9 +1248,9 @@ namespace Hecton8.UI
                 ? system.CurrentLog.logId
                 : null;
 
-            for (int i = 0; i < _rows.Count; i++)
+            for (int i = 0; i < _rowCount; i++)
             {
-                LogRow row = _rows[i];
+                LogRow row = GetRow(i);
                 AudioLogData log = GetLog(row.LogIndex);
                 bool isSelected = row.LogIndex == _selectedIndex;
                 bool isPlaying = log != null && log.logId == playingId;
@@ -1264,7 +1372,7 @@ namespace Hecton8.UI
             if (_catalogLoreSurfaceHashes.Length != surfaceKeyCount)
                 _catalogLoreSurfaceHashes = new int[surfaceKeyCount]; // COLD ALLOC: int[allLogs.Length * lore surfaces] - PDA corruption surface token hashes - owner: PDADataLogTab
 
-            LoreDatabaseManager database = s_cachedLoreDatabase;
+            ILoreDatabaseReadModel database = s_cachedLoreDatabase;
             for (int i = 0; i < logCount; i++)
             {
                 AudioLogData log = GetLog(i);
@@ -1276,7 +1384,7 @@ namespace Hecton8.UI
                     continue;
                 }
 
-                uint loreHash = LoreDatabaseManager.ComputeLoreHash(log.SafeLogId);
+                uint loreHash = LocHash.ComputeAscii(log.SafeLogId);
                 _catalogLoreHashes[i] = loreHash;
                 _catalogLoreRecordIndices[i] = database != null && database.TryGetRecordIndex(loreHash, out int recordIndex)
                     ? recordIndex
@@ -1335,7 +1443,7 @@ namespace Hecton8.UI
                 return false;
 
             EnsureLoreBindingCache();
-            LoreDatabaseManager database = s_cachedLoreDatabase;
+            ILoreDatabaseReadModel database = s_cachedLoreDatabase;
             if (database == null || !database.TryGetPackedUnlockWords(out Unity.Collections.NativeArray<uint>.ReadOnly words))
                 return false;
 
@@ -1586,7 +1694,7 @@ namespace Hecton8.UI
                         _subtitleLabel,
                         subtitleLog,
                         "subtitle",
-                        new ReadOnlySpan<char>(_prevSubtitleBuffer, 0, _prevSubtitleLength),
+                        _prevSubtitleBuffer.AsSpan(0, _prevSubtitleLength),
                         ref _summaryTextBuffer);
                 }
                 else
@@ -1778,7 +1886,7 @@ namespace Hecton8.UI
             _hiddenRecordFlashActive = false;
             _hiddenRecordFlashConsumed = true;
             BuildHexCipherText(
-                new ReadOnlySpan<char>(_resolvedSummaryBaseBuffer, 0, _resolvedSummaryBaseLength),
+                _resolvedSummaryBaseBuffer.AsSpan(0, _resolvedSummaryBaseLength),
                 ref _resolvedSummaryHexBuffer,
                 out _resolvedSummaryHexLength);
 
@@ -1840,7 +1948,7 @@ namespace Hecton8.UI
             if (manager == null || _summaryLabel == null || log == null)
                 return;
 
-            int cycle = Mathf.Max(1, Mathf.FloorToInt(Time.unscaledTime));
+            int cycle = Mathf.Max(1, Mathf.FloorToInt((float)SystemDispatcher.CurrentUnscaledTimeSeconds));
             EnsureCharCapacity(ref _summaryTextBuffer, 256);
             if (!manager.TryResolveMadnessWhisperPreview(
                     ResolveCachedLoreSurfaceHash(log, SummaryHiddenSurfaceId),
@@ -2012,7 +2120,7 @@ namespace Hecton8.UI
             if (_playbackTimerLabel == null)
                 return;
 
-            LocNumericBuffer.Write(new System.ReadOnlySpan<char>(PlaybackTimerTemplateChars), LocNumericArg.Int(minutes), LocNumericArg.Int(seconds), out char[] buffer, out int length);
+            LocNumericBuffer.Write(PlaybackTimerTemplate.AsSpan(), LocNumericArg.Int(minutes), LocNumericArg.Int(seconds), out char[] buffer, out int length);
             int safeLength = Mathf.Clamp(length, 0, buffer != null ? buffer.Length : 0);
             _playbackTimerLabel.SetCharArray(buffer, 0, safeLength);
         }

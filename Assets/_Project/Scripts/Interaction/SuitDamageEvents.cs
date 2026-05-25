@@ -93,7 +93,7 @@ namespace Hecton8.Interaction
             if (_listenerCount >= ListenerCapacity)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SuitDamageEvents] Listener capacity exceeded; registration rejected.");
+                Hecton8.Core.H8Debug.LogWarning("[SuitDamageEvents] Listener capacity exceeded; registration rejected.");
 #endif
                 return;
             }

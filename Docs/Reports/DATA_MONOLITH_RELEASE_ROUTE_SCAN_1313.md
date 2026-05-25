@@ -1,0 +1,289 @@
+﻿# DATA MONOLITH RELEASE ROUTE SCAN - 1313
+
+Evidence: rg token candidate scan. No dotnet. No Unity. Not Roslyn. Not full preprocessor proof.
+
+Files scanned: 1731
+Production candidate findings: 281
+
+- `Assets/_Project/Scripts/Core/SystemDispatcher.cs:2710` `csvOrManagedParserRoute` TryReloadMasterExecutionPriorityCsv();
+- `Assets/_Project/Scripts/Core/SystemDispatcher.cs:3491` `csvOrManagedParserRoute` private void TryReloadMasterExecutionPriorityCsv()
+- `Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime_HatchLocks.cs:139` `csvOrManagedParserRoute` public static bool TryLoadHatchProfilesFromCsvBytes(ReadOnlySpan<byte> csv)
+- `Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime_HatchLocks.cs:163` `csvOrManagedParserRoute` public static bool TryLoadHatchProfilesFromCsvFile(string path)
+- `Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault_AnxietyDecay.cs:424` `csvOrManagedParserRoute` tuning.CsvReloadVersion++;
+- `Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault.cs:374` `csvOrManagedParserRoute` public static bool TryLoadCsvProfiles(IDataVault vault, ref UtilityAICognitionVaultHandles handles, string projectRoot)
+- `Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault.cs:402` `csvOrManagedParserRoute` tuning.CsvReloadVersion++;
+- `Assets/_Project/Scripts/AI/Cognition/UtilityAICognitionVault.cs:438` `csvOrManagedParserRoute` tuning.CsvReloadVersion++;
+- `Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs:568` `csvOrManagedParserRoute` public static bool TryLoadCsvOverrides(IDataVault vault, ref ApexBrainVaultHandles handles, string projectRoot)
+- `Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs:593` `csvOrManagedParserRoute` tuning.CsvReloadVersion++;
+- `Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainVault.cs:621` `csvOrManagedParserRoute` return TryLoadCsvOverrides(vault, ref handles, projectRoot);
+- `Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs:146` `csvOrManagedParserRoute` public static bool TryLoadPipeProfilesFromCsvBytes(byte[] csvBytes, out int profileCount)
+- `Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs:153` `csvOrManagedParserRoute` runtime.TryLoadPipeProfilesFromCsv(csvBytes, out profileCount);
+- `Assets/_Project/Scripts/Construction/SumpPumpPipeGridRuntime.cs:352` `csvOrManagedParserRoute` public bool TryLoadPipeProfilesFromCsv(ReadOnlySpan<byte> csvBytes, out int profileCount)
+- `Assets/_Project/Scripts/AI/Cognition/ShinobuApexBrainContracts.cs:132` `csvOrManagedParserRoute` tuning.CsvReloadVersion = 0u;
+- `Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs:373` `managedTextStreamReader` using (StreamReader reader = new StreamReader(stream))
+- `Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs:381` `managedJsonDeserialize` coefficient = JsonUtility.FromJson<EcosystemCoefficientJson>(json);
+- `Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime.cs:160` `csvOrManagedParserRoute` public static bool TryLoadProfilesFromCsvBytes(ReadOnlySpan<byte> csv)
+- `Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime.cs:175` `csvOrManagedParserRoute` public static bool TryLoadProfilesFromCsvFile(string path)
+- `Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorData.cs:511` `csvOrManagedParserRoute` public static bool TryLoadProfilesFromCsvBytes(
+- `Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorData.cs:527` `csvOrManagedParserRoute` return TryLoadProfilesFromCsvBytesUnlocked(
+- `Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorData.cs:540` `csvOrManagedParserRoute` private static bool TryLoadProfilesFromCsvBytesUnlocked(
+- `Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorData.cs:637` `csvOrManagedParserRoute` public static unsafe bool TryLoadProfilesFromCsvFile(string path)
+- `Assets/_Project/Scripts/Construction/FoundationSnappingCalculatorData.cs:688` `csvOrManagedParserRoute` return TryLoadProfilesFromCsvBytesUnlocked(
+- `Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:499` `csvOrManagedParserRoute` int csvCount = TryLoadHapticProfilesFromCsv(profiles);
+- `Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:512` `csvOrManagedParserRoute` private int TryLoadHapticProfilesFromCsv(NativeArray<HapticProfileDTO> profiles)
+- `Assets/_Project/Scripts/Core/Data/H8DataBaker.cs:1163` `managedTextStreamReader` using (StreamReader reader = new StreamReader(stream, StrictUtf8, true))
+- `Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs:325` `csvOrManagedParserRoute` public static bool TryLoadValidationRulesCsv()
+- `Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs:331` `csvOrManagedParserRoute` return runtime.LoadValidationRulesCsvInternal();
+- `Assets/_Project/Scripts/Core/MemorySentinelRuntime.cs:1584` `csvOrManagedParserRoute` private bool LoadValidationRulesCsvInternal()
+- `Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs:561` `csvOrManagedParserRoute` public bool TryReloadCsvOverrides()
+- `Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs:646` `csvOrManagedParserRoute` TryReloadCsvOverrides();
+- `Assets/_Project/Scripts/Core/Origin/AupOriginShiftCoordinator.cs:809` `csvOrManagedParserRoute` public static bool TryReloadCsvOverrideFromDisk(IDataVault vault)
+- `Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:289` `csvOrManagedParserRoute` _loadedCsv = TryLoadWeatherProfilesCsv();
+- `Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:963` `csvOrManagedParserRoute` private bool TryLoadWeatherProfilesCsv()
+- `Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:984` `csvOrManagedParserRoute` return TryLoadBeaufortProfilesCsv(root, scratch);
+- `Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:991` `csvOrManagedParserRoute` changed |= TryLoadBeaufortProfilesCsv(root, scratch);
+- `Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs:1011` `csvOrManagedParserRoute` private bool TryLoadBeaufortProfilesCsv(string root, NativeArray<byte> scratch)
+- `Assets/_Project/Scripts/Core/RebindingManager.cs:374` `managedTextFileRead` string json = File.ReadAllText(path);
+- `Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:1917` `csvOrManagedParserRoute` LoadFaultProfilesCsvOrDefaults();
+- `Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:2335` `csvOrManagedParserRoute` private unsafe void LoadFaultProfilesCsvOrDefaults()
+- `Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:2347` `csvOrManagedParserRoute` if (TryLoadFaultProfilesCsvAt(Path.Combine(Application.dataPath, "..", "tectonic_fault_profiles.csv"), scratch, profiles, tuningBuffer))
+- `Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:2349` `csvOrManagedParserRoute` if (TryLoadFaultProfilesCsvAt(Path.Combine(Application.dataPath, "_Project", "Data", "Environment", "tectonic_fault_profiles.csv"), scratch, profiles, tuningBuffer))
+- `Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs:2359` `csvOrManagedParserRoute` private static unsafe bool TryLoadFaultProfilesCsvAt(
+- `Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorRuntime.cs:237` `csvOrManagedParserRoute` TryLoadMaterialStrengthCsv();
+- `Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorRuntime.cs:494` `csvOrManagedParserRoute` TryLoadMaterialStrengthCsv();
+- `Assets/_Project/Scripts/Habitat/Deformation/Runtime/StructuralIntegrityCalculatorRuntime.cs:1289` `csvOrManagedParserRoute` private bool TryLoadMaterialStrengthCsv()
+- `Assets/_Project/Scripts/Input/UserOptionsPersistence.cs:514` `managedTextStreamReader` using (StreamReader reader = new StreamReader(stream, OptionsEncoding, detectEncodingFromByteOrderMarks: true))
+- `Assets/_Project/Scripts/Input/UserOptionsPersistence.cs:569` `managedJsonDeserialize` OptionsFile file = JsonUtility.FromJson<OptionsFile>(json);
+- `Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs:336` `csvOrManagedParserRoute` public static bool TryReloadEditorCsv()
+- `Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs:346` `csvOrManagedParserRoute` bool ready = active.HasCurrentCsvReloadState(vault) || active.TryInitializeVaultState(vault);
+- `Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs:351` `csvOrManagedParserRoute` bool loadedAging = active.ReloadCsvFromDisk(vault, active._csvPath, ref active._csvLastWriteTicks, true);
+- `Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs:354` `csvOrManagedParserRoute` loadedDegradation = active.ReloadCsvFromDisk(vault, active._degradationCsvPath, ref active._degradationCsvLastWriteTicks, true);
+- `Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs:965` `csvOrManagedParserRoute` private bool HasCurrentCsvReloadState(IDataVault vault)
+- `Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs:1662` `csvOrManagedParserRoute` private bool ReloadCsvFromDisk(IDataVault vault, string csvPath, ref long lastWriteTicks, bool force)
+- `Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs:177` `csvOrManagedParserRoute` bool loaded = runtime.TryLoadCarrionProfilesCsvCold();
+- `Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs:222` `csvOrManagedParserRoute` _carrionProfilesLoadedCold = TryLoadCarrionProfilesCsvCold();
+- `Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs:247` `csvOrManagedParserRoute` _carrionProfilesLoadedCold = TryLoadCarrionProfilesCsvCold();
+- `Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs:276` `csvOrManagedParserRoute` _carrionProfilesLoadedCold = TryLoadCarrionProfilesCsvCold();
+- `Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs:673` `csvOrManagedParserRoute` private bool TryLoadCarrionProfilesCsvCold()
+- `Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs:183` `csvOrManagedParserRoute` return runtime.TryLoadProfilesCsvCold();
+- `Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs:503` `csvOrManagedParserRoute` TryLoadProfilesCsvCold();
+- `Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs:531` `csvOrManagedParserRoute` TryLoadProfilesCsvCold();
+- `Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs:568` `csvOrManagedParserRoute` TryLoadProfilesCsvCold();
+- `Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs:1005` `csvOrManagedParserRoute` private bool TryLoadProfilesCsvCold()
+- `Assets/_Project/Scripts/Graphics/Culling/AbyssalShadowCullingRuntime.cs:329` `csvOrManagedParserRoute` public bool LoadProfileCsv()
+- `Assets/_Project/Scripts/Graphics/Culling/AbyssalShadowCullingRuntime.cs:474` `csvOrManagedParserRoute` public static bool LoadActiveProfileCsv()
+- `Assets/_Project/Scripts/Graphics/Culling/AbyssalShadowCullingRuntime.cs:476` `csvOrManagedParserRoute` return s_active != null && s_active.LoadProfileCsv();
+- `Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs:503` `csvOrManagedParserRoute` return director.TryLoadRulesCsvCold(vault, forceReload: true, locksHeld: true);
+- `Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs:645` `csvOrManagedParserRoute` TryLoadRulesCsvCold(vault, forceReload: false, locksHeld: false);
+- `Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs:1800` `csvOrManagedParserRoute` private bool TryLoadRulesCsvCold(IDataVault vault, bool forceReload, bool locksHeld)
+- `Assets/_Project/Scripts/Fauna/StressDrivenSpawnDirector.cs:1825` `csvOrManagedParserRoute` return TryLoadRulesCsvCold(vault, forceReload, locksHeld: true);
+- `Assets/_Project/Scripts/Ecosystem/MacroEcosystemMathematicianRuntime.cs:164` `csvOrManagedParserRoute` TryLoadBiomeSpecsCsv();
+- `Assets/_Project/Scripts/Ecosystem/MacroEcosystemMathematicianRuntime.cs:788` `csvOrManagedParserRoute` private unsafe void TryLoadBiomeSpecsCsv()
+- `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain_Steering.cs:328` `csvOrManagedParserRoute` TryLoadLeviathanSteeringProfilesCsvCold();
+- `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain_Steering.cs:733` `csvOrManagedParserRoute` private static unsafe bool TryLoadLeviathanSteeringProfilesCsvCold()
+- `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain_Steering.cs:1813` `managedTextFileRead` string existing = File.Exists(path) ? File.ReadAllText(path) : "{\n}\n";
+- `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain_Steering.cs:1923` `managedTextFileRead` string text = File.ReadAllText(files[i]);
+- `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:2315` `csvOrManagedParserRoute` TryLoadMesofaunaSpeciesProfilesCsvCold();
+- `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:2872` `csvOrManagedParserRoute` return TryLoadMesofaunaSpeciesProfilesCsvCold();
+- `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:2964` `csvOrManagedParserRoute` return TryLoadBehaviorOverridesCsvCold();
+- `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:3146` `csvOrManagedParserRoute` private static bool TryLoadBehaviorOverridesCsvCold()
+- `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:3156` `managedTextFileRead` string csv = File.ReadAllText(path);
+- `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.cs:3340` `csvOrManagedParserRoute` private static unsafe bool TryLoadMesofaunaSpeciesProfilesCsvCold()
+- `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.AcousticSdf.cs:438` `csvOrManagedParserRoute` TryLoadAcousticHearingProfilesCsvCold();
+- `Assets/_Project/Scripts/Fauna/PredatorCognitionDomain.AcousticSdf.cs:1422` `csvOrManagedParserRoute` private static unsafe bool TryLoadAcousticHearingProfilesCsvCold()
+- `Assets/_Project/Scripts/Habitat/Deformation/Runtime/BaseStructuralWarningDispatcherTypes.cs:976` `csvOrManagedParserRoute` public bool TryLoadBaseAlarmProfilesCsv(string relativePath = null)
+- `Assets/_Project/Scripts/Dev/CelestialCataclysmSmokeTester.cs:534` `managedTextFileRead` return File.Exists(fullPath) ? File.ReadAllText(fullPath) : string.Empty;
+- `Assets/_Project/Scripts/HectonFloatingOrigin.cs:248` `csvOrManagedParserRoute` return AupOriginShiftCoordinator.TryReloadCsvOverrideFromDisk(vault);
+- `Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs:415` `csvOrManagedParserRoute` TryReloadCsvOverrides();
+- `Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs:587` `csvOrManagedParserRoute` public void RequestCsvReload()
+- `Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs:591` `csvOrManagedParserRoute` TryReloadCsvOverrides();
+- `Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs:595` `csvOrManagedParserRoute` public void RequestAmbientProfileCsvReload()
+- `Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs:598` `csvOrManagedParserRoute` TryReloadAmbientProfileCsv();
+- `Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs:1615` `csvOrManagedParserRoute` private void TryReloadCsvOverrides()
+- `Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs:1645` `csvOrManagedParserRoute` TryReloadAmbientProfileCsv();
+- `Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs:1653` `csvOrManagedParserRoute` private void TryReloadAmbientProfileCsv()
+- `Assets/_Project/Scripts/Physiology/ShinobuSuitIntegrityRuntime.cs:451` `csvOrManagedParserRoute` LoadCsvProfilesFromDisk(vault);
+- `Assets/_Project/Scripts/Physiology/ShinobuSuitIntegrityRuntime.cs:805` `csvOrManagedParserRoute` private void LoadCsvProfilesFromDisk(IDataVault vault)
+- `Assets/_Project/Scripts/Lighting/HectonLightingRuntime_DayNightRelay.cs:738` `managedWholeFileByteRead` byte[] bytes = File.ReadAllBytes(fullPath);
+- `Assets/_Project/Scripts/Physiology/ShinobuSensoryImpairmentRuntime.cs:125` `csvOrManagedParserRoute` TryLoadCsvProfilesCold(vault);
+- `Assets/_Project/Scripts/Physiology/ShinobuSensoryImpairmentRuntime.cs:413` `csvOrManagedParserRoute` TryLoadCsvProfilesCold(vault);
+- `Assets/_Project/Scripts/Physiology/ShinobuSensoryImpairmentRuntime.cs:679` `csvOrManagedParserRoute` private bool TryLoadCsvProfilesCold(IDataVault vault)
+- `Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs:232` `csvOrManagedParserRoute` TryLoadProfilesFromCsv();
+- `Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs:284` `csvOrManagedParserRoute` public void RequestCsvReload()
+- `Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs:292` `csvOrManagedParserRoute` public bool ReloadCsvNow()
+- `Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs:295` `csvOrManagedParserRoute` return TryLoadProfilesFromCsv();
+- `Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs:1512` `csvOrManagedParserRoute` private bool TryLoadProfilesFromCsv()
+- `Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs:876` `csvOrManagedParserRoute` _medicalBayCsvInitialized = TryLoadMedicalBayCsv();
+- `Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs:881` `csvOrManagedParserRoute` _penaltyCsvInitialized = TryLoadPenaltyCsv();
+- `Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs:1038` `csvOrManagedParserRoute` private bool TryLoadMedicalBayCsv()
+- `Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs:1215` `csvOrManagedParserRoute` private bool TryLoadPenaltyCsv()
+- `Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs:1437` `csvOrManagedParserRoute` public static bool TryReloadPenaltyCsvFromEditor()
+- `Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs:1445` `csvOrManagedParserRoute` bool loaded = runtime.TryLoadPenaltyCsv();
+- `Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs:1450` `csvOrManagedParserRoute` public static bool TryReloadMedicalBayCsvFromEditor()
+- `Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs:1458` `csvOrManagedParserRoute` bool loaded = runtime.TryLoadMedicalBayCsv();
+- `Assets/_Project/Scripts/Physiology/ShinobuRadiationMutationRuntime.cs:135` `csvOrManagedParserRoute` TryLoadCsvProfilesCold(vault);
+- `Assets/_Project/Scripts/Physiology/ShinobuRadiationMutationRuntime.cs:353` `csvOrManagedParserRoute` TryLoadCsvProfilesCold(vault);
+- `Assets/_Project/Scripts/Physiology/ShinobuRadiationMutationRuntime.cs:660` `csvOrManagedParserRoute` private bool TryLoadCsvProfilesCold(IDataVault vault)
+- `Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs:1056` `csvOrManagedParserRoute` LoadCsvOverridesFromDisk(vault);
+- `Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs:1854` `csvOrManagedParserRoute` private void LoadCsvOverridesFromDisk(IDataVault vault)
+- `Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs:1856` `csvOrManagedParserRoute` LoadGasCsvOverridesFromDisk(vault);
+- `Assets/_Project/Scripts/Physiology/ShinobuPhysiologyRuntime.cs:1891` `csvOrManagedParserRoute` private void LoadGasCsvOverridesFromDisk(IDataVault vault)
+- `Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs:162` `csvOrManagedParserRoute` TryLoadBiologicalProfilesCsv();
+- `Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs:164` `csvOrManagedParserRoute` TryLoadSuitThermalProfilesCsv();
+- `Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs:513` `csvOrManagedParserRoute` public bool TryLoadBiologicalProfilesCsv()
+- `Assets/_Project/Scripts/Physiology/ShinobuMetabolismRuntime.cs:581` `csvOrManagedParserRoute` public bool TryLoadSuitThermalProfilesCsv()
+- `Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs:1023` `csvOrManagedParserRoute` public bool TryLoadCsvFromFile(string path)
+- `Assets/_Project/Scripts/QA/Headless/HeadlessStressFractureBot.cs:1689` `managedTextFileRead` text = File.ReadAllText(file);
+- `Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs:393` `csvOrManagedParserRoute` TryReloadCsvOverrides();
+- `Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs:1666` `csvOrManagedParserRoute` private void TryReloadCsvOverrides()
+- `Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs:833` `csvOrManagedParserRoute` TryLoadRadiationProfilesCsv();
+- `Assets/_Project/Scripts/Gameplay/RadiationHazardGrid.cs:862` `csvOrManagedParserRoute` private void TryLoadRadiationProfilesCsv()
+- `Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs:500` `csvOrManagedParserRoute` public static bool TryLoadCsvOverrides(IDataVault vault, ref VoxelSurfaceNetsVaultHandles handles, string projectRoot)
+- `Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs:549` `csvOrManagedParserRoute` return TryLoadCsvOverrides(vault, ref handles, projectRoot);
+- `Assets/_Project/Scripts/Rendering/WaterOptics/WaterOpticsRuntime.cs:547` `csvOrManagedParserRoute` public bool TryReloadEditorProfilesCsv()
+- `Assets/_Project/Scripts/Rendering/WaterOptics/WaterOpticsRuntime.cs:557` `csvOrManagedParserRoute` bool loaded = TryLoadProfilesCsv(vault);
+- `Assets/_Project/Scripts/Rendering/WaterOptics/WaterOpticsRuntime.cs:625` `csvOrManagedParserRoute` TryLoadProfilesCsv(vault);
+- `Assets/_Project/Scripts/Rendering/WaterOptics/WaterOpticsRuntime.cs:845` `csvOrManagedParserRoute` private bool TryLoadProfilesCsv(IDataVault vault)
+- `Assets/_Project/Scripts/Rendering/OceanSinglePass/ShorelineFoamGraftContracts.cs:737` `csvOrManagedParserRoute` LoadProfilesCsvIfNeeded(vault, projectRootPath, profiles);
+- `Assets/_Project/Scripts/Rendering/OceanSinglePass/ShorelineFoamGraftContracts.cs:751` `csvOrManagedParserRoute` private static void LoadProfilesCsvIfNeeded(IDataVault vault, string projectRootPath, NativeArray<ShorelineFoamProfileDTO> profiles)
+- `Assets/_Project/Scripts/Rendering/OceanSinglePass/OceanSinglePassRuntime.cs:455` `csvOrManagedParserRoute` LoadAestheticProfilesCsvIfNeeded();
+- `Assets/_Project/Scripts/Rendering/OceanSinglePass/OceanSinglePassRuntime.cs:522` `csvOrManagedParserRoute` private void LoadAestheticProfilesCsvIfNeeded()
+- `Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs:322` `csvOrManagedParserRoute` TryLoadCsvLayout();
+- `Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs:790` `csvOrManagedParserRoute` private bool TryLoadCsvLayout()
+- `Assets/_Project/Scripts/Rendering/GlobalShaderDispatcher.cs:248` `csvOrManagedParserRoute` TryLoadCsvOverridesCold();
+- `Assets/_Project/Scripts/Rendering/GlobalShaderDispatcher.cs:1239` `csvOrManagedParserRoute` private void TryLoadCsvOverridesCold()
+- `Assets/_Project/Scripts/Rendering/BilateralDrs/HectonBilateralDrsUpscalerRuntime.cs:365` `csvOrManagedParserRoute` public static bool TryLoadQualityProfilesCsv(string projectRelativePath)
+- `Assets/_Project/Scripts/Rendering/BilateralDrs/HectonBilateralDrsUpscalerRuntime.cs:368` `csvOrManagedParserRoute` return runtime != null && runtime.LoadQualityProfilesCsv(projectRelativePath);
+- `Assets/_Project/Scripts/Rendering/BilateralDrs/HectonBilateralDrsUpscalerRuntime.cs:723` `csvOrManagedParserRoute` private bool LoadQualityProfilesCsv(string projectRelativePath)
+- `Assets/_Project/Scripts/Rendering/AbyssalCaustics/AbyssalDeferredCausticsRuntime.cs:304` `csvOrManagedParserRoute` public static bool TryLoadLightingProfilesCsv(string projectRelativePath)
+- `Assets/_Project/Scripts/Rendering/AbyssalCaustics/AbyssalDeferredCausticsRuntime.cs:307` `csvOrManagedParserRoute` return runtime != null && runtime.LoadLightingProfilesCsv(projectRelativePath);
+- `Assets/_Project/Scripts/Rendering/AbyssalCaustics/AbyssalDeferredCausticsRuntime.cs:310` `csvOrManagedParserRoute` public bool LoadLightingProfilesCsv(string projectRelativePath)
+- `Assets/_Project/Scripts/Narrative/LoreDatabaseManager.cs:985` `managedTextFileRead` string[] lines = File.ReadAllLines(fullSourcePath);
+- `Assets/_Project/Scripts/Narrative/LoreDatabaseManager.cs:1031` `managedTextStreamReader` using (StreamReader reader = new StreamReader(filePath))
+- `Assets/_Project/Scripts/Gameplay/Combat/StatusEffectsEditorFacade.cs:131` `csvOrManagedParserRoute` root.Add(new Button(LoadCsv) { text = "Load status_effect_profiles.csv" });
+- `Assets/_Project/Scripts/Gameplay/Combat/StatusEffectsEditorFacade.cs:195` `csvOrManagedParserRoute` private void LoadCsv()
+- `Assets/_Project/Scripts/Gameplay/Combat/StatusEffectsEditorFacade.cs:198` `csvOrManagedParserRoute` CombatDamageRuntime.TryLoadStatusEffectProfilesCsv(path);
+- `Assets/_Project/Scripts/Gameplay/Combat/StatusEffectsEditorFacade.cs:398` `managedTextFileRead` string report = File.Exists(absoluteReport) ? File.ReadAllText(absoluteReport) : "{\n}\n";
+- `Assets/_Project/Scripts/Gameplay/Combat/StatusEffectsEditorFacade.cs:470` `managedTextFileRead` string text = File.ReadAllText(files[fileIndex]);
+- `Assets/_Project/Scripts/Quest/QuestDagDataLoading.cs:449` `managedTextStreamReader` using StreamReader reader = new StreamReader(path);
+- `Assets/_Project/Scripts/Quest/NarrativeDagInspectorWindow.cs:177` `managedTextFileRead` string[] lines = File.ReadAllLines(NodeNamesPath);
+- `Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs:1841` `csvOrManagedParserRoute` public static bool TryLoadArmorProfilesCsv(string path)
+- `Assets/_Project/Scripts/Gameplay/Combat/HectonCombatRuntime_ArmorPenetration.cs:1847` `managedWholeFileByteRead` byte[] bytes = File.ReadAllBytes(path);
+- `Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs:395` `csvOrManagedParserRoute` internal static bool TryLoadStatusEffectProfilesCsv(string path)
+- `Assets/_Project/Scripts/Gameplay/Combat/CombatDamageRuntime_StatusEffects.cs:400` `managedWholeFileByteRead` byte[] bytes = File.ReadAllBytes(path);
+- `Assets/_Project/Scripts/Power/PowerGridSolarContracts.cs:1326` `csvOrManagedParserRoute` public static bool TryLoadProfilesFromCsv(ReadOnlySpan<byte> csvBytes, out int profileCount)
+- `Assets/_Project/Scripts/ModdingAPI/ModWorldPersistenceManager.cs:296` `managedJsonDeserialize` payload = JsonUtility.FromJson<ModWorldSavePayload>(json);
+- `Assets/_Project/Scripts/Gameplay/Combat/BallisticsRuntime.cs:896` `csvOrManagedParserRoute` public static bool TryLoadPenetrationCsv(string csvPath)
+- `Assets/_Project/Scripts/Gameplay/Combat/BallisticsEditorFacade.cs:140` `csvOrManagedParserRoute` Button csvButton = new Button(LoadCsv)
+- `Assets/_Project/Scripts/Gameplay/Combat/BallisticsEditorFacade.cs:226` `csvOrManagedParserRoute` private void LoadCsv()
+- `Assets/_Project/Scripts/Gameplay/Combat/BallisticsEditorFacade.cs:229` `csvOrManagedParserRoute` BallisticsRuntime.TryLoadPenetrationCsv(path);
+- `Assets/_Project/Scripts/Gameplay/Combat/ArmorPenetrationEditorFacade.cs:132` `csvOrManagedParserRoute` root.Add(new Button(LoadCsv) { text = "Load fauna_armor_luts.csv" });
+- `Assets/_Project/Scripts/Gameplay/Combat/ArmorPenetrationEditorFacade.cs:198` `csvOrManagedParserRoute` private void LoadCsv()
+- `Assets/_Project/Scripts/Gameplay/Combat/ArmorPenetrationEditorFacade.cs:201` `csvOrManagedParserRoute` CombatDamageRuntime.TryLoadArmorProfilesCsv(path);
+- `Assets/_Project/Scripts/Gameplay/Combat/ArmorPenetrationEditorFacade.cs:691` `managedTextFileRead` string text = File.ReadAllText(filePath);
+- `Assets/_Project/Scripts/Gameplay/Combat/ArmorPenetrationEditorFacade.cs:728` `managedTextFileRead` string text = File.ReadAllText(filePath);
+- `Assets/_Project/Scripts/ModdingAPI/ModLoader.cs:241` `managedTextFileRead` string json = File.ReadAllText(manifestPath);
+- `Assets/_Project/Scripts/ModdingAPI/ModLoader.cs:242` `managedJsonDeserialize` ModManifest manifest = JsonUtility.FromJson<ModManifest>(json);
+- `Assets/_Project/Scripts/SaveThumbnailSystem.cs:401` `managedWholeFileByteRead` byte[] bytes = File.ReadAllBytes(path);
+- `Assets/_Project/Scripts/SaveThumbnailSystem.cs:430` `managedWholeFileByteRead` bytes = File.ReadAllBytes(path);
+- `Assets/_Project/Scripts/Power/BatteryChargerLogistics/BatteryChargerLogisticsRuntime.cs:493` `csvOrManagedParserRoute` public static bool TryLoadProfilesFromCsvBytes(ReadOnlySpan<byte> csv)
+- `Assets/_Project/Scripts/ModdingAPI/ModAssetManager.cs:193` `managedWholeFileByteRead` pngBytes = File.ReadAllBytes(filePath);
+- `Assets/_Project/Scripts/ModdingAPI/ModAssetManager.cs:313` `managedTextStreamReader` using (StreamReader reader = new StreamReader(ledgerPath, LedgerEncoding, detectEncodingFromByteOrderMarks: true))
+- `Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore_SHINOBU357.cs:148` `csvOrManagedParserRoute` internal static bool TryLoadShinobu357ProfilesCsv(
+- `Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore_SHINOBU357.cs:157` `csvOrManagedParserRoute` return TryLoadProfilesCsv(resolvedPath, profiles, out count, out errorCode);
+- `Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore_SHINOBU357.cs:865` `managedTextFileRead` string text = File.ReadAllText(files[i]);
+- `Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore.cs:182` `csvOrManagedParserRoute` if (TryLoadProfilesCsv(profilePath, profiles, out int count, out _) && count > 0)
+- `Assets/_Project/Scripts/SaveSystem/WalIntegrityFuzzerCore.cs:323` `csvOrManagedParserRoute` internal static bool TryLoadProfilesCsv(string path, NativeArray<WalFuzzerProfileDTO> profiles, out int count, out uint errorCode)
+- `Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:645` `csvOrManagedParserRoute` TryLoadVehicleProfileCsvCold();
+- `Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs:1203` `csvOrManagedParserRoute` private unsafe bool TryLoadVehicleProfileCsvCold()
+- `Assets/_Project/Scripts/SavePersistenceOmegaSmokeTester.cs:306` `managedTextFileRead` string text = File.Exists(absolutePath) ? File.ReadAllText(absolutePath) : string.Empty;
+- `Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs:246` `csvOrManagedParserRoute` TryReloadCsvOverrides();
+- `Assets/_Project/Scripts/Thermodynamics/ThermodynamicsHazardGridRuntime.cs:1236` `csvOrManagedParserRoute` private void TryReloadCsvOverrides()
+- `Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs:975` `csvOrManagedParserRoute` public static bool TryReloadAllowedOpcodesCsvFromDisk()
+- `Assets/_Project/Scripts/ModdingAPI/FutureCommandSandboxValidator.cs:1009` `csvOrManagedParserRoute` public static bool TryReloadKernelTuningProfilesCsvFromDisk()
+- `Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:919` `csvOrManagedParserRoute` public static bool TryLoadDefaultOrdnanceCsv()
+- `Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:921` `csvOrManagedParserRoute` return TryLoadDefaultOrdnanceCsv(false);
+- `Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:924` `csvOrManagedParserRoute` public static bool TryLoadDefaultOrdnanceCsv(bool forceReload)
+- `Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:940` `csvOrManagedParserRoute` if (TryLoadOrdnanceCsv(path))
+- `Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:944` `csvOrManagedParserRoute` return TryLoadOrdnanceCsv(legacyPath);
+- `Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:947` `csvOrManagedParserRoute` public static unsafe bool TryLoadOrdnanceCsv(string csvPath)
+- `Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:1310` `csvOrManagedParserRoute` if (autoLoadCsv)
+- `Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:1311` `csvOrManagedParserRoute` AbyssalCavitationRuntime.TryLoadDefaultOrdnanceCsv();
+- `Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:1409` `csvOrManagedParserRoute` if (autoLoadCsv && !AbyssalCavitationRuntime.IsCsvLoaded())
+- `Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs:1410` `csvOrManagedParserRoute` AbyssalCavitationRuntime.TryLoadDefaultOrdnanceCsv();
+- `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs:803` `csvOrManagedParserRoute` public bool TryLoadMaterialVolumesCsv()
+- `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs:829` `csvOrManagedParserRoute` public bool TryLoadMaterialSettlingProfilesCsv()
+- `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs:855` `csvOrManagedParserRoute` public bool TryLoadSimdMathTolerancesCsv()
+- `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs:912` `csvOrManagedParserRoute` TryLoadMaterialVolumesCsv();
+- `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs:914` `csvOrManagedParserRoute` TryLoadMaterialSettlingProfilesCsv();
+- `Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs:916` `csvOrManagedParserRoute` TryLoadSimdMathTolerancesCsv();
+- `Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs:2069` `csvOrManagedParserRoute` public bool TryLoadScannerProfilesCsvForEditor(string projectRoot, out int appliedRows)
+- `Assets/_Project/Scripts/PDA/PlayerExplorationTracker.cs:2076` `csvOrManagedParserRoute` bool loaded = CartographyVault.TryLoadScannerProfilesCsvForEditor(
+- `Assets/_Project/Scripts/Thermodynamics/OOP_Thermal_Scanner.cs:66` `managedTextFileRead` string text = File.ReadAllText(path);
+- `Assets/_Project/Scripts/Thermodynamics/OOP_Thermal_Scanner.cs:99` `managedTextFileRead` string text = File.ReadAllText(files[i]);
+- `Assets/_Project/Scripts/Thermodynamics/OOP_Thermal_Scanner.cs:139` `managedTextFileRead` string existing = File.ReadAllText(sharedPath).Trim();
+- `Assets/_Project/Scripts/Thermodynamics/OOP_Thermal_Scanner.cs:157` `managedStringSplit` string[] lines = json.Split('\n');
+- `Assets/_Project/Scripts/PDA/CartographyGridJobs.cs:791` `csvOrManagedParserRoute` public static bool TryLoadScannerProfilesCsvForEditor(
+- `Assets/_Project/Scripts/Meta/GlobalProfileManager.cs:1059` `managedTextFileRead` string json = File.ReadAllText(path);
+- `Assets/_Project/Scripts/Meta/GlobalProfileManager.cs:1062` `managedJsonDeserialize` : JsonUtility.FromJson<GlobalProfileData>(json);
+- `Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs:1921` `csvOrManagedParserRoute` root.Add(new Button(LoadCsv) { text = "Load loot_distribution_tables.csv" });
+- `Assets/_Project/Scripts/Scavenging/ScavengingLootOracle.cs:1975` `csvOrManagedParserRoute` private unsafe void LoadCsv()
+- `Assets/_Project/Scripts/SpatialAudioManager.cs:4890` `managedWholeFileByteRead` byte[] bytes = File.ReadAllBytes(path); // COLD ALLOC: byte[524288] - one-shot Sabine RT60+damping fallback read - owner: SpatialAudioManager
+- `Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs:559` `csvOrManagedParserRoute` return instance.TryLoadEmitterProfilesFromCsv();
+- `Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs:821` `csvOrManagedParserRoute` TryLoadEmitterProfilesFromCsv();
+- `Assets/_Project/Scripts/World/ChemicalInfluenceGrid.cs:1107` `csvOrManagedParserRoute` private bool TryLoadEmitterProfilesFromCsv()
+- `Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs:1213` `csvOrManagedParserRoute` int parsed = TryLoadDistributionRulesFromCsv(csvPath, views);
+- `Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs:1222` `csvOrManagedParserRoute` private unsafe int TryLoadDistributionRulesFromCsv(string csvPath, ProceduralGeologyVaultViews views)
+- `Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs:1241` `csvOrManagedParserRoute` int byteCount = LoadCsvFileIntoScratch(csvPath, csvScratch);
+- `Assets/_Project/Scripts/World/Resources/ProceduralOreSpawner.cs:1257` `csvOrManagedParserRoute` private static unsafe int LoadCsvFileIntoScratch(string csvPath, NativeArray<byte> scratch)
+- `Assets/_Project/Scripts/VoxelDeformationSmokeTester.cs:652` `managedTextFileRead` return File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), relativePath));
+- `Assets/_Project/Scripts/VisualOmegaSmokeTester.cs:204` `managedTextFileRead` return File.Exists(fullPath) ? File.ReadAllText(fullPath) : string.Empty;
+- `Assets/_Project/Scripts/World/EcosystemDirector.cs:3708` `csvOrManagedParserRoute` TryReloadFaunaGeneticsProfilesFromCsv();
+- `Assets/_Project/Scripts/World/EcosystemDirector.cs:3713` `csvOrManagedParserRoute` private bool TryReloadFaunaGeneticsProfilesFromCsv()
+- `Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageVault.cs:476` `csvOrManagedParserRoute` return TryLoadCsvRules(vault, ref handles, projectRoot);
+- `Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageVault.cs:527` `csvOrManagedParserRoute` public static bool TryLoadCsvRules(IDataVault vault, ref ProceduralWreckageVaultHandles handles, string projectRoot)
+- `Assets/_Project/Scripts/World/ProceduralWreckage/ProceduralWreckageVault.cs:585` `csvOrManagedParserRoute` TryLoadCsvRules(vault, ref handles, projectRoot);
+- `Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs:691` `csvOrManagedParserRoute` TryLoadBiomeProfilesFromEditorCsv(vault);
+- `Assets/_Project/Scripts/World/FloraAmbientSway/FloraAmbientSwayRuntime.cs:843` `csvOrManagedParserRoute` private bool TryLoadBiomeProfilesFromEditorCsv(IDataVault vault)
+- `Assets/_Project/Scripts/World/ProceduralCoral/ProceduralCoralVault.cs:527` `csvOrManagedParserRoute` public static bool TryLoadCsvRules(IDataVault vault, ref ProceduralCoralVaultHandles handles, string projectRoot)
+- `Assets/_Project/Scripts/Visor/DynamicDecalVaultRuntime.cs:971` `csvOrManagedParserRoute` public static unsafe bool TryLoadMaterialProfilesCsv(string csvPath, out int profilesWritten)
+- `Assets/_Project/Scripts/World/GlobalWorldSampler.cs:2476` `csvOrManagedParserRoute` if (!TryLoadCsvMockProfile(silent: true))
+- `Assets/_Project/Scripts/World/GlobalWorldSampler.cs:2531` `csvOrManagedParserRoute` root.Add(new Button(OnLoadCsvButtonClicked) { text = "Load CSV Mock Profile" });
+- `Assets/_Project/Scripts/World/GlobalWorldSampler.cs:2585` `csvOrManagedParserRoute` private void OnLoadCsvButtonClicked()
+- `Assets/_Project/Scripts/World/GlobalWorldSampler.cs:2587` `csvOrManagedParserRoute` TryLoadCsvMockProfile(silent: false);
+- `Assets/_Project/Scripts/World/GlobalWorldSampler.cs:2633` `csvOrManagedParserRoute` TryLoadCsvMockProfile(silent: true);
+- `Assets/_Project/Scripts/World/GlobalWorldSampler.cs:2752` `csvOrManagedParserRoute` private unsafe bool TryLoadCsvMockProfile(bool silent)
+- `Assets/_Project/Scripts/World/FloraInteractionManager.cs:4010` `csvOrManagedParserRoute` public bool TryReloadFloraStiffnessProfilesCsvForEditor(string path)
+- `Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:416` `csvOrManagedParserRoute` public bool TryReloadCsvOverrides()
+- `Assets/_Project/Scripts/Visor/DiegeticVisorLensRuntime.cs:466` `csvOrManagedParserRoute` TryReloadCsvOverrides();
+- `Assets/_Project/Scripts/World/Biomes/BiomeTransitionManagerRuntime.cs:1345` `csvOrManagedParserRoute` public static bool TryReloadCsvFromEditor()
+- `Assets/_Project/Scripts/VFX/CameraJuiceSystem_CameraJuiceBurst.cs:402` `csvOrManagedParserRoute` TryLoadCameraJuiceTraumaProfilesFromCsv(profiles, cameraJuiceCsvScratch, tuning);
+- `Assets/_Project/Scripts/VFX/CameraJuiceSystem_CameraJuiceBurst.cs:732` `csvOrManagedParserRoute` private bool TryLoadCameraJuiceTraumaProfilesFromCsv(
+- `Assets/_Project/Scripts/VFX/Parasites/ParasiteSwarmGpuRuntime.cs:275` `csvOrManagedParserRoute` ParasiteSwarmContracts.LoadProfilesFromCsv(vault, new ReadOnlySpan<byte>(ptr, bytesRead));
+- `Assets/_Project/Scripts/VFX/Parasites/ParasiteSwarmContracts.cs:221` `csvOrManagedParserRoute` public static int LoadProfilesFromCsv(IDataVault vault, ReadOnlySpan<byte> bytes)
+- `Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs:424` `csvOrManagedParserRoute` TryLoadNoirColorCsvCold();
+- `Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs:432` `csvOrManagedParserRoute` TryLoadAestheticCsvCold();
+- `Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.Noir.cs:1066` `csvOrManagedParserRoute` private unsafe bool TryLoadNoirColorCsvCold()
+- `Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:2279` `csvOrManagedParserRoute` RequestCsvReload();
+- `Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:2298` `csvOrManagedParserRoute` RequestCsvReload();
+- `Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:2303` `csvOrManagedParserRoute` RequestCsvReload();
+- `Assets/_Project/Scripts/VFX/Bioluminescence/BiolumPulseSyncRuntime.cs:2306` `csvOrManagedParserRoute` private void RequestCsvReload()
+- `Assets/_Project/Scripts/VFX/Debris/ShinobuVoxelSculptorWindow.cs:435` `managedTextFileRead` string[] lines = File.ReadAllLines(path);
+- `Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs:843` `csvOrManagedParserRoute` TryLoadNoirColorCsvCold();
+- `Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs:855` `csvOrManagedParserRoute` TryLoadAestheticCsvCold();
+- `Assets/_Project/Scripts/Visor/HectonVisorUberPostFeature.cs:1643` `csvOrManagedParserRoute` private unsafe bool TryLoadAestheticCsvCold()
+- `Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs:643` `csvOrManagedParserRoute` LoadCsvProfilesCold();
+- `Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs:788` `csvOrManagedParserRoute` LoadCsvProfilesCold();
+- `Assets/_Project/Scripts/Visor/HectonVisorARStencilRendererFeature.cs:942` `csvOrManagedParserRoute` private void LoadCsvProfilesCold()
+- `Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs:349` `csvOrManagedParserRoute` private bool _pendingCsvReload;
+- `Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs:921` `csvOrManagedParserRoute` _pendingCsvReload = true;
+- `Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs:949` `csvOrManagedParserRoute` _pendingCsvReload = true;
+- `Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs:954` `csvOrManagedParserRoute` public void ReloadCsvForEditor()
+- `Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs:958` `csvOrManagedParserRoute` _pendingCsvReload = true;
+- `Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs:967` `csvOrManagedParserRoute` _pendingCsvReload = true;
+- `Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs:982` `csvOrManagedParserRoute` _pendingCsvReload = false;
+- `Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs:987` `csvOrManagedParserRoute` if (_pendingCsvReload)
+- `Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs:989` `csvOrManagedParserRoute` _pendingCsvReload = false;
+- `Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs:990` `csvOrManagedParserRoute` ReloadCsvForEditor();
+- `Assets/_Project/Scripts/UI/DiegeticGlitchSurgeonRuntime.cs:1006` `csvOrManagedParserRoute` ReloadCsvForEditor();
+

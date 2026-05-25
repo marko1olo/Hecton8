@@ -23,7 +23,7 @@ using UnityEditor;
 namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
-    public sealed class HectonFabricatorUI : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ICraftingEventListener, IGlobalRegistryHotSwapListener, IOriginShiftListener, ILocalizationLanguageChangedListener
+    public sealed class HectonFabricatorUI : MonoBehaviour, ILateFrameTickable, ICraftingEventListener, IGlobalRegistryHotSwapListener, IOriginShiftListener, ILocalizationLanguageChangedListener
     {
         private const string HologramShaderPath = "Assets/_Project/Art/Shaders/Hecton_FabricatorHologram.shader";
         private const int MaxVisibleHologramInstances = 16;
@@ -182,7 +182,6 @@ namespace Hecton8.UI
         private bool _isOpen;
         private bool _isCrafting;
         private float _craftProgress;
-        private bool _tickRegistered;
         private bool _lateFrameTickRegistered;
         private float _pendingFabricatorVisualDeltaTime;
         private bool _hasPendingFabricatorVisualTick;
@@ -195,7 +194,7 @@ namespace Hecton8.UI
         private IPlayerInventoryService _playerInventoryService;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private INativeInputManagerRuntime _nativeInputManager;
-        private ResourceScarcityDirector _resourceScarcityRuntime;
+        private IResourceScarcityReadModel _resourceScarcityRuntime;
         private INativeInputManagerRuntime _subscribedInputManager;
         private uint _lastPlayerInputSignalSequence;
         private const uint PlayerInputSignalSourceHash = 0x504C494Eu;
@@ -358,7 +357,7 @@ namespace Hecton8.UI
             _originShiftListenerRegistered = false;
         }
 
-        public void Tick(float deltaTime)
+        private void RunFabricatorUiFrame(float deltaTime)
         {
             long solveStartTimestamp = Stopwatch.GetTimestamp();
             ConsumePlayerInputSignals();
@@ -388,12 +387,17 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
-            FlushFabricatorVisualTick();
-            TryRetireLateFrameTickAfterClose();
+            RunFabricatorLateFrame();
         }
 
         void ILateFrameTickable.LateFrameTick()
         {
+            RunFabricatorLateFrame();
+        }
+
+        private void RunFabricatorLateFrame()
+        {
+            RunFabricatorUiFrame(SystemDispatcher.CurrentFrameDeltaTime);
             FlushFabricatorVisualTick();
             TryRetireLateFrameTickAfterClose();
         }
@@ -661,10 +665,7 @@ namespace Hecton8.UI
 
         private void RegisterTick()
         {
-            if (_tickRegistered || !Application.isPlaying)
-                return;
-
-            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            RegisterLateFrameTick();
         }
 
         private void RegisterLateFrameTick()
@@ -677,11 +678,6 @@ namespace Hecton8.UI
 
         private void UnregisterTick()
         {
-            if (_tickRegistered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _tickRegistered = false;
-            }
         }
 
         private void UnregisterLateFrameTick()
@@ -809,7 +805,7 @@ namespace Hecton8.UI
                     RebindPlayerRuntimeContext(currentService as IPlayerRuntimeContext);
                     return;
                 case GlobalRegistryServiceSlot.ResourceScarcityRuntime:
-                    _resourceScarcityRuntime = currentService as ResourceScarcityDirector;
+                    _resourceScarcityRuntime = currentService as IResourceScarcityReadModel;
                     _lastRecipeVisualVersion = int.MinValue;
                     InvalidateHologramMatrixCache();
                     return;
@@ -1334,7 +1330,7 @@ namespace Hecton8.UI
         {
             _inputService = GlobalRegistry.Input;
             _nativeInputManager = GlobalRegistry.NativeInputRuntime;
-            _resourceScarcityRuntime = GlobalRegistry.ResourceScarcity;
+            _resourceScarcityRuntime = GlobalRegistry.ResourceScarcityReadModel;
             RebindPlayerInventoryService(GlobalRegistry.PlayerInventory);
             RebindPlayerRuntimeContext(GlobalRegistry.Player);
         }
@@ -1590,7 +1586,7 @@ namespace Hecton8.UI
             int recipeCount = _recipes != null ? _recipes.Count : 0;
             int inventoryVersion = playerInventory != null ? playerInventory.InventoryVersion : 0;
             int batchMultiplier = Mathf.Clamp(craftBatchMultiplier, 1, 99);
-            ResourceScarcityDirector scarcity = _resourceScarcityRuntime;
+            IResourceScarcityReadModel scarcity = _resourceScarcityRuntime;
             int scarcityVersion = scarcity != null ? scarcity.RuntimeVersion : 0;
             return recipeCount ^
                    (_selectedIndex << 8) ^
@@ -1704,7 +1700,7 @@ namespace Hecton8.UI
 
         private int ResolveFastFailScarcityVersion()
         {
-            ResourceScarcityDirector scarcity = _resourceScarcityRuntime;
+            IResourceScarcityReadModel scarcity = _resourceScarcityRuntime;
             return scarcity != null ? scarcity.RuntimeVersion : 0;
         }
 

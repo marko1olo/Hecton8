@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -32,9 +33,9 @@ namespace Hecton8.UI
         [FieldOffset(100)]
         public float GlitchIntensity;
         [FieldOffset(104)]
-        public uint _pad0;
+        private uint _pad0;
         [FieldOffset(108)]
-        public uint _pad1;
+        private uint _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 248)]
@@ -87,11 +88,11 @@ namespace Hecton8.UI
         [FieldOffset(232)]
         public int QualityWeightQ8;
         [FieldOffset(236)]
-        public int _pad0;
+        private int _pad0;
         [FieldOffset(240)]
-        public int _pad1;
+        private int _pad1;
         [FieldOffset(244)]
-        public int _pad2;
+        private int _pad2;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -224,12 +225,12 @@ namespace Hecton8.UI
         [FieldOffset(24)]
         public uint Flags;
         [FieldOffset(28)]
-        public uint _pad0;
+        private uint _pad0;
     }
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Wrist Hologram HUD Runtime")]
-    public sealed unsafe partial class WristHologramHudRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed unsafe partial class WristHologramHudRuntime : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int StateCapacity = 1;
         private const int GlyphCapacity = 128;
@@ -319,7 +320,6 @@ namespace Hecton8.UI
         private int _vitalsQueueCount;
         private int _pdaQueueCount;
 
-        private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _registeredHotSwapListener;
         private bool _blackBoxDumped;
@@ -519,7 +519,7 @@ namespace Hecton8.UI
             ClearSignalBuffers();
         }
 
-        public void Tick(float deltaTime)
+        private void AdvanceHudFrameState(float deltaTime)
         {
             if (!HasRequiredVaultHandles())
             {
@@ -545,6 +545,8 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            AdvanceHudFrameState(math.max(0f, SystemDispatcher.CurrentFrameDeltaTime));
+
             if (_nativeResourcesDirty || !HasRequiredVaultHandles() || !HasSignalBuffers())
             {
                 _nativeResourcesDirty = false;
@@ -729,7 +731,7 @@ namespace Hecton8.UI
             in VaultGenerationHandle<T> handle,
             BufferID expectedBufferId,
             int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
             return _vault != null &&
@@ -739,12 +741,12 @@ namespace Hecton8.UI
                    buffer.Length >= requiredLength;
         }
 
-        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : unmanaged
         {
             return handle.BufferID == unchecked((uint)(int)expectedBufferId) && handle.Generation != 0u;
         }
 
-        private static ref T ResolveElementRef<T>(NativeArray<T> buffer, int index) where T : struct
+        private static ref T ResolveElementRef<T>(NativeArray<T> buffer, int index) where T : unmanaged
         {
             void* basePtr = NativeArrayUnsafeUtility.GetUnsafePtr(buffer);
             return ref UnsafeUtility.AsRef<T>((byte*)basePtr + (index * UnsafeUtility.SizeOf<T>()));
@@ -820,20 +822,12 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            if (!_registeredUpdate)
-                _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregisterTickLanes()
         {
-            if (_registeredUpdate)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registeredUpdate = false;
-            }
-
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
@@ -939,7 +933,8 @@ namespace Hecton8.UI
 
         private void RunMockSignalInjector(float deltaTime)
         {
-            PlayerVitalsSignal vitals = BuildMockVitalsSignal(_latestVitals, math.max(0f, deltaTime), Time.unscaledTime);
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            PlayerVitalsSignal vitals = BuildMockVitalsSignal(_latestVitals, math.max(0f, deltaTime), now);
             InjectVitalsSignal(in vitals);
 
             if ((Hecton8.Core.SystemDispatcher.CurrentFrameIndex & 127) == 0)
@@ -985,7 +980,7 @@ namespace Hecton8.UI
 
             int max = ResolveMockAcousticTapCapacity();
             int count = math.min(max, acousticTaps.Length);
-            float t = Time.unscaledTime;
+            float t = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             for (int i = 0; i < count; i++)
             {
                 float phase = t * (0.0477f + i * 0.0027f) + i * 0.6180339f;
@@ -1158,7 +1153,7 @@ namespace Hecton8.UI
                 PdaGridCellSize = pdaGridCellSizeMeters,
                 PdaGridDistance = pdaGridDistanceMeters,
                 GlitchMultiplier = glitchMultiplier,
-                TimeSeconds = Time.unscaledTime,
+                TimeSeconds = (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
                 DeltaTime = math.max(0f, deltaTime),
                 FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameIndex,
                 QualityWeight01 = _cachedQualityWeight01,
@@ -1270,11 +1265,17 @@ namespace Hecton8.UI
                 return;
 
             NativeArray<WristHudQuadTransformDTO> mapped = writeBuffer.LockBufferForWrite<WristHudQuadTransformDTO>(0, count);
-            UnsafeUtility.MemCpy(
-                NativeArrayUnsafeUtility.GetUnsafePtr(mapped),
-                NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(quads),
-                (long)count * UnsafeUtility.SizeOf<WristHudQuadTransformDTO>());
-            writeBuffer.UnlockBufferAfterWrite<WristHudQuadTransformDTO>(count);
+            try
+            {
+                UnsafeUtility.MemCpy(
+                    NativeArrayUnsafeUtility.GetUnsafePtr(mapped),
+                    NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(quads),
+                    (long)count * UnsafeUtility.SizeOf<WristHudQuadTransformDTO>());
+            }
+            finally
+            {
+                writeBuffer.UnlockBufferAfterWrite<WristHudQuadTransformDTO>(count);
+            }
             PromoteQuadGpuBuffer(writeBuffer);
             _lastUploadCount = count;
             _lastUploadedFrameIndex = frameIndex;
@@ -1387,15 +1388,16 @@ namespace Hecton8.UI
             catch (Exception)
             {
                 _legacyMissing = true;
-                Debug.LogWarning("[SHINOBU_07] Legacy font atlas discovery failed.");
+                Hecton8.Core.H8Debug.LogWarning("[SHINOBU_07] Legacy font atlas discovery failed.");
                 GenerateMockFontAtlas();
             }
         }
 
         private static string FindFirstFile(string root, string fileName)
         {
-            foreach (string path in Directory.EnumerateFiles(root, fileName, SearchOption.AllDirectories))
-                return path;
+            using IEnumerator<string> paths = Directory.EnumerateFiles(root, fileName, SearchOption.AllDirectories).GetEnumerator();
+            if (paths.MoveNext())
+                return paths.Current;
 
             return null;
         }
@@ -1512,7 +1514,7 @@ namespace Hecton8.UI
             if (byteCount <= 0)
                 return false;
 
-            ReadOnlySpan<byte> span = new ReadOnlySpan<byte>(_csvReadBuffer, 0, byteCount);
+            ReadOnlySpan<byte> span = _csvReadBuffer.AsSpan(0, byteCount);
             int cursor = 0;
             bool any = false;
             while (cursor < span.Length)
@@ -1746,16 +1748,20 @@ namespace Hecton8.UI
             {
                 string directory = Path.Combine(ResolveProjectRoot(), "Docs", "AgentLogs");
                 Directory.CreateDirectory(directory);
-                string path = Path.Combine(directory, "Dump_SHINOBU_07.h8dump");
+                string path = Path.Combine(directory, "Dump_1309_WristHologramHud.bin");
                 using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
-                    stream.Write(new ReadOnlySpan<byte>(&header, UnsafeUtility.SizeOf<WristHudBlackBoxDumpHeader>()));
-                    stream.Write(new ReadOnlySpan<byte>(NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry), payloadBytes));
+                    stream.Write(MemoryMarshal.CreateReadOnlySpan(
+                        ref UnsafeUtility.AsRef<byte>(&header),
+                        UnsafeUtility.SizeOf<WristHudBlackBoxDumpHeader>()));
+                    stream.Write(MemoryMarshal.CreateReadOnlySpan(
+                        ref UnsafeUtility.AsRef<byte>(NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry)),
+                        payloadBytes));
                 }
             }
             catch (Exception)
             {
-                Debug.LogError("SHINOBU_07 blackbox dump failed.");
+                Hecton8.Core.H8Debug.LogError("SHINOBU_07 blackbox dump failed.");
             }
         }
 
@@ -1775,23 +1781,23 @@ namespace Hecton8.UI
         private static void ColdSanityCheckLayout()
         {
             if (UnsafeUtility.SizeOf<WristHudQuadTransformDTO>() != 112)
-                Debug.LogError("WristHudQuadTransformDTO stride mismatch.");
+                Hecton8.Core.H8Debug.LogError("WristHudQuadTransformDTO stride mismatch.");
             if (UnsafeUtility.SizeOf<WristHudStateDTO>() != 248)
-                Debug.LogError("WristHudStateDTO stride mismatch.");
+                Hecton8.Core.H8Debug.LogError("WristHudStateDTO stride mismatch.");
             if (UnsafeUtility.SizeOf<WristHudFontGlyphDTO>() != 32)
-                Debug.LogError("WristHudFontGlyphDTO stride mismatch.");
+                Hecton8.Core.H8Debug.LogError("WristHudFontGlyphDTO stride mismatch.");
             if (UnsafeUtility.SizeOf<WristHudTelemetryEntry>() != 64)
-                Debug.LogError("WristHudTelemetryEntry stride mismatch.");
+                Hecton8.Core.H8Debug.LogError("WristHudTelemetryEntry stride mismatch.");
             if (UnsafeUtility.SizeOf<WristHudBlackBoxDumpHeader>() != 32)
-                Debug.LogError("WristHudBlackBoxDumpHeader stride mismatch.");
+                Hecton8.Core.H8Debug.LogError("WristHudBlackBoxDumpHeader stride mismatch.");
             if (UnsafeUtility.SizeOf<PlayerVitalsSignal>() != 32)
-                Debug.LogError("PlayerVitalsSignal stride mismatch.");
+                Hecton8.Core.H8Debug.LogError("PlayerVitalsSignal stride mismatch.");
             if (UnsafeUtility.SizeOf<O2LevelChangedSignal>() != 8)
-                Debug.LogError("O2LevelChangedSignal stride mismatch.");
+                Hecton8.Core.H8Debug.LogError("O2LevelChangedSignal stride mismatch.");
             if (UnsafeUtility.SizeOf<PdaOpenedSignal>() != 16)
-                Debug.LogError("PdaOpenedSignal stride mismatch.");
+                Hecton8.Core.H8Debug.LogError("PdaOpenedSignal stride mismatch.");
             if (UnsafeUtility.SizeOf<AcousticEchoTap>() != 32)
-                Debug.LogError("AcousticEchoTap stride mismatch.");
+                Hecton8.Core.H8Debug.LogError("AcousticEchoTap stride mismatch.");
         }
 
         private static Mesh CreateQuadMesh()

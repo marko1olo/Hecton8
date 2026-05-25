@@ -928,7 +928,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshColdRegistryDependencies()
         {
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
         }
 
         private void TryRegisterSaveOwner()

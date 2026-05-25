@@ -46,7 +46,7 @@ namespace Hecton8.Guardian
             {
                 Scene currentScene = gameObject.scene;
 
-                Debug.LogError(
+                Hecton8.Core.H8Debug.LogError(
                     $"[SceneGuard] Scene '{currentScene.name}' loaded WITHOUT bootstrap! " +
                     $"This violates the architecture. Reloading {BootstrapSceneName}...");
 

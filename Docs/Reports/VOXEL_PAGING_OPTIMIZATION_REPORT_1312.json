@@ -1,0 +1,56 @@
+{
+  "agent": "1312",
+  "checks": {
+    "agent1312LayoutValidatorPresent": true,
+    "aupDoubleEvidence": true,
+    "compactionScratchVaultBacked": true,
+    "denseFallbackFlagPresent": true,
+    "denseFallbackPayloadConstant135168": true,
+    "directoryMaskRemoved": true,
+    "directoryModuloPresent": true,
+    "directoryPageStillFits": true,
+    "dumpPath1312": true,
+    "fatalRleOverflowClearedByFallback": true,
+    "fuzzerAllSlotsReachableAt10000": true,
+    "mockWriteJobPresent": true,
+    "nativeSnapshotScratchVaultBacked": true,
+    "ownerDump1304CompatibilityRouteIsSecondary": true,
+    "processorPagerRunGuardPresent": true,
+    "rleLimitPresent": true,
+    "telemetryCarriesDirectorySlot": true
+  },
+  "fuzzer": {
+    "allSlotsReachable": true,
+    "maxBucket": 61,
+    "minBucket": 23,
+    "samples": 10000,
+    "slotCollisionFreePossible": false,
+    "slotCollisionFreeReason": "10000 sector hashes cannot map injectively into 252 directory slots.",
+    "stdDevBucket": 6.504761130090513,
+    "uniqueSlots": 252
+  },
+  "math": {
+    "checkerboardOverflowBytes": 96,
+    "checkerboardRleBytes": 262176,
+    "checkerboardRuns": 32768,
+    "denseFallbackBytes": 135168,
+    "directoryBytes": 4096,
+    "directoryEntryBytes": 16,
+    "directoryHeaderBytes": 64,
+    "directorySlotCount": 252,
+    "maxSafeRleRuns": 32756,
+    "newPairCollisionProbability": 0.003968253968253968,
+    "oldDeadSlotPercent": 0.49206349206349204,
+    "oldDeadSlots": 124,
+    "oldPairCollisionProbability": 0.0078125,
+    "oldReachableSlotsUsingMask251": 128,
+    "pagerPayloadBytes": 262080
+  },
+  "scanner": "OOP_VoxelPaging_Scanner",
+  "sourceFiles": [
+    "Assets\\_Project\\Scripts\\SaveSystem\\H8BinaryWorldPager.cs",
+    "Assets\\_Project\\Scripts\\VoxelDeltaProcessor.cs",
+    "Assets\\_Project\\Scripts\\SaveSystem\\VoxelDeltaCompressionArchitecture.cs"
+  ],
+  "success": true
+}

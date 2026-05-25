@@ -181,9 +181,9 @@ namespace Hecton8.Construction.Editor
                         ResolveUnsafeOffset<FoundationPylonSurfaceDTO>(nameof(FoundationPylonSurfaceDTO.HitLocalLength)) == 32 &&
                         UnsafeUtility.SizeOf<FoundationPylonFrameCounters>() == 64;
             if (pass)
-                Debug.Log("[SHINOBU_252] Foundation pylon ARM64 layout PASS.");
+                Hecton8.Core.H8Debug.Log("[SHINOBU_252] Foundation pylon ARM64 layout PASS.");
             else
-                Debug.LogError("[SHINOBU_252] Foundation pylon ARM64 layout FAIL.");
+                Hecton8.Core.H8Debug.LogError("[SHINOBU_252] Foundation pylon ARM64 layout FAIL.");
         }
 
         public static int ResolveUnsafeOffset<T>(string fieldName) where T : struct
@@ -234,7 +234,7 @@ namespace Hecton8.Construction.Editor
             json.AppendLine("}");
             File.WriteAllText(Path.Combine(root, ReportPath), json.ToString());
             AssetDatabase.Refresh();
-            Debug.Log("[SHINOBU_252] Foundation physics inquisition wrote " + ReportPath + " pass=" + pass);
+            Hecton8.Core.H8Debug.Log("[SHINOBU_252] Foundation physics inquisition wrote " + ReportPath + " pass=" + pass);
         }
 
         private static int CountInFiles(string directory, string filenameContains, string needle)

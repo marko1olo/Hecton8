@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -19,7 +20,7 @@ namespace Hecton8.World
     /// Generates and renders seabed scatter entirely on the GPU from the active MapMagic height payload.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class GPUScatterDirector : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public sealed class GPUScatterDirector : MonoBehaviour, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
         private const int ThreadGroupSize = 64;
         private const int FrustumPlaneCount = 6;
@@ -454,13 +455,9 @@ namespace Hecton8.World
         /// <summary>
         /// Generates and renders the current player-centered scatter field.
         /// </summary>
-        public void Tick(float deltaTime)
-        {
-        }
-
         public void LateFrameTick()
         {
-            float deltaTime = Time.deltaTime;
+            float deltaTime = SystemDispatcher.CurrentFrameDeltaTime;
             if (deltaTime < 0f)
                 return;
 
@@ -792,10 +789,15 @@ namespace Hecton8.World
             ReleaseBuffer(ref _visibilityCacheBuffer);
             _visibilityCacheBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, requiredCapacity, UnsafeUtility.SizeOf<uint>()); // COLD ALLOC: GraphicsBuffer[gridResolution^2] - persistent foveated scatter visibility cache - owner: GPUScatterDirector
             NativeArray<uint> cacheWrite = _visibilityCacheBuffer.LockBufferForWrite<uint>(0, requiredCapacity);
-            for (int i = 0; i < requiredCapacity; i++)
-                cacheWrite[i] = 0u;
-
-            _visibilityCacheBuffer.UnlockBufferAfterWrite<uint>(requiredCapacity);
+            try
+            {
+                for (int i = 0; i < requiredCapacity; i++)
+                    cacheWrite[i] = 0u;
+            }
+            finally
+            {
+                _visibilityCacheBuffer.UnlockBufferAfterWrite<uint>(requiredCapacity);
+            }
             _hasFoveatedVisibilitySnapshot = false;
         }
 
@@ -818,10 +820,16 @@ namespace Hecton8.World
                 return;
 
             NativeArray<float4> boundsWrite = _scatterBoundsLutBuffer.LockBufferForWrite<float4>(0, ScatterBoundsLutCount);
-            float4 packedBounds = new float4(safeBounds.x, safeBounds.y, safeBounds.z, safeBounds.w);
-            for (int i = 0; i < ScatterBoundsLutCount; i++)
-                boundsWrite[i] = packedBounds;
-            _scatterBoundsLutBuffer.UnlockBufferAfterWrite<float4>(ScatterBoundsLutCount);
+            try
+            {
+                float4 packedBounds = new float4(safeBounds.x, safeBounds.y, safeBounds.z, safeBounds.w);
+                for (int i = 0; i < ScatterBoundsLutCount; i++)
+                    boundsWrite[i] = packedBounds;
+            }
+            finally
+            {
+                _scatterBoundsLutBuffer.UnlockBufferAfterWrite<float4>(ScatterBoundsLutCount);
+            }
             _lastUploadedScatterBounds = safeBounds;
             _hasUploadedScatterBounds = true;
         }
@@ -837,15 +845,21 @@ namespace Hecton8.World
             _argsBufferMesh = scatterMesh;
             NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
                 _argsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            try
             {
-                indexCountPerInstance = scatterMesh != null ? scatterMesh.GetIndexCount(0) : 0u,
-                instanceCount = 0u,
-                startIndex = scatterMesh != null ? scatterMesh.GetIndexStart(0) : 0u,
-                baseVertexIndex = scatterMesh != null ? (uint)math.max(0, scatterMesh.GetBaseVertex(0)) : 0u,
-                startInstance = 0u
-            };
-            _argsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+                argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+                {
+                    indexCountPerInstance = scatterMesh != null ? scatterMesh.GetIndexCount(0) : 0u,
+                    instanceCount = 0u,
+                    startIndex = scatterMesh != null ? scatterMesh.GetIndexStart(0) : 0u,
+                    baseVertexIndex = scatterMesh != null ? (uint)math.max(0, scatterMesh.GetBaseVertex(0)) : 0u,
+                    startInstance = 0u
+                };
+            }
+            finally
+            {
+                _argsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            }
         }
 
         private void PopulateFrustumPlaneUpload(Camera cullCamera)
@@ -1078,16 +1092,13 @@ namespace Hecton8.World
             if (biomeHash == 0u)
                 return false;
 
-            H8BiomeRecord* records = (H8BiomeRecord*)H8StaticDataArena.GetSectionDataPointer(
-                H8DataSectionId.Biomes,
-                H8DataLayoutConstants.BiomeRecordSize,
-                out int count);
+            ReadOnlySpan<H8BiomeRecord> records = H8StaticDataArena.GetSectionSpan<H8BiomeRecord>(H8DataSectionId.Biomes);
 
-            if (records == null || count <= 0)
+            if (records.Length <= 0)
                 return false;
 
             int low = 0;
-            int high = count - 1;
+            int high = records.Length - 1;
             while (low <= high)
             {
                 int mid = (low + high) >> 1;
@@ -1414,7 +1425,7 @@ namespace Hecton8.World
             if (!enableDepthOcclusion || depthPyramidCompute == null || cullCamera == null)
                 return false;
 
-            if (Time.frameCount <= _depthPyramidInvalidatedFrame)
+            if (SystemDispatcher.CurrentFrameIndex <= _depthPyramidInvalidatedFrame)
                 return false;
 
             ResolveDepthPyramidKernels();

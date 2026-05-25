@@ -11,7 +11,6 @@ namespace Hecton8.Interaction
     using Hecton8.Core.Contracts.Signals;
     using Hecton8.Core.Memory;
     using Hecton8.Gameplay;
-    using Hecton8.Physics;
     using Hecton8.Tools;
     using Hecton8.World;
     using Unity.Collections;
@@ -50,7 +49,7 @@ namespace Hecton8.Interaction
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Interaction/Physical Hand Controller")]
-    public sealed class PhysicalHandController : MonoBehaviour, IPhysicalHandIkTargetSink
+    public sealed class PhysicalHandController : MonoBehaviour, IPhysicalHandIkTargetSink, IGlobalRegistryHotSwapListener
     {
         private static int s_x001PhysicalHandControllerSignalPushDropCount;
         private const int FingerCount = 5;
@@ -243,6 +242,7 @@ namespace Hecton8.Interaction
         private SphereCollider _suitHandCollider;
         private Transform _cachedInteractionProbeColliderSource;
         private Collider _cachedInteractionProbeCollider;
+        private IPhysicsService _physicsService;
         private IDataVault _kinematicBridgeVault;
         private Hecton8.Core.Contracts.IVoxelSonarSdfReadModel _kinematicSdfReadModel;
         private VRInteractionKinematicBridgeViews _kinematicBridgeViews;
@@ -254,6 +254,7 @@ namespace Hecton8.Interaction
         private float _harvestSnapDuration;
         private float _lastKinematicPenetration;
         private bool _harvestSnapActive;
+        private bool _registeredHotSwapListener;
         private int _terminalSnapSourceId;
         private uint _lastKinematicVelocitySignalFrame = uint.MaxValue;
         private uint _lastKinematicDumpFrame = uint.MaxValue;
@@ -545,7 +546,7 @@ namespace Hecton8.Interaction
                 {
                     Vector3 clampedVelocity = ClampPerAxis(_activeBody.linearVelocity, 8f);
                     QueueBodyVelocityTarget(_activeBody, IsFinite(clampedVelocity) ? clampedVelocity : Vector3.zero);
-                    PhysicsForceRouter.QueueAngularVelocitySet(_activeBody, Vector3.zero, wake: false);
+                    _physicsService?.QueueAngularVelocitySet(_activeBody, Vector3.zero, wake: false);
                 }
             }
 
@@ -725,6 +726,7 @@ namespace Hecton8.Interaction
         private void Awake()
         {
             _cachedTransform = transform;
+            CachePhysicsServiceCold();
             CacheSwimBlockoutRigCold();
             CacheKinematicBridgeCold(true);
             EnsureRuntimeProxy();
@@ -739,6 +741,8 @@ namespace Hecton8.Interaction
 
         private void OnEnable()
         {
+            CachePhysicsServiceCold();
+            TryRegisterHotSwapListener();
             CacheKinematicBridgeCold(true);
             CacheInteractionProbeColliderCold();
             AllocatePersistentBuffersCold();
@@ -758,11 +762,13 @@ namespace Hecton8.Interaction
             if (IsGrabbing)
                 EndGrab(PhysicalHandGrabEndReason.Disabled);
 
+            TryUnregisterHotSwapListener();
             DisposePersistentBuffers();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
             FlushKinematicBridgeFaultDump();
             DisposePersistentBuffers();
             DisableSuitCollisionShell();
@@ -783,10 +789,42 @@ namespace Hecton8.Interaction
             _runtimeGripPoint = null;
             _runtimeHandBody = null;
             _runtimeProxyCreated = false;
+            _physicsService = null;
             _kinematicBridgeVault = null;
             _kinematicSdfReadModel = null;
             _kinematicBridgeViews = default;
             _kinematicBridgeReady = false;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Physics)
+                _physicsService = currentService as IPhysicsService;
+        }
+
+        private void CachePhysicsServiceCold()
+        {
+            _physicsService = GlobalRegistry.Physics;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
         }
 
         private void EnsureRuntimeProxy()
@@ -1135,9 +1173,8 @@ namespace Hecton8.Interaction
 
         private void RefreshKinematicTuning(ref VRInteractionTuningDTO tuning, Vector3 controllerPosition, double3 runtimeOriginAup)
         {
-            Vector3 rootRuntimePosition = _cachedTransform != null ? _cachedTransform.position : controllerPosition;
-            if (!VRInteractionKinematicBridgeMath.TryResolveRuntimeAup(rootRuntimePosition, runtimeOriginAup, out double3 rootAup))
-                rootAup = runtimeOriginAup;
+            Vector3 fallbackRootRuntimePosition = _cachedTransform != null ? _cachedTransform.position : controllerPosition;
+            double3 rootAup = ResolvePlayerRootAup(runtimeOriginAup, fallbackRootRuntimePosition);
 
             float side = handSide == PhysicalHandSide.Left ? -1f : 1f;
             double3 shoulderAup = rootAup + new double3(side * 0.18d, 1.38d, 0.08d);
@@ -1154,6 +1191,24 @@ namespace Hecton8.Interaction
                 VRInteractionKinematicBridgeConstants.TuningFlagSdfEnabled |
                 VRInteractionKinematicBridgeConstants.TuningFlagSocketSnapEnabled |
                 VRInteractionKinematicBridgeConstants.TuningFlagVelocitySignalEnabled;
+        }
+
+        private static double3 ResolvePlayerRootAup(double3 runtimeOriginAup, Vector3 fallbackRuntimePosition)
+        {
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            if (runtimeContext != null &&
+                runtimeContext.TryGetPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot snapshot) &&
+                snapshot.Aup.IsFinite())
+            {
+                double3 snapshotAup = snapshot.Aup.ToAbsoluteDouble3();
+                if (VRInteractionKinematicBridgeMath.IsFinite(snapshotAup))
+                    return snapshotAup;
+            }
+
+            if (VRInteractionKinematicBridgeMath.TryResolveRuntimeAup(fallbackRuntimePosition, runtimeOriginAup, out double3 fallbackAup))
+                return fallbackAup;
+
+            return runtimeOriginAup;
         }
 
         private bool TryBindNearestSdf(Vector3 controllerPosition, double3 runtimeOriginAup, ref VRInteractionTuningDTO tuning, out NativeArray<byte>.ReadOnly encodedSdf)
@@ -1753,7 +1808,7 @@ namespace Hecton8.Interaction
 
             Vector3 deltaVelocity = ClampMagnitude(acceleration * dt, ResolveMaxDeltaVelocity(body, gainMultiplier));
             if (deltaVelocity.sqrMagnitude > 0.0000001f)
-                PhysicsForceRouter.QueueForce(body, deltaVelocity, ForceMode.VelocityChange);
+                _physicsService?.QueueForce(body, deltaVelocity, ForceMode.VelocityChange);
 
             Quaternion targetBodyRotation = ResolveTargetBodyRotation(handRotation);
             Quaternion deltaRotation = targetBodyRotation * Quaternion.Inverse(body.rotation);
@@ -1777,7 +1832,7 @@ namespace Hecton8.Interaction
 
             Vector3 deltaAngularVelocity = ClampMagnitude(angularAcceleration * dt, MaxDeltaAngularVelocity * gainMultiplier);
             if (deltaAngularVelocity.sqrMagnitude > 0.0000001f)
-                PhysicsForceRouter.QueueTorque(body, deltaAngularVelocity, ForceMode.VelocityChange);
+                _physicsService?.QueueTorque(body, deltaAngularVelocity, ForceMode.VelocityChange);
 
             UpdateImplicitTwoHandStabilizer(body);
             ApplyTwoHandMassScaleTorque(body, handPosition, gainMultiplier, dt);
@@ -1823,7 +1878,7 @@ namespace Hecton8.Interaction
                 MaxDeltaAngularVelocity * 0.35f);
 
             if (deltaAngularVelocity.sqrMagnitude > 0.0000001f)
-                PhysicsForceRouter.QueueTorque(body, deltaAngularVelocity, ForceMode.VelocityChange);
+                _physicsService?.QueueTorque(body, deltaAngularVelocity, ForceMode.VelocityChange);
         }
 
         private void UpdateImplicitTwoHandStabilizer(Rigidbody body)
@@ -1866,7 +1921,7 @@ namespace Hecton8.Interaction
 
             Vector3 deltaAngularVelocity = ClampMagnitude(angularVelocity * -0.15f, MaxDeltaAngularVelocity * 0.35f);
             if (deltaAngularVelocity.sqrMagnitude > 0.0000001f && IsFinite(deltaAngularVelocity))
-                PhysicsForceRouter.QueueTorque(body, deltaAngularVelocity, ForceMode.VelocityChange);
+                _physicsService?.QueueTorque(body, deltaAngularVelocity, ForceMode.VelocityChange);
         }
 
         private Bounds ResolveActiveBodyBounds(Rigidbody body)
@@ -2465,7 +2520,7 @@ namespace Hecton8.Interaction
             if (body != null)
             {
                 QueueBodyVelocityTarget(body, Vector3.zero);
-                PhysicsForceRouter.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
+                _physicsService?.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
             }
 
             _virtualHandVelocity = Vector3.zero;
@@ -2473,11 +2528,11 @@ namespace Hecton8.Interaction
             _currentSeparationSq = 0f;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError(InvalidMotionResetMessage);
+            Hecton8.Core.H8Debug.LogError(InvalidMotionResetMessage);
 #endif
         }
 
-        private static void QueueBodyVelocityTarget(Rigidbody body, Vector3 targetVelocity)
+        private void QueueBodyVelocityTarget(Rigidbody body, Vector3 targetVelocity)
         {
             if (body == null || body.isKinematic)
                 return;
@@ -2485,7 +2540,7 @@ namespace Hecton8.Interaction
             Vector3 currentVelocity = IsFinite(body.linearVelocity) ? body.linearVelocity : Vector3.zero;
             Vector3 safeTargetVelocity = IsFinite(targetVelocity) ? targetVelocity : Vector3.zero;
             if ((safeTargetVelocity - currentVelocity).sqrMagnitude > 0.0000001f)
-                PhysicsForceRouter.QueueLinearVelocitySet(body, safeTargetVelocity);
+                _physicsService?.QueueLinearVelocitySet(body, safeTargetVelocity);
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 32)]

@@ -95,7 +95,7 @@ namespace Hecton8.Modding
         {
             if (string.IsNullOrWhiteSpace(key))
             {
-                Debug.LogError("[ModSaveStateStore] Refused to write mod save data with an empty key.");
+                Hecton8.Core.H8Debug.LogError("[ModSaveStateStore] Refused to write mod save data with an empty key.");
                 return;
             }
 
@@ -558,7 +558,7 @@ namespace Hecton8.Modding
                     continue;
                 }
 
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     $"[ModItemRegistry] Failed to register pending runtime item '{(itemData != null ? itemData.name : "null")}': {error}");
                 _pendingItems.RemoveAt(i);
             }
@@ -743,7 +743,7 @@ namespace Hecton8.Modding
                     continue;
                 }
 
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     $"[ModBuildableRegistry] Failed to register pending buildable '{(registration.Data != null ? registration.Data.name : "null")}': {error}");
                 _pendingBuildables.RemoveAt(i);
             }

@@ -35,7 +35,7 @@ namespace Hecton8.UI
     /// Shows different prompts based on looked-at object and held tool.
     /// Uses ITickable for updates. Zero GC in hot paths.
     /// </summary>
-    public class InteractionUI : MonoBehaviour, IUpdatable, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
+    public class InteractionUI : MonoBehaviour, ILateFrameTickable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
@@ -99,7 +99,6 @@ namespace Hecton8.UI
         private IPlayerActionInterruptSink _cachedPlayerActions;
         private ILocalizationTextExpansionReadModel _cachedLocalization;
         private INativeInputManagerRuntime _cachedInputManager;
-        private bool _registered;
         private bool _registeredLateFrame;
         private string _currentPrompt;
         private string _currentPromptSource;
@@ -280,11 +279,6 @@ namespace Hecton8.UI
         {
             SamplePromptState(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
             HphiReactiveUiTelemetry.RecordActiveUiUpdate();
-        }
-
-        /// <inheritdoc />
-        public void Tick(float deltaTime)
-        {
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -745,7 +739,7 @@ namespace Hecton8.UI
 
         private void RefreshCachedRegistryServices()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedInputManager = GlobalRegistry.NativeInputRuntime;
             _cachedPlayerActions = GlobalRegistry.PlayerActionInterrupts;
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationTextExpansion;
@@ -770,7 +764,6 @@ namespace Hecton8.UI
             {
                 if (currentService == null)
                 {
-                    _registered = false;
                     _registeredLateFrame = false;
                     return;
                 }
@@ -880,24 +873,12 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registered = false;
-            }
-
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTick()
         {
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registered = false;
-            }
-
             if (!_registeredLateFrame)
                 return;
 

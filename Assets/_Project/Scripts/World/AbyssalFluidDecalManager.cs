@@ -1,5 +1,4 @@
 using Hecton8.Core;
-using Hecton8.Physics;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -14,7 +13,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-103)]
-    public sealed class AbyssalFluidDecalManager : MonoBehaviour, ITickable, ILateFrameTickable, IOriginShiftListener, IFluidDecalPresentationSink, IGlobalRegistryHotSwapListener
+    public sealed class AbyssalFluidDecalManager : MonoBehaviour, ILateFrameTickable, IOriginShiftListener, IFluidDecalPresentationSink, IGlobalRegistryHotSwapListener
     {
 #if UNITY_EDITOR
         private const string DecalMaterialAssetPath = "Assets/_Project/Art/Materials/VFX/MAT_AbyssalFluidDecal.mat";
@@ -163,6 +162,7 @@ namespace Hecton8.World
         private float _fluidDecalClockSeconds;
         private SargassumGlobalDragManager _sargassumDrag;
         private IPlayerRuntimeContext _playerContext;
+        private IAmbientCurrentReadModel _ambientCurrentReadModel;
         private bool _serviceRegistered;
         private bool _registeredTick;
         private bool _registeredLateFrame;
@@ -393,6 +393,12 @@ namespace Hecton8.World
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.FluidRuntime)
+            {
+                _ambientCurrentReadModel = currentService as IAmbientCurrentReadModel;
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 _registeredTick = false;
@@ -405,7 +411,7 @@ namespace Hecton8.World
         /// <summary>
         /// Advances decal drift, spread, and draw.
         /// </summary>
-        public void Tick(float dt)
+        private void AdvanceFluidDecals(float dt)
         {
             if (_decalStates == null || _runtimeMaterial == null || _quadMesh == null)
                 return;
@@ -451,6 +457,8 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
+            AdvanceFluidDecals(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (_drawDecalsDirty)
             {
                 _drawDecalsDirty = false;
@@ -890,7 +898,7 @@ namespace Hecton8.World
                 {
                     _loggedMissingDecalMaterial = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError("[AbyssalFluidDecalManager] Missing decalMaterial asset. Runtime material creation is forbidden for this draw path.", this);
+                    Hecton8.Core.H8Debug.LogError("[AbyssalFluidDecalManager] Missing decalMaterial asset. Runtime material creation is forbidden for this draw path.", this);
 #endif
                 }
             }
@@ -930,7 +938,10 @@ namespace Hecton8.World
                 currentTimeScale,
                 currentStrength,
                 currentVerticalFactor);
-            Vector3 authoredCurrent = CurrentVolume.SampleAt(positionWS);
+            Vector3 authoredCurrent = Vector3.zero;
+            IAmbientCurrentReadModel ambientCurrent = _ambientCurrentReadModel;
+            if (ambientCurrent != null)
+                ambientCurrent.TrySampleAuthoredCurrent(positionWS, out authoredCurrent);
             Vector3 resolvedCurrent = new Vector3(sampledCurrent.x, sampledCurrent.y, sampledCurrent.z) + authoredCurrent;
             resolvedCurrent.y *= currentVerticalFactor;
             return resolvedCurrent;
@@ -954,11 +965,6 @@ namespace Hecton8.World
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_registeredTick)
-            {
-                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-            }
-
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
@@ -966,10 +972,13 @@ namespace Hecton8.World
         private void CacheRegistryServicesCold()
         {
             if (_playerContext == null)
-                _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerContext = GlobalRegistry.Player;
 
             if (_sargassumDrag == null)
                 _sargassumDrag = GlobalRegistry.SargassumDrag;
+
+            if (_ambientCurrentReadModel == null)
+                _ambientCurrentReadModel = GlobalRegistry.AmbientCurrent;
         }
 
         private void TryRegisterHotSwapListener()
@@ -1015,11 +1024,7 @@ namespace Hecton8.World
                 _registeredLateFrame = false;
             }
 
-            if (_registeredTick)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = false;
-            }
+            _registeredTick = false;
         }
 
         private void ApplyRuntimeOffsetToCachedState(Vector3 runtimeOffset)

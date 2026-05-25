@@ -14,11 +14,11 @@ namespace Hecton8.Quest
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct MockQuestSignalPushJob : IJob
     {
-        public NativeQueue<MockPlayerPositionSignal>.ParallelWriter PlayerPositionWriter;
+        public global::Hecton8.Core.MpscSignalRingBuffer<MockPlayerPositionSignal>.ParallelWriter PlayerPositionWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> PlayerPositionWriterBudget;
-        public NativeQueue<QuestDagMockItemAcquiredSignal>.ParallelWriter ItemAcquiredWriter;
+        public global::Hecton8.Core.MpscSignalRingBuffer<QuestDagMockItemAcquiredSignal>.ParallelWriter ItemAcquiredWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> ItemAcquiredWriterBudget;
-        public NativeQueue<MockStoryEventSignal>.ParallelWriter StoryEventWriter;
+        public global::Hecton8.Core.MpscSignalRingBuffer<MockStoryEventSignal>.ParallelWriter StoryEventWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> StoryEventWriterBudget;
         public uint Frame;
         public uint Seed;

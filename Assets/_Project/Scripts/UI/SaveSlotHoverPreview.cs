@@ -5,7 +5,6 @@ using Hecton.UI.MainMenu;
 using Hecton8.Core;
 using Hecton.Localization;
 using Hecton8.SaveSystem;
-using System.Collections.Generic;
 using System;
 
 namespace Hecton8.UI
@@ -66,8 +65,6 @@ namespace Hecton8.UI
         private readonly char[] _previewDetailsBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
         // COLD ALLOC: char[256] - save hover preview integrity status staging for TMP SetCharArray - owner: SaveSlotHoverPreview
         private readonly char[] _previewStatusBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
-        // COLD ALLOC: List<TMP_Text>(8) â€” preview text auto-wire buffer â€” owner: SaveSlotHoverPreview
-        private readonly List<TMP_Text> _previewTextResolveBuffer = new List<TMP_Text>(8);
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // LIFECYCLE
@@ -334,61 +331,54 @@ namespace Hecton8.UI
                 (previewTitleText != null && previewDetailsText != null && previewStatusText != null))
                 return;
 
-            _previewTextResolveBuffer.Clear();
-            previewPanel.GetComponentsInChildren(true, _previewTextResolveBuffer);
-            for (int i = 0; i < _previewTextResolveBuffer.Count; i++)
-            {
-                TMP_Text candidate = _previewTextResolveBuffer[i];
-                if (candidate == null)
-                    continue;
+            TMP_Text fallback0 = null;
+            TMP_Text fallback1 = null;
+            TMP_Text fallback2 = null;
+            AutoWirePreviewTextReferencesInHierarchy(
+                previewPanel.transform,
+                ref fallback0,
+                ref fallback1,
+                ref fallback2);
 
+            if (previewTitleText == null)
+                previewTitleText = fallback0;
+            if (previewDetailsText == null && fallback1 != previewTitleText)
+                previewDetailsText = fallback1;
+            if (previewStatusText == null &&
+                fallback2 != previewTitleText &&
+                fallback2 != previewDetailsText)
+                previewStatusText = fallback2;
+        }
+
+        private void AutoWirePreviewTextReferencesInHierarchy(
+            Transform root,
+            ref TMP_Text fallback0,
+            ref TMP_Text fallback1,
+            ref TMP_Text fallback2)
+        {
+            if (root == null)
+                return;
+
+            if (root.TryGetComponent(out TMP_Text candidate) && candidate != null)
+            {
                 string candidateName = candidate.name;
                 if (previewTitleText == null && IsPreviewTextMatch(candidateName, "title", "header", "slot"))
-                {
                     previewTitleText = candidate;
-                    continue;
-                }
-
-                if (previewDetailsText == null && IsPreviewTextMatch(candidateName, "detail", "meta", "info", "body"))
-                {
+                else if (previewDetailsText == null && IsPreviewTextMatch(candidateName, "detail", "meta", "info", "body"))
                     previewDetailsText = candidate;
-                    continue;
-                }
-
-                if (previewStatusText == null && IsPreviewTextMatch(candidateName, "status", "integrity", "warning"))
-                {
+                else if (previewStatusText == null && IsPreviewTextMatch(candidateName, "status", "integrity", "warning"))
                     previewStatusText = candidate;
-                }
+
+                if (fallback0 == null)
+                    fallback0 = candidate;
+                else if (fallback1 == null && candidate != fallback0)
+                    fallback1 = candidate;
+                else if (fallback2 == null && candidate != fallback0 && candidate != fallback1)
+                    fallback2 = candidate;
             }
 
-            for (int i = 0; i < _previewTextResolveBuffer.Count; i++)
-            {
-                TMP_Text candidate = _previewTextResolveBuffer[i];
-                if (candidate == null)
-                    continue;
-
-                if (previewTitleText == null)
-                {
-                    previewTitleText = candidate;
-                    continue;
-                }
-
-                if (previewDetailsText == null && candidate != previewTitleText)
-                {
-                    previewDetailsText = candidate;
-                    continue;
-                }
-
-                if (previewStatusText == null &&
-                    candidate != previewTitleText &&
-                    candidate != previewDetailsText)
-                {
-                    previewStatusText = candidate;
-                    break;
-                }
-            }
-
-            _previewTextResolveBuffer.Clear();
+            for (int i = 0; i < root.childCount; i++)
+                AutoWirePreviewTextReferencesInHierarchy(root.GetChild(i), ref fallback0, ref fallback1, ref fallback2);
         }
 
         private static bool IsPreviewTextMatch(string candidateName, string tokenA, string tokenB, string tokenC)
@@ -663,7 +653,7 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
-            _cachedSaveManager = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance as SaveManager;
+            _cachedSaveManager = Hecton8.Core.GlobalRegistry.Save as SaveManager;
         }
 
         private void TryRegisterHotSwapListener()

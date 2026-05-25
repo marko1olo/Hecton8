@@ -785,7 +785,7 @@ namespace Hecton8.Inventory
             if (!slots.IsCreated || !requests.IsCreated || !results.IsCreated)
                 return dependency;
 
-            NativeQueue<LogisticsTransferSignal>.ParallelWriter writer = default;
+            global::Hecton8.Core.MpscSignalRingBuffer<LogisticsTransferSignal>.ParallelWriter writer = default;
             NativeArray<int> writerBudget = default;
             int emit = 0;
             if (emitTransferSignals)
@@ -1375,7 +1375,7 @@ namespace Hecton8.Inventory
         // from the configured LogisticsTransferSignal lane for this frame. This job performs enqueue-only writes to
         // that lane; authoritative item state remains in Slots and is protected by ReservedLock CompareExchange.
         [NativeDisableContainerSafetyRestriction]
-        public NativeQueue<LogisticsTransferSignal>.ParallelWriter TransferSignalWriter;
+        public global::Hecton8.Core.MpscSignalRingBuffer<LogisticsTransferSignal>.ParallelWriter TransferSignalWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> TransferSignalWriterBudget;
         public int RequestCount;
         public int EmitTransferSignals;

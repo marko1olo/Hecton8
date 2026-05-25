@@ -9,10 +9,13 @@
   "scanner": "Tools/OOP_Kcc_Scanner_X_005.py",
   "scope": [
     "Assets/_Project/Scripts/Audio/AcousticReverbPresetTrigger.cs",
+    "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
     "Assets/_Project/Scripts/BaseModule.cs",
     "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
     "Assets/_Project/Scripts/BuoyancyObject.cs",
+    "Assets/_Project/Scripts/CaveBioRootsGenerator.cs",
     "Assets/_Project/Scripts/Construction/VehicleDockingModule.cs",
+    "Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs",
     "Assets/_Project/Scripts/Core/InputDispatcher.cs",
     "Assets/_Project/Scripts/DemoDoor.cs",
     "Assets/_Project/Scripts/DemoFirstPersonController.cs",
@@ -48,10 +51,13 @@
     "Assets/_Project/Scripts/Interaction/PhysicalInteractionHandler.cs",
     "Assets/_Project/Scripts/Interaction/PlayerInteraction.cs",
     "Assets/_Project/Scripts/Items/PickupItem.cs",
+    "Assets/_Project/Scripts/LandingImpactVFX.cs",
     "Assets/_Project/Scripts/Physics/KCC/HectonKccRuntime_SmokeTest.cs",
     "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
     "Assets/_Project/Scripts/Physics/KCC/KinematicSleepStateJobs.cs",
     "Assets/_Project/Scripts/Physics/KCC/SdfSqueezeJob.cs",
+    "Assets/_Project/Scripts/PlayerFootstepAudio.cs",
+    "Assets/_Project/Scripts/PlayerThrusterAudio.cs",
     "Assets/_Project/Scripts/QueryCacheContext.cs",
     "Assets/_Project/Scripts/RaycastBatchHelper.cs",
     "Assets/_Project/Scripts/SaveManager.cs",
@@ -61,6 +67,9 @@
     "Assets/_Project/Scripts/Tools/LaserCutterDodJobs.cs",
     "Assets/_Project/Scripts/Tools/LaserCutterDodRuntime.cs",
     "Assets/_Project/Scripts/UI/DiegeticPdaFocusDistanceController.cs",
-    "Assets/_Project/Scripts/UI/InteractionUI.cs"
+    "Assets/_Project/Scripts/UI/InteractionUI.cs",
+    "Assets/_Project/Scripts/World/AbyssalThermalManager.cs",
+    "Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs",
+    "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs"
   ]
 }

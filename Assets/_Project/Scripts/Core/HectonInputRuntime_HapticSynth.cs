@@ -15,7 +15,7 @@ namespace Hecton8.Core
     {
         private static int s_x001HectonInputRuntimeHapticSynthSignalPushDropCount;
 #if UNITY_EDITOR
-        private const string HapticProfilesRelativePath = "Hecton8/haptic_response_profiles.csv";
+        private const string HapticProfilesFileName = "haptic_response_profiles.csv";
 #endif
         private const string HapticFaultDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_353.bin";
 
@@ -391,7 +391,7 @@ namespace Hecton8.Core
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (HapticSynthesisMath.ValidateLayoutSizes() != 0u)
-                UnityEngine.Debug.LogError("[InputDispatcher] Haptic synthesis ABI violation.");
+                Hecton8.Core.H8Debug.LogError("[InputDispatcher] Haptic synthesis ABI violation.");
 #endif
             bool ready =
                 TryResolveOrAcquireInputBuffer(
@@ -514,7 +514,7 @@ namespace Hecton8.Core
             if (!TryResolveInputBuffer(in _hapticSynthesisCsvScratchHandle, HapticSynthesisMath.ProfileCsvScratchBytes, out NativeArray<byte> scratch))
                 return 0;
 
-            string path = Path.Combine(Application.streamingAssetsPath, HapticProfilesRelativePath);
+            string path = Path.Combine(Application.dataPath, "_Project", "Data", "Haptics", HapticProfilesFileName);
             if (!File.Exists(path))
                 return 0;
 

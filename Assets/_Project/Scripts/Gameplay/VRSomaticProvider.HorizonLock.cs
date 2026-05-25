@@ -22,11 +22,11 @@ namespace Hecton8.Gameplay
         private const uint SomaticHorizonTelemetryHash = 0x485A4E31u; // HZN1
         private const float SomaticHorizonBudgetMicroseconds = 100f;
 
-        private VaultNativeArray<VRSomaticKinematicStateMirrorDTO> _somaticKccStateMirror;
-        private VaultNativeArray<quaternion> _somaticRawRotation;
-        private VaultNativeArray<VRSomaticComfortDTO> _somaticHorizonWrite;
-        private VaultNativeArray<VRSomaticComfortDTO> _somaticHorizonRead;
-        private VaultNativeArray<SomaticTelemetryEntry> _somaticHorizonTelemetry;
+        private VaultBufferView<VRSomaticKinematicStateMirrorDTO> _somaticKccStateMirror;
+        private VaultBufferView<quaternion> _somaticRawRotation;
+        private VaultBufferView<VRSomaticComfortDTO> _somaticHorizonWrite;
+        private VaultBufferView<VRSomaticComfortDTO> _somaticHorizonRead;
+        private VaultBufferView<SomaticTelemetryEntry> _somaticHorizonTelemetry;
         private quaternion _somaticStabilizedRotation = quaternion.identity;
         private float4 _somaticLastQuaternionDelta = new float4(0f, 0f, 0f, 1f);
         private float3 _somaticLastRawAngularVelocity;

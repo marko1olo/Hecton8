@@ -265,7 +265,7 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _localizationManager = GlobalRegistry.LocalizationText;
         }
 
@@ -492,7 +492,7 @@ namespace Hecton8.Gameplay
             if (playerInventory == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[StorageCrate] PlayerInventory is null. Cannot transfer item.");
+                Hecton8.Core.H8Debug.LogWarning("[StorageCrate] PlayerInventory is null. Cannot transfer item.");
 #endif
                 return false;
             }

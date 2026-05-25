@@ -1043,7 +1043,7 @@ namespace Hecton8.Tools
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                Hecton8.Core.H8Debug.LogException(ex);
             }
         }
 

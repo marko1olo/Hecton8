@@ -345,7 +345,7 @@ namespace Hecton8.Physics
             NativeArray<double3> pinnedAups,
             NativeArray<byte> pinnedMask,
             NativeArray<VerletCableTuningDTO> tuning,
-            NativeQueue<PhysicsEventPayload>.ParallelWriter physicsEventWriter,
+            global::Hecton8.Core.MpscSignalRingBuffer<PhysicsEventPayload>.ParallelWriter physicsEventWriter,
             NativeArray<int> physicsEventWriterBudget,
             uint frameIndex,
             float fixedDeltaTime,
@@ -472,7 +472,7 @@ namespace Hecton8.Physics
             }.Schedule(splineHandle);
         }
 
-        private static NativeQueue<PhysicsEventPayload>.ParallelWriter AcquirePhysicsEventWriter()
+        private static global::Hecton8.Core.MpscSignalRingBuffer<PhysicsEventPayload>.ParallelWriter AcquirePhysicsEventWriter()
         {
             SignalBus<PhysicsEventPayload>.EnsureInitialized();
             return SignalBus<PhysicsEventPayload>.ParallelWriter;
@@ -722,23 +722,36 @@ namespace Hecton8.Physics
             if (safeCount <= 0)
                 return false;
 
-            NativeArray<TetherSplineVertexDTO> mapped = destination.LockBufferForWrite<TetherSplineVertexDTO>(0, safeCount);
-            JobHandle uploadHandle = new CableSplineGpuMemcpyJob
+            bool locked = false;
+            try
             {
-                Source = source,
-                Destination = (TetherSplineVertexDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped),
-                Count = safeCount,
-                DestinationBytes = (long)mapped.Length * VerletCableLayout.TetherSplineVertexStrideBytes
-            }.Schedule(dependency);
+                NativeArray<TetherSplineVertexDTO> mapped = destination.LockBufferForWrite<TetherSplineVertexDTO>(0, safeCount);
+                locked = true;
+                JobHandle uploadHandle = new CableSplineGpuMemcpyJob
+                {
+                    Source = source,
+                    Destination = (TetherSplineVertexDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped),
+                    Count = safeCount,
+                    DestinationBytes = (long)mapped.Length * VerletCableLayout.TetherSplineVertexStrideBytes
+                }.Schedule(dependency);
 
-            upload = new CableSplineUploadTicket132
+                upload = new CableSplineUploadTicket132
+                {
+                    Destination = destination,
+                    Handle = uploadHandle,
+                    Count = safeCount,
+                    Active = 1
+                };
+                return true;
+            }
+            catch
             {
-                Destination = destination,
-                Handle = uploadHandle,
-                Count = safeCount,
-                Active = 1
-            };
-            return true;
+                if (locked)
+                    TryUnlockSplineVertexUploadBuffer(destination, safeCount);
+
+                upload = default;
+                return false;
+            }
         }
 
         public static bool TryFinalizeSplineVertexUpload(ref CableSplineUploadTicket132 upload)
@@ -753,9 +766,9 @@ namespace Hecton8.Physics
             if (!DispatcherJobFence.TryFinalizeCompleted(ref handle))
                 return false;
 
-            upload.Destination.UnlockBufferAfterWrite<TetherSplineVertexDTO>(upload.Count);
+            bool unlocked = TryUnlockSplineVertexUploadBuffer(upload.Destination, upload.Count);
             upload = default;
-            return true;
+            return unlocked;
         }
 
         public static bool ForceFinalizeSplineVertexUpload(ref CableSplineUploadTicket132 upload)
@@ -768,9 +781,9 @@ namespace Hecton8.Physics
 
             JobHandle handle = upload.Handle;
             DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
-            upload.Destination.UnlockBufferAfterWrite<TetherSplineVertexDTO>(upload.Count);
+            bool unlocked = TryUnlockSplineVertexUploadBuffer(upload.Destination, upload.Count);
             upload = default;
-            return true;
+            return unlocked;
         }
 
         public static GraphicsBuffer CreateSplineVertexBuffer(int capacity)
@@ -813,21 +826,34 @@ namespace Hecton8.Physics
             if (vertexCount == 0u)
                 return false;
 
-            NativeArray<TetherSplineIndirectArgsDTO> mapped = destination.LockBufferForWrite<TetherSplineIndirectArgsDTO>(0, 1);
-            JobHandle uploadHandle = new CableSplineIndirectArgsJob
+            bool locked = false;
+            try
             {
-                Destination = (TetherSplineIndirectArgsDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped),
-                VertexCountPerInstance = vertexCount,
-                InstanceCount = 1u
-            }.Schedule(dependency);
+                NativeArray<TetherSplineIndirectArgsDTO> mapped = destination.LockBufferForWrite<TetherSplineIndirectArgsDTO>(0, 1);
+                locked = true;
+                JobHandle uploadHandle = new CableSplineIndirectArgsJob
+                {
+                    Destination = (TetherSplineIndirectArgsDTO*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped),
+                    VertexCountPerInstance = vertexCount,
+                    InstanceCount = 1u
+                }.Schedule(dependency);
 
-            upload = new CableSplineIndirectArgsUploadTicket132
+                upload = new CableSplineIndirectArgsUploadTicket132
+                {
+                    Destination = destination,
+                    Handle = uploadHandle,
+                    Active = 1
+                };
+                return true;
+            }
+            catch
             {
-                Destination = destination,
-                Handle = uploadHandle,
-                Active = 1
-            };
-            return true;
+                if (locked)
+                    TryUnlockSplineIndirectArgsUploadBuffer(destination);
+
+                upload = default;
+                return false;
+            }
         }
 
         public static bool TryFinalizeSplineIndirectArgsUpload(ref CableSplineIndirectArgsUploadTicket132 upload)
@@ -842,9 +868,9 @@ namespace Hecton8.Physics
             if (!DispatcherJobFence.TryFinalizeCompleted(ref handle))
                 return false;
 
-            upload.Destination.UnlockBufferAfterWrite<TetherSplineIndirectArgsDTO>(1);
+            bool unlocked = TryUnlockSplineIndirectArgsUploadBuffer(upload.Destination);
             upload = default;
-            return true;
+            return unlocked;
         }
 
         public static bool ForceFinalizeSplineIndirectArgsUpload(ref CableSplineIndirectArgsUploadTicket132 upload)
@@ -857,9 +883,35 @@ namespace Hecton8.Physics
 
             JobHandle handle = upload.Handle;
             DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
-            upload.Destination.UnlockBufferAfterWrite<TetherSplineIndirectArgsDTO>(1);
+            bool unlocked = TryUnlockSplineIndirectArgsUploadBuffer(upload.Destination);
             upload = default;
-            return true;
+            return unlocked;
+        }
+
+        private static bool TryUnlockSplineVertexUploadBuffer(GraphicsBuffer destination, int count)
+        {
+            try
+            {
+                destination.UnlockBufferAfterWrite<TetherSplineVertexDTO>(count);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static bool TryUnlockSplineIndirectArgsUploadBuffer(GraphicsBuffer destination)
+        {
+            try
+            {
+                destination.UnlockBufferAfterWrite<TetherSplineIndirectArgsDTO>(1);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         public static bool TryDrawSplineProceduralIndirect(
@@ -1225,7 +1277,7 @@ namespace Hecton8.Physics
         // The scheduler acquires one ParallelWriter for this solve pass, writes finite PhysicsEventPayload values during
         // the final constraint iteration only, and does not dispose or reconfigure the SignalBus lane while the handle lives.
         [NoAlias, NativeDisableContainerSafetyRestriction]
-        public NativeQueue<PhysicsEventPayload>.ParallelWriter PhysicsEventWriter;
+        public global::Hecton8.Core.MpscSignalRingBuffer<PhysicsEventPayload>.ParallelWriter PhysicsEventWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> PhysicsEventWriterBudget;
         public byte PhysicsEventWriterEnabled;
         public double3 CameraAUP;

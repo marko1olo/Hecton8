@@ -779,7 +779,7 @@ namespace Hecton8.Gameplay
         private static void ReportBridgeRollbackFailure()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("BatteryCharger bridge rollback failed; Inventory-owner reservation route is required for a hard conservation proof.");
+            Hecton8.Core.H8Debug.LogError("BatteryCharger bridge rollback failed; Inventory-owner reservation route is required for a hard conservation proof.");
 #endif
         }
 
@@ -859,7 +859,7 @@ namespace Hecton8.Gameplay
         private void CacheRegistryServicesCold()
         {
             CachePlayerRuntimeContext(GlobalRegistry.Player, forceAssign: true);
-            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _cachedAudioService = GlobalRegistry.Audio;
         }
 
         private void CachePlayerRuntimeContext(IPlayerRuntimeContext playerContext, bool forceAssign)

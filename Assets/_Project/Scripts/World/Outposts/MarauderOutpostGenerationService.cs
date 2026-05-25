@@ -128,6 +128,7 @@ namespace Hecton8.World.Outposts
         private JobPhase _jobPhase;
         private OutpostGenerationQualityTier _qualityTier;
         private OutpostGenerationState _state;
+        private float _generationQualityWeight01 = 1f;
         private float3 _generationOrigin;
         private float3 _pendingShift;
         private float3 _pendingInteractableProxyShift;
@@ -442,10 +443,9 @@ namespace Hecton8.World.Outposts
             _activeSolveSeed = MarauderOutpostHash.LcgHash((ulong)worldSeed + ResolveFirstBaseHash());
             _activeGridHash = 0u;
             _generationOrigin = originMeters;
-            _qualityTier = ResolveQualityTier();
-            _activeDimensions = _qualityTier == OutpostGenerationQualityTier.Low
-                ? new int3(MarauderOutpostConstants.LowWidth, MarauderOutpostConstants.LowHeight, MarauderOutpostConstants.LowDepth)
-                : new int3(MarauderOutpostConstants.FullWidth, MarauderOutpostConstants.FullHeight, MarauderOutpostConstants.FullDepth);
+            _generationQualityWeight01 = ResolveOutpostQualityWeight01();
+            _qualityTier = ResolveQualityTier(_generationQualityWeight01);
+            _activeDimensions = ResolveContinuousActiveDimensions(_generationQualityWeight01);
 
             RestoreWfcMutableState(sectorHash);
 
@@ -463,7 +463,7 @@ namespace Hecton8.World.Outposts
                     WfcGrid = wfcGrid,
                     Dimensions = ResolveActiveDimensions(),
                     Seed = _activeSolveSeed,
-                    LowTier = _qualityTier == OutpostGenerationQualityTier.Low ? (byte)1 : (byte)0
+                    GlobalQualityWeight = _generationQualityWeight01
                 };
 
                 _jobHandle = job.Schedule();
@@ -690,7 +690,7 @@ namespace Hecton8.World.Outposts
                 StiltClearanceMeters = ResolveStiltClearanceMeters(),
                 OutpostAge01 = ResolveOutpostAge01(),
                 Seed = _activeSolveSeed,
-                LowTier = _qualityTier == OutpostGenerationQualityTier.Low ? (byte)1 : (byte)0
+                GlobalQualityWeight = _generationQualityWeight01
             };
 
             try
@@ -811,9 +811,8 @@ namespace Hecton8.World.Outposts
             return ToFloat3(position);
         }
 
-        private OutpostGenerationQualityTier ResolveQualityTier()
+        private static OutpostGenerationQualityTier ResolveQualityTier(float qualityWeight01)
         {
-            float qualityWeight01 = ResolveOutpostQualityWeight01();
             if (qualityWeight01 < MiddleOutpostQualityThreshold01)
                 return OutpostGenerationQualityTier.Low;
             if (qualityWeight01 < HighOutpostQualityThreshold01)
@@ -822,6 +821,15 @@ namespace Hecton8.World.Outposts
                 return OutpostGenerationQualityTier.High;
 
             return OutpostGenerationQualityTier.Ultra;
+        }
+
+        private static int3 ResolveContinuousActiveDimensions(float qualityWeight01)
+        {
+            float q = MathLodApproximation.SmoothStep01(MathLodApproximation.SaturateFinite(qualityWeight01, 1f));
+            return new int3(
+                math.clamp((int)math.round(math.lerp(MarauderOutpostConstants.LowWidth, MarauderOutpostConstants.FullWidth, q)), MarauderOutpostConstants.LowWidth, MarauderOutpostConstants.FullWidth),
+                math.clamp((int)math.round(math.lerp(MarauderOutpostConstants.LowHeight, MarauderOutpostConstants.FullHeight, q)), MarauderOutpostConstants.LowHeight, MarauderOutpostConstants.FullHeight),
+                math.clamp((int)math.round(math.lerp(MarauderOutpostConstants.LowDepth, MarauderOutpostConstants.FullDepth, q)), MarauderOutpostConstants.LowDepth, MarauderOutpostConstants.FullDepth));
         }
 
         private static float ResolveOutpostQualityWeight01()
@@ -1139,15 +1147,21 @@ namespace Hecton8.World.Outposts
 
             NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
                 _activeArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            try
             {
-                indexCountPerInstance = indexCount,
-                instanceCount = safeInstanceCount,
-                startIndex = startIndex,
-                baseVertexIndex = baseVertexIndex,
-                startInstance = 0u
-            };
-            _activeArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+                argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+                {
+                    indexCountPerInstance = indexCount,
+                    instanceCount = safeInstanceCount,
+                    startIndex = startIndex,
+                    baseVertexIndex = baseVertexIndex,
+                    startInstance = 0u
+                };
+            }
+            finally
+            {
+                _activeArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            }
         }
 
         private void SpawnInteractableProxies()
@@ -1480,8 +1494,9 @@ namespace Hecton8.World.Outposts
 
         private ushort ResolveDescriptorFlags()
         {
+            float survivalBandWeight = 1f - MathLodApproximation.SmoothRange01(0.18f, 0.42f, _generationQualityWeight01);
             return (ushort)((_heightmapFallback ? MarauderOutpostConstants.HeightmapFallbackFlag : 0u) |
-                            (_qualityTier == OutpostGenerationQualityTier.Low ? MarauderOutpostConstants.LowTierFlag : 0u));
+                            (survivalBandWeight > 0.5f ? MarauderOutpostConstants.LowTierFlag : 0u));
         }
 
         private bool TryPublishGeneratedSignal()
@@ -1798,7 +1813,7 @@ namespace Hecton8.World.Outposts
             Vector4 decayRuntime = new Vector4(
                 age,
                 0.55f,
-                _qualityTier == OutpostGenerationQualityTier.Low ? 1f : 0f,
+                1f - MathLodApproximation.SmoothRange01(0.18f, 0.42f, _generationQualityWeight01),
                 (_activeSolveSeed & 0xFFFFu) * MarauderOutpostConstants.HeightUShortToUnit);
 
             if (_renderPropertiesDirty || _renderPropertyMatrixBuffer != _activeMatrixBuffer)
@@ -2216,7 +2231,7 @@ namespace Hecton8.World.Outposts
         private void CompleteCurrentOutpostJobForTeardown()
         {
             if (_jobPhase != JobPhase.None)
-                _jobHandle.Complete();
+                DispatcherJobFence.TryComplete(ref _jobHandle, forceComplete: true);
 
             _jobHandle = default;
             _jobPhase = JobPhase.None;
@@ -2298,9 +2313,15 @@ namespace Hecton8.World.Outposts
                 return;
 
             NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
-            for (int i = 0; i < safeCount; i++)
-                mapped[i] = source[i];
-            destination.UnlockBufferAfterWrite<T>(safeCount);
+            try
+            {
+                for (int i = 0; i < safeCount; i++)
+                    mapped[i] = source[i];
+            }
+            finally
+            {
+                destination.UnlockBufferAfterWrite<T>(safeCount);
+            }
         }
     }
 }

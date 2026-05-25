@@ -1,9 +1,9 @@
+using System;
 using Hecton8.Core;
 using Hecton8.Audio;
 using Hecton8.Atmosphere;
 using Hecton8.Construction;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Physics;
 using Hecton8.World;
 using Hecton.Localization;
 using Unity.Mathematics;
@@ -17,7 +17,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(HectonSurvivalSystem))]
     [RequireComponent(typeof(HectonPlayerMovement))]
-    public sealed class TraumaDispatcher : MonoBehaviour, ISlowTickable, IDamageSignalReceiver, IModuleStatusEventListener, IElectromagneticPulseEventListener, IGlobalRegistryHotSwapListener
+    public sealed class TraumaDispatcher : MonoBehaviour, ISlowTickable, ILateFrameTickable, IDamageSignalReceiver, IModuleStatusEventListener, IGlobalRegistryHotSwapListener
     {
         private static int s_x001TraumaDispatcherSignalPushDropCount;
         private const float TraumaSlowTickDeltaSeconds = 0.1f;
@@ -47,6 +47,7 @@ namespace Hecton8.Gameplay
         private HectonPlayerMovement _playerMovement;
         private PlayerTransportCoordinator _playerTransportCoordinator;
         private bool _registeredSlowTick;
+        private bool _registeredLateFrame;
         private float _integrityChannel01;
         private float _powerChannel01;
         private float _clarityChannel01;
@@ -70,6 +71,7 @@ namespace Hecton8.Gameplay
         private bool _parasiteSporeLosResultValid;
         private bool _parasiteSporeLosBlocked;
         private bool _hotSwapRegistered;
+        private int _lastPhysicsEventSnapshotGeneration;
         private ISpatialAudioEnvironmentModulationSink _spatialAudioSink;
         private IPdaCorrosionPresentationSink _pdaCorrosionSink;
 
@@ -142,7 +144,6 @@ namespace Hecton8.Gameplay
             CacheRegistryServicesCold();
             ResolveReferences();
             ModuleStatusEvents.Register(this);
-            PhysicsEventBus.Register((IElectromagneticPulseEventListener)this);
 
             if (_playerTransportCoordinator != null)
                 _playerTransportCoordinator.ActiveTransportLifecycleChanged += HandleTransportLifecycleChanged;
@@ -159,7 +160,6 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             ModuleStatusEvents.Unregister(this);
-            PhysicsEventBus.Unregister((IElectromagneticPulseEventListener)this);
 
             if (_playerTransportCoordinator != null)
                 _playerTransportCoordinator.ActiveTransportLifecycleChanged -= HandleTransportLifecycleChanged;
@@ -174,6 +174,7 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            TryUnregister();
             TryUnregisterHotSwapListener();
         }
 
@@ -190,12 +191,9 @@ namespace Hecton8.Gameplay
             PublishSignals(false);
         }
 
-        /// <summary>
-        /// Receives deferred electromagnetic pulse events from the physics event lane.
-        /// </summary>
-        public void OnElectromagneticPulse(in ElectromagneticPulseEvent pulseEvent)
+        public void LateFrameTick()
         {
-            HandleElectromagneticPulse(in pulseEvent);
+            DrainPhysicsEventPayloads();
         }
 
         /// <summary>
@@ -328,6 +326,9 @@ namespace Hecton8.Gameplay
 
             if (!_registeredSlowTick)
                 _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
+
+            if (!_registeredLateFrame)
+                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
         private void TryUnregister()
@@ -337,11 +338,18 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
                 _registeredSlowTick = false;
             }
+
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredLateFrame = false;
+                _lastPhysicsEventSnapshotGeneration = 0;
+            }
         }
 
         private void CacheRegistryServicesCold()
         {
-            _spatialAudioSink = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance as ISpatialAudioEnvironmentModulationSink;
+            _spatialAudioSink = GlobalRegistry.Audio as ISpatialAudioEnvironmentModulationSink;
             _pdaCorrosionSink = GlobalRegistry.PdaCorrosionPresentationSink;
         }
 
@@ -378,6 +386,8 @@ namespace Hecton8.Gameplay
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _registeredSlowTick = false;
+                    _registeredLateFrame = false;
+                    _lastPhysicsEventSnapshotGeneration = 0;
                     if (currentService != null && isActiveAndEnabled)
                         TryRegister();
                     break;
@@ -784,16 +794,32 @@ namespace Hecton8.Gameplay
             return clarityRemaining01 < BiosRecoveryClarityThreshold || playerIntegrity01 < 0.05f;
         }
 
-        private void HandleElectromagneticPulse(in ElectromagneticPulseEvent pulseEvent)
+        private void DrainPhysicsEventPayloads()
         {
-            if ((pulseEvent.DamageType & (uint)DamageTypeMask.Emp) == 0u ||
+            int snapshotGeneration = SignalBus<PhysicsEventPayload>.SnapshotGeneration;
+            if (snapshotGeneration == _lastPhysicsEventSnapshotGeneration)
+                return;
+
+            _lastPhysicsEventSnapshotGeneration = snapshotGeneration;
+            ReadOnlySpan<PhysicsEventPayload> signals = SignalBus<PhysicsEventPayload>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PhysicsEventPayload payload = signals[i];
+                if (payload.EventType == (ushort)PhysicsEventType.ElectromagneticPulse)
+                    HandleElectromagneticPulse(in payload);
+            }
+        }
+
+        private void HandleElectromagneticPulse(in PhysicsEventPayload pulseEvent)
+        {
+            if ((pulseEvent.DataHash & (uint)DamageTypeMask.Emp) == 0u ||
                 !IsPulseRelevantToPlayer(in pulseEvent))
             {
                 return;
             }
 
-            float durationSeconds = math.max(0f, pulseEvent.DurationSeconds);
-            float claritySuppression01 = math.saturate(pulseEvent.ClaritySuppression01);
+            float durationSeconds = math.max(0f, pulseEvent.Scalar0);
+            float claritySuppression01 = math.saturate(pulseEvent.Scalar1);
             _empSensorBlindTimer = math.max(_empSensorBlindTimer, durationSeconds);
             PromoteChannel(ref _clarityChannel01, claritySuppression01);
 
@@ -806,7 +832,7 @@ namespace Hecton8.Gameplay
             _pdaCorrosionSink?.RequestExternalPdaCorrosion(claritySuppression01, durationSeconds);
         }
 
-        private bool IsPulseRelevantToPlayer(in ElectromagneticPulseEvent pulseEvent)
+        private bool IsPulseRelevantToPlayer(in PhysicsEventPayload pulseEvent)
         {
             Vector3 pulsePosition = pulseEvent.RuntimePosition;
             float pulseRadius = math.max(0f, pulseEvent.RadiusMeters);

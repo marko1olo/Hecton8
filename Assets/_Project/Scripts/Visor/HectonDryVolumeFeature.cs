@@ -43,10 +43,10 @@ namespace Hecton8.Visor
 
             protected static void DrawDryStencil(IRasterCommandBuffer cmd, Material material)
             {
-                int sourceCount = HectonDryVolumeStencilSource.ActiveSources.Count;
+                int sourceCount = HectonDryVolumeStencilSource.ActiveSourceCount;
                 for (int sourceIndex = 0; sourceIndex < sourceCount; sourceIndex++)
                 {
-                    HectonDryVolumeStencilSource source = HectonDryVolumeStencilSource.ActiveSources[sourceIndex];
+                    HectonDryVolumeStencilSource source = HectonDryVolumeStencilSource.GetActiveSource(sourceIndex);
                     if (source == null || !source.isActiveAndEnabled)
                         continue;
 
@@ -158,7 +158,7 @@ namespace Hecton8.Visor
                     _stencilWriteMaterial == null ||
                     _restoreMaterial == null ||
                     _clearMaterial == null ||
-                    HectonDryVolumeStencilSource.ActiveSources.Count <= 0 ||
+                    HectonDryVolumeStencilSource.ActiveSourceCount <= 0 ||
                     IsUnsupportedCamera(frameData) ||
                     !TryReadOceanCameraColorTexture(out Texture oceanCameraColorTexture))
                 {
@@ -297,7 +297,7 @@ namespace Hecton8.Visor
 
                 _stencilWriteMaterial.SetFloat(ShaderConstants.StencilRefId, _settings.stencilRef);
                 _resolveMaterial.SetFloat(ShaderConstants.StencilRefId, _settings.stencilRef);
-                bool hasDryVolumes = HectonDryVolumeStencilSource.ActiveSources.Count > 0;
+                bool hasDryVolumes = HectonDryVolumeStencilSource.ActiveSourceCount > 0;
 
                 if (hasDryVolumes)
                 {

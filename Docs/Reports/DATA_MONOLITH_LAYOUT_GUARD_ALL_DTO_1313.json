@@ -1,0 +1,51 @@
+{
+  "schema": "HECTON8_DATA_MONOLITH_LAYOUT_GUARD_ALL_DTO_V1",
+  "agent": "1313",
+  "date": "2026-05-25",
+  "evidence": "STATIC_SOURCE_NO_DOTNET_NO_UNITY",
+  "patch": {
+    "file": "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithLayoutGuard.cs",
+    "expectAllDeclaredLayoutsCallLine": 85,
+    "dtoEnumerationLines": "121-152",
+    "expectDeclaredLayoutLine": 155,
+    "fieldOffsetAttributeLine": 178,
+    "unsafeGetFieldOffsetLine": 182,
+    "undeclaredPaddingRejectionLine": 215,
+    "boolFieldRejectionLine": 222
+  },
+  "checksAdded": [
+    "LayoutKind.Explicit required for every DTO",
+    "UnsafeUtility.SizeOf<T>() must match expected size",
+    "DTO size must be multiple of 8 bytes",
+    "Every instance field must declare FieldOffsetAttribute",
+    "UnsafeUtility.GetFieldOffset(field) must match FieldOffsetAttribute.Value",
+    "Field offset must satisfy natural alignment up to 8 bytes",
+    "No overlapping field bytes",
+    "No undeclared padding holes",
+    "No bool fields",
+    "No string or managed reference fields"
+  ],
+  "staticVerification": {
+    "dtoStructsParsedFromH8DataMonolithTypes": 32,
+    "dtoCoverageFailures": 0,
+    "guardExpectDeclaredLayoutCallCount": 32,
+    "guardIfCount": 1,
+    "guardEndifCount": 1,
+    "guardPreprocessorBalanced": true,
+    "json1313Parse": "PASS_AT_TIME_OF_REPORT",
+    "gitDiffCheck": "PASS_CRLF_WARNINGS_ONLY",
+    "activeWindowsReleaseForbiddenTokenHits": 0,
+    "activeAndroidReleaseForbiddenTokenHits": 0
+  },
+  "remainingRejections": {
+    "strictDtoFieldOrderFailures": [
+      "H8DataBlobHeader"
+    ],
+    "h8ItemRecord": "STRICT_ORDER_FIXED_STATIC_BLOB_V2_VALIDATED",
+    "activeBlob": "STATIC_VALIDATION_PASS_CHECKSUM_0x19D880780D6E1B46",
+    "questAndroidProductionHydrator": "FAIL_CLOSED_NO_NATIVE_PAL",
+    "strictGlobalParserBlockers": 262
+  },
+  "dotnetRun": false,
+  "unityBuildRun": false
+}

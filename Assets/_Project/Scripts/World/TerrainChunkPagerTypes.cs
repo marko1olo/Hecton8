@@ -374,6 +374,24 @@ namespace Hecton8.World
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint HashMetadata(NativeArray<ChunkMetadataDTO> metadata, int count)
+        {
+            ulong hash = FnvaOffset64;
+            int safeCount = math.min(count, metadata.Length);
+            for (int i = 0; i < safeCount; i++)
+            {
+                ChunkMetadataDTO entry = metadata[i];
+                hash ^= entry.SectorHash;
+                hash *= FnvaPrime64;
+                hash ^= entry.StateFlags;
+                hash *= FnvaPrime64;
+            }
+
+            uint folded = unchecked((uint)(hash ^ (hash >> 32)));
+            return folded == 0u ? 1u : folded;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float FiniteOr(float value, float fallback)
         {
             return math.isfinite(value) ? value : fallback;
@@ -397,10 +415,10 @@ namespace Hecton8.World
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct EvaluateChunkResidencyJob : IJob
+    public struct EvaluateChunkResidencyJob : IJob
     {
-        [NativeDisableUnsafePtrRestriction] public void* MetadataPtr;
-        [NativeDisableUnsafePtrRestriction] public void* SectorCoordPtr;
+        [NoAlias] public NativeArray<ChunkMetadataDTO> Metadata;
+        [ReadOnly, NoAlias] public NativeArray<TerrainChunkSectorCoordDTO> SectorCoords;
         public int MetadataCapacity;
         [NoAlias] public NativeArray<TerrainChunkWorkerRequestDTO> LoadRequests;
         [NoAlias] public NativeArray<int> LoadRequestCount;
@@ -413,25 +431,24 @@ namespace Hecton8.World
 
         public void Execute()
         {
-            if (MetadataPtr == null || SectorCoordPtr == null || MetadataCapacity <= 0)
+            if (!Metadata.IsCreated || !SectorCoords.IsCreated || MetadataCapacity <= 0)
                 return;
 
-            ChunkMetadataDTO* metadata = (ChunkMetadataDTO*)MetadataPtr;
             int loadCount = 0;
             int staleCount = 0;
+            int metadataCapacity = math.min(MetadataCapacity, math.min(Metadata.Length, SectorCoords.Length));
             int ringRadius = TerrainChunkPagerMath.ResolveDiscreteRingRadius(Tuning.EffectiveRingRadius);
             float sectorSize = math.max(1f, Tuning.SectorSizeMeters);
             long cameraSectorX = TerrainChunkPagerMath.ResolveSectorCoord(CameraAup.x, sectorSize);
             long cameraSectorZ = TerrainChunkPagerMath.ResolveSectorCoord(CameraAup.z, sectorSize);
 
-            for (int slot = 0; slot < MetadataCapacity; slot++)
+            for (int slot = 0; slot < metadataCapacity; slot++)
             {
-                ChunkMetadataDTO* metaPtr = metadata + slot;
-                ref ChunkMetadataDTO meta = ref UnsafeUtility.AsRef<ChunkMetadataDTO>(metaPtr);
+                ChunkMetadataDTO meta = Metadata[slot];
                 if (meta.SectorHash == 0UL)
                     continue;
 
-                TerrainChunkSectorCoordDTO coord = UnsafeUtility.ReadArrayElement<TerrainChunkSectorCoordDTO>(SectorCoordPtr, slot);
+                TerrainChunkSectorCoordDTO coord = SectorCoords[slot];
                 double dx = ((double)coord.X - (double)cameraSectorX) * sectorSize;
                 double dz = ((double)coord.Z - (double)cameraSectorZ) * sectorSize;
                 double distSqD = (dx * dx) + (dz * dz);
@@ -448,6 +465,8 @@ namespace Hecton8.World
                     if (staleCount < StaleSlots.Length)
                         StaleSlots[staleCount++] = slot;
                 }
+
+                Metadata[slot] = meta;
             }
 
             for (int z = -ringRadius; z <= ringRadius; z++)
@@ -457,7 +476,7 @@ namespace Hecton8.World
                     long sectorX = AddSmallSectorOffset(cameraSectorX, x);
                     long sectorZ = AddSmallSectorOffset(cameraSectorZ, z);
                     ulong hash = TerrainChunkPagerMath.ComputeSectorHash(sectorX, sectorZ);
-                    if (FindSlotByHash(metadata, hash, MetadataCapacity) >= 0)
+                    if (FindSlotByHash(Metadata, hash, metadataCapacity) >= 0)
                         continue;
 
                     if (loadCount >= LoadRequests.Length)
@@ -488,11 +507,11 @@ namespace Hecton8.World
                 StaleSlotCount[0] = staleCount;
         }
 
-        private static int FindSlotByHash(ChunkMetadataDTO* metadata, ulong hash, int count)
+        private static int FindSlotByHash(NativeArray<ChunkMetadataDTO> metadata, ulong hash, int count)
         {
             for (int i = 0; i < count; i++)
             {
-                ref readonly ChunkMetadataDTO meta = ref UnsafeUtility.AsRef<ChunkMetadataDTO>(metadata + i);
+                ChunkMetadataDTO meta = metadata[i];
                 if (meta.SectorHash == hash &&
                     (meta.StateFlags & (TerrainChunkStateFlags.Active | TerrainChunkStateFlags.Loading | TerrainChunkStateFlags.ReadyToCommit)) != 0u)
                 {
@@ -515,10 +534,10 @@ namespace Hecton8.World
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct EvictStaleChunksJob : IJob
+    public struct EvictStaleChunksJob : IJob
     {
-        [NativeDisableUnsafePtrRestriction] public void* MetadataPtr;
-        [NativeDisableUnsafePtrRestriction] public void* SectorCoordPtr;
+        [NoAlias] public NativeArray<ChunkMetadataDTO> Metadata;
+        [NoAlias] public NativeArray<TerrainChunkSectorCoordDTO> SectorCoords;
         public int MetadataCapacity;
         [NoAlias] public NativeArray<int> FreedSlots;
         [NoAlias] public NativeArray<int> FreedSlotCount;
@@ -529,16 +548,16 @@ namespace Hecton8.World
 
         public void Execute()
         {
-            if (MetadataPtr == null || SectorCoordPtr == null || MetadataCapacity <= 0)
+            if (!Metadata.IsCreated || !SectorCoords.IsCreated || MetadataCapacity <= 0)
                 return;
 
-            ChunkMetadataDTO* metadata = (ChunkMetadataDTO*)MetadataPtr;
+            int metadataCapacity = math.min(MetadataCapacity, math.min(Metadata.Length, SectorCoords.Length));
             double cullMeters = (double)math.max(1f, CullRadiusSectors) * math.max(1f, SectorSizeMeters);
             double cullSq = cullMeters * cullMeters;
             int freeCount = 0;
-            for (int i = 0; i < MetadataCapacity; i++)
+            for (int i = 0; i < metadataCapacity; i++)
             {
-                ref ChunkMetadataDTO meta = ref UnsafeUtility.AsRef<ChunkMetadataDTO>(metadata + i);
+                ChunkMetadataDTO meta = Metadata[i];
                 if (meta.SectorHash == 0UL ||
                     (meta.StateFlags & TerrainChunkStateFlags.Stale) == 0u ||
                     (meta.StateFlags & TerrainChunkStateFlags.Loading) != 0u ||
@@ -547,14 +566,14 @@ namespace Hecton8.World
                     continue;
                 }
 
-                TerrainChunkSectorCoordDTO coord = UnsafeUtility.ReadArrayElement<TerrainChunkSectorCoordDTO>(SectorCoordPtr, i);
+                TerrainChunkSectorCoordDTO coord = SectorCoords[i];
                 double dx = ((double)coord.X - (double)CameraSectorX) * SectorSizeMeters;
                 double dz = ((double)coord.Z - (double)CameraSectorZ) * SectorSizeMeters;
                 if ((dx * dx) + (dz * dz) <= cullSq)
                     continue;
 
-                meta = default;
-                UnsafeUtility.WriteArrayElement(SectorCoordPtr, i, default(TerrainChunkSectorCoordDTO));
+                Metadata[i] = default;
+                SectorCoords[i] = default;
                 if (freeCount < FreedSlots.Length)
                     FreedSlots[freeCount++] = i;
             }
@@ -565,25 +584,27 @@ namespace Hecton8.World
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct CommitStagedChunkJob : IJob
+    public struct CommitStagedChunkJob : IJob
     {
-        [NativeDisableUnsafePtrRestriction] public byte* Source;
-        [NativeDisableUnsafePtrRestriction] public byte* Destination;
+        [ReadOnly, NoAlias] public NativeArray<byte> Source;
+        [NoAlias] public NativeArray<byte> Destination;
         public int ByteCount;
 
         public void Execute()
         {
-            if (Source == null || Destination == null || ByteCount <= 0)
+            if (!Source.IsCreated || !Destination.IsCreated || ByteCount <= 0)
                 return;
 
-            UnsafeUtility.MemCpy(Destination, Source, ByteCount);
+            int byteCount = math.min(ByteCount, math.min(Source.Length, Destination.Length));
+            for (int i = 0; i < byteCount; i++)
+                Destination[i] = Source[i];
         }
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public unsafe struct GenerateMockDiskLoadJob : IJob
+    public struct GenerateMockDiskLoadJob : IJob
     {
-        [NativeDisableUnsafePtrRestriction] public byte* Destination;
+        [NoAlias] public NativeArray<byte> Destination;
         public int ByteCount;
         public ulong SectorHash;
         public uint Sequence;
@@ -593,7 +614,23 @@ namespace Hecton8.World
             Fill(Destination, ByteCount, SectorHash, Sequence);
         }
 
-        public static void Fill(byte* destination, int byteCount, ulong sectorHash, uint sequence)
+        public static void Fill(NativeArray<byte> destination, int byteCount, ulong sectorHash, uint sequence)
+        {
+            if (!destination.IsCreated || byteCount <= 0)
+                return;
+
+            int safeByteCount = math.min(byteCount, destination.Length);
+            uint seed = unchecked((uint)(sectorHash ^ (sectorHash >> 32)) ^ sequence ^ 0xA341316Cu);
+            for (int i = 0; i < safeByteCount; i++)
+            {
+                seed ^= seed << 13;
+                seed ^= seed >> 17;
+                seed ^= seed << 5;
+                destination[i] = (byte)(seed >> 24);
+            }
+        }
+
+        public static unsafe void Fill(byte* destination, int byteCount, ulong sectorHash, uint sequence)
         {
             if (destination == null || byteCount <= 0)
                 return;

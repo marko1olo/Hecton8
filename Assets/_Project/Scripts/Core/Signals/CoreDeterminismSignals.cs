@@ -202,6 +202,32 @@ namespace Hecton8.Core
             return signal.Sequence != 0u;
         }
 
+        public static bool TryGetLatestKccVelocityFloat3(uint maxFrameAge, out float3 velocity)
+        {
+            velocity = float3.zero;
+            uint currentFrame = SystemDispatcher.CurrentFrameId;
+            if (!TryGetLatestKccVelocity(out KccVelocitySignal signal) ||
+                signal.Sequence == 0u ||
+                !IsKccVelocityFresh(in signal, currentFrame, maxFrameAge) ||
+                !math.all(math.isfinite(signal.Velocity)))
+            {
+                return false;
+            }
+
+            velocity = signal.Velocity;
+            return true;
+        }
+
+        public static bool TryGetLatestKccVelocityVector(uint maxFrameAge, out Vector3 velocity)
+        {
+            velocity = Vector3.zero;
+            if (!TryGetLatestKccVelocityFloat3(maxFrameAge, out float3 value))
+                return false;
+
+            velocity = new Vector3(value.x, value.y, value.z);
+            return true;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -228,6 +254,14 @@ namespace Hecton8.Core
         {
             EnsureInitialized();
             return SignalBus<T>.TryConsumeFrame(out signal);
+        }
+
+        private static bool IsKccVelocityFresh(in KccVelocitySignal signal, uint currentFrame, uint maxFrameAge)
+        {
+            uint signalFrame = signal.Frame != 0u ? signal.Frame : signal.Sequence;
+            return currentFrame == 0u ||
+                   signalFrame == 0u ||
+                   (signalFrame <= currentFrame && currentFrame - signalFrame <= maxFrameAge);
         }
 
         private static void ClearSidecars()

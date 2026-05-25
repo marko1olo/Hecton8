@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -13,6 +12,14 @@ using UnityEditor;
 
 namespace Hecton8.Visor
 {
+    internal static class HectonVisorShaderTagIds
+    {
+        internal static readonly ShaderTagId DepthOnly = new ShaderTagId("DepthOnly");
+        internal static readonly ShaderTagId UniversalForward = new ShaderTagId("UniversalForward");
+        internal static readonly ShaderTagId UniversalForwardOnly = new ShaderTagId("UniversalForwardOnly");
+        internal static readonly ShaderTagId SrpDefaultUnlit = new ShaderTagId("SRPDefaultUnlit");
+    }
+
     /// <summary>
     /// Writes water, voxel cave, and terrain depth before transparent silt and refractive passes shade pixels.
     /// </summary>
@@ -21,15 +28,6 @@ namespace Hecton8.Visor
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_FillrateDepthOnly.shader";
 #endif
-
-        // COLD ALLOC: List<ShaderTagId>[4] - renderer-list tags for fillrate depth prepass - owner: HectonFillrateDepthPrepassFeature
-        private static readonly List<ShaderTagId> ShaderTagIds = new List<ShaderTagId>(4)
-        {
-            new ShaderTagId("DepthOnly"),
-            new ShaderTagId("UniversalForward"),
-            new ShaderTagId("UniversalForwardOnly"),
-            new ShaderTagId("SRPDefaultUnlit")
-        };
 
         [Serializable]
         private sealed class FeatureSettings
@@ -92,11 +90,14 @@ namespace Hecton8.Visor
                 UniversalLightData lightData = frameData.Get<UniversalLightData>();
                 UniversalRenderingData renderingData = frameData.Get<UniversalRenderingData>();
                 DrawingSettings drawingSettings = CreateDrawingSettings(
-                    ShaderTagIds,
+                    HectonVisorShaderTagIds.DepthOnly,
                     renderingData,
                     cameraData,
                     lightData,
                     SortingCriteria.CommonOpaque);
+                drawingSettings.SetShaderPassName(1, HectonVisorShaderTagIds.UniversalForward);
+                drawingSettings.SetShaderPassName(2, HectonVisorShaderTagIds.UniversalForwardOnly);
+                drawingSettings.SetShaderPassName(3, HectonVisorShaderTagIds.SrpDefaultUnlit);
                 drawingSettings.overrideMaterial = _depthOnlyMaterial;
                 drawingSettings.overrideMaterialPassIndex = 0;
 

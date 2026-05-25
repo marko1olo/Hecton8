@@ -184,7 +184,7 @@ namespace Hecton8.Physics
         /// <summary>Profiler marker dlya Recalculate</summary>
         private static readonly ProfilerMarker RecalculateMarker
             = new ProfilerMarker("FlowFieldVisualizer.Recalculate");
-        private HectonFluidEngine _subscribedFluidEngine;
+        private IFluidSurfaceCurrentReadModel _subscribedFluidCurrent;
 
         /// <summary>Object pool dlya particle effects (editor-only)</summary>
         private class ParticlePool
@@ -577,7 +577,7 @@ namespace Hecton8.Physics
 
             // Animatsionnyy faktor dlya preview
             float animationFactor = animateInEditor ?
-                FastTriangleSigned(Time.realtimeSinceStartup * animationSpeed) * 0.5f + 0.5f : 1f;
+                FastTriangleSigned((float)SystemDispatcher.CurrentUnscaledTimeSeconds * animationSpeed) * 0.5f + 0.5f : 1f;
 
             // Risuem strelki dlya kazhdoy tochki grid'a
             UpdateActiveParticles();
@@ -678,7 +678,7 @@ namespace Hecton8.Physics
         /// <summary>Obnovlyaet srok zhizni vremennyh particle effects</summary>
         private void UpdateActiveParticles()
         {
-            float now = Time.realtimeSinceStartup;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             for (int i = _activeParticles.Count - 1; i >= 0; i--)
             {
                 var (ps, expireTime) = _activeParticles[i];
@@ -733,7 +733,7 @@ namespace Hecton8.Physics
             if (totalPoints > maxGridResolution * maxGridResolution)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[FlowFieldVisualizer] Grid resolution clamped to configured maximum.", this);
+                Hecton8.Core.H8Debug.LogWarning("[FlowFieldVisualizer] Grid resolution clamped to configured maximum.", this);
 #endif
                 gridResolution.x = Mathf.Min(gridResolution.x, maxGridResolution);
                 gridResolution.y = Mathf.Min(gridResolution.y, maxGridResolution);
@@ -744,7 +744,7 @@ namespace Hecton8.Physics
             if (totalPoints <= 0)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[FlowFieldVisualizer] Invalid grid resolution. Must be > 0.", this);
+                Hecton8.Core.H8Debug.LogError("[FlowFieldVisualizer] Invalid grid resolution. Must be > 0.", this);
 #endif
                 return;
             }
@@ -762,15 +762,15 @@ namespace Hecton8.Physics
 
             using (RecalculateMarker.Auto())
             {
-                float calculationStartTime = Time.realtimeSinceStartup;
+                float calculationStartTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
                 uint calculationShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
                 EnsureSampleBuffers(totalPoints);
                 PrepareSamplePositions(totalPoints);
 
                 if (useJobSystem && useBurstSampling)
                 {
-                    HectonFluidEngine engine = GlobalRegistry.Fluid;
-                    bool includeGlobalCurrent = showGlobalCurrent && engine != null;
+                    IFluidSurfaceCurrentReadModel fluidCurrent = GlobalRegistry.FluidSurfaceCurrent;
+                    bool includeGlobalCurrent = showGlobalCurrent && fluidCurrent != null;
 
                     var positions = new NativeArray<float3>(totalPoints, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                     var flowResults = new NativeArray<float3>(totalPoints, Allocator.TempJob, NativeArrayOptions.ClearMemory);
@@ -794,11 +794,11 @@ namespace Hecton8.Physics
                             VolumeData = volumeData,
                             VolumeCount = volumeData.IsCreated ? volumeData.Length : 0,
                             ShowGlobalCurrent = includeGlobalCurrent ? (byte)1 : (byte)0,
-                            Time = Time.realtimeSinceStartup,
-                            NoiseScale = includeGlobalCurrent ? engine.CurrentNoiseScale : 0f,
-                            TimeScale = includeGlobalCurrent ? engine.CurrentTimeScale : 0f,
-                            Strength = includeGlobalCurrent ? engine.PhantomCurrentStrength : 0f,
-                            VerticalFactor = includeGlobalCurrent ? engine.CurrentVerticalFactor : 0f,
+                            Time = (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
+                            NoiseScale = includeGlobalCurrent ? fluidCurrent.CurrentNoiseScale : 0f,
+                            TimeScale = includeGlobalCurrent ? fluidCurrent.CurrentTimeScale : 0f,
+                            Strength = includeGlobalCurrent ? fluidCurrent.PhantomCurrentStrength : 0f,
+                            VerticalFactor = includeGlobalCurrent ? fluidCurrent.CurrentVerticalFactor : 0f,
                             ShowLocalCurrents = showLocalCurrents ? (byte)1 : (byte)0
                         };
 
@@ -820,7 +820,7 @@ namespace Hecton8.Physics
                             _flowMagnitudes[i] = ApproximateVectorMagnitude(flow);
                         }
 
-                        _lastCalculationTime = Time.realtimeSinceStartup - calculationStartTime;
+                        _lastCalculationTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds - calculationStartTime;
                         _lastPointCount = totalPoints;
                     }
                     finally
@@ -854,7 +854,7 @@ namespace Hecton8.Physics
                     _flowMagnitudes[i] = ApproximateVectorMagnitude(flow);
                 }
 
-                _lastCalculationTime = Time.realtimeSinceStartup - calculationStartTime;
+                _lastCalculationTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds - calculationStartTime;
                 _lastPointCount = totalPoints;
             }
         }
@@ -1003,7 +1003,7 @@ namespace Hecton8.Physics
             if (gridResolution.x > maxGridResolution || gridResolution.y > maxGridResolution)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[FlowFieldVisualizer] Grid too large. Clamping to configured maximum.", this);
+                Hecton8.Core.H8Debug.LogWarning("[FlowFieldVisualizer] Grid too large. Clamping to configured maximum.", this);
 #endif
             }
 
@@ -1087,18 +1087,18 @@ namespace Hecton8.Physics
             Vector3 totalFlow = Vector3.zero;
 
             // Globalnoe phantom techenie
-            HectonFluidEngine engine = GlobalRegistry.Fluid;
-            if (showGlobalCurrent && engine != null)
+            IFluidSurfaceCurrentReadModel fluidCurrent = GlobalRegistry.FluidSurfaceCurrent;
+            if (showGlobalCurrent && fluidCurrent != null)
             {
                 float3 pos = new float3(worldPos.x, worldPos.y, worldPos.z);
 
                 float3 sampledFlow = CurrentManager.SampleCurrent(
                     pos,
-                    Time.realtimeSinceStartup, // Ispolzuem realtime dlya preview
-                    engine.CurrentNoiseScale,
-                    engine.CurrentTimeScale,
-                    engine.PhantomCurrentStrength,
-                    engine.CurrentVerticalFactor
+                    (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
+                    fluidCurrent.CurrentNoiseScale,
+                    fluidCurrent.CurrentTimeScale,
+                    fluidCurrent.PhantomCurrentStrength,
+                    fluidCurrent.CurrentVerticalFactor
                 );
                 totalFlow += new Vector3(sampledFlow.x, sampledFlow.y, sampledFlow.z);
             }
@@ -1258,7 +1258,7 @@ namespace Hecton8.Physics
                     if (ps == null)
                     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                        Debug.LogError("[FlowFieldVisualizer] Particle prefab must contain ParticleSystem", this);
+                        Hecton8.Core.H8Debug.LogError("[FlowFieldVisualizer] Particle prefab must contain ParticleSystem", this);
 #endif
                         DestroyImmediate(go);
                         return null;
@@ -1279,7 +1279,7 @@ namespace Hecton8.Physics
             main.startSpeed = magnitude * 2f;
             main.startLifetime = lifetime;
 
-            _activeParticles.Add((ps, Time.realtimeSinceStartup + lifetime));
+            _activeParticles.Add((ps, (float)SystemDispatcher.CurrentUnscaledTimeSeconds + lifetime));
 #endif
         }
 
@@ -1290,20 +1290,20 @@ namespace Hecton8.Physics
         private void OnEnable()
         {
             // Podpisyvaemsya na izmeneniya nastroek techeniy
-            _subscribedFluidEngine = GlobalRegistry.Fluid;
-            if (_subscribedFluidEngine != null)
+            _subscribedFluidCurrent = GlobalRegistry.FluidSurfaceCurrent;
+            if (_subscribedFluidCurrent != null)
             {
-                _subscribedFluidEngine.OnCurrentSettingsChangedEvent += OnCurrentSettingsChanged;
+                _subscribedFluidCurrent.CurrentSettingsChanged += OnCurrentSettingsChanged;
             }
         }
 
         private void OnDisable()
         {
             // Otpisyvaemsya ot sobytiy
-            if (_subscribedFluidEngine != null)
+            if (_subscribedFluidCurrent != null)
             {
-                _subscribedFluidEngine.OnCurrentSettingsChangedEvent -= OnCurrentSettingsChanged;
-                _subscribedFluidEngine = null;
+                _subscribedFluidCurrent.CurrentSettingsChanged -= OnCurrentSettingsChanged;
+                _subscribedFluidCurrent = null;
             }
 
             // Polnostyu osvobozhdaem preview-resursy, chtoby ne ostavlyat hidden editor objects.

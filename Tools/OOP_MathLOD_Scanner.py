@@ -1,58 +1,112 @@
 #!/usr/bin/env python3
+import bisect
 import json
 import math
 import re
 import struct
+from fractions import Fraction
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "Assets" / "_Project" / "Scripts"
 REPORT = ROOT / "Docs" / "Reports" / "MATH_LOD_OPTIMIZATION_REPORT_X_007.json"
+READ_TEXT_CACHE: dict[Path, str] = {}
+STRIPPED_CODE_CACHE: dict[Path, str] = {}
+
+TRANSCENDENTAL_METHODS = (
+    "exp",
+    "pow",
+    "sin",
+    "cos",
+    "sincos",
+    "log",
+    "tan",
+    "atan",
+    "atan2",
+    "asin",
+    "acos",
+)
+
+FRAMEWORK_TRANSCENDENTAL_METHODS = (
+    "Exp",
+    "Pow",
+    "Sin",
+    "Cos",
+    "Log",
+    "Tan",
+    "Atan",
+    "Atan2",
+    "Asin",
+    "Acos",
+)
 
 TRANSCENDENTAL_PATTERNS = {
-    "math.exp": re.compile(r"\bmath\.exp\s*\("),
-    "math.pow": re.compile(r"\bmath\.pow\s*\("),
-    "math.sin": re.compile(r"\bmath\.sin\s*\("),
-    "math.cos": re.compile(r"\bmath\.cos\s*\("),
-    "math.sincos": re.compile(r"\bmath\.sincos\s*\("),
-    "math.log": re.compile(r"\bmath\.log\s*\("),
-    "math.tan": re.compile(r"\bmath\.tan\s*\("),
-    "math.atan": re.compile(r"\bmath\.atan\s*\("),
-    "math.atan2": re.compile(r"\bmath\.atan2\s*\("),
-    "math.asin": re.compile(r"\bmath\.asin\s*\("),
-    "math.acos": re.compile(r"\bmath\.acos\s*\("),
-    "UnityMathf.Exp": re.compile(r"\bMathf\.Exp\s*\("),
-    "UnityMathf.Pow": re.compile(r"\bMathf\.Pow\s*\("),
-    "UnityMathf.Sin": re.compile(r"\bMathf\.Sin\s*\("),
-    "UnityMathf.Cos": re.compile(r"\bMathf\.Cos\s*\("),
-    "UnityMathf.Log": re.compile(r"\bMathf\.Log\s*\("),
-    "UnityMathf.Tan": re.compile(r"\bMathf\.Tan\s*\("),
-    "UnityMathf.Atan": re.compile(r"\bMathf\.Atan\s*\("),
-    "UnityMathf.Atan2": re.compile(r"\bMathf\.Atan2\s*\("),
-    "UnityMathf.Asin": re.compile(r"\bMathf\.Asin\s*\("),
-    "UnityMathf.Acos": re.compile(r"\bMathf\.Acos\s*\("),
-    "SystemMath.Exp": re.compile(r"\b(?:System\.)?Math\.Exp\s*\("),
-    "SystemMath.Pow": re.compile(r"\b(?:System\.)?Math\.Pow\s*\("),
-    "SystemMath.Sin": re.compile(r"\b(?:System\.)?Math\.Sin\s*\("),
-    "SystemMath.Cos": re.compile(r"\b(?:System\.)?Math\.Cos\s*\("),
-    "SystemMath.Log": re.compile(r"\b(?:System\.)?Math\.Log\s*\("),
-    "SystemMath.Tan": re.compile(r"\b(?:System\.)?Math\.Tan\s*\("),
-    "SystemMath.Atan": re.compile(r"\b(?:System\.)?Math\.Atan\s*\("),
-    "SystemMath.Atan2": re.compile(r"\b(?:System\.)?Math\.Atan2\s*\("),
-    "SystemMath.Asin": re.compile(r"\b(?:System\.)?Math\.Asin\s*\("),
-    "SystemMath.Acos": re.compile(r"\b(?:System\.)?Math\.Acos\s*\("),
-    "SystemMathF.Exp": re.compile(r"\b(?:System\.)?MathF\.Exp\s*\("),
-    "SystemMathF.Pow": re.compile(r"\b(?:System\.)?MathF\.Pow\s*\("),
-    "SystemMathF.Sin": re.compile(r"\b(?:System\.)?MathF\.Sin\s*\("),
-    "SystemMathF.Cos": re.compile(r"\b(?:System\.)?MathF\.Cos\s*\("),
-    "SystemMathF.Log": re.compile(r"\b(?:System\.)?MathF\.Log\s*\("),
-    "SystemMathF.Tan": re.compile(r"\b(?:System\.)?MathF\.Tan\s*\("),
-    "SystemMathF.Atan": re.compile(r"\b(?:System\.)?MathF\.Atan\s*\("),
-    "SystemMathF.Atan2": re.compile(r"\b(?:System\.)?MathF\.Atan2\s*\("),
-    "SystemMathF.Asin": re.compile(r"\b(?:System\.)?MathF\.Asin\s*\("),
-    "SystemMathF.Acos": re.compile(r"\b(?:System\.)?MathF\.Acos\s*\("),
+    "math.exp": re.compile(r"(?<!\.)\bmath\.exp\s*\("),
+    "math.pow": re.compile(r"(?<!\.)\bmath\.pow\s*\("),
+    "math.sin": re.compile(r"(?<!\.)\bmath\.sin\s*\("),
+    "math.cos": re.compile(r"(?<!\.)\bmath\.cos\s*\("),
+    "math.sincos": re.compile(r"(?<!\.)\bmath\.sincos\s*\("),
+    "math.log": re.compile(r"(?<!\.)\bmath\.log\s*\("),
+    "math.tan": re.compile(r"(?<!\.)\bmath\.tan\s*\("),
+    "math.atan": re.compile(r"(?<!\.)\bmath\.atan\s*\("),
+    "math.atan2": re.compile(r"(?<!\.)\bmath\.atan2\s*\("),
+    "math.asin": re.compile(r"(?<!\.)\bmath\.asin\s*\("),
+    "math.acos": re.compile(r"(?<!\.)\bmath\.acos\s*\("),
+    "UnityMathf.Exp": re.compile(r"(?<!\.)\bMathf\.Exp\s*\("),
+    "UnityMathf.Pow": re.compile(r"(?<!\.)\bMathf\.Pow\s*\("),
+    "UnityMathf.Sin": re.compile(r"(?<!\.)\bMathf\.Sin\s*\("),
+    "UnityMathf.Cos": re.compile(r"(?<!\.)\bMathf\.Cos\s*\("),
+    "UnityMathf.Log": re.compile(r"(?<!\.)\bMathf\.Log\s*\("),
+    "UnityMathf.Tan": re.compile(r"(?<!\.)\bMathf\.Tan\s*\("),
+    "UnityMathf.Atan": re.compile(r"(?<!\.)\bMathf\.Atan\s*\("),
+    "UnityMathf.Atan2": re.compile(r"(?<!\.)\bMathf\.Atan2\s*\("),
+    "UnityMathf.Asin": re.compile(r"(?<!\.)\bMathf\.Asin\s*\("),
+    "UnityMathf.Acos": re.compile(r"(?<!\.)\bMathf\.Acos\s*\("),
+    "SystemMath.Exp": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?Math\.Exp\s*\("),
+    "SystemMath.Pow": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?Math\.Pow\s*\("),
+    "SystemMath.Sin": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?Math\.Sin\s*\("),
+    "SystemMath.Cos": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?Math\.Cos\s*\("),
+    "SystemMath.Log": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?Math\.Log\s*\("),
+    "SystemMath.Tan": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?Math\.Tan\s*\("),
+    "SystemMath.Atan": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?Math\.Atan\s*\("),
+    "SystemMath.Atan2": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?Math\.Atan2\s*\("),
+    "SystemMath.Asin": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?Math\.Asin\s*\("),
+    "SystemMath.Acos": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?Math\.Acos\s*\("),
+    "SystemMathF.Exp": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?MathF\.Exp\s*\("),
+    "SystemMathF.Pow": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?MathF\.Pow\s*\("),
+    "SystemMathF.Sin": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?MathF\.Sin\s*\("),
+    "SystemMathF.Cos": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?MathF\.Cos\s*\("),
+    "SystemMathF.Log": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?MathF\.Log\s*\("),
+    "SystemMathF.Tan": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?MathF\.Tan\s*\("),
+    "SystemMathF.Atan": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?MathF\.Atan\s*\("),
+    "SystemMathF.Atan2": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?MathF\.Atan2\s*\("),
+    "SystemMathF.Asin": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?MathF\.Asin\s*\("),
+    "SystemMathF.Acos": re.compile(r"(?<!\.)\b(?:global::)?(?:System\.)?MathF\.Acos\s*\("),
 }
+
+for method_name in TRANSCENDENTAL_METHODS:
+    TRANSCENDENTAL_PATTERNS[f"UnityMathematicsMath.{method_name}"] = re.compile(
+        rf"\b(?:global::)?Unity\.Mathematics\.math\.{method_name}\s*\("
+    )
+
+for method_name in FRAMEWORK_TRANSCENDENTAL_METHODS:
+    TRANSCENDENTAL_PATTERNS[f"UnityEngineMathf.{method_name}"] = re.compile(
+        rf"\b(?:global::)?UnityEngine\.Mathf\.{method_name}\s*\("
+    )
+
+UNITY_MATH_ALIAS_DECLARATION = re.compile(
+    r"\busing\s+(?P<alias>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*Unity\.Mathematics\.math\s*;"
+)
+UNITY_MATH_STATIC_IMPORT = re.compile(
+    r"\busing\s+static\s+(?:global::)?Unity\.Mathematics\.math\s*;"
+)
+FRAMEWORK_MATH_ALIAS_DECLARATION = re.compile(
+    r"\busing\s+(?P<alias>[A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?P<target>(?:global::)?(?:UnityEngine\.Mathf|System\.MathF?|MathF|Math))\s*;"
+)
+FRAMEWORK_MATH_STATIC_IMPORT = re.compile(
+    r"\busing\s+static\s+(?P<target>(?:global::)?(?:UnityEngine\.Mathf|System\.MathF?|MathF|Math))\s*;"
+)
 
 AUDITED_BRANCH_FILES = [
     "Assets/_Project/Scripts/MathLodApproximation.cs",
@@ -62,6 +116,7 @@ AUDITED_BRANCH_FILES = [
     "Assets/_Project/Scripts/Atmosphere/SurfaceWeatherMath.cs",
     "Assets/_Project/Scripts/Atmosphere/ToxicOutgassingChemistryRuntime.cs",
     "Assets/_Project/Scripts/Physiology/ShinobuPhysiologyJobs.cs",
+    "Assets/_Project/Scripts/Physics/FluidImpulseJob.cs",
     "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs",
     "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs",
     "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs",
@@ -73,6 +128,98 @@ AUDITED_BRANCH_FILES = [
 
 def f32(value: float) -> float:
     return struct.unpack("<f", struct.pack("<f", float(value)))[0]
+
+
+def series_mul(left: list[Fraction], right: list[Fraction], max_order: int) -> list[Fraction]:
+    result = [Fraction(0) for _ in range(max_order + 1)]
+    for left_order, left_coeff in enumerate(left[: max_order + 1]):
+        if left_coeff == 0:
+            continue
+        for right_order, right_coeff in enumerate(right[: max_order + 1 - left_order]):
+            result[left_order + right_order] += left_coeff * right_coeff
+    return result
+
+
+def series_pow(base: list[Fraction], exponent: int, max_order: int) -> list[Fraction]:
+    result = [Fraction(0) for _ in range(max_order + 1)]
+    result[0] = Fraction(1)
+    for _ in range(exponent):
+        result = series_mul(result, base, max_order)
+    return result
+
+
+def series_reciprocal(denominator: list[Fraction], max_order: int) -> list[Fraction]:
+    if denominator[0] != 1:
+        raise ValueError("series reciprocal expects denominator[0] == 1")
+    result = [Fraction(0) for _ in range(max_order + 1)]
+    result[0] = Fraction(1)
+    for order in range(1, max_order + 1):
+        result[order] = -sum(
+            denominator[k] * result[order - k]
+            for k in range(1, min(order, len(denominator) - 1) + 1)
+        )
+    return result
+
+
+def exp_neg_series(scale: Fraction, max_order: int) -> list[Fraction]:
+    return [((-scale) ** order) / Fraction(math.factorial(order)) for order in range(max_order + 1)]
+
+
+def p33_neg_series(input_scale: Fraction, max_order: int) -> list[Fraction]:
+    numerator = [Fraction(0) for _ in range(max_order + 1)]
+    denominator = [Fraction(0) for _ in range(max_order + 1)]
+    numerator[0] = Fraction(1)
+    denominator[0] = Fraction(1)
+    numerator[1] = -input_scale / 2
+    denominator[1] = input_scale / 2
+    numerator[2] = (input_scale ** 2) / 10
+    denominator[2] = (input_scale ** 2) / 10
+    numerator[3] = -(input_scale ** 3) / 120
+    denominator[3] = (input_scale ** 3) / 120
+    return series_mul(numerator, series_reciprocal(denominator, max_order), max_order)
+
+
+def first_nonzero_series_term(left: list[Fraction], right: list[Fraction]) -> tuple[int, Fraction]:
+    for order, (left_coeff, right_coeff) in enumerate(zip(left, right)):
+        delta = left_coeff - right_coeff
+        if delta != 0:
+            return order, delta
+    return -1, Fraction(0)
+
+
+def fraction_to_report(value: Fraction) -> dict:
+    return {
+        "fraction": f"{value.numerator}/{value.denominator}" if value.denominator != 1 else str(value.numerator),
+        "decimal": float(value),
+    }
+
+
+def pade33_series_proof(max_order: int = 10) -> dict:
+    exact = exp_neg_series(Fraction(1), max_order)
+    base_order, base_coeff = first_nonzero_series_term(p33_neg_series(Fraction(1), max_order), exact)
+    reduced_order, reduced_coeff = first_nonzero_series_term(
+        series_pow(p33_neg_series(Fraction(1, 4), max_order), 4, max_order),
+        exact,
+    )
+    wide_order, wide_coeff = first_nonzero_series_term(
+        series_pow(p33_neg_series(Fraction(1, 40), max_order), 40, max_order),
+        exact,
+    )
+    return {
+        "method": "exact rational Taylor series arithmetic through x^10",
+        "baseP33YMinusExpNegY": {
+            "firstNonZeroOrder": base_order,
+            "coefficient": fraction_to_report(base_coeff),
+        },
+        "reducedP33XOver4Pow4MinusExpNegX": {
+            "firstNonZeroOrder": reduced_order,
+            "coefficient": fraction_to_report(reduced_coeff),
+        },
+        "wideP33XOver40Pow40MinusExpNegX": {
+            "firstNonZeroOrder": wide_order,
+            "coefficient": fraction_to_report(wide_coeff),
+        },
+    }
 
 
 def clamp_finite_directional_infinity_f32(value: float, minimum: float, maximum: float, nan_fallback: float) -> float:
@@ -420,6 +567,94 @@ def scan_signed_residual_with(approx_fn, exact_fn, max_x: float, step: float) ->
     }
 
 
+def scan_decompression_quality_drop_continuity() -> dict:
+    previous_tissue_pressure = f32(0.8625)
+    ambient_pressure = f32(0.7900)
+    effective_k = f32(math.log(2.0) / 300.0)
+    delta_seconds = f32(0.25)
+    x = f32(effective_k * delta_seconds)
+    decay = approx_exp_neg_pade33_reduced_f32(x)
+    next_q1 = f32(ambient_pressure + f32((previous_tissue_pressure - ambient_pressure) * decay))
+    next_q01 = f32(ambient_pressure + f32((previous_tissue_pressure - ambient_pressure) * decay))
+    return {
+        "formula": "ambient + (previous - ambient) * ApproxExpNegPade33Reduced(effectiveK * dt)",
+        "globalQualityWeightAppearsInAuthorityFormula": False,
+        "qHigh": 1.0,
+        "qLow": 0.1,
+        "previousTissuePressure": previous_tissue_pressure,
+        "ambientPressure": ambient_pressure,
+        "effectiveK": effective_k,
+        "deltaSeconds": delta_seconds,
+        "x": x,
+        "decay": decay,
+        "nextAtQ1": next_q1,
+        "nextAtQ0_1": next_q01,
+        "absDelta": abs(float(next_q1) - float(next_q01)),
+    }
+
+
+def sanitize01_f32(value: float) -> float:
+    selected = f32(value) if math.isfinite(value) else f32(0.0)
+    return f32(min(max(selected, 0.0), 1.0))
+
+
+def scan_jacobi_boundedness() -> dict:
+    current_potentials = [float("nan"), float("inf"), float("-inf"), -1.0e6, -1.0, 0.0, 0.5, 1.0, 2.0, 1.0e6]
+    destination_potentials = [float("nan"), float("inf"), float("-inf"), -64.0, 0.0, 0.25, 1.0, 4096.0]
+    conductances = [float("nan"), float("inf"), float("-inf"), -4096.0, 0.0, 1.0e-8, 1.0, 4096.0, 1.0e9]
+    demands = [float("nan"), float("inf"), float("-inf"), -1.0, 0.0, 0.5, 2.0, 1.0e6]
+    quality_values = [float("nan"), float("inf"), float("-inf"), -1.0, 0.0, 0.1, 0.5, 1.0, 2.0]
+    smoothing_values = [float("nan"), float("inf"), float("-inf"), -1.0, 0.0, 0.35, 1.0, 2.0]
+    checked = 0
+    non_finite = 0
+    out_of_range = 0
+    negative_voltage = 0
+    max_abs_voltage = 0.0
+    max_abs_target = 0.0
+    max_conductance_seen = 0.0
+    for current in current_potentials:
+        for destination in destination_potentials:
+            for raw_conductance in conductances:
+                for demand in demands:
+                    for quality in quality_values:
+                        for smoothing_raw in smoothing_values:
+                            for source_flag in (0.0, 1.0):
+                                checked += 1
+                                conductance = f32(raw_conductance if math.isfinite(raw_conductance) else 0.0)
+                                conductance = f32(min(max(conductance, 0.0), 4096.0))
+                                conductance = f32(conductance * (0.0 if conductance <= 0.000001 else 1.0))
+                                max_conductance_seen = max(max_conductance_seen, abs(float(conductance)))
+                                weighted = f32(conductance * sanitize01_f32(destination))
+                                demand_selected = f32(demand if math.isfinite(demand) else 0.0)
+                                demand_rate = f32(min(max(max(0.0, demand_selected), 0.0), 1.0))
+                                target = f32((weighted + source_flag - demand_rate) * f32(1.0 / max(conductance + 1.0, 1.0)))
+                                max_abs_target = max(max_abs_target, abs(float(target)))
+                                q = f32(min(max(quality if math.isfinite(quality) else 0.0, 0.0), 1.0))
+                                smoothing_input = f32(smoothing_raw if math.isfinite(smoothing_raw) else 1.0)
+                                quality_smoothing = f32(0.35 + ((1.0 - 0.35) * q))
+                                smoothing = f32(min(max(smoothing_input * quality_smoothing, 0.05), 1.0))
+                                solved = f32(sanitize01_f32(current) + f32((target - sanitize01_f32(current)) * smoothing))
+                                solved = sanitize01_f32(solved)
+                                if not math.isfinite(solved):
+                                    non_finite += 1
+                                    continue
+                                if solved < 0.0:
+                                    negative_voltage += 1
+                                if solved < 0.0 or solved > 1.0:
+                                    out_of_range += 1
+                                max_abs_voltage = max(max_abs_voltage, abs(float(solved)))
+    return {
+        "checkedCases": checked,
+        "nonFiniteSolvedVoltageCount": non_finite,
+        "outOfRangeSolvedVoltageCount": out_of_range,
+        "negativeSolvedVoltageCount": negative_voltage,
+        "maxAbsSolvedVoltage": max_abs_voltage,
+        "maxAbsUnclampedTargetPotential": max_abs_target,
+        "maxConductanceAfterClamp": max_conductance_seen,
+        "policy": "PowerVoltageSolverJob does not claim convergence at minimum quality; it guarantees finite saturated voltage and capped non-negative conductance per relaxation step",
+    }
+
+
 def smooth01(q: float) -> float:
     s = min(max(q, 0.0), 1.0)
     return s * s * (3.0 - (2.0 * s))
@@ -446,7 +681,21 @@ def collect_asmdef_files() -> list[Path]:
 
 
 def read_text(path: Path) -> str:
-    return path.read_text(encoding="utf-8", errors="replace")
+    cached = READ_TEXT_CACHE.get(path)
+    if cached is not None:
+        return cached
+    text = path.read_text(encoding="utf-8", errors="replace")
+    READ_TEXT_CACHE[path] = text
+    return text
+
+
+def read_code_text(path: Path) -> str:
+    cached = STRIPPED_CODE_CACHE.get(path)
+    if cached is not None:
+        return cached
+    code_text = strip_csharp_non_code(read_text(path))
+    STRIPPED_CODE_CACHE[path] = code_text
+    return code_text
 
 
 def strip_csharp_non_code(text: str) -> str:
@@ -579,32 +828,144 @@ def strip_csharp_non_code(text: str) -> str:
 def line_collections(path: Path, text: str, code_text: str) -> list[dict]:
     rows = []
     original_lines = text.splitlines()
-    code_lines = code_text.splitlines()
-    for line_number, code_line in enumerate(code_lines, start=1):
-        for name, pattern in TRANSCENDENTAL_PATTERNS.items():
-            if pattern.search(code_line):
-                line = original_lines[line_number - 1] if line_number <= len(original_lines) else code_line
-                rows.append({
-                    "file": str(path.relative_to(ROOT)).replace("\\", "/"),
-                    "line": line_number,
-                    "pattern": name,
-                    "text": line.strip()[:240],
-                    "hotHeuristic": bool(re.search(r"IJob|BurstCompile|Tick|Update|Fixed|Late|Execute|Solver|Runtime|Manager|Director|Controller|Kernel", str(path) + " " + line)),
-                })
+    line_starts = [0]
+    for match in re.finditer(r"\n", code_text):
+        line_starts.append(match.end())
+    patterns = dict(TRANSCENDENTAL_PATTERNS)
+    for alias in unity_math_aliases(code_text):
+        for method_name in TRANSCENDENTAL_METHODS:
+            patterns[f"UnityMathAlias.{alias}.{method_name}"] = re.compile(
+                rf"\b{re.escape(alias)}\.{method_name}\s*\("
+            )
+    if has_unity_math_static_import(code_text):
+        for method_name in TRANSCENDENTAL_METHODS:
+            patterns[f"UnityMathStatic.{method_name}"] = re.compile(
+                rf"(?<!\.)\b{method_name}\s*\("
+            )
+    for alias, target_key in framework_math_aliases(code_text):
+        for method_name in FRAMEWORK_TRANSCENDENTAL_METHODS:
+            patterns[f"MathTypeAlias.{target_key}.{alias}.{method_name}"] = re.compile(
+                rf"\b{re.escape(alias)}\.{method_name}\s*\("
+            )
+    for target_key in framework_math_static_imports(code_text):
+        for method_name in FRAMEWORK_TRANSCENDENTAL_METHODS:
+            patterns[f"MathTypeStatic.{target_key}.{method_name}"] = re.compile(
+                rf"(?<!\.)\b{method_name}\s*\("
+            )
+    for name, pattern in patterns.items():
+        for match in pattern.finditer(code_text):
+            line_number = bisect.bisect_right(line_starts, match.start())
+            line = original_lines[line_number - 1] if line_number <= len(original_lines) else ""
+            rows.append({
+                "file": str(path.relative_to(ROOT)).replace("\\", "/"),
+                "line": line_number,
+                "pattern": name,
+                "text": line.strip()[:240],
+                "hotHeuristic": bool(re.search(r"IJob|BurstCompile|Tick|Update|Fixed|Late|Execute|Solver|Runtime|Manager|Director|Controller|Kernel", str(path) + " " + line)),
+            })
     return rows
+
+
+def unity_math_aliases(code_text: str) -> list[str]:
+    return sorted({match.group("alias") for match in UNITY_MATH_ALIAS_DECLARATION.finditer(code_text)})
+
+
+def has_unity_math_static_import(code_text: str) -> bool:
+    return UNITY_MATH_STATIC_IMPORT.search(code_text) is not None
+
+
+def normalize_framework_math_target(target: str) -> str:
+    normalized = target.replace("global::", "")
+    if normalized == "UnityEngine.Mathf":
+        return "UnityEngineMathf"
+    if normalized == "System.Math" or normalized == "Math":
+        return "SystemMath"
+    if normalized == "System.MathF" or normalized == "MathF":
+        return "SystemMathF"
+    return "UnknownMathType"
+
+
+def framework_math_aliases(code_text: str) -> list[tuple[str, str]]:
+    aliases = []
+    for match in FRAMEWORK_MATH_ALIAS_DECLARATION.finditer(code_text):
+        aliases.append((match.group("alias"), normalize_framework_math_target(match.group("target"))))
+    return sorted(set(aliases))
+
+
+def framework_math_static_imports(code_text: str) -> list[str]:
+    targets = []
+    for match in FRAMEWORK_MATH_STATIC_IMPORT.finditer(code_text):
+        targets.append(normalize_framework_math_target(match.group("target")))
+    return sorted(set(targets))
 
 
 def count_remaining_transcendentals(files: list[Path]) -> tuple[dict, list[dict]]:
     counts = {name: 0 for name in TRANSCENDENTAL_PATTERNS}
+    for method_name in TRANSCENDENTAL_METHODS:
+        counts[f"UnityMathAlias.{method_name}"] = 0
+        counts[f"UnityMathStatic.{method_name}"] = 0
+    for target_key in ("UnityEngineMathf", "SystemMath", "SystemMathF"):
+        for method_name in FRAMEWORK_TRANSCENDENTAL_METHODS:
+            counts[f"MathTypeAlias.{target_key}.{method_name}"] = 0
+            counts[f"MathTypeStatic.{target_key}.{method_name}"] = 0
     occurrences = []
     for path in files:
         text = read_text(path)
-        code_text = strip_csharp_non_code(text)
+        code_text = read_code_text(path)
         for name, pattern in TRANSCENDENTAL_PATTERNS.items():
             matches = pattern.findall(code_text)
             counts[name] += len(matches)
+        for alias in unity_math_aliases(code_text):
+            for method_name in TRANSCENDENTAL_METHODS:
+                alias_pattern = re.compile(rf"\b{re.escape(alias)}\.{method_name}\s*\(")
+                counts[f"UnityMathAlias.{method_name}"] += len(alias_pattern.findall(code_text))
+        if has_unity_math_static_import(code_text):
+            for method_name in TRANSCENDENTAL_METHODS:
+                static_pattern = re.compile(rf"(?<!\.)\b{method_name}\s*\(")
+                counts[f"UnityMathStatic.{method_name}"] += len(static_pattern.findall(code_text))
+        for alias, target_key in framework_math_aliases(code_text):
+            for method_name in FRAMEWORK_TRANSCENDENTAL_METHODS:
+                alias_pattern = re.compile(rf"\b{re.escape(alias)}\.{method_name}\s*\(")
+                counts[f"MathTypeAlias.{target_key}.{method_name}"] += len(alias_pattern.findall(code_text))
+        for target_key in framework_math_static_imports(code_text):
+            for method_name in FRAMEWORK_TRANSCENDENTAL_METHODS:
+                static_pattern = re.compile(rf"(?<!\.)\b{method_name}\s*\(")
+                counts[f"MathTypeStatic.{target_key}.{method_name}"] += len(static_pattern.findall(code_text))
         occurrences.extend(line_collections(path, text, code_text))
     return counts, occurrences
+
+
+def count_unity_math_alias_declarations(files: list[Path]) -> int:
+    count = 0
+    for path in files:
+        code_text = read_code_text(path)
+        count += len(unity_math_aliases(code_text))
+    return count
+
+
+def count_unity_math_static_imports(files: list[Path]) -> int:
+    count = 0
+    for path in files:
+        code_text = read_code_text(path)
+        if has_unity_math_static_import(code_text):
+            count += 1
+    return count
+
+
+def count_framework_math_alias_declarations(files: list[Path]) -> int:
+    count = 0
+    for path in files:
+        code_text = read_code_text(path)
+        count += len(framework_math_aliases(code_text))
+    return count
+
+
+def count_framework_math_static_imports(files: list[Path]) -> int:
+    count = 0
+    for path in files:
+        code_text = read_code_text(path)
+        count += len(framework_math_static_imports(code_text))
+    return count
 
 
 def extract_function_body(text: str, signature: str) -> str:
@@ -755,7 +1116,9 @@ def code_anchor_audit() -> dict:
     bulkhead_hatchlocks = ROOT / "Assets/_Project/Scripts/Construction/BulkheadContainmentRuntime_HatchLocks.cs"
     symbiosis_solver = ROOT / "Assets/_Project/Scripts/AI/Ecosystem/ShinobuFloraFaunaSymbiosisSolver.cs"
     migration_director = ROOT / "Assets/_Project/Scripts/Ecosystem/MigrationDirector.cs"
+    ecosystem_balancer = ROOT / "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs"
     boid_controller = ROOT / "Assets/_Project/Scripts/HectonBoidController.cs"
+    voxel_astar_runtime = ROOT / "Assets/_Project/Scripts/AI/Pathfinding/PathFunnelNavmeshRuntime_VoxelAStar.cs"
     leviathan_terrain_ik = ROOT / "Assets/_Project/Scripts/Animation/LeviathanTerrainIkJobs.cs"
     procedural_bone_jobs = ROOT / "Assets/_Project/Scripts/Animation/FaunaProcedural/ProceduralBoneBlenderJobs.cs"
     kinetic_character_jobs = ROOT / "Assets/_Project/Scripts/Animation/KineticCharacter/KineticCharacterAnimatorJobs.cs"
@@ -787,6 +1150,7 @@ def code_anchor_audit() -> dict:
     mod_projection = ROOT / "Assets/_Project/Scripts/ModdingAPI/ModEventProjectionBridge.cs"
     power = ROOT / "Assets/_Project/Scripts/Power/SubmarineOsThermalGridRuntime.cs"
     logistics = ROOT / "Assets/_Project/Scripts/Power/LogisticsNetworkGraph.cs"
+    logistics_router = ROOT / "Assets/_Project/Scripts/Power/ShinobuLogisticsRouter.cs"
     power_jacobi = ROOT / "Assets/_Project/Scripts/Power/PowerGridJacobiContracts.cs"
     power_fuzzer = ROOT / "Assets/_Project/Scripts/QA/Headless/JacobiStressFuzzer/PowerGridJacobiStressFuzzer.cs"
     solar = ROOT / "Assets/_Project/Scripts/Power/PowerGridSolarContracts.cs"
@@ -839,7 +1203,9 @@ def code_anchor_audit() -> dict:
     bulkhead_hatchlocks_text = read_text(bulkhead_hatchlocks) if bulkhead_hatchlocks.exists() else ""
     symbiosis_text = read_text(symbiosis_solver) if symbiosis_solver.exists() else ""
     migration_text = read_text(migration_director) if migration_director.exists() else ""
+    ecosystem_balancer_text = read_text(ecosystem_balancer) if ecosystem_balancer.exists() else ""
     boid_text = read_text(boid_controller) if boid_controller.exists() else ""
+    voxel_astar_runtime_text = read_text(voxel_astar_runtime) if voxel_astar_runtime.exists() else ""
     leviathan_terrain_ik_text = read_text(leviathan_terrain_ik) if leviathan_terrain_ik.exists() else ""
     procedural_bone_text = read_text(procedural_bone_jobs) if procedural_bone_jobs.exists() else ""
     kinetic_character_text = read_text(kinetic_character_jobs) if kinetic_character_jobs.exists() else ""
@@ -871,6 +1237,7 @@ def code_anchor_audit() -> dict:
     mod_projection_text = read_text(mod_projection) if mod_projection.exists() else ""
     power_text = read_text(power)
     logistics_text = read_text(logistics) if logistics.exists() else ""
+    logistics_router_text = read_text(logistics_router) if logistics_router.exists() else ""
     power_jacobi_text = read_text(power_jacobi) if power_jacobi.exists() else ""
     power_fuzzer_text = read_text(power_fuzzer) if power_fuzzer.exists() else ""
     solar_text = read_text(solar) if solar.exists() else ""
@@ -979,7 +1346,10 @@ def code_anchor_audit() -> dict:
     symbiosis_quality_body = extract_function_body(symbiosis_text, "private static float ResolveSymbiosisQualityWeight()")
     migration_quality_body = extract_function_body(migration_text, "private static float ResolveMigrationQualityWeight()")
     migration_cadence_body = extract_function_body(migration_text, "private float ResolveMigrationFieldColdTickIntervalSeconds(float globalQualityWeight)")
+    ecosystem_balancer_quality_body = extract_function_body(ecosystem_balancer_text, "private static float ResolveGlobalQualityWeight01()")
+    ecosystem_macro_body = extract_function_body(ecosystem_balancer_text, "private void RunMacroBiomassPass(IDataVault vault)")
     boid_social_lod_body = extract_function_body(boid_text, "private static float ResolveBoidSocialLodWeight01()")
+    voxel_astar_quality_body = extract_function_body(voxel_astar_runtime_text, "private static float ResolveVoxelAStarQualityWeight(")
     leviathan_sdf_body = extract_function_body(leviathan_terrain_ik_text, "private bool TrySampleSdfAdaptive(")
     kinetic_sdf_body = extract_function_body(kinetic_character_text, "private bool TrySampleSdf(")
     interior_gi_quality_body = extract_function_body(interior_gi_text, "private float ResolveQualityWeight()")
@@ -988,6 +1358,11 @@ def code_anchor_audit() -> dict:
     storm_noise_octave_body = extract_function_body(storm_text, "public static int ResolveNoiseOctaveCount(")
     ocean_foam_body = extract_function_body(ocean_surface_text, "public static float ResolveFoamScalar(")
     voxel_density_body = extract_function_body(voxel_surface_text, "private float SampleDensityLocal(")
+    logistics_router_quality_body = extract_function_body(logistics_router_text, "private static float ResolveGlobalQualityWeight()")
+    logistics_router_emergency_body = extract_function_body(logistics_router_text, "private static LogisticsTuningDTO EmergencyTuning()")
+    solar_quality_body = extract_function_body(solar_text, "private static float ResolveSolarQualityWeight()")
+    solar_default_body = extract_function_body(solar_text, "private static SolarConditionsDTO DefaultConditions()")
+    solar_sanitize_body = extract_function_body(solar_text, "private static SolarConditionsDTO SanitizeConditions(in SolarConditionsDTO source)")
     critical_audio_reverb_body = extract_function_body(critical_audio_text, "private ReverbDspTier ResolveReverbDspTier()")
     biomimetic_hzb_body = extract_function_body(biomimetic_text, "public void Execute(int index)")
     seedship_budget_body = extract_function_body(seedship_text, "public static int ResolveEntityBudget(")
@@ -1123,6 +1498,11 @@ def code_anchor_audit() -> dict:
         "logisticsGraphReadsMathLodConfigQuality": "ResolveEvaluationQualityWeight()" in logistics_text and "MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config)" in logistics_text,
         "logisticsGraphJobUsesResolvedQuality": "GlobalQualityWeight = qualityWeight" in logistics_text and "GlobalQualityWeight = PowerSolverConvergenceMath.AuthoritativeQualityWeight" not in logistics_text,
         "logisticsGraphAdaptiveWindowUsesResolvedQuality": "ResolveAdaptiveSolveWindow(qualityWeight, out int solveStartNode, out int solveNodeCount)" in logistics_text and "ResolveAdaptiveSolveNodesPerFrame(globalQualityWeight)" in logistics_text and "ResolveAdaptiveSolveNodesPerFrame(PowerSolverConvergenceMath.AuthoritativeQualityWeight)" not in logistics_text,
+        "logisticsRouterReadsMathLodConfigQuality": "MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config)" in logistics_router_quality_body and "MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f)" in logistics_router_quality_body,
+        "logisticsRouterEmergencyTuningUsesResolvedQuality": "GlobalQualityWeight = ResolveGlobalQualityWeight()" in logistics_router_emergency_body and "GlobalQualityWeight = 1f" not in logistics_router_emergency_body,
+        "solarConditionsReadMathLodConfigQuality": "MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config)" in solar_quality_body and "MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f)" in solar_quality_body,
+        "solarDefaultConditionsUseResolvedQuality": "conditions.GlobalQualityWeight = ResolveSolarQualityWeight();" in solar_default_body,
+        "solarSanitizeFallbackUsesResolvedQuality": "MathLodApproximation.SaturateFinite(result.GlobalQualityWeight, ResolveSolarQualityWeight())" in solar_sanitize_body,
         "powerGridManagerReadsMathLodConfigQuality": "ResolveMathLodQualityWeight()" in power_grid_manager_text and "MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config)" in power_grid_manager_text,
         "powerGridManagerThermalCadenceContinuous": "ResolveSubmarineThermalGridCadenceSeconds(float globalQualityWeight)" in power_grid_manager_text and "MathLodApproximation.SmoothStep01(q)" in power_grid_manager_text and "math.lerp(SubmarineThermalGridLowCadenceSeconds, SubmarineThermalGridHighCadenceSeconds, curve)" in power_grid_manager_text and "return SubmarineThermalGridHighCadenceSeconds;" not in power_grid_manager_text,
         "powerGridManagerThermalScheduleUsesResolvedQuality": "float quality = ResolveMathLodQualityWeight();" in power_grid_manager_text and "runtime.ScheduleSolve(cadenceSeconds, quality" in power_grid_manager_text and "float quality = PowerSolverConvergenceMath.AuthoritativeQualityWeight;" not in power_grid_manager_text,
@@ -1182,7 +1562,10 @@ def code_anchor_audit() -> dict:
         "migrationReadsMathLodConfig": "MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config)" in migration_quality_body and "MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, AuthoritativeQualityWeight)" in migration_quality_body,
         "migrationCadenceContinuousResolved": "float qualityWeight = ResolveMigrationQualityWeight();" in migration_text and "ResolveMigrationFieldColdTickIntervalSeconds(qualityWeight)" in migration_text and "math.lerp(2.4f, 0.2f, quality)" in migration_cadence_body and "ResolveMigrationFieldColdTickIntervalSeconds()" not in migration_text,
         "migrationJobUsesResolvedQuality": "GlobalQualityWeight = ResolveMigrationQualityWeight()" in migration_text and "GlobalQualityWeight = AuthoritativeQualityWeight" not in migration_text,
+        "ecosystemBalancerReadsMathLodConfig": "MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config)" in ecosystem_balancer_quality_body and "MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, AuthoritativeQualityWeight)" in ecosystem_balancer_quality_body,
+        "ecosystemMacroJobUsesResolvedQuality": "GlobalQualityWeight = visualQualityWeight" in ecosystem_macro_body and "GlobalQualityWeight = AuthoritativeQualityWeight" not in ecosystem_macro_body,
         "boidSocialLodReadsMathLodConfig": "MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config)" in boid_social_lod_body and "MathLodApproximation.SaturateFinite(qualityWeight, 1f)" in boid_social_lod_body and "HomeostasisBrain.GlobalQualityWeight;" in boid_social_lod_body,
+        "voxelAStarReadsMathLodConfig": "MathLodRuntimeConfig.TryReadLatestConfig(out MathLodConfigDTO config)" in voxel_astar_quality_body and "MathLodApproximation.SaturateFinite(config.GlobalQualityWeight, 1f)" in voxel_astar_quality_body,
         "leviathanTerrainIkSdfContinuous": "float trilinearWeight = Smooth01(qualityWeight);" in leviathan_sdf_body and "math.lerp(nearestDensity, trilinearDensity, trilinearWeight)" in leviathan_sdf_body and "math.step(0.3f" not in leviathan_sdf_body,
         "proceduralBoneSecondaryContinuous": "float secondaryCurve = ProceduralBoneMath.SmoothRange01(quality, tuning.SecondaryBoneStart01, 1f);" in procedural_bone_text and "secondaryGate" not in procedural_bone_text,
         "proceduralBoneJawContinuous": "float jawWeight = math.saturate(tuning.JawIkWeight * ProceduralBoneMath.SmoothRange01(quality, 0.35f, 1f));" in procedural_bone_text and "jawGate" not in procedural_bone_text,
@@ -1245,6 +1628,24 @@ def code_anchor_audit() -> dict:
 def main() -> int:
     files = collect_cs_files()
     counts, occurrences = count_remaining_transcendentals(files)
+    fully_qualified_unity_math_total = sum(counts[f"UnityMathematicsMath.{method_name}"] for method_name in TRANSCENDENTAL_METHODS)
+    unity_math_alias_total = sum(counts[f"UnityMathAlias.{method_name}"] for method_name in TRANSCENDENTAL_METHODS)
+    unity_math_alias_declarations = count_unity_math_alias_declarations(files)
+    unity_math_static_total = sum(counts[f"UnityMathStatic.{method_name}"] for method_name in TRANSCENDENTAL_METHODS)
+    unity_math_static_imports = count_unity_math_static_imports(files)
+    unity_engine_mathf_total = sum(counts[f"UnityEngineMathf.{method_name}"] for method_name in FRAMEWORK_TRANSCENDENTAL_METHODS)
+    framework_math_alias_total = sum(
+        counts[f"MathTypeAlias.{target_key}.{method_name}"]
+        for target_key in ("UnityEngineMathf", "SystemMath", "SystemMathF")
+        for method_name in FRAMEWORK_TRANSCENDENTAL_METHODS
+    )
+    framework_math_static_total = sum(
+        counts[f"MathTypeStatic.{target_key}.{method_name}"]
+        for target_key in ("UnityEngineMathf", "SystemMath", "SystemMathF")
+        for method_name in FRAMEWORK_TRANSCENDENTAL_METHODS
+    )
+    framework_math_alias_declarations = count_framework_math_alias_declarations(files)
+    framework_math_static_imports = count_framework_math_static_imports(files)
     domain_1 = scan_exp_residual(1.0, 0.0001)
     domain_4 = scan_exp_residual(4.0, 0.0001)
     domain_pos_4 = scan_exp_residual_with(approx_exp_positive_pade33_reduced_f32, math.exp, 4.0, 0.0001)
@@ -1254,6 +1655,9 @@ def main() -> int:
     domain_tan_visual = scan_signed_residual_with(lambda x: approx_tan_clamped_f32(x, 4096.0), math.tan, 1.4, 0.0001)
     domain_atan = scan_signed_residual_with(approx_atan_fast_f32, math.atan, 16.0, 0.0001)
     domain_acos = scan_signed_residual_with(approx_acos_fast_f32, math.acos, 1.0, 0.0001)
+    series_proof = pade33_series_proof()
+    decompression_quality_continuity = scan_decompression_quality_drop_continuity()
+    jacobi_boundedness = scan_jacobi_boundedness()
     extreme_kernel_finiteness = scan_extreme_kernel_finiteness()
     power_destination_mask_equivalence = scan_power_destination_mask_equivalence()
     phys_x = math.log(2.0) / 300.0 * 256.0 * 0.25
@@ -1279,10 +1683,28 @@ def main() -> int:
         "remainingTranscendentals": counts,
         "remainingTranscendentalTotal": sum(counts.values()),
         "firstOccurrences": occurrences[:200],
+        "transcendentalScannerBypassProof": {
+            "fullyQualifiedUnityMathPatternsCovered": [f"Unity.Mathematics.math.{method_name}" for method_name in TRANSCENDENTAL_METHODS],
+            "fullyQualifiedUnityMathTranscendentalTotal": fully_qualified_unity_math_total,
+            "unityMathAliasDeclarations": unity_math_alias_declarations,
+            "unityMathAliasTranscendentalTotal": unity_math_alias_total,
+            "unityMathStaticImportDeclarations": unity_math_static_imports,
+            "unityMathStaticImportTranscendentalTotal": unity_math_static_total,
+            "aliasPolicy": "using Alias = Unity.Mathematics.math is allowed only while Alias.exp/pow/sin/cos/sincos/log/tan/atan/atan2/asin/acos remains zero",
+            "staticImportPolicy": "using static Unity.Mathematics.math is allowed only while bare exp/pow/sin/cos/sincos/log/tan/atan/atan2/asin/acos remains zero in that file",
+            "unityEngineMathfFullyQualifiedTranscendentalTotal": unity_engine_mathf_total,
+            "frameworkMathAliasDeclarations": framework_math_alias_declarations,
+            "frameworkMathAliasTranscendentalTotal": framework_math_alias_total,
+            "frameworkMathStaticImportDeclarations": framework_math_static_imports,
+            "frameworkMathStaticImportTranscendentalTotal": framework_math_static_total,
+            "frameworkAliasPolicy": "using Alias = UnityEngine.Mathf/System.Math/System.MathF is allowed only while Alias.Exp/Pow/Sin/Cos/Log/Tan/Atan/Atan2/Asin/Acos remains zero",
+            "frameworkStaticImportPolicy": "using static UnityEngine.Mathf/System.Math/System.MathF is allowed only while bare Exp/Pow/Sin/Cos/Log/Tan/Atan/Atan2/Asin/Acos remains zero in that file",
+        },
         "residualProof": {
             "approximation": "P33(clamp(x,0,4)/4)^4",
             "p33Numerator": "1 - y/2 + y^2/10 - y^3/120",
             "p33Denominator": "1 + y/2 + y^2/10 + y^3/120",
+            "pade33SeriesProof": series_proof,
             "floatScan0To1": domain_1,
             "floatScan0To4": domain_4,
             "positiveExpScan0To4": domain_pos_4,
@@ -1311,6 +1733,7 @@ def main() -> int:
             "authorityUsesGlobalQualityWeightForTissueCount": False,
             "authorityTissueCount": anchors["decompressionAuthorityTissueCount"],
             "expectedTissueStateDeltaForEqualPhysicalInputs": 0.0,
+            "numericContinuitySample": decompression_quality_continuity,
         },
         "tortureProof": {
             "sampleCount": 16,
@@ -1325,6 +1748,7 @@ def main() -> int:
         "powerDestinationMaskEquivalenceProof": power_destination_mask_equivalence,
         "jacobiProof": {
             "samples": [jacobi_sample(q) for q in [0.0, 0.1, 0.5, 1.0]],
+            "boundednessStress": jacobi_boundedness,
             "safetyInvariant": "bounded relaxation: capped non-negative conductance, guarded denominator, saturated [0,1] potential, finite current caps, divergence flags",
             "convergenceClaimAtMinQuality": "not claimed",
             "headlessFuzzerContract": {
@@ -1349,6 +1773,11 @@ def main() -> int:
             "readsMathLodConfig": anchors["logisticsGraphReadsMathLodConfigQuality"],
             "jobUsesResolvedQuality": anchors["logisticsGraphJobUsesResolvedQuality"],
             "adaptiveWindowUsesResolvedQuality": anchors["logisticsGraphAdaptiveWindowUsesResolvedQuality"],
+            "routerReadsMathLodConfig": anchors["logisticsRouterReadsMathLodConfigQuality"],
+            "routerEmergencyTuningUsesResolvedQuality": anchors["logisticsRouterEmergencyTuningUsesResolvedQuality"],
+            "solarConditionsReadMathLodConfig": anchors["solarConditionsReadMathLodConfigQuality"],
+            "solarDefaultConditionsUseResolvedQuality": anchors["solarDefaultConditionsUseResolvedQuality"],
+            "solarSanitizeFallbackUsesResolvedQuality": anchors["solarSanitizeFallbackUsesResolvedQuality"],
             "fallback": "AuthoritativeQualityWeight only when MathLodRuntimeConfig has no published snapshot",
         },
         "powerGridManagerQualityRouteProof": {
@@ -1385,7 +1814,10 @@ def main() -> int:
             "migrationReadsMathLodConfig": anchors["migrationReadsMathLodConfig"],
             "migrationCadenceContinuousResolved": anchors["migrationCadenceContinuousResolved"],
             "migrationJobUsesResolvedQuality": anchors["migrationJobUsesResolvedQuality"],
+            "ecosystemBalancerReadsMathLodConfig": anchors["ecosystemBalancerReadsMathLodConfig"],
+            "ecosystemMacroJobUsesResolvedQuality": anchors["ecosystemMacroJobUsesResolvedQuality"],
             "boidSocialLodReadsMathLodConfig": anchors["boidSocialLodReadsMathLodConfig"],
+            "voxelAStarReadsMathLodConfig": anchors["voxelAStarReadsMathLodConfig"],
             "truthPolicy": "ecosystem quality scales cadence/stride/social visual detail; oxygen, feeding, migration authority amplitudes are not reduced by binary quality tiers",
         },
         "animationQualityGateProof": {
@@ -1486,7 +1918,15 @@ def main() -> int:
             "migrationSnapshotRoute": anchors["migrationReadsMathLodConfig"],
             "migrationCadenceContinuous": anchors["migrationCadenceContinuousResolved"],
             "migrationJobUsesResolvedQuality": anchors["migrationJobUsesResolvedQuality"],
+            "ecosystemBalancerSnapshotRoute": anchors["ecosystemBalancerReadsMathLodConfig"],
+            "ecosystemMacroJobUsesResolvedQuality": anchors["ecosystemMacroJobUsesResolvedQuality"],
             "boidSocialLodSnapshotRoute": anchors["boidSocialLodReadsMathLodConfig"],
+            "voxelAStarSnapshotRoute": anchors["voxelAStarReadsMathLodConfig"],
+            "logisticsRouterSnapshotRoute": anchors["logisticsRouterReadsMathLodConfigQuality"],
+            "logisticsRouterEmergencyTuningUsesResolvedQuality": anchors["logisticsRouterEmergencyTuningUsesResolvedQuality"],
+            "solarConditionsSnapshotRoute": anchors["solarConditionsReadMathLodConfigQuality"],
+            "solarDefaultConditionsUseResolvedQuality": anchors["solarDefaultConditionsUseResolvedQuality"],
+            "solarSanitizeFallbackUsesResolvedQuality": anchors["solarSanitizeFallbackUsesResolvedQuality"],
             "policy": "cadence changes integrate accumulated delta time; visual turbulence/debris use smooth continuous quality curves; gameplay truth amplitudes are not reduced by binary quality tiers",
         },
         "branchAudit": branch_audit(),
@@ -1512,6 +1952,18 @@ def main() -> int:
     }
     if report["remainingTranscendentalTotal"] > 0:
         report["hardFailures"].append("remaining direct transcendental calls exist; full purge is false")
+    if fully_qualified_unity_math_total > 0:
+        report["hardFailures"].append("fully-qualified Unity.Mathematics.math transcendental bypass calls exist")
+    if unity_math_alias_total > 0:
+        report["hardFailures"].append("Unity.Mathematics.math alias transcendental bypass calls exist")
+    if unity_math_static_total > 0:
+        report["hardFailures"].append("Unity.Mathematics.math static-import transcendental bypass calls exist")
+    if unity_engine_mathf_total > 0:
+        report["hardFailures"].append("fully-qualified UnityEngine.Mathf transcendental bypass calls exist")
+    if framework_math_alias_total > 0:
+        report["hardFailures"].append("UnityEngine.Mathf/System.Math/System.MathF alias transcendental bypass calls exist")
+    if framework_math_static_total > 0:
+        report["hardFailures"].append("UnityEngine.Mathf/System.Math/System.MathF static-import transcendental bypass calls exist")
     if not report["codeAnchorAudit"]["decompressionDirectExpRemoved"]:
         report["hardFailures"].append("decompression direct math.exp still present")
     if not report["codeAnchorAudit"]["mathLodConfigDto64BytesDeclared"]:
@@ -1524,6 +1976,12 @@ def main() -> int:
         report["hardFailures"].append("directional infinity clamp is not branchless math.select code")
     if not report["residualProof"]["positiveInfinityDecayPolicy"]["withinMaxDecayRange"]:
         report["hardFailures"].append("positive infinity exp decay does not clamp to maximum finite range")
+    if report["residualProof"]["pade33SeriesProof"]["baseP33YMinusExpNegY"]["firstNonZeroOrder"] != 7:
+        report["hardFailures"].append("Pade33 base residual does not start at seventh order")
+    if report["residualProof"]["pade33SeriesProof"]["reducedP33XOver4Pow4MinusExpNegX"]["coefficient"]["fraction"] != "-1/412876800":
+        report["hardFailures"].append("decompression reduced Pade33 residual coefficient changed")
+    if report["qualityDropProof"]["numericContinuitySample"]["absDelta"] != 0.0:
+        report["hardFailures"].append("decompression tissue state changes directly when GlobalQualityWeight changes")
     if not report["codeAnchorAudit"]["mathLodConfigBufferIdsPresent"]:
         report["hardFailures"].append("math lod vault buffer ids missing")
     if not report["codeAnchorAudit"]["mathLodConfigPublishedByHomeostasis"]:
@@ -1560,6 +2018,12 @@ def main() -> int:
         report["hardFailures"].append("battery charge integration destination bounds still branch inside edge loop")
     if report["powerDestinationMaskEquivalenceProof"]["mismatchCount"] != 0:
         report["hardFailures"].append("safe-index destination masks are not numerically equivalent to the previous branch/continue behavior")
+    if report["jacobiProof"]["boundednessStress"]["nonFiniteSolvedVoltageCount"] != 0:
+        report["hardFailures"].append("power jacobi boundedness stress produced non-finite solved voltage")
+    if report["jacobiProof"]["boundednessStress"]["outOfRangeSolvedVoltageCount"] != 0:
+        report["hardFailures"].append("power jacobi boundedness stress produced voltage outside [0,1]")
+    if report["jacobiProof"]["boundednessStress"]["negativeSolvedVoltageCount"] != 0:
+        report["hardFailures"].append("power jacobi boundedness stress produced negative voltage")
     if not report["codeAnchorAudit"]["auditedFiniteGuardTernariesRemoved"]:
         report["hardFailures"].append("audited physiology/power/thermal finite guards still use branch-style ternaries")
     if not report["codeAnchorAudit"]["externalThermalInjectionQualityInvariantHeatShape"]:

@@ -118,7 +118,7 @@ namespace Hecton8.World
             if (!_initialized)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[ScatterEvaluator] Not initialized. Call Initialize() first.");
+                Hecton8.Core.H8Debug.LogError("[ScatterEvaluator] Not initialized. Call Initialize() first.");
 #endif
                 return default;
             }

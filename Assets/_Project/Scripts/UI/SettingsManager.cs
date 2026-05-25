@@ -770,7 +770,7 @@ namespace Hecton8.UI
 
                 default:
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning("[SettingsManager] Invalid preset. Valid range: 0-3.");
+                    H8Debug.LogWarning("[SettingsManager] Invalid preset. Valid range: 0-3.");
 #endif
                     break;
             }
@@ -828,7 +828,7 @@ namespace Hecton8.UI
             if (value < 0 || value > maxLevel)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SettingsManager] Invalid quality level; clamping.");
+                H8Debug.LogWarning("[SettingsManager] Invalid quality level; clamping.");
 #endif
                 return Mathf.Clamp(value, 0, maxLevel);
             }
@@ -840,7 +840,7 @@ namespace Hecton8.UI
             if (value < 0f || value > 1f)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SettingsManager] Invalid volume; clamping.");
+                H8Debug.LogWarning("[SettingsManager] Invalid volume; clamping.");
 #endif
                 return Mathf.Clamp01(value);
             }
@@ -852,7 +852,7 @@ namespace Hecton8.UI
             if (value < min || value > max)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SettingsManager] Invalid resolution dimension; clamping.");
+                H8Debug.LogWarning("[SettingsManager] Invalid resolution dimension; clamping.");
 #endif
                 return Mathf.Clamp(value, min, max);
             }
@@ -864,7 +864,7 @@ namespace Hecton8.UI
             if (value < 60f || value > 110f)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SettingsManager] Invalid FOV; clamping.");
+                H8Debug.LogWarning("[SettingsManager] Invalid FOV; clamping.");
 #endif
                 return Mathf.Clamp(value, 60f, 110f);
             }
@@ -876,7 +876,7 @@ namespace Hecton8.UI
             if (value < 0 || value > 3)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SettingsManager] Invalid shadow quality; clamping.");
+                H8Debug.LogWarning("[SettingsManager] Invalid shadow quality; clamping.");
 #endif
                 return Mathf.Clamp(value, 0, 3);
             }
@@ -888,7 +888,7 @@ namespace Hecton8.UI
             if (value < 50f || value > 300f)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SettingsManager] Invalid shadow distance; clamping.");
+                H8Debug.LogWarning("[SettingsManager] Invalid shadow distance; clamping.");
 #endif
                 return Mathf.Clamp(value, 50f, 300f);
             }
@@ -900,7 +900,7 @@ namespace Hecton8.UI
             if (value < 0 || value > 3)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SettingsManager] Invalid anti-aliasing; clamping.");
+                H8Debug.LogWarning("[SettingsManager] Invalid anti-aliasing; clamping.");
 #endif
                 return Mathf.Clamp(value, 0, 3);
             }
@@ -912,7 +912,7 @@ namespace Hecton8.UI
             if (value < 0 || value > 3)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SettingsManager] Invalid texture quality; clamping.");
+                H8Debug.LogWarning("[SettingsManager] Invalid texture quality; clamping.");
 #endif
                 return Mathf.Clamp(value, 0, 3);
             }
@@ -924,7 +924,7 @@ namespace Hecton8.UI
             if (value < 0 || value > 3)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SettingsManager] Invalid graphics preset; clamping.");
+                H8Debug.LogWarning("[SettingsManager] Invalid graphics preset; clamping.");
 #endif
                 return Mathf.Clamp(value, 0, 3);
             }
@@ -1028,7 +1028,7 @@ namespace Hecton8.UI
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (failureCount > 0)
             {
-                Debug.LogWarning("[SettingsManager] Applied settings with failures. Check warnings above.");
+                H8Debug.LogWarning("[SettingsManager] Applied settings with failures. Check warnings above.");
             }
 #endif
 
@@ -1218,7 +1218,7 @@ namespace Hecton8.UI
         private static void LogApplyQualityLevelFailed(int level, System.Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[SettingsManager] Failed to apply quality level.");
+            H8Debug.LogError("[SettingsManager] Failed to apply quality level.");
 #endif
         }
 
@@ -1227,7 +1227,7 @@ namespace Hecton8.UI
         private static void LogApplyVSyncFailed(System.Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[SettingsManager] Failed to apply VSync.");
+            H8Debug.LogError("[SettingsManager] Failed to apply VSync.");
 #endif
         }
 
@@ -1236,7 +1236,7 @@ namespace Hecton8.UI
         private static void LogApplyFullscreenFailed(System.Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[SettingsManager] Failed to apply fullscreen.");
+            H8Debug.LogError("[SettingsManager] Failed to apply fullscreen.");
 #endif
         }
 
@@ -1245,7 +1245,7 @@ namespace Hecton8.UI
         private static void LogApplyResolutionFailed(int width, int height, System.Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[SettingsManager] Failed to apply resolution.");
+            H8Debug.LogError("[SettingsManager] Failed to apply resolution.");
 #endif
         }
 
@@ -1254,7 +1254,7 @@ namespace Hecton8.UI
         private static void LogApplyShadowDistanceFailed(System.Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[SettingsManager] Failed to apply shadow distance.");
+            H8Debug.LogError("[SettingsManager] Failed to apply shadow distance.");
 #endif
         }
 
@@ -1263,7 +1263,7 @@ namespace Hecton8.UI
         private static void LogApplyTextureQualityFailed(System.Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[SettingsManager] Failed to apply texture quality.");
+            H8Debug.LogError("[SettingsManager] Failed to apply texture quality.");
 #endif
         }
 
@@ -1554,7 +1554,7 @@ namespace Hecton8.UI
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (!success)
                 {
-                    Debug.LogWarning("[SettingsManager] AudioMixer parameter not found or not exposed.");
+                    H8Debug.LogWarning("[SettingsManager] AudioMixer parameter not found or not exposed.");
                 }
 #endif
                 
@@ -1563,7 +1563,7 @@ namespace Hecton8.UI
             catch (System.Exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[SettingsManager] Failed to set AudioMixer parameter.");
+                H8Debug.LogError("[SettingsManager] Failed to set AudioMixer parameter.");
 #endif
                 return false;
             }

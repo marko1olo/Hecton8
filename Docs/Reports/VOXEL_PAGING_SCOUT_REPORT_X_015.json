@@ -1,0 +1,453 @@
+{
+  "agent_id": "X_015",
+  "role": "VOXEL_PAGING_AND_SECTOR_LAYOUT_SCOUT",
+  "domain": "ECHELON 2 WORLD GENERATION AND TERRAIN",
+  "mode": "read_only_source_audit",
+  "source_code_modified": false,
+  "assignment": {
+    "source": "Docs/Tasks/CURRENT_BATCH.md",
+    "tag": "<AGENT_PROMPT id=\"X_015\" role=\"VOXEL_PAGING_AND_SECTOR_LAYOUT_SCOUT\" chat_name=\"X_015\">",
+    "task_count": 4
+  },
+  "audited_primary_files": [
+    "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs",
+    "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+    "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs"
+  ],
+  "audited_supporting_files": [
+    "Assets/_Project/Scripts/SaveSystem/VoxelDeltaCompressionArchitecture.cs",
+    "Assets/_Project/Scripts/SaveSystem/SaveDeltaCompression.cs",
+    "Assets/_Project/Scripts/VoxelDeltaPersistenceDTO.cs",
+    "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+    "Assets/_Project/Scripts/Core/Contracts/PersistencePagingContracts.cs",
+    "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+    "Assets/_Project/Scripts/SaveManager.cs",
+    "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs"
+  ],
+  "mandates_read": [
+    "VOX_Voxel_World_Logic_Carving_Persistence.txt",
+    "STRM_World_Streaming_Residency_Chunk_Management.txt",
+    "DATA_Runtime_Struct_Layout_ARM64.txt",
+    "DATA_Save_Persistence_Binary_Delta_Checksum.txt",
+    "OPT_Native_Memory_Collections_JobSystem_Protocol.txt",
+    "OPT_Zero_GC_Policy_AllocFree_Mandate.txt",
+    "DBG_Telemetry_Crash_Reporting_PostMortem.txt",
+    "ARCH_Global_Registry_ServiceLocator_DI_Init.txt"
+  ],
+  "pager_sector_layout": {
+    "owner_file": "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs",
+    "constants_evidence": "H8BinaryWorldPager.cs:27-62",
+    "page_magic_hex": "0x48385047",
+    "page_magic_ascii": "H8PG",
+    "wal_magic_hex": "0x4C573848",
+    "wal_magic_ascii": "H8WL",
+    "directory_magic_hex": "0x44573848",
+    "directory_magic_ascii": "H8WD",
+    "page_version": 1,
+    "wal_version": 1,
+    "sector_size_bytes": 262144,
+    "sector_header_bytes": 64,
+    "sector_payload_bytes": 262080,
+    "max_sectors": 8192,
+    "max_sector_mask": 8191,
+    "world_directory_bytes": 4096,
+    "world_directory_header_bytes": 64,
+    "directory_entry_bytes": 16,
+    "directory_slot_count": 252,
+    "max_world_data_file_bytes_if_all_sectors_written": 2147487744,
+    "sector_offset_formula": {
+      "expression": "4096 + (((ulong)sectorHash & 8191) * 262144)",
+      "evidence": "H8BinaryWorldPager.cs:1696-1700",
+      "first_sector_offset": 4096,
+      "last_sector_offset": 2147225600,
+      "last_sector_end_offset": 2147487744
+    },
+    "page_header_64_bytes": [
+      { "offset": 0, "bytes": 4, "type": "uint32_le", "name": "PageMagic", "value": "0x48385047" },
+      { "offset": 4, "bytes": 2, "type": "uint16_le", "name": "PageVersion", "value": 1 },
+      { "offset": 6, "bytes": 2, "type": "uint16_le", "name": "HeaderBytes", "value": 64 },
+      { "offset": 8, "bytes": 4, "type": "uint32_le", "name": "PayloadType" },
+      { "offset": 12, "bytes": 4, "type": "uint32_le", "name": "Flags" },
+      { "offset": 16, "bytes": 8, "type": "int64_le", "name": "SectorHash" },
+      { "offset": 24, "bytes": 4, "type": "int32_le", "name": "RawBytes" },
+      { "offset": 28, "bytes": 4, "type": "int32_le", "name": "StoredBytes" },
+      { "offset": 32, "bytes": 4, "type": "uint32_le", "name": "RawPayloadHash32" },
+      { "offset": 36, "bytes": 4, "type": "uint32_le", "name": "Frame" },
+      { "offset": 40, "bytes": 4, "type": "uint32_le", "name": "SourceHash" },
+      { "offset": 44, "bytes": 4, "type": "uint32_le", "name": "RequestId" },
+      { "offset": 48, "bytes": 16, "type": "zeroed_reserved", "name": "Reserved" }
+    ],
+    "page_header_evidence": "H8BinaryWorldPager.cs:2247-2272",
+    "directory_header_4096_page": [
+      { "offset": 0, "bytes": 4, "type": "uint32_le", "name": "DirectoryMagic", "value": "0x44573848" },
+      { "offset": 4, "bytes": 2, "type": "uint16_le", "name": "PageVersion", "value": 1 },
+      { "offset": 6, "bytes": 2, "type": "uint16_le", "name": "WorldDirectoryBytes", "value": 4096 },
+      { "offset": 8, "bytes": 4, "type": "int32_le", "name": "SectorSizeBytes", "value": 262144 },
+      { "offset": 12, "bytes": 4, "type": "int32_le", "name": "MaxSectors", "value": 8192 },
+      { "offset": 16, "bytes": 4, "type": "int32_le", "name": "DirectorySlotCount", "value": 252 },
+      { "offset": 20, "bytes": 4, "type": "int32_le", "name": "DirectoryEntryBytes", "value": 16 },
+      { "offset": 24, "bytes": 40, "type": "zeroed_reserved", "name": "DirectoryHeaderReserved" },
+      { "offset": 64, "bytes": 4032, "type": "DirectoryEntry[252]", "name": "DirectoryEntries" }
+    ],
+    "directory_entry_16_bytes": [
+      { "offset": 0, "bytes": 8, "type": "int64_le", "name": "SectorHash" },
+      { "offset": 8, "bytes": 8, "type": "int64_le", "name": "SectorOffset" }
+    ],
+    "directory_evidence": "H8BinaryWorldPager.cs:1712-1760, H8BinaryWorldPager.cs:1769-1789",
+    "directory_slot_resolution": {
+      "expression": "mixed & (DirectorySlotCount - 1)",
+      "evidence": "H8BinaryWorldPager.cs:1703-1709",
+      "observed_slot_mask": 251,
+      "actual_reachable_slot_count_by_mask": 128,
+      "declared_slot_count": 252,
+      "risk": "DirectorySlotCount is 252, not a power of two. Bitmasking with 251 leaves 124 declared directory entries unreachable and increases collisions. The sector offset still uses 8192 slots; the directory index is the weak metadata route."
+    },
+    "wal_record_layout": {
+      "record_formula": "64-byte WAL header + StoredPayload[StoredBytes] + HotState[0..512] + 4-byte tail CRC",
+      "append_evidence": "H8BinaryWorldPager.cs:1812-1866",
+      "validation_evidence": "H8BinaryWorldPager.cs:2310-2358",
+      "wal_header_64_bytes": [
+        { "offset": 0, "bytes": 4, "type": "uint32_le", "name": "WalMagic", "value": "0x4C573848" },
+        { "offset": 4, "bytes": 2, "type": "uint16_le", "name": "WalVersion", "value": 1 },
+        { "offset": 6, "bytes": 2, "type": "uint16_le", "name": "WalHeaderBytes", "value": 64 },
+        { "offset": 8, "bytes": 4, "type": "uint32_le", "name": "PayloadType" },
+        { "offset": 12, "bytes": 4, "type": "uint32_le", "name": "Flags" },
+        { "offset": 16, "bytes": 8, "type": "int64_le", "name": "SectorHash" },
+        { "offset": 24, "bytes": 4, "type": "int32_le", "name": "RawBytes" },
+        { "offset": 28, "bytes": 4, "type": "int32_le", "name": "StoredBytes" },
+        { "offset": 32, "bytes": 4, "type": "uint32_le", "name": "RawPayloadHash32" },
+        { "offset": 36, "bytes": 4, "type": "uint32_le", "name": "Frame" },
+        { "offset": 40, "bytes": 4, "type": "uint32_le", "name": "SourceHash" },
+        { "offset": 44, "bytes": 4, "type": "int32_le", "name": "HotStateBytes" },
+        { "offset": 48, "bytes": 8, "type": "uint64_le", "name": "Sequence" },
+        { "offset": 56, "bytes": 4, "type": "uint32_le", "name": "HotStateCrc32" },
+        { "offset": 60, "bytes": 4, "type": "uint32_le", "name": "HotStateSchemaHash" }
+      ]
+    }
+  },
+  "pager_outer_byte_rle": {
+    "owner_file": "Assets/_Project/Scripts/SaveSystem/H8BinaryWorldPager.cs",
+    "algorithm": "Byte run-length encoding over the entire raw page payload before disk write.",
+    "record_stride_bytes": 3,
+    "record_layout": [
+      { "offset": 0, "bytes": 1, "type": "byte", "name": "Value" },
+      { "offset": 1, "bytes": 2, "type": "uint16_le", "name": "RunLength" }
+    ],
+    "max_run_length": 65535,
+    "encode_evidence": "H8BinaryWorldPager.cs:2153-2175",
+    "decode_evidence": "H8BinaryWorldPager.cs:2177-2192",
+    "compression_acceptance_rule": "The compressed stream is accepted only when outputBytes > 0 and outputBytes < inputBytes.",
+    "worst_case_raw_payload_bytes": 262080,
+    "worst_case_encoded_bytes_if_forced": 786240,
+    "forced_worst_case_fits_sector": false,
+    "actual_on_disk_worst_case_stored_bytes": 262080,
+    "actual_behavior": "If RLE would expand or fill the compression scratch, TryCompressRle returns false and ProcessWrite stores the raw payload.",
+    "best_case_uniform_payload_encoded_bytes": 12,
+    "best_case_uniform_run_count": 4,
+    "write_path_evidence": "H8BinaryWorldPager.cs:1297-1385",
+    "read_validation": "Read path rejects rawBytes or storedBytes <= 0 or > 262080 before copy/decompress.",
+    "read_validation_evidence": "H8BinaryWorldPager.cs:1457-1490"
+  },
+  "voxel_delta_pager_payload": {
+    "owner_file": "Assets/_Project/Scripts/SaveSystem/VoxelDeltaCompressionArchitecture.cs",
+    "payload_type": {
+      "name": "H8WorldPagePayloadTypes.VoxelDeltaRle",
+      "hex": "0x5658524C",
+      "ascii": "VXRL",
+      "evidence": "PersistencePagingContracts.cs:22-25"
+    },
+    "route_to_pager": {
+      "enqueue_method": "IAsyncPersistenceService.TryEnqueueChunkPageWrite -> H8BinaryWorldPager.TryEnqueueWrite",
+      "evidence": "SaveManager.cs:863-872, VoxelDeltaCompressionArchitecture.cs:584-592",
+      "read_request_evidence": "WorldChunkResidencyManager.cs:1438-1451"
+    },
+    "limits": {
+      "max_pager_payload_bytes": 262080,
+      "voxel_delta_header_bytes": 32,
+      "rle_run_stride_bytes": 8,
+      "max_runs_per_wal_payload": 32756,
+      "max_run_payload_bytes": 262048,
+      "max_total_payload_bytes": 262080,
+      "evidence": "VoxelDeltaCompressionArchitecture.cs:189-198"
+    },
+    "voxel_delta_header_32_bytes": [
+      { "offset": 0, "bytes": 8, "type": "uint64_le", "name": "SectorHash" },
+      { "offset": 8, "bytes": 4, "type": "uint32_le", "name": "CompressedSize" },
+      { "offset": 12, "bytes": 4, "type": "uint32_le", "name": "UncompressedSize" },
+      { "offset": 16, "bytes": 8, "type": "uint64_le", "name": "XXHash3Checksum" },
+      { "offset": 24, "bytes": 4, "type": "uint32_le", "name": "_pad0" },
+      { "offset": 28, "bytes": 4, "type": "uint32_le", "name": "_pad1" }
+    ],
+    "voxel_delta_header_evidence": "VoxelDeltaCompressionArchitecture.cs:31-39, VoxelDeltaCompressionArchitecture.cs:675-704",
+    "voxel_delta_rle_run_8_bytes": [
+      { "offset": 0, "bytes": 2, "type": "uint16_le", "name": "StartIndex" },
+      { "offset": 2, "bytes": 2, "type": "uint16_le", "name": "RunLength" },
+      { "offset": 4, "bytes": 1, "type": "sbyte", "name": "SdfValue" },
+      { "offset": 5, "bytes": 1, "type": "byte", "name": "MaterialId" },
+      { "offset": 6, "bytes": 1, "type": "byte", "name": "Flags" },
+      { "offset": 7, "bytes": 1, "type": "byte", "name": "Reserved0" }
+    ],
+    "rle_run_evidence": "VoxelDeltaCompressionArchitecture.cs:17-25, SaveDeltaCompression.cs:47-67",
+    "chunk_cell_count": 32768,
+    "worst_single_cell_modified_runs": 32768,
+    "worst_single_cell_run_payload_bytes": 262144,
+    "worst_single_cell_total_with_header_bytes": 262176,
+    "worst_single_cell_fits_single_pager_payload": false,
+    "overflow_behavior": {
+      "encoder_sets_overflow": "VoxelRleEncoderJob sets HeaderFlagFatal when per-block run storage is exhausted.",
+      "finalize_sets_failure": "VoxelDeltaRleFinalizeJob writes CounterFailure when HeaderFlagFatal is present.",
+      "persist_rejects_failure": "PersistSectorRle rejects CounterFailure != 0 and byteCount > MaxVoxelDeltaWalPayloadBytes.",
+      "evidence": "VoxelDeltaCompressionArchitecture.cs:1250-1266, VoxelDeltaCompressionArchitecture.cs:1328-1335, VoxelDeltaCompressionArchitecture.cs:575-592"
+    },
+    "packed_payload_order": {
+      "order": "VoxelDeltaHeaderDTO[32] followed by compressed/raw byte stream",
+      "evidence": "VoxelDeltaCompressionArchitecture.cs:1710-1762",
+      "checksum_source": "VoxelDeltaChecksumHeaderJob hashes CompressedBytes[CounterCompressedBytes] before header pack.",
+      "checksum_evidence": "VoxelDeltaCompressionArchitecture.cs:1663-1700"
+    }
+  },
+  "voxel_delta_native_snapshot_layout": {
+    "owner_file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+    "usage": "Main SaveManager native voxel snapshot path, separate from the world pager page envelope.",
+    "save_manager_route_evidence": "SaveManager.cs:2918-2964",
+    "snapshot_version_magic": {
+      "current": "NativeSnapshotDeltaRleAlignedMagic",
+      "hex": "0x48584435",
+      "evidence": "VoxelDeltaProcessor.cs:113-116, VoxelDeltaProcessor.cs:2197-2206"
+    },
+    "native_snapshot_header_16_bytes": [
+      { "offset": 0, "bytes": 4, "type": "int32_le", "name": "Version" },
+      { "offset": 4, "bytes": 4, "type": "int32_le", "name": "ChunkCount" },
+      { "offset": 8, "bytes": 4, "type": "int32_le", "name": "TotalDirtyCellCount" },
+      { "offset": 12, "bytes": 4, "type": "int32_le", "name": "Reserved0" }
+    ],
+    "native_snapshot_header_evidence": "VoxelDeltaProcessor.cs:6045-6052",
+    "chunk_header_delta_rle_40_bytes": [
+      { "offset": 0, "bytes": 4, "type": "int32_le", "name": "ChunkX" },
+      { "offset": 4, "bytes": 4, "type": "int32_le", "name": "ChunkY" },
+      { "offset": 8, "bytes": 4, "type": "int32_le", "name": "ChunkZ" },
+      { "offset": 12, "bytes": 4, "type": "float32_le", "name": "VoxelSize" },
+      { "offset": 16, "bytes": 4, "type": "int32_le", "name": "DirtyCellCount" },
+      { "offset": 20, "bytes": 1, "type": "byte", "name": "StorageFlags" },
+      { "offset": 21, "bytes": 1, "type": "byte", "name": "Reserved0" },
+      { "offset": 22, "bytes": 2, "type": "uint16_le", "name": "Reserved1" },
+      { "offset": 24, "bytes": 4, "type": "int32_le", "name": "PayloadByteLength" },
+      { "offset": 28, "bytes": 4, "type": "uint32_le", "name": "PayloadHashLow" },
+      { "offset": 32, "bytes": 4, "type": "uint32_le", "name": "PayloadHashHigh" },
+      { "offset": 36, "bytes": 4, "type": "uint32_le", "name": "Reserved2" }
+    ],
+    "chunk_header_evidence": "VoxelDeltaProcessor.cs:6087-6102",
+    "storage_flags": {
+      "dense": 0,
+      "uniform_sdf_rle": 1,
+      "sparse_delta_rle": 2,
+      "evidence": "VoxelDeltaProcessor.cs:121-125"
+    },
+    "dense_payload_bytes": {
+      "dirty_mask_words": 1024,
+      "dirty_mask_bytes": 4096,
+      "sdf_value_bits_bytes": 65536,
+      "material_ids_bytes": 32768,
+      "cell_flags_bytes": 32768,
+      "total_payload_bytes": 135168,
+      "record_total_bytes": 135208,
+      "evidence": "VoxelDeltaProcessor.cs:2356-2362"
+    },
+    "uniform_payload_bytes": {
+      "raw_payload_bytes": 1,
+      "aligned_payload_bytes": 4,
+      "record_total_bytes": 44,
+      "evidence": "VoxelDeltaProcessor.cs:2381-2420"
+    },
+    "sparse_delta_rle_payload": {
+      "run_stride_bytes": 8,
+      "run_record": "SaveVoxelDeltaRun8",
+      "worst_forced_runs": 32768,
+      "worst_forced_payload_bytes": 262144,
+      "forced_worst_fits_262080_page_payload": false,
+      "active_fallback_rule": "Use dense payload when sparsePayloadBytes > 135168.",
+      "active_max_record_bytes": 135208,
+      "evidence": "VoxelDeltaProcessor.cs:2423-2454, VoxelDeltaProcessor.cs:2482-2562, VoxelDeltaProcessor.cs:2364-2367"
+    },
+    "load_validation": {
+      "requirements": [
+        "payloadBytes must be a multiple of 8",
+        "runLength must be positive",
+        "runs must be monotonically non-overlapping",
+        "startIndex must not exceed ChunkCellCount - runLength",
+        "decoded dirty cell count must equal declared dirtyCellCount"
+      ],
+      "evidence": "VoxelDeltaProcessor.cs:3216-3294"
+    },
+    "snapshot_scratch_capacity": {
+      "raw_payload_capacity_bytes": 67108864,
+      "raw_payload_capacity_evidence": "SaveBinaryStorage.cs:1122-1126",
+      "processor_scratch_capacity_formula": "16 + 256 * (40 + 135168) + 256 * (40 + 4)",
+      "processor_scratch_capacity_bytes": 34624528,
+      "evidence": "VoxelDeltaProcessor.cs:2369-2379, VoxelDeltaProcessor.cs:4802-4824",
+      "safe_dense_equivalent_records": 256,
+      "safe_uniform_compacted_records_after_256_dense": 256,
+      "risk": "TryMeasureNativeSnapshot can count non-uniform compacted chunks as dense records. ResolveNativeSnapshotScratchCapacityBytes budgets 256 dense dirty records plus 256 uniform compacted records, not 512 dense records. More than 256 dense-equivalent records will exceed the borrowed scratch capacity and cause snapshot copy failure."
+    }
+  },
+  "chunk_pool_and_recycler": {
+    "owner_file": "Assets/_Project/Scripts/VoxelDeltaProcessor.cs",
+    "chunk_resolution": 32,
+    "cell_count": 32768,
+    "dirty_mask_word_count": 1024,
+    "pool_slots": 256,
+    "pool_slot_layout": {
+      "dirty_mask_words_per_slot": 1024,
+      "dirty_mask_bytes_per_slot": 4096,
+      "sdf_bits_bytes_per_slot": 65536,
+      "material_bytes_per_slot": 32768,
+      "cell_flags_bytes_per_slot": 32768,
+      "total_native_bytes_per_slot": 135168
+    },
+    "pool_total_native_bytes": 34603008,
+    "pool_total_formula": "256 * (1024*4 + 32768*2 + 32768 + 32768)",
+    "vault_buffer_lengths": {
+      "dirty_mask_uint_elements": 262144,
+      "sdf_bits_ushort_elements": 8388608,
+      "material_byte_elements": 8388608,
+      "cell_flags_byte_elements": 8388608
+    },
+    "allocation_evidence": "VoxelDeltaProcessor.cs:4851-4890, VoxelDeltaProcessor.cs:4892-4935",
+    "lease_flow": {
+      "lease": "TryLeaseChunkState pops a free slot, resets metadata, then MemClear-calls ClearChunkStateStorage before use.",
+      "release": "ReleaseChunkState resets metadata and pushes the pool slot back onto the free stack.",
+      "starvation": "If no free slots remain, TryLeaseChunkState returns false and publishes one performance warning until the free count rises above 64.",
+      "evidence": "VoxelDeltaProcessor.cs:4937-4982"
+    },
+    "zero_overwrite_flow": {
+      "method": "ClearChunkStateStorage",
+      "cleared_buffers": [
+        "DirtyMaskWords",
+        "SdfValueBits",
+        "MaterialIds",
+        "CellFlags"
+      ],
+      "sets_dirty_cell_count_to_zero": true,
+      "evidence": "VoxelDeltaProcessor.cs:5031-5058"
+    },
+    "compaction_scratch": {
+      "source_sdf_bytes": 2146689,
+      "dirty_mask_bytes": 4096,
+      "delta_sdf_bytes": 65536,
+      "material_bytes": 32768,
+      "flags_bytes": 32768,
+      "output_sdf_bytes": 65536,
+      "output_material_bytes": 32768,
+      "output_flags_bytes": 32768,
+      "uniform_flag_bytes": 1,
+      "total_bytes": 2413930,
+      "single_lease_guard": true,
+      "evidence": "VoxelDeltaProcessor.cs:4705-4785"
+    },
+    "scheduled_carve_write_buffer": {
+      "capacity_records": 131072,
+      "record_stride_bytes": 32,
+      "total_bytes": 4194304,
+      "record_layout_evidence": "VoxelDeltaProcessor.cs:83, VoxelDeltaProcessor.cs:4529-4586, VoxelDeltaProcessor.cs:5552-5565",
+      "record_layout": [
+        { "offset": 0, "bytes": 4, "type": "int32", "name": "AbsoluteCellX" },
+        { "offset": 4, "bytes": 4, "type": "int32", "name": "AbsoluteCellY" },
+        { "offset": 8, "bytes": 4, "type": "int32", "name": "AbsoluteCellZ" },
+        { "offset": 12, "bytes": 4, "type": "float32", "name": "BlendStrength" },
+        { "offset": 16, "bytes": 2, "type": "uint16", "name": "SdfValueBits" },
+        { "offset": 18, "bytes": 1, "type": "byte", "name": "MaterialId" },
+        { "offset": 19, "bytes": 1, "type": "byte", "name": "DeltaFlags" },
+        { "offset": 20, "bytes": 1, "type": "byte", "name": "IsActive" },
+        { "offset": 21, "bytes": 7, "type": "reserved_explicit_padding", "name": "Pad0Pad1Pad2AndUnused28to31" }
+      ]
+    }
+  },
+  "voxel_surface_nets_vault": {
+    "owner_file": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsVault.cs",
+    "contract_file": "Assets/_Project/Scripts/World/VoxelSurfaceNets/VoxelSurfaceNetsContracts.cs",
+    "role": "GlobalDataVault-backed meshing working set. No disk sector writer and no RLE encoder were found in VoxelSurfaceNetsVault.cs.",
+    "constants_evidence": "VoxelSurfaceNetsContracts.cs:7-40",
+    "vault_allocation_evidence": "VoxelSurfaceNetsVault.cs:117-228",
+    "fixed_capacities": {
+      "chunk_resolution": 32,
+      "density_resolution": 34,
+      "cell_count": 32768,
+      "density_sample_count": 39304,
+      "max_vertices": 65000,
+      "max_indices": 196608,
+      "max_tracked_chunks": 256,
+      "telemetry_frames": 300,
+      "lookup_case_count": 256,
+      "max_hzb_tiles": 4096
+    },
+    "vault_total_known_native_bytes": 3335708,
+    "dto_strides": {
+      "VoxelVertexDTO": 32,
+      "ChunkMeshingStateDTO": 64,
+      "VoxelMeshingTuningDTO": 64,
+      "VoxelMeshingTelemetryEntry": 64,
+      "VoxelSurfaceAabbDTO": 64,
+      "VoxelSurfaceModifiedSignal": 64,
+      "VoxelSurfacePriorityDTO": 16,
+      "VoxelSurfaceIndirectArgsDTO": 32,
+      "MockVoxelDensityArray": 48,
+      "VoxelSurfacePhysicsBakeRequestDTO": 32,
+      "VoxelSurfaceHzbTileDTO": 16
+    },
+    "dto_layout_evidence": "VoxelSurfaceNetsContracts.cs:91-337",
+    "black_box_dump": {
+      "files": [
+        "Docs/AgentLogs/Dump_MESH_SURGEON.bin",
+        "Docs/AgentLogs/Dump_SHINOBU_308_Voxel.bin"
+      ],
+      "header_bytes": 32,
+      "payload": "TelemetryRing[300] * VoxelMeshingTelemetryEntry[64]",
+      "total_dump_bytes": 19232,
+      "evidence": "VoxelSurfaceNetsVault.cs:672-680, VoxelSurfaceNetsVault.cs:993-1012"
+    }
+  },
+  "identified_risks": [
+    {
+      "id": "DIR_SLOT_MASK_252",
+      "severity": "HIGH_METADATA_COLLISION_RISK",
+      "fact": "DirectorySlotCount is 252 but ResolveDirectorySlot masks with DirectorySlotCount - 1. Only 128 slots are reachable.",
+      "evidence": "H8BinaryWorldPager.cs:35-38, H8BinaryWorldPager.cs:1703-1709",
+      "impact": "Directory metadata collision probability is higher than intended. Sector body offsets still use 8192 slots, but directory reverse/index metadata is weaker."
+    },
+    {
+      "id": "VOXEL_DELTA_SINGLE_PAGE_RUN_LIMIT",
+      "severity": "HARD_PAYLOAD_LIMIT",
+      "fact": "Voxel delta pager payload can store 32756 8-byte runs plus a 32-byte header. A 32768-cell checkerboard delta produces 32768 runs and does not fit.",
+      "evidence": "VoxelDeltaCompressionArchitecture.cs:195-198, VoxelDeltaCompressionArchitecture.cs:575-592",
+      "impact": "Future laser/cave cutters must split, densify, or otherwise avoid one-page single-cell run saturation."
+    },
+    {
+      "id": "NATIVE_SNAPSHOT_DENSE_EQUIVALENT_CAP",
+      "severity": "SAVE_SNAPSHOT_CAPACITY_RISK",
+      "fact": "Native snapshot scratch capacity is 34624528 bytes, enough for 256 dense-equivalent records plus 256 uniform records. More than 256 dense-equivalent chunk records can exceed scratch.",
+      "evidence": "VoxelDeltaProcessor.cs:2276-2379, VoxelDeltaProcessor.cs:4802-4824",
+      "impact": "SaveManager can receive no voxel native snapshot when TryCopyNativeSnapshotToBorrowedScratch cannot fit measured bytes."
+    },
+    {
+      "id": "CHUNK_POOL_STARVATION_FAIL_CLOSED",
+      "severity": "EXPECTED_BACKPRESSURE",
+      "fact": "ChunkDeltaState pool has exactly 256 slots. On exhaustion lease fails and publishes a performance warning; it does not allocate an emergency native buffer.",
+      "evidence": "VoxelDeltaProcessor.cs:4851-4982",
+      "impact": "This protects zero-GC behavior but drops or refuses new dirty chunk state until slots are released."
+    }
+  ],
+  "future_agent_constraints": [
+    "Never write more than 262080 raw bytes into H8BinaryWorldPager.TryEnqueueWrite.",
+    "Treat 262080 as the outer page payload limit, not the voxel delta run-stream limit.",
+    "For VoxelDeltaCompressionArchitecture pager pages, keep VoxelDeltaHeaderDTO[32] + stored bytes <= 262080.",
+    "Do not assume a full 32768 single-cell RLE run stream fits a single VXRL page; max is 32756 runs.",
+    "For VoxelDeltaProcessor native snapshots, dense fallback makes one chunk record 135208 bytes; plan splitting when dense-equivalent records exceed 256.",
+    "Do not mutate or poll GlobalRegistry on hot paths; chunk state comes from fixed GlobalDataVault buffers and hot events via SignalBus."
+  ],
+  "verification": {
+    "csharp_source_files_edited": false,
+    "dotnet_build_run": false,
+    "dotnet_build_skip_reason": "Read-only audit generated reports only; no C# source or project metadata was edited.",
+    "json_validated": true
+  }
+}

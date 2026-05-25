@@ -115,7 +115,7 @@ namespace Hecton8.UI
             if (_canvasGroup == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[LoadingScreenController] Missing CanvasGroup component!");
+                Hecton8.Core.H8Debug.LogError("[LoadingScreenController] Missing CanvasGroup component!");
 #endif
                 enabled = false;
                 return;
@@ -129,7 +129,7 @@ namespace Hecton8.UI
             if (_loadingPanel == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[LoadingScreenController] Loading panel not assigned!");
+                Hecton8.Core.H8Debug.LogError("[LoadingScreenController] Loading panel not assigned!");
 #endif
                 enabled = false;
                 return;
@@ -154,7 +154,7 @@ namespace Hecton8.UI
             TryRegisterHotSwapListener();
             TryRegisterRuntime();
             TryRegisterToTickManager();
-            _lastUnscaledTickTime = Time.unscaledTime;
+            _lastUnscaledTickTime = ResolvePresentationClockSeconds();
         }
 
         private void Start()
@@ -202,7 +202,7 @@ namespace Hecton8.UI
             }
 
             _isShowing = true;
-            _showStartTime = Time.unscaledTime;
+            _showStartTime = ResolvePresentationClockSeconds();
             _delayRemaining = 0f;
             _transitionElapsed = 0f;
             _fadeStartAlpha = _canvasGroup.alpha;
@@ -219,7 +219,7 @@ namespace Hecton8.UI
             if (!_isShowing)
                 return;
 
-            float elapsed = Time.unscaledTime - _showStartTime;
+            float elapsed = ResolvePresentationClockSeconds() - _showStartTime;
             if (elapsed < _minimumDisplayTime)
             {
                 _delayRemaining = _minimumDisplayTime - elapsed;
@@ -493,7 +493,7 @@ namespace Hecton8.UI
 
         private float GetUnscaledDeltaTime()
         {
-            float currentTime = Time.unscaledTime;
+            float currentTime = ResolvePresentationClockSeconds();
             if (_lastUnscaledTickTime <= 0f)
             {
                 _lastUnscaledTickTime = currentTime;
@@ -503,6 +503,11 @@ namespace Hecton8.UI
             float delta = currentTime - _lastUnscaledTickTime;
             _lastUnscaledTickTime = currentTime;
             return delta > 0f ? delta : 0f;
+        }
+
+        private static float ResolvePresentationClockSeconds()
+        {
+            return (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
         }
 
         private void TryRegisterToTickManager()

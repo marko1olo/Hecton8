@@ -3,12 +3,14 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Hecton.Localization;
-using Hecton8.Physics;
 using System.Runtime.InteropServices;
 using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
+
+using SubmarineFluidDynamics = global::Hecton8.Physics.SubmarineFluidDynamics;
+using SubmarineStructuralGrid = global::Hecton8.Physics.SubmarineStructuralGrid;
 
 namespace Hecton8.Gameplay
 {

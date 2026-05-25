@@ -1,0 +1,53 @@
+{
+    "schema":  "hecton8.agent1302_own_files_text_scan.v1",
+    "generatedAt":  "2026-05-25",
+    "fileCount":  8,
+    "hitCount":  9,
+    "hits":  [
+                 {
+                     "file":  "Docs/Tasks/Status_1302.md",
+                     "line":  42,
+                     "text":  "- Rejected alternative: Rejected allocating a new telemetry ring for a non-existent migration target."
+                 },
+                 {
+                     "file":  "Docs/AgentLogs/Rationale_1302.md",
+                     "line":  50,
+                     "text":  "Rejected Alternatives: Rejected rewriting accessors to new read-lock wrappers with no source alias to remove. That would add unproven contention windows and could force hidden synchronization."
+                 },
+                 {
+                     "file":  "Docs/AgentLogs/Rationale_1302.md",
+                     "line":  60,
+                     "text":  "Hardware Impact: 0 us runtime change. No new memory stride, copy, or cache footprint change introduced."
+                 },
+                 {
+                     "file":  "Docs/AgentLogs/Rationale_1302.md",
+                     "line":  64,
+                     "text":  "Problem: Task 05 asks for a new forensic telemetry ring, but there is no migrated in-domain memory buffer requiring one."
+                 },
+                 {
+                     "file":  "Docs/Reports/PHASE0_MEMORY_SOVEREIGNTY_1302.md",
+                     "line":  39,
+                     "text":  "No 1302-owned migration target was identified, so no new `BufferID` assignments are required in Phase 0."
+                 },
+                 {
+                     "file":  "Docs/Reports/PHASE0_MEMORY_SOVEREIGNTY_1302.md",
+                     "line":  76,
+                     "text":  "No new runtime telemetry ring was implemented in Phase 0 because no source migration occurred."
+                 },
+                 {
+                     "file":  "Docs/Reports/PROMPT_1302_REEXTRACTED.txt",
+                     "line":  17,
+                     "text":  "4. FAIL-CLOSED METADATA VALIDATION PROTOCOLS: Whenever you convert a legacy physics system to utilize the new generation handles, you must implement brutal, fail-closed validation checks before any data is passed to the Burst compiler. Before any array is read or written, you must verify the `BufferID`, the `SystemID`, the generation counter, and the expected element capacity. If the `GlobalDataVault` reports that the handle is stale, missing, or mismatched in size, your system must immediately abort the physics update, log the exact failure parameters to the designated 300-frame forensic blackbox telemetry ring, and degrade safely. You must never throw managed exceptions in these hot paths, as doing so will stall the Unity main thread and violate our strict zero-GC performance budgets."
+                 },
+                 {
+                     "file":  "Docs/Reports/PROMPT_1302_REEXTRACTED.txt",
+                     "line":  21,
+                     "text":  "6. CONTINUOUS SCALABILITY AWARENESS: As you refactor these memory access patterns, you must preserve the continuous scalability mathematics already present in the codebase. If the fluid engine previously evaluated 10,000 buoyant objects, your new phase-local resolution must still seamlessly respect the `HomeostasisBrain.GlobalQualityWeight` scalar, dynamically and continuously reducing the simulated entity count or the fidelity of the drag calculations based on the available thermal budget. You will not introduce primitive binary switches (e.g., `if (isLowEnd)`); all performance throttling within your refactored jobs must remain a smooth, floating-point mathematical degradation."
+                 },
+                 {
+                     "file":  "Docs/Reports/PROMPT_1302_REEXTRACTED.txt",
+                     "line":  45,
+                     "text":  "Task 10: BURST_JOB_SIGNATURE_RECONCILIATION. Systematically update the `IJob`, `IJobParallelFor`, and raycast batching structs to accept the newly resolved `NativeArray\u003cT\u003e` physical views as direct parameters. Diligently apply `[NoAlias]` and `[ReadOnly]` attributes to these new parameters where appropriate, guaranteeing the Burst compiler can aggressively vectorize inner collision loops without memory overlap fears. Do not pass handles into the jobs."
+                 }
+             ]
+}

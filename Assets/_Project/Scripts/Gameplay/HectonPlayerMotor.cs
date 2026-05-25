@@ -4,7 +4,6 @@ using Hecton8.Core.Memory;
 using Hecton8.Caves;
 using Hecton8.Inventory;
 using Hecton8.Interaction;
-using Hecton8.Physics;
 using Hecton8.Core.Contracts.Physics;
 using Hecton8.Physics.KCC;
 using Hecton8.World;
@@ -51,7 +50,8 @@ namespace Hecton8.Gameplay
         private bool _registeredMotorService;
         private bool _registeredHotSwap;
         private IPlayerRuntimeContext _playerRuntimeContext;
-        private AbyssalFluidDecalManager _fluidDecals;
+        private IFluidDecalPresentationSink _fluidDecals;
+        private IPhysicsService _physicsService;
         private Vector3 _lastKnownLinearVelocity;
         private float _encumbranceMovementMultiplier = 1f;
         private float _wakeSiltEmissionCooldown;
@@ -135,7 +135,7 @@ namespace Hecton8.Gameplay
             if (_lastWallSlidePhysicsFrame < 0)
                 return false;
 
-            int age = PhysicsFrame.Current - _lastWallSlidePhysicsFrame;
+            int age = SystemDispatcher.CurrentFrameIndex - _lastWallSlidePhysicsFrame;
             if (age < 0 || age > math.max(0, maxPhysicsFrameAge))
                 return false;
 
@@ -304,9 +304,11 @@ namespace Hecton8.Gameplay
             }
 
             if (serviceSlot == GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime)
-                _fluidDecals = newService as AbyssalFluidDecalManager;
+                _fluidDecals = newService as IFluidDecalPresentationSink;
             else if (serviceSlot == GlobalRegistryServiceSlot.Player)
                 _playerRuntimeContext = newService as IPlayerRuntimeContext;
+            else if (serviceSlot == GlobalRegistryServiceSlot.Physics)
+                _physicsService = newService as IPhysicsService;
         }
 
         void IGlobalRegistryHotSwapListener.OnGlobalRegistryServiceReplaced(
@@ -343,7 +345,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            PhysicsForceRouter.QueueForce(_body, force, ForceMode.Force);
+            IPhysicsService physicsService = ResolvePhysicsService();
+            physicsService?.QueueForce(_body, force, ForceMode.Force);
         }
 
         /// <summary>Applies a world-space acceleration after finite validation.</summary>
@@ -358,7 +361,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            PhysicsForceRouter.QueueForce(_body, acceleration, ForceMode.Acceleration);
+            IPhysicsService physicsService = ResolvePhysicsService();
+            physicsService?.QueueForce(_body, acceleration, ForceMode.Acceleration);
         }
 
         /// <summary>Applies a world-space velocity change after finite validation.</summary>
@@ -375,7 +379,8 @@ namespace Hecton8.Gameplay
             }
 
             _lastKnownLinearVelocity = SafeVelocity(ResolveCurrentLinearVelocity(Vector3.zero) + velocityChange, _lastKnownLinearVelocity);
-            PhysicsForceRouter.QueueForce(_body, velocityChange, ForceMode.VelocityChange);
+            IPhysicsService physicsService = ResolvePhysicsService();
+            physicsService?.QueueForce(_body, velocityChange, ForceMode.VelocityChange);
         }
 
         /// <summary>Applies an impulse after finite validation.</summary>
@@ -392,7 +397,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            PhysicsForceRouter.QueueForce(_body, impulse, ForceMode.Impulse);
+            IPhysicsService physicsService = ResolvePhysicsService();
+            physicsService?.QueueForce(_body, impulse, ForceMode.Impulse);
         }
 
         /// <summary>
@@ -410,7 +416,8 @@ namespace Hecton8.Gameplay
             if (!IsFiniteNonZero(clampedTorque))
                 return;
 
-            PhysicsForceRouter.QueueTorque(_body, clampedTorque, ForceMode.Force);
+            IPhysicsService physicsService = ResolvePhysicsService();
+            physicsService?.QueueTorque(_body, clampedTorque, ForceMode.Force);
         }
 
         /// <summary>
@@ -437,7 +444,8 @@ namespace Hecton8.Gameplay
             if (!IsFiniteNonZero(clampedDelta))
                 return;
 
-            PhysicsForceRouter.QueueTorque(_body, clampedDelta, ForceMode.VelocityChange);
+            IPhysicsService physicsService = ResolvePhysicsService();
+            physicsService?.QueueTorque(_body, clampedDelta, ForceMode.VelocityChange);
         }
 
         /// <summary>
@@ -495,7 +503,19 @@ namespace Hecton8.Gameplay
             if (currentVelocityFinite && (targetVelocity - currentVelocity).sqrMagnitude <= MinVectorMagnitudeSq)
                 return;
 
-            PhysicsForceRouter.QueueOwnedLinearVelocitySet(_body, targetVelocity);
+            IPhysicsService physicsService = ResolvePhysicsService();
+            physicsService?.QueueLinearVelocitySet(_body, targetVelocity);
+        }
+
+        /// <summary>Routes legacy angular velocity targets through the motor owner when Hydro KCC is inactive.</summary>
+        public void SetAngularVelocity(Vector3 angularVelocity, bool wake = true)
+        {
+            if (_body == null || HydrodynamicKccOwnsCollision())
+                return;
+
+            Vector3 targetAngularVelocity = SafeVelocity(angularVelocity, Vector3.zero);
+            IPhysicsService physicsService = ResolvePhysicsService();
+            physicsService?.QueueAngularVelocitySet(_body, targetAngularVelocity, wake);
         }
 
         /// <summary>Projects the current linear velocity onto a collision plane.</summary>
@@ -746,7 +766,7 @@ namespace Hecton8.Gameplay
         private Vector3 ResolveCurrentLinearVelocity(Vector3 fallback)
         {
             if (HydrodynamicKccOwnsCollision() &&
-                PhysicsDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityMotorMaxAgeFrames, out Vector3 kccVelocity))
+                CoreDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityMotorMaxAgeFrames, out Vector3 kccVelocity))
             {
                 return SafeVelocity(kccVelocity, fallback);
             }
@@ -852,7 +872,7 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(emitPosition3)))
                 return;
 
-            AbyssalFluidDecalManager fluidDecals = _fluidDecals;
+            IFluidDecalPresentationSink fluidDecals = _fluidDecals;
             if (fluidDecals == null)
                 return;
 
@@ -1082,7 +1102,8 @@ namespace Hecton8.Gameplay
             GlobalRegistry.RegisterHotSwapListener(this);
             _registeredHotSwap = true;
             _playerRuntimeContext = GlobalRegistry.Player;
-            _fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            _fluidDecals = GlobalRegistry.FluidDecalPresentation;
+            _physicsService = GlobalRegistry.Physics;
         }
 
         private void TryUnregisterHotSwap()
@@ -1093,6 +1114,13 @@ namespace Hecton8.Gameplay
             GlobalRegistry.UnregisterHotSwapListener(this);
             _registeredHotSwap = false;
             _playerRuntimeContext = null;
+            _fluidDecals = null;
+            _physicsService = null;
+        }
+
+        private IPhysicsService ResolvePhysicsService()
+        {
+            return _physicsService;
         }
 
         private static Vector3 ResolveDominantPlanarDirection(Vector3 direction, Vector3 fallback)

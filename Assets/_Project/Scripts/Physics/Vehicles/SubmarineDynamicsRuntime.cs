@@ -1,5 +1,7 @@
 using System;
+#if UNITY_EDITOR
 using System.IO;
+#endif
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
@@ -37,6 +39,10 @@ namespace Hecton8.Physics.Vehicles
         private const uint HashSloshSpring = 0x3466D6C8u;
         private const uint HashSloshDamping = 0x96934799u;
         private const uint CavitationSourceId = SubmarineDynamicsConstants.SourceHashAddedMass; // AM25
+        private const uint SubmarineDynamicsFaultEventHash = 0x53444654u; // SDFT
+        private const uint SubmarineDynamicsFaultDumpHash = 0x53444450u; // SDDP
+        private const uint SubmarineGyroFaultEventHash = 0x47334654u; // G3FT
+        private const uint SubmarineGyroFaultDumpHash = 0x47334450u; // G3DP
 
         [Header("Vault Lane")]
         [SerializeField, Range(1, SubmarineDynamicsConstants.MaxVehicles)] private int vehicleCapacity = 1;
@@ -91,6 +97,7 @@ namespace Hecton8.Physics.Vehicles
         private bool _registeredSlow;
         private bool _registeredHotSwapListener;
         private bool _dumpWritten;
+        private bool _coreBlackboxWarmed;
         private bool _hasPendingVehicleCommand;
         private int _droppedSignalCount;
         private uint _frameCounter;
@@ -100,11 +107,13 @@ namespace Hecton8.Physics.Vehicles
         private uint _primaryVehicleEntityHash;
         private float _fluidDensityMultiplier = 1f;
         private VehicleCommandSignal _pendingVehicleCommand;
+#if UNITY_EDITOR
         private long _csvLastWriteTicks;
         private long _hullProfilesCsvLastWriteTicks;
         private string _projectRoot;
         private string _csvPath;
         private string _hullProfilesCsvPath;
+#endif
 
         public int DroppedSignalCount => _droppedSignalCount;
 
@@ -129,15 +138,18 @@ namespace Hecton8.Physics.Vehicles
         {
             _latest = this;
             _droppedSignalCount = 0;
+#if UNITY_EDITOR
             _projectRoot = ResolveProjectRoot();
             _csvPath = Path.Combine(_projectRoot, "sub_physics_overrides.csv");
             _hullProfilesCsvPath = Path.Combine(_projectRoot, "Data", "Physics", "vehicle_hull_profiles.csv");
             InitializeGyroRuntimePaths();
+#endif
             EnsureSignalLanes();
             RefreshCommandTargetIds();
             VehicleCommandSignalBus.Register(this);
             EnsureDataVault();
             EnsureVaultBuffers();
+            WarmCoreBlackboxRoute();
 
             TryRegisterHotSwapListener();
             TryRegisterRuntimeLanes();
@@ -157,6 +169,7 @@ namespace Hecton8.Physics.Vehicles
 
             TryUnregisterHotSwapListener();
             TryUnregisterRuntimeLanes();
+            _coreBlackboxWarmed = false;
             if (ReferenceEquals(_latest, this))
                 _latest = null;
         }
@@ -188,7 +201,10 @@ namespace Hecton8.Physics.Vehicles
             ClearVaultHandles();
             _buffersReady = false;
             if (isActiveAndEnabled && _dataVault != null)
+            {
                 EnsureVaultBuffers();
+                WarmCoreBlackboxRoute();
+            }
         }
 
         public void FixedTick(float fixedDeltaTime)
@@ -676,7 +692,11 @@ namespace Hecton8.Physics.Vehicles
 
                 if (configs[0].SourceHash == 0u)
                 {
-                    if (!TryLoadLegacyProfiles(configs, dragLut))
+                    bool profilesLoaded = false;
+#if UNITY_EDITOR
+                    profilesLoaded = TryLoadLegacyProfiles(configs, dragLut);
+#endif
+                    if (!profilesLoaded)
                         GenerateEmergencyMockProfiles(configs, dragLut);
 
                     InitializeVehicleDefaults(states, controls, masses, hullProfiles, configs[0]);
@@ -1043,6 +1063,7 @@ namespace Hecton8.Physics.Vehicles
             _buffersLocked = false;
         }
 
+#if UNITY_EDITOR
         private bool TryLoadLegacyProfiles(NativeArray<SubmarineKinematicConfig> configs, NativeArray<float> dragLut)
         {
             try
@@ -1797,12 +1818,15 @@ namespace Hecton8.Physics.Vehicles
                 return false;
 
             bool fatal = false;
+            SubmarineKinematicState fatalState = default;
             int capacity = math.min(states.Length, math.clamp(vehicleCapacity, 1, SubmarineDynamicsConstants.MaxVehicles));
             for (int i = 0; i < capacity; i++)
             {
-                if ((states[i].Flags & SubmarineDynamicsConstants.StateFlagFatalNan) != 0u)
+                SubmarineKinematicState state = states[i];
+                if ((state.Flags & SubmarineDynamicsConstants.StateFlagFatalNan) != 0u)
                 {
                     fatal = true;
+                    fatalState = state;
                     break;
                 }
             }
@@ -1811,29 +1835,28 @@ namespace Hecton8.Physics.Vehicles
                 return false;
 
             RecordVaultSovereigntyTelemetry(VaultSovereigntyTelemetry.FaultFlag);
-            VaultSovereigntyTelemetry.TryDump(_dataVault, _projectRoot);
-
-            if (!TryReadVaultHandle(in _hydrodynamicsTelemetryHandle, out NativeArray<SubmarineHydrodynamicsTelemetry> hydroTelemetry))
-                return true;
-
-            string logRoot = Path.Combine(_projectRoot, "Docs", "AgentLogs");
-            try
-            {
-                Directory.CreateDirectory(logRoot);
-            }
-            catch (IOException)
-            {
-                return true;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return true;
-            }
-
-            string addedMassBinPath = Path.Combine(logRoot, "Dump_SHINOBU_251.bin");
-            TryWriteHydrodynamicsBlackBoxDump(addedMassBinPath, hydroTelemetry);
-            _dumpWritten = true;
+            float scalar = math.lengthsq(fatalState.LinearVelocity);
+            bool written = TryDumpCoreBlackbox(SubmarineDynamicsFaultEventHash, scalar, fatalState.EntityId, SubmarineDynamicsFaultDumpHash);
+            _dumpWritten |= written;
             return true;
+        }
+
+        private void WarmCoreBlackboxRoute()
+        {
+            if (_coreBlackboxWarmed || !Application.isPlaying)
+                return;
+
+            GlobalTelemetryBus.Initialize();
+            _coreBlackboxWarmed = GlobalTelemetryBus.BlackboxActiveFrameCount > 0;
+        }
+
+        private bool TryDumpCoreBlackbox(uint eventHash, float scalarValue, uint stateHash, uint dumpHash)
+        {
+            if (!_coreBlackboxWarmed || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
+                return false;
+
+            GlobalTelemetryBus.PushEvent(eventHash, scalarValue, stateHash);
+            return GlobalTelemetryBus.TryDumpBlackboxNow(dumpHash);
         }
 
         private void RecordVaultSovereigntyTelemetry(uint flags)
@@ -1923,44 +1946,6 @@ namespace Hecton8.Physics.Vehicles
                 return 0f;
 
             return (float)Math.Min(elapsedMicros, 16777216.0d);
-        }
-
-        private static unsafe bool TryWriteHydrodynamicsBlackBoxDump(string path, NativeArray<SubmarineHydrodynamicsTelemetry> telemetry)
-        {
-            if (!telemetry.IsCreated || telemetry.Length == 0)
-                return false;
-
-            int entrySize = UnsafeUtility.SizeOf<SubmarineHydrodynamicsTelemetry>();
-            long payloadBytes64 = (long)telemetry.Length * entrySize;
-            if (entrySize <= 0 || payloadBytes64 <= 0L || payloadBytes64 > int.MaxValue)
-                return false;
-
-            int payloadBytes = (int)payloadBytes64;
-            try
-            {
-                uint* header = stackalloc uint[4];
-                header[0] = 0x35324D41u; // AM25
-                header[1] = (uint)telemetry.Length;
-                header[2] = (uint)SubmarineDynamicsConstants.BlackBoxFrames;
-                header[3] = (uint)entrySize;
-
-                void* telemetryPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-                {
-                    stream.Write(new ReadOnlySpan<byte>(header, 16));
-                    stream.Write(new ReadOnlySpan<byte>(telemetryPtr, payloadBytes));
-                }
-
-                return true;
-            }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return false;
-            }
         }
 
         private static void EnsureSignalLanes()
@@ -2099,5 +2084,6 @@ namespace Hecton8.Physics.Vehicles
                 ? current
                 : Path.Combine(current, "Hecton8");
         }
+#endif
     }
 }

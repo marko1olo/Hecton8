@@ -1,21 +1,21 @@
 // ============================================================================
-// HECTON-8 — CorporateOrderSystem.cs
+// HECTON-8 â€” CorporateOrderSystem.cs
 // Sistema protivorechivyh korporativnyh prikazov.
 //
 // LOR (lor3 Blok A):
 //   Igrok poluchaet protivorechivye prikazy cherez zaderzhku svyazi (8-12 chasov).
-//   Fraktsiya «Etiki» vs «Pragmatiki».
-//   Eto ne dialog — eto narrativ cherez interfeys.
+//   Fraktsiya Â«EtikiÂ» vs Â«PragmatikiÂ».
+//   Eto ne dialog â€” eto narrativ cherez interfeys.
 //
 // MEHANIKA:
-//   • Prikazy prihodyat s zaderzhkoy (igrovoe vremya).
-//   • Pri poluchenii konfliktuyuschego prikaza — HUD uvedomlenie.
-//   • Igrok vidit oba prikaza v PDA (Data Log).
-//   • Vybor — cherez deystviya v mire, ne cherez dialog.
+//   â€¢ Prikazy prihodyat s zaderzhkoy (igrovoe vremya).
+//   â€¢ Pri poluchenii konfliktuyuschego prikaza â€” HUD uvedomlenie.
+//   â€¢ Igrok vidit oba prikaza v PDA (Data Log).
+//   â€¢ Vybor â€” cherez deystviya v mire, ne cherez dialog.
 //
 // ZERO GC:
-//   • ISlowTickable — proverka taymerov.
-//   • Pre-allocated massiv sostoyaniy prikazov.
+//   â€¢ ISlowTickable â€” proverka taymerov.
+//   â€¢ Pre-allocated massiv sostoyaniy prikazov.
 // ============================================================================
 
 using System;
@@ -94,7 +94,7 @@ namespace Hecton8.Narrative
             if (!TryRegisterRuntime())
                 return;
 
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             TryRegisterHotSwapListener();
             TryRegister();
             TryRegisterSaveParticipant();
@@ -220,7 +220,7 @@ namespace Hecton8.Narrative
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;
@@ -342,7 +342,7 @@ namespace Hecton8.Narrative
 
         private static ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
-            LocalizationManager manager = Hecton.Localization.LocalizationManager.ActiveRuntimeInstance;
+            ILocalizationTextReadModel manager = Hecton8.Core.GlobalRegistry.LocalizationText;
             return manager != null
                 ? manager.GetRawSpanOrFallback(LocHash.Compute(key), fallback.AsSpan())
                 : fallback.AsSpan();
@@ -446,7 +446,7 @@ namespace Hecton8.Narrative
                 }
             }
 
-            // Esli net sohranennyh taymerov — planiruem zanovo
+            // Esli net sohranennyh taymerov â€” planiruem zanovo
             if (_pendingTimers.Count == 0 && _receivedOrders.Count == 0)
                 ScheduleAllOrders();
         }

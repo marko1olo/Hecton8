@@ -1,0 +1,212 @@
+﻿{
+    "schema":  "HECTON8_DATA_MONOLITH_PARANOID_REVIEW_V4",
+    "agent":  "1313",
+    "evidence":  "STATIC_SOURCE_AND_PREPROCESSOR_MODEL_NO_DOTNET_NO_UNITY_BUILD",
+    "promptTaskCount":  10,
+    "hardVerdicts":  {
+                         "runtimeZeroGc":  "STATIC_WINDOWS_RELEASE_ACTIVE_TOKEN_PASS__RUNTIME_PROFILER_UNVERIFIED",
+                         "winReleaseActiveManagedTokenCount":  0,
+                         "nonWinReleaseActiveManagedTokenCount":  0,
+                         "sourceInactiveManagedResidueCount":  23,
+                         "stringFormatCount":  0,
+                         "toStringCount":  0,
+                         "linqTokenCount":  0,
+                         "boxingTokenCount":  0,
+                         "arm64NaturalAlignment":  "PASS_FROM_BYTE_MAP",
+                         "arm64StrictFieldOrder":  "FAIL_1_SERIALIZED_ABI_STRUCT__H8DATABLOBHEADER_ABI_EXCEPTION",
+                         "aupCompute":  "NOT_APPLICABLE_DATA_STORAGE_ONLY",
+                         "failClosed":  "WINDOWS_NATIVE_READ_WRITE_PATH_STATIC_ONLY__NON_WINDOWS_RELEASE_FAILS_CLOSED",
+                         "overengineering":  "PASS_NO_SIMULATION_ADDED",
+                         "build":  "NOT_RUN_USER_RESTRICTED_DOTNET"
+                     },
+    "changes":  {
+                    "productionPath":  [
+                                           "Non-development Windows player uses stackalloc path + GetModuleFileNameW + CreateFileW + GetFileSizeEx + ReadFile into GlobalDataVault arena.",
+                                           "Non-development Windows player dump uses CreateDirectoryW/CreateFileW/WriteFile with stack buffer; no FileStream/BinaryWriter active.",
+                                           "Editor/Development retain managed URI staging, FileStream/MMF fallback, and designer diagnostics.",
+                                           "Non-development non-Windows path returns ReadFailed/fail-closed instead of executing managed URI staging."
+                                       ],
+                    "spanPurge":  [
+                                      "Active ReadOnlySpan constructor tokens replaced with MemoryMarshal.CreateReadOnlySpan + UnsafeUtility.ArrayElementAsRef."
+                                  ]
+                },
+    "winReleaseActiveHits":  [
+
+                             ],
+    "nonWinReleaseActiveHits":  [
+
+                                ],
+    "sourceManagedResidueAllPreprocessorStates":  [
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  173,
+                                                          "text":  "return Path.Combine(root, relativePath);"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  175,
+                                                          "text":  "string normalizedRoot = root.EndsWith(\"/\", StringComparison.Ordinal) ? root : root + \"/\";"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  199,
+                                                          "text":  "string cacheDirectory = Path.Combine(Application.temporaryCachePath, \"Hecton8\", \"DataMonolith\");"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  201,
+                                                          "text":  "cachePath = Path.Combine(cacheDirectory, \"static_data.h8bin\");"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  202,
+                                                          "text":  "tempPath = cachePath + \".tmp\";"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  205,
+                                                          "text":  "using UnityWebRequest request = new UnityWebRequest(streamingUri, UnityWebRequest.kHttpVerbGET);"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  206,
+                                                          "text":  "request.downloadHandler = new DownloadHandlerFile(tempPath)"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  213,
+                                                          "text":  "UnityWebRequestAsyncOperation operation = request.SendWebRequest();"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  217,
+                                                          "text":  "if (request.result != UnityWebRequest.Result.Success)"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  231,
+                                                          "text":  "catch (Exception)"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  249,
+                                                          "text":  "catch (Exception)"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  345,
+                                                          "text":  "FileInfo info = new FileInfo(absolutePath);"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  1481,
+                                                          "text":  "using FileStream stream = new FileStream(absolutePath, FileMode.Open, FileAccess.Read, FileShare.Read, 64 * 1024, FileOptions.SequentialScan);"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  1482,
+                                                          "text":  "Span\u003cbyte\u003e destinationBytes = new Span\u003cbyte\u003e(destination, expectedBytes);"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  1500,
+                                                          "text":  "catch (Exception)"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  1595,
+                                                          "text":  "catch (Exception)"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  2202,
+                                                          "text":  "WriteTelemetryDump(System.IO.Path.Combine(folder, \"Dump_SHINOBU_103.bin\"), status, ring, cursor[0]);"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  2203,
+                                                          "text":  "WriteTelemetryDump(System.IO.Path.Combine(folder, \"Dump_DATA_MONOLITH.bin\"), status, ring, cursor[0]);"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  2204,
+                                                          "text":  "WriteTelemetryDump(System.IO.Path.Combine(folder, \"Dump_X_002.bin\"), status, ring, cursor[0]);"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  2205,
+                                                          "text":  "WriteTelemetryDump(System.IO.Path.Combine(folder, \"Dump_1313.bin\"), status, ring, cursor[0]);"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  2207,
+                                                          "text":  "catch (Exception)"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  2220,
+                                                          "text":  "using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);"
+                                                      },
+                                                      {
+                                                          "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8StaticDataArena.cs",
+                                                          "line":  2221,
+                                                          "text":  "using BinaryWriter writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: false);"
+                                                      }
+                                                  ],
+    "aupStorageHits":  [
+                           {
+                               "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8DataMonolithTypes.cs",
+                               "line":  425,
+                               "text":  "[FieldOffset(0)] public double AupX;"
+                           },
+                           {
+                               "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8DataMonolithTypes.cs",
+                               "line":  426,
+                               "text":  "[FieldOffset(8)] public double AupY;"
+                           },
+                           {
+                               "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8DataMonolithTypes.cs",
+                               "line":  427,
+                               "text":  "[FieldOffset(16)] public double AupZ;"
+                           },
+                           {
+                               "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8DataMonolithTypes.cs",
+                               "line":  526,
+                               "text":  "[FieldOffset(0)] public long AupX;"
+                           },
+                           {
+                               "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8DataMonolithTypes.cs",
+                               "line":  527,
+                               "text":  "[FieldOffset(8)] public long AupZ;"
+                           },
+                           {
+                               "file":  "Assets\\_Project\\Scripts\\Data\\Monolith\\H8DataMonolithTypes.cs",
+                               "line":  568,
+                               "text":  "[FieldOffset(40)] public float AupSectorSizeMeters;"
+                           }
+                       ],
+    "strictFieldOrderFailures":  [
+                                     {
+                                         "struct":  "H8DataBlobHeader",
+                                         "size":  64,
+                                         "reason":  "Strict field-order fail but serialized file ABI; natural alignment pass; magic/version/header bytes must stay at offsets 0/4/6 before Checksum64 at 8."
+                                     }
+                                 ],
+    "h8ItemRecordStatus":  {
+                               "strictFieldOrder":  "PASS_AFTER_V2_REORDER",
+                               "offsets":  "RecipeMask0=0, RecipeMask1=8, HashId=16, AccessFrequency=72, MaxStack=76, RecipeIngredientCount=78",
+                               "activeBlob":  "STATIC_VALIDATION_PASS_CHECKSUM_0x19D880780D6E1B46"
+                           },
+    "dependencyEvidence":  {
+                               "runtimeAsmdef":  "Assets/_Project/Scripts/Hecton8.Core.asmdef",
+                               "editorAsmdef":  "Assets/_Project/Scripts/Editor/DataMonolith/Hecton8.DataMonolith.Editor.asmdef",
+                               "asmdefReferencesChanged":  false,
+                               "newDomainDependencyAdded":  "NONE",
+                               "bootstrapEdit":  "Established Data Monolith boot injection point only.",
+                               "batchAuditParserFindingsGate":  "H8DataMonolithBatchAudit exits failure when OOP_StaticData_Scanner returns production findings.",
+                               "agent1313FuzzerReport":  "Docs/Reports/DATA_MONOLITH_CORRUPTION_FUZZER_1313.json",
+                               "agent1313VaultStressReport":  "Docs/Reports/DATA_MONOLITH_UNITY_GLOBAL_DATA_VAULT_STRESS_1313.json",
+                               "globalReleaseRouteScan":  "Docs/Reports/DATA_MONOLITH_RELEASE_ROUTE_SCAN_1313.json",
+                               "globalReleaseRouteCandidateFindings":  281
+                           }
+}

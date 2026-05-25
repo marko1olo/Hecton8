@@ -1,9 +1,9 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Narrative;
-using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Mathematics;
@@ -106,6 +106,7 @@ namespace Hecton8.AtlasSignal
         private static readonly int _ShaderSignalStatic = Shader.PropertyToID("_AtlasSignalStatic");
         private static float _lastPublishedShaderStatic01 = -1f;
         private static bool _pendingDominantShaderStaticDirty;
+        private static int s_x001SignalBeaconSignalPushDropCount;
 
         /// <summary>Latest published beacon telemetry.</summary>
         public SignalBeaconTelemetry Telemetry => _telemetry;
@@ -293,16 +294,24 @@ namespace Hecton8.AtlasSignal
 
             float safeBipRadiusMeters = math.max(0f, bipRadiusMeters);
             float safeBipPeriodSeconds = math.max(0.02f, bipPeriodSeconds);
-            AcousticPingEvent pingEvent = new AcousticPingEvent(
-                ResolveBeaconRuntimePosition(),
-                safeBipRadiusMeters,
-                math.saturate(bipIntensity01 * math.max(0.1f, _telemetry.Strength01)),
-                safeBipPeriodSeconds,
-                acousticRole,
-                acousticSourceId,
-                10f);
+            PhysicsEventPayload payload = new PhysicsEventPayload
+            {
+                RuntimePosition = ResolveBeaconRuntimePosition(),
+                Direction = default,
+                ForceVector = default,
+                ImpulseVector = default,
+                RadiusMeters = safeBipRadiusMeters,
+                Scalar0 = math.saturate(bipIntensity01 * math.max(0.1f, _telemetry.Strength01)),
+                Scalar1 = safeBipPeriodSeconds,
+                Scalar2 = 10f,
+                PrimaryId = acousticSourceId,
+                DataHash = 0u,
+                StatusBits = unchecked((uint)acousticRole),
+                EventType = (ushort)PhysicsEventType.AcousticPing,
+                Reserved = 0
+            };
 
-            PhysicsEventBus.TryNotifyAcousticPing(in pingEvent);
+            SignalBus<PhysicsEventPayload>.TryPushTracked(in payload, ref s_x001SignalBeaconSignalPushDropCount);
         }
 
         private bool TryRecoverFragment()
@@ -462,7 +471,7 @@ namespace Hecton8.AtlasSignal
         private void CacheRegistryServicesCold()
         {
             _audioLogs = GlobalRegistry.AudioLogRuntime;
-            _spatialAudio = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance as ISpatialAudioListenerCaveReadModel;
+            _spatialAudio = GlobalRegistry.Audio as ISpatialAudioListenerCaveReadModel;
             _playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
         }
 

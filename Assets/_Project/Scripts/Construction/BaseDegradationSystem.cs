@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Hecton8.Building;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Gameplay;
 using Hecton8.Power;
 using Hecton8.World;
@@ -492,7 +493,7 @@ namespace Hecton8.Construction
                 baseModule.EmitHullBreachJet(localRupturePoint, DefaultPressureDelta);
             }
 
-            AbyssalFluidDecalManager fluidDecals = Hecton8.Core.GlobalRegistry.AbyssalFluidDecals;
+            IFluidDecalPresentationSink fluidDecals = Hecton8.Core.GlobalRegistry.FluidDecalPresentation;
             if (fluidDecals != null)
                 fluidDecals.RegisterRuptureFluid(ruptureWorldPosition, DefaultFluidRadiusScale);
         }

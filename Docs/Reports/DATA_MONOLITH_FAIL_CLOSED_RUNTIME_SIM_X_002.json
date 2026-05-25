@@ -1,7 +1,7 @@
 ﻿{
   "schema": "HECTON8_DATA_MONOLITH_FAIL_CLOSED_RUNTIME_SIM_V1",
   "agent": "X_002",
-  "generated": "2026-05-25T00:27:50.3923587Z",
+  "generated": "2026-05-25T09:53:28.1980866Z",
   "status": "PASS_FAIL_CLOSED_NO_POISON_PUBLISH",
   "setupError": "",
   "proofBoundary": "CLI resident-pointer simulation of the H8StaticDataArena publish gate. It proves corrupt candidates fail before publish and validation allocates zero bytes; Unity player profiler proof is still separate.",
@@ -10,22 +10,31 @@
   "publishedChecksumHex": "0x0D49885F30E5DF35",
   "validationIterations": 256,
   "validationPasses": 256,
-  "validationMeanMicroseconds": 453.367,
+  "validationMeanMicroseconds": 297.247,
   "validationAllocatedBytes": 0,
   "failureCodeLegend": {
     "0": "None",
+    "1": "TooSmall",
     "2": "Header",
     "3": "BadChecksum",
     "4": "Directory",
+    "5": "SectionOrder",
+    "6": "SectionRecordSize",
     "7": "SectionAlignment",
-    "8": "SectionOutOfRange"
+    "8": "SectionOutOfRange",
+    "9": "LocalizationDirectory"
   },
   "cases": [
     { "case": "bad_stored_checksum", "passed": true, "candidateValid": false, "failureCode": 3, "expectedFailureCode": 3, "finalPublishCount": 1, "finalChecksumHex": "0x0D49885F30E5DF35" },
     { "case": "bad_payload_checksum", "passed": true, "candidateValid": false, "failureCode": 3, "expectedFailureCode": 3, "finalPublishCount": 1, "finalChecksumHex": "0x0D49885F30E5DF35" },
+    { "case": "bad_header_unknown_flags", "passed": true, "candidateValid": false, "failureCode": 2, "expectedFailureCode": 2, "finalPublishCount": 1, "finalChecksumHex": "0x0D49885F30E5DF35" },
+    { "case": "bad_header_reserved", "passed": true, "candidateValid": false, "failureCode": 2, "expectedFailureCode": 2, "finalPublishCount": 1, "finalChecksumHex": "0x0D49885F30E5DF35" },
+    { "case": "bad_directory_reserved", "passed": true, "candidateValid": false, "failureCode": 4, "expectedFailureCode": 4, "finalPublishCount": 1, "finalChecksumHex": "0x0D49885F30E5DF35" },
+    { "case": "bad_header_section_count", "passed": true, "candidateValid": false, "failureCode": 2, "expectedFailureCode": 2, "finalPublishCount": 1, "finalChecksumHex": "0x0D49885F30E5DF35" },
+    { "case": "bad_header_section_table_offset", "passed": true, "candidateValid": false, "failureCode": 2, "expectedFailureCode": 2, "finalPublishCount": 1, "finalChecksumHex": "0x0D49885F30E5DF35" },
     { "case": "bad_section_out_of_bounds", "passed": true, "candidateValid": false, "failureCode": 8, "expectedFailureCode": 8, "finalPublishCount": 1, "finalChecksumHex": "0x0D49885F30E5DF35" },
     { "case": "bad_section_unaligned_offset", "passed": true, "candidateValid": false, "failureCode": 7, "expectedFailureCode": 7, "finalPublishCount": 1, "finalChecksumHex": "0x0D49885F30E5DF35" },
-    { "case": "bad_section_table_void", "passed": true, "candidateValid": false, "failureCode": 4, "expectedFailureCode": 4, "finalPublishCount": 1, "finalChecksumHex": "0x0D49885F30E5DF35" },
+    { "case": "bad_section_table_void", "passed": true, "candidateValid": false, "failureCode": 2, "expectedFailureCode": 2, "finalPublishCount": 1, "finalChecksumHex": "0x0D49885F30E5DF35" },
     { "case": "bad_section_overlap", "passed": true, "candidateValid": false, "failureCode": 8, "expectedFailureCode": 8, "finalPublishCount": 1, "finalChecksumHex": "0x0D49885F30E5DF35" },
     { "case": "bad_localization_directory", "passed": true, "candidateValid": false, "failureCode": 9, "expectedFailureCode": 9, "finalPublishCount": 1, "finalChecksumHex": "0x0D49885F30E5DF35" },
     { "case": "truncated_blob", "passed": true, "candidateValid": false, "failureCode": 2, "expectedFailureCode": 2, "finalPublishCount": 1, "finalChecksumHex": "0x0D49885F30E5DF35" }

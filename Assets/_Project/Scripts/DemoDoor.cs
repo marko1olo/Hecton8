@@ -26,12 +26,12 @@ namespace ScifiOffice
             _cachedTransform = transform;
             TryGetComponent(out _animator);
             CacheTriggerVolumeCold();
-            _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntime = GlobalRegistry.Player;
         }
 
         private void OnEnable()
         {
-            _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntime = GlobalRegistry.Player;
             TryRegister();
             TryRegisterHotSwapListener();
         }

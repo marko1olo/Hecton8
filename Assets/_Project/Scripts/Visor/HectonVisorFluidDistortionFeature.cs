@@ -449,8 +449,14 @@ namespace Hecton8.Visor
 
                 GraphicsBuffer writeBuffer = ResolveNextVisorFluidGlobalsBuffer();
                 NativeArray<VisorFluidGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<VisorFluidGlobalsDTO>(0, 1);
-                mapped[0] = globals;
-                writeBuffer.UnlockBufferAfterWrite<VisorFluidGlobalsDTO>(1);
+                try
+                {
+                    mapped[0] = globals;
+                }
+                finally
+                {
+                    writeBuffer.UnlockBufferAfterWrite<VisorFluidGlobalsDTO>(1);
+                }
                 _activeVisorFluidGlobalsBuffer = writeBuffer;
                 _lastVisorFluidGlobals = globals;
                 _hasVisorFluidGlobals = true;
@@ -513,15 +519,21 @@ namespace Hecton8.Visor
                     runtimeState.DiegeticLensParams1,
                     runtimeState.DiegeticLensParams2,
                     new Vector4(
-                        Time.timeSinceLevelLoad,
+                        (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
                         Sanitize01(lensMaskBlend),
                         Sanitize01(runtimeState.QualityPressure01),
                         Sanitize01(runtimeState.VisualOverkill01)));
 
                 GraphicsBuffer writeBuffer = ResolveNextLensComputeGlobalsBuffer();
                 NativeArray<LensComputeGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<LensComputeGlobalsDTO>(0, 1);
-                mapped[0] = globals;
-                writeBuffer.UnlockBufferAfterWrite<LensComputeGlobalsDTO>(1);
+                try
+                {
+                    mapped[0] = globals;
+                }
+                finally
+                {
+                    writeBuffer.UnlockBufferAfterWrite<LensComputeGlobalsDTO>(1);
+                }
                 _activeLensComputeGlobalsBuffer = writeBuffer;
                 globalsBuffer = writeBuffer;
                 return true;
@@ -1124,7 +1136,7 @@ namespace Hecton8.Visor
             if (context != null && context.PlayerCamera != null)
                 return context;
 
-            context = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            context = GlobalRegistry.Player;
             _playerContext = context;
             return context;
         }
@@ -1185,7 +1197,7 @@ namespace Hecton8.Visor
 
         private void WriteBlackBoxFrame(Camera renderCamera, in RuntimeState runtimeState)
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (!TryResolveBlackBoxRing(out NativeArray<VisorRefractionTelemetryEntry> blackBox, out int blackBoxLength))
                 return;
 
@@ -1359,7 +1371,7 @@ namespace Hecton8.Visor
             _blackBoxHotSwapRegistered = false;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
         {
             return handle.BufferID != 0u && handle.Generation != 0u;
         }

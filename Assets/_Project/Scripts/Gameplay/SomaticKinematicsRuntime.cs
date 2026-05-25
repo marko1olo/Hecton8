@@ -178,7 +178,7 @@ namespace Hecton8.Gameplay
         [FieldOffset(76)] public byte LeftTracked;
         [FieldOffset(77)] public byte RightTracked;
         [FieldOffset(78)] public byte SeaglideActive;
-        [FieldOffset(79)] public byte LowTier;
+        [FieldOffset(79)] public byte QualityPressureQ8;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 48)]
@@ -187,7 +187,7 @@ namespace Hecton8.Gameplay
         [FieldOffset(0)] public double3 SectorOriginAup;
         [FieldOffset(24)] public float3 AbyssalCurrent;
         [FieldOffset(36)] public float SystemStress01;
-        [FieldOffset(40)] public byte ThermalThrottle;
+        [FieldOffset(40)] public byte QualityPressureQ8;
         [FieldOffset(41)] public byte Reserved0;
         [FieldOffset(42)] public ushort Reserved1;
         [FieldOffset(44)] public uint Reserved2;
@@ -1489,31 +1489,34 @@ namespace Hecton8.Gameplay
             float qualityWeight01 = ResolveGlobalQualityWeight01(_cachedGlobalQualityWeight01);
             _cachedGlobalQualityWeight01 = qualityWeight01;
             float qualityPressure01 = 1f - SmoothQuality01(qualityWeight01);
-            byte lowTier = qualityPressure01 >= 0.66f ? (byte)1 : (byte)0;
+            byte qualityPressureQ8 = EncodeUnitByte(qualityPressure01);
             _frameInput.HeadLocalPosition = headLocal;
             _frameInput.DeltaTime = math.isfinite(fixedDeltaTime) ? math.clamp(fixedDeltaTime, 0.001f, 0.05f) : 0.0166667f;
             _frameInput.HeadForward = headForward;
             _frameInput.SeaglideInput01 = _seaglideInput01;
             _frameInput.ControllerForward = controllerForward;
-            _frameInput.TimeSeconds = math.isfinite(Time.unscaledTime) ? math.max(0f, Time.unscaledTime) : 0f;
+            float inputTimeSeconds = (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds;
+            _frameInput.TimeSeconds = math.isfinite(inputTimeSeconds) ? math.max(0f, inputTimeSeconds) : 0f;
             _frameInput.LeftHandLocal = leftHand;
             _frameInput.RightHandLocal = rightHand;
             _frameInput.FrameIndex = fixedFrame;
             _frameInput.LeftTracked = leftTracked;
             _frameInput.RightTracked = rightTracked;
             _frameInput.SeaglideActive = _seaglideActive;
-            _frameInput.LowTier = lowTier;
+            _frameInput.QualityPressureQ8 = qualityPressureQ8;
             _frameContext.SectorOriginAup = sector;
             _frameContext.AbyssalCurrent = flow;
             _frameContext.SystemStress01 = math.lerp(0.1f, 0.75f, qualityPressure01);
-            _frameContext.ThermalThrottle = lowTier;
+            _frameContext.QualityPressureQ8 = qualityPressureQ8;
 
             if (ResolveStateBuffer(out NativeArray<PlayerKinematicState> stateBuffer))
             {
                 PlayerKinematicState state = stateBuffer[0];
                 state.Stamina01 = math.max(0f, oxygen01);
-                if (lowTier != 0)
+                if (qualityPressureQ8 >= 128)
                     state.Flags |= StateFlagLowTier;
+                else
+                    state.Flags &= ~StateFlagLowTier;
                 if (_seaglideActive != 0)
                     state.Flags |= StateFlagSeaglide;
                 else
@@ -1532,6 +1535,11 @@ namespace Hecton8.Gameplay
         {
             float t = math.saturate(math.select(1f, value, math.isfinite(value)));
             return t * t * (3f - 2f * t);
+        }
+
+        private static byte EncodeUnitByte(float value)
+        {
+            return (byte)math.clamp((int)math.round(math.saturate(value) * 255f), 0, 255);
         }
 
         private float3 ResolveAbyssalFlow(float3 localPosition)

@@ -22,7 +22,7 @@ namespace Hecton8.Audio.Synthesis.Editor
         public static void ValidateMenu()
         {
             ValidateOrThrow();
-            Debug.Log("[SHINOBU_260] Vocal bank ABI validated: header=64, record=32, state=32, codec=64, telemetry=64, cue=64.");
+            Hecton8.Core.H8Debug.Log("[1308] Vocal bank ABI validated: header=64, record=32, state=32, codec=64, telemetry=64, cue=64.");
         }
 
         public static void ValidateOrThrow()
@@ -42,7 +42,7 @@ namespace Hecton8.Audio.Synthesis.Editor
             AssertOffset<VocalStateDTO>(nameof(VocalStateDTO.PlaybackSpeed), 12);
             AssertOffset<VocalStateDTO>(nameof(VocalStateDTO.VolumeScalar), 16);
             AssertOffset<VocalStateDTO>(nameof(VocalStateDTO.Flags), 20);
-            AssertOffset<VocalStateDTO>(nameof(VocalStateDTO.Pad0), 24);
+            AssertOffset<VocalStateDTO>("_pad0", 24);
 
             AssertOffset<VocalCodecStateDTO>(nameof(VocalCodecStateDTO.PayloadOffset), 0);
             AssertOffset<VocalCodecStateDTO>(nameof(VocalCodecStateDTO.PayloadByteLength), 8);

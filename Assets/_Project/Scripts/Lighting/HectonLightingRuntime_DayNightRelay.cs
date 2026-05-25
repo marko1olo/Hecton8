@@ -486,7 +486,7 @@ namespace Hecton8.Lighting
             int index = _dayNightTelemetryCursorCached;
             telemetryRing[index] = new LightingRelayTelemetryEntry
             {
-                FrameIndex = Time.frameCount,
+                FrameIndex = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                 Sequence = _snapshot.Sequence,
                 Flags = (uint)flags,
                 StateHash = hash,
@@ -570,7 +570,7 @@ namespace Hecton8.Lighting
             catch (Exception exception)
             {
 #if UNITY_EDITOR
-                Debug.LogException(exception, this);
+                Hecton8.Core.H8Debug.LogException(exception, this);
 #endif
             }
         }
@@ -709,7 +709,7 @@ namespace Hecton8.Lighting
             GenerateMockLightingRelayJob job = new GenerateMockLightingRelayJob
             {
                 Samples = samples,
-                PhaseSeconds = Time.realtimeSinceStartup,
+                PhaseSeconds = (float)SystemDispatcher.CurrentUnscaledTimeSeconds,
                 QualityWeight = ResolveDayNightQualityWeight()
             };
             job.Run(samples.Length);

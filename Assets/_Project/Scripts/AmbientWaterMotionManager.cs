@@ -75,6 +75,7 @@ namespace Hecton8.Physics
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
         private IPlayerRuntimeContext _playerRuntimeContext;
+        private IAmbientCurrentReadModel _ambientCurrentReadModel;
         private Vector3 _biomeCurrentVector;
         private Vector3 _biomeCurrentStartVector;
         private Vector3 _biomeCurrentTargetVector;
@@ -144,10 +145,14 @@ namespace Hecton8.Physics
                 case GlobalRegistryServiceSlot.Player:
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                     break;
+                case GlobalRegistryServiceSlot.FluidRuntime:
+                    _ambientCurrentReadModel = currentService as IAmbientCurrentReadModel;
+                    break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     if (currentService == null)
                     {
                         _tickRegistered = false;
+                        _lateFrameRegistered = false;
                         break;
                     }
 
@@ -203,7 +208,7 @@ namespace Hecton8.Physics
             if (HectonFloatingOrigin.IsShiftInProgress)
                 return;
 
-            float deltaTime = _pendingVisualDeltaTime > 0f ? _pendingVisualDeltaTime : Time.deltaTime;
+            float deltaTime = _pendingVisualDeltaTime > 0f ? _pendingVisualDeltaTime : SystemDispatcher.CurrentFrameDeltaTime;
             _pendingVisualDeltaTime = 0f;
             UpdateBiomeCurrentBlend(deltaTime);
 
@@ -361,7 +366,11 @@ namespace Hecton8.Physics
             Vector3 current = Vector3.zero;
             if (coupling > 0.0001f)
             {
-                Vector3 volumeCurrent = CurrentVolume.SampleAt(worldPos);
+                Vector3 volumeCurrent = Vector3.zero;
+                IAmbientCurrentReadModel ambientCurrent = _ambientCurrentReadModel;
+                if (ambientCurrent != null)
+                    ambientCurrent.TrySampleAuthoredCurrent(worldPos, out volumeCurrent);
+
                 float3 phantomCurrent = CurrentManager.SampleHorizontal(
                     new float3(worldPos.x, worldPos.y, worldPos.z),
                     _time,
@@ -607,6 +616,7 @@ namespace Hecton8.Physics
         private void CacheRegistryServicesCold()
         {
             _playerRuntimeContext = Hecton8.Core.GlobalRegistry.Player;
+            _ambientCurrentReadModel = Hecton8.Core.GlobalRegistry.AmbientCurrent;
         }
 
         private void TryRegisterHotSwapListener()

@@ -358,7 +358,7 @@ namespace Hecton8.Core.Content
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogRequiredHashDestinationTooSmall(int requiredCount, int destinationLength)
         {
-            Debug.LogError("[ContentAssetHashMap] Required-hash copy rejected destinationLength=" +
+            Hecton8.Core.H8Debug.LogError("[ContentAssetHashMap] Required-hash copy rejected destinationLength=" +
                            destinationLength + " required=" + requiredCount + ".");
         }
 

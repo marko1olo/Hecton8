@@ -17,7 +17,9 @@ namespace Hecton8.EditorValidation
     public static unsafe class H8DataMonolithGlobalDataVaultStressProbe
     {
         private const string AgentId = "X_002";
+        private const string AgentId1313 = "1313";
         private const string ReportPath = "Docs/Reports/DATA_MONOLITH_UNITY_GLOBAL_DATA_VAULT_STRESS_X_002.json";
+        private const string ReportPath1313 = "Docs/Reports/DATA_MONOLITH_UNITY_GLOBAL_DATA_VAULT_STRESS_1313.json";
         private const string BlobAssetPath = "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin";
         private const int ResidentLoadIterations = 96;
         private const double ResidentMeanTargetMicroseconds = 1000.0d;
@@ -26,13 +28,13 @@ namespace Hecton8.EditorValidation
         private static void RunFromMenu()
         {
             bool passed = Run();
-            Debug.Log("[H8DataMonolithGlobalDataVaultStressProbe] passed=" + passed + " report=" + ReportPath);
+            Debug.Log("[H8DataMonolithGlobalDataVaultStressProbe] passed=" + passed + " report=" + ReportPath + " report1313=" + ReportPath1313);
         }
 
         public static void RunBatch()
         {
             bool passed = Run();
-            Debug.Log("[H8DataMonolithGlobalDataVaultStressProbe] batch passed=" + passed + " report=" + ReportPath);
+            Debug.Log("[H8DataMonolithGlobalDataVaultStressProbe] batch passed=" + passed + " report=" + ReportPath + " report1313=" + ReportPath1313);
             if (Application.isBatchMode)
                 EditorApplication.Exit(passed ? 0 : 1);
         }
@@ -80,6 +82,7 @@ namespace Hecton8.EditorValidation
                           residentZeroGcOk &&
                           (residentMetrics.Pass || releaseCliTiming.Pass) &&
                           header.LittleEndianFlagSet &&
+                          header.Flags == H8DataLayoutConstants.BlobFlagLittleEndian &&
                           header.HeaderBytes == H8DataLayoutConstants.HeaderSizeBytes &&
                           header.DirectoryOffset == H8DataLayoutConstants.HeaderSizeBytes &&
                           header.SectionTableOffset == H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes &&
@@ -219,9 +222,14 @@ namespace Hecton8.EditorValidation
             passCount = 0;
             RunColdCase(vault, "bad_stored_checksum", MutateStoredChecksum(baseline), H8DataBlobLoadStatus.BadChecksum, cases, ref caseCount, ref passCount);
             RunColdCase(vault, "bad_payload_checksum", MutatePayloadByte(baseline), H8DataBlobLoadStatus.BadChecksum, cases, ref caseCount, ref passCount);
+            RunColdCase(vault, "bad_header_unknown_flags", MutateHeaderUnknownFlagsWithValidChecksum(baseline), H8DataBlobLoadStatus.HeaderMismatch, cases, ref caseCount, ref passCount);
+            RunColdCase(vault, "bad_header_reserved", MutateHeaderReserved(baseline), H8DataBlobLoadStatus.HeaderMismatch, cases, ref caseCount, ref passCount);
+            RunColdCase(vault, "bad_directory_reserved", MutateDirectoryReservedWithValidChecksum(baseline), H8DataBlobLoadStatus.InvalidSectionTable, cases, ref caseCount, ref passCount);
+            RunColdCase(vault, "bad_header_section_count", MutateHeaderSectionCount(baseline), H8DataBlobLoadStatus.HeaderMismatch, cases, ref caseCount, ref passCount);
+            RunColdCase(vault, "bad_header_section_table_offset", MutateHeaderSectionTableOffset(baseline), H8DataBlobLoadStatus.HeaderMismatch, cases, ref caseCount, ref passCount);
             RunColdCase(vault, "bad_section_out_of_bounds", MutateSectionOutOfBoundsWithValidChecksum(baseline), H8DataBlobLoadStatus.InvalidSectionTable, cases, ref caseCount, ref passCount);
             RunColdCase(vault, "bad_section_unaligned_offset", MutateSectionUnalignedOffsetWithValidChecksum(baseline), H8DataBlobLoadStatus.InvalidSectionTable, cases, ref caseCount, ref passCount);
-            RunColdCase(vault, "bad_section_table_void", MutateSectionTableVoidWithValidChecksum(baseline), H8DataBlobLoadStatus.InvalidSectionTable, cases, ref caseCount, ref passCount);
+            RunColdCase(vault, "bad_section_table_void", MutateSectionTableVoidWithValidChecksum(baseline), H8DataBlobLoadStatus.HeaderMismatch, cases, ref caseCount, ref passCount);
             RunColdCase(vault, "bad_section_overlap", MutateSectionOverlapWithValidChecksum(baseline), H8DataBlobLoadStatus.InvalidSectionTable, cases, ref caseCount, ref passCount);
             RunColdCase(vault, "bad_localization_directory", MutateLocalizationDirectoryWithValidChecksum(baseline), H8DataBlobLoadStatus.InvalidSectionTable, cases, ref caseCount, ref passCount);
             RunColdCase(vault, "truncated_blob", MutateTruncate(baseline), H8DataBlobLoadStatus.HeaderMismatch, cases, ref caseCount, ref passCount);
@@ -402,7 +410,7 @@ namespace Hecton8.EditorValidation
                     WorldSeed = header.WorldSeed,
                     AppVersionHash = header.AppVersionHash,
                     SchemaHash = header.SchemaHash,
-                    DirectoryBytesValue = directory.SectionTableBytes,
+                    SectionTableBytes = directory.SectionTableBytes,
                     DataStartOffset = directory.DataStartOffset,
                     LocalizationOffset = directory.LocalizationOffset,
                     LocalizationBytes = directory.LocalizationBytes,
@@ -423,6 +431,44 @@ namespace Hecton8.EditorValidation
             byte[] bytes = (byte[])baseline.Clone();
             int index = Math.Max(H8DataLayoutConstants.HeaderSizeBytes, bytes.Length - 32);
             bytes[index] ^= 0x33;
+            return bytes;
+        }
+
+        private static byte[] MutateHeaderUnknownFlagsWithValidChecksum(byte[] baseline)
+        {
+            byte[] bytes = (byte[])baseline.Clone();
+            WriteUInt32(bytes, 36, H8DataLayoutConstants.BlobFlagLittleEndian | 0x2u);
+            WriteUInt32(bytes, H8DataLayoutConstants.HeaderSizeBytes + 32, H8DataLayoutConstants.BlobFlagLittleEndian | 0x2u);
+            RewriteChecksum(bytes);
+            return bytes;
+        }
+
+        private static byte[] MutateHeaderReserved(byte[] baseline)
+        {
+            byte[] bytes = (byte[])baseline.Clone();
+            WriteUInt32(bytes, 52, 1u);
+            return bytes;
+        }
+
+        private static byte[] MutateDirectoryReservedWithValidChecksum(byte[] baseline)
+        {
+            byte[] bytes = (byte[])baseline.Clone();
+            WriteUInt32(bytes, H8DataLayoutConstants.HeaderSizeBytes + 44, 1u);
+            RewriteChecksum(bytes);
+            return bytes;
+        }
+
+        private static byte[] MutateHeaderSectionCount(byte[] baseline)
+        {
+            byte[] bytes = (byte[])baseline.Clone();
+            WriteUInt32(bytes, 32, (uint)H8DataSectionId.PhysicsConstants - 1u);
+            return bytes;
+        }
+
+        private static byte[] MutateHeaderSectionTableOffset(byte[] baseline)
+        {
+            byte[] bytes = (byte[])baseline.Clone();
+            WriteUInt32(bytes, 28, H8DataLayoutConstants.HeaderSizeBytes + H8DataLayoutConstants.DirectorySizeBytes + 64u);
             return bytes;
         }
 
@@ -528,7 +574,7 @@ namespace Hecton8.EditorValidation
             AppendJsonNumber(json, "directoryOffset", header.DirectoryOffset, comma: true, indent: 2);
             AppendJsonNumber(json, "directoryBytes", header.DirectoryBytes, comma: true, indent: 2);
             AppendJsonNumber(json, "sectionTableOffset", header.SectionTableOffset, comma: true, indent: 2);
-            AppendJsonNumber(json, "sectionTableBytes", header.DirectoryBytesValue, comma: true, indent: 2);
+            AppendJsonNumber(json, "sectionTableBytes", header.SectionTableBytes, comma: true, indent: 2);
             AppendJsonNumber(json, "sectionCount", header.SectionCount, comma: true, indent: 2);
             AppendJsonNumber(json, "dataStartOffset", header.DataStartOffset, comma: true, indent: 2);
             AppendJsonNumber(json, "localizationOffset", header.LocalizationOffset, comma: true, indent: 2);
@@ -618,6 +664,13 @@ namespace Hecton8.EditorValidation
             string absolutePath = Path.Combine(projectRoot, ReportPath.Replace('/', Path.DirectorySeparatorChar));
             Directory.CreateDirectory(Path.GetDirectoryName(absolutePath));
             File.WriteAllText(absolutePath, text, Encoding.UTF8);
+
+            string absolutePath1313 = Path.Combine(projectRoot, ReportPath1313.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(Path.GetDirectoryName(absolutePath1313));
+            File.WriteAllText(
+                absolutePath1313,
+                text.Replace("\"agent\": \"" + AgentId + "\"", "\"agent\": \"" + AgentId1313 + "\""),
+                Encoding.UTF8);
         }
 
         private static long GetAllocatedBytesForCurrentThreadSafe()
@@ -806,7 +859,7 @@ namespace Hecton8.EditorValidation
             public uint WorldSeed;
             public uint AppVersionHash;
             public uint SchemaHash;
-            public uint DirectoryBytesValue;
+            public uint SectionTableBytes;
             public uint DataStartOffset;
             public uint LocalizationOffset;
             public uint LocalizationBytes;

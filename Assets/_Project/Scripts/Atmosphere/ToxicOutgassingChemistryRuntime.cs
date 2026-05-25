@@ -586,7 +586,7 @@ namespace Hecton8.Atmosphere
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"ToxicOutgassingChemistryRuntime ignored CSV override failure: {ex.Message}");
+                Hecton8.Core.H8Debug.LogWarning($"ToxicOutgassingChemistryRuntime ignored CSV override failure: {ex.Message}");
                 return false;
             }
         }
@@ -1278,7 +1278,7 @@ namespace Hecton8.Atmosphere
             }
             catch (Exception ex)
             {
-                Debug.LogError($"ToxicOutgassingChemistryRuntime failed to dump black box: {ex.Message}");
+                Hecton8.Core.H8Debug.LogError($"ToxicOutgassingChemistryRuntime failed to dump black box: {ex.Message}");
             }
         }
 
@@ -1302,7 +1302,7 @@ namespace Hecton8.Atmosphere
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"ToxicOutgassingChemistryRuntime ignored binary probe failure: {ex.Message}");
+                Hecton8.Core.H8Debug.LogWarning($"ToxicOutgassingChemistryRuntime ignored binary probe failure: {ex.Message}");
             }
         }
 

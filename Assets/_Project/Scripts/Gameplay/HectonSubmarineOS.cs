@@ -1028,7 +1028,7 @@ namespace Hecton8.Gameplay
             _runtimeDispatcherReady = GlobalRegistry.Dispatcher != null;
             _powerGridService = GlobalRegistry.PowerGrid;
             _spectrumRuntime = GlobalRegistry.Spectrum;
-            _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntime = GlobalRegistry.Player;
         }
 
         private void Subscribe()
@@ -1412,10 +1412,9 @@ namespace Hecton8.Gameplay
         private static float ResolveSonarRefreshIntervalSeconds(float qualityWeight01)
         {
             float quality = SmoothQuality01(qualityWeight01);
-            if (quality < 0.5f)
-                return math.lerp(LowTierSonarRefreshIntervalSeconds, MidTierSonarRefreshIntervalSeconds, quality * 2f);
-
-            return math.lerp(MidTierSonarRefreshIntervalSeconds, HighTierSonarRefreshIntervalSeconds, (quality - 0.5f) * 2f);
+            float lowToMiddle = math.lerp(LowTierSonarRefreshIntervalSeconds, MidTierSonarRefreshIntervalSeconds, math.saturate(quality * 2f));
+            float middleToHigh = math.lerp(MidTierSonarRefreshIntervalSeconds, HighTierSonarRefreshIntervalSeconds, math.saturate((quality - 0.5f) * 2f));
+            return math.lerp(lowToMiddle, middleToHigh, quality);
         }
 
         private static float ResolveSonarInterpolationWeight(float qualityWeight01)
@@ -1651,7 +1650,7 @@ namespace Hecton8.Gameplay
         {
             SubmarineVwsFlags nextFlags = ResolveVwsFlags();
             SubmarineVwsFlags risingFlags = nextFlags & ~_vwsActiveFlags;
-            double now = Time.unscaledTimeAsDouble;
+            double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
             uint activeMask = (uint)(ushort)nextFlags;
             while (activeMask != 0u)
             {

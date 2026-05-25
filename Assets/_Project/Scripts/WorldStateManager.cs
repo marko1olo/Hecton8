@@ -268,7 +268,7 @@ namespace Hecton8.World
                 if (nodeIndex >= WorldStateDTO.MaxNodes)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         $"[WorldStateManager] Max depleted nodes ({WorldStateDTO.MaxNodes}) reached. " +
                         $"Truncating: {_depletedNodeIds.Count - nodeIndex} nodes not saved.");
 #endif
@@ -421,7 +421,7 @@ namespace Hecton8.World
             if (_saveRegistered)
                 return;
 
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             if (_saveService == null)
                 return;
 
@@ -483,7 +483,7 @@ namespace Hecton8.World
                 if (_packedPickupWords.Count >= WorldStateDTO.MaxPickupWords)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         $"[WorldStateManager] Max depleted pickup words ({WorldStateDTO.MaxPickupWords}) reached. " +
                         $"Truncating: {_pickupPersistenceEntries.Count - i} pickups not saved.");
 #endif
@@ -496,7 +496,7 @@ namespace Hecton8.World
                     if (_packedPickupChunkKeys.Count >= WorldStateDTO.MaxPickupChunks)
                     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                        Debug.LogWarning(
+                        Hecton8.Core.H8Debug.LogWarning(
                             $"[WorldStateManager] Max depleted pickup chunks ({WorldStateDTO.MaxPickupChunks}) reached. " +
                             "Truncating remaining pickup persistence.");
 #endif

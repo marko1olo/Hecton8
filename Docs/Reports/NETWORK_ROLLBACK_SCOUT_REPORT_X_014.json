@@ -1,0 +1,855 @@
+{
+  "agent": {
+    "id": "X_014",
+    "codename": "MERKLE_STATE_AND_NETWORK_ROLLBACK_SCOUT",
+    "domain": "Echelon 1 Core Infrastructure / netcode rollback, Merkle state hashing, state serialization",
+    "status": "PENDING VERIFICATION",
+    "date": "2026-05-25",
+    "mode": "READ_ONLY_SOURCE_AUDIT"
+  },
+  "assignment": {
+    "batch_file_found": "Docs/Tasks/CURRENT_BATCH.md",
+    "root_current_batch_md_found": false,
+    "prompt_tag": "AGENT_PROMPT id=\"X_014\"",
+    "prompt_lines": "Docs/Tasks/CURRENT_BATCH.md:31-60",
+    "task_count": 4,
+    "csharp_source_mutation_authorized": false
+  },
+  "evidence_class": "STATIC_SOURCE / STATIC_DOC / NO_RUNTIME_PROOF",
+  "source_inventory": [
+    {
+      "path": "Assets/_Project/Scripts/Networking/HectonNetworkManager.cs",
+      "role": "Mode facade. Requires HectonRollbackNetcodeRuntime. No transport, packet serialization, Merkle hashing, or rollback state storage is implemented in this file.",
+      "evidence": [
+        "Assets/_Project/Scripts/Networking/HectonNetworkManager.cs:5-7",
+        "Assets/_Project/Scripts/Networking/HectonNetworkManager.cs:22-48"
+      ]
+    },
+    {
+      "path": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs",
+      "role": "Runtime owner that allocates DataVault buffers, initializes network Merkle descriptors, schedules hash jobs and rollback pipeline jobs, and dumps black-box telemetry.",
+      "evidence": [
+        "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:68-107",
+        "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:480-660",
+        "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:839-893",
+        "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:919-968"
+      ]
+    },
+    {
+      "path": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs",
+      "role": "Network rollback DTO layout, Merkle node layout, hash jobs, snapshot/restore jobs, mismatch detection, remote hash fence, visual correction, telemetry DTOs.",
+      "evidence": [
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:17-87",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:159-430",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:638-724",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:790-1006",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:1008-1285",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:1648-1935",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:1980-2123"
+      ]
+    },
+    {
+      "path": "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs",
+      "role": "Persistence Merkle tree, 4096-leaf save delta extraction, cosmetic delta pruning, save Merkle telemetry.",
+      "evidence": [
+        "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:19-157",
+        "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:205-245",
+        "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:580-597",
+        "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:1993-2171",
+        "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:2601-2725"
+      ]
+    },
+    {
+      "path": "Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs",
+      "role": "Save file v10 master state hash preimage and 128-bit stored master hash derivation.",
+      "evidence": [
+        "Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs:15-52",
+        "Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs:67-108",
+        "Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs:197-250"
+      ]
+    },
+    {
+      "path": "Assets/_Project/Scripts/SaveBinaryStorage.cs",
+      "role": "Save container payload/header hash validation and indexed save aggregate hash path.",
+      "evidence": [
+        "Assets/_Project/Scripts/SaveBinaryStorage.cs:2728-2753",
+        "Assets/_Project/Scripts/SaveBinaryStorage.cs:3461-3467",
+        "Assets/_Project/Scripts/SaveBinaryStorage.cs:3566-3573",
+        "Assets/_Project/Scripts/SaveBinaryStorage.cs:6541-6545",
+        "Assets/_Project/Scripts/SaveBinaryStorage.cs:6998-7086",
+        "Assets/_Project/Scripts/SaveBinaryStorage.cs:7357-7369"
+      ]
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Persistence",
+      "role": "Contains asmdef and marker classes only for this audit scope. No active Merkle or rollback implementation was found under this folder.",
+      "evidence": [
+        "Assets/_Project/Scripts/Core/Persistence/PersistenceAssemblyMarker.cs",
+        "Assets/_Project/Scripts/Core/Persistence/Paging/PersistencePagingAssemblyMarker.cs"
+      ]
+    }
+  ],
+  "network_manager_fact": {
+    "class": "HectonNetworkManager",
+    "declaration": "public sealed class HectonNetworkManager : MonoBehaviour",
+    "requires_runtime": "RequireComponent(typeof(HectonRollbackNetcodeRuntime))",
+    "serialized_fields": [
+      "isServer",
+      "isClient",
+      "serverAddress = 127.0.0.1",
+      "port = 7777"
+    ],
+    "public_mode_methods": [
+      "StartServer() -> TrySetMode(server: true, client: false)",
+      "StartClient() -> TrySetMode(server: false, client: true)",
+      "StopNetwork() -> TryStopMode()",
+      "ApplySerializedMode() -> TrySetMode(isServer, isClient)"
+    ],
+    "not_found_in_file": [
+      "network socket or transport loop",
+      "packet serializer",
+      "Merkle tree storage",
+      "state ring buffer",
+      "rollback restore logic"
+    ],
+    "evidence": [
+      "Assets/_Project/Scripts/Networking/HectonNetworkManager.cs:5-13",
+      "Assets/_Project/Scripts/Networking/HectonNetworkManager.cs:22-48"
+    ]
+  },
+  "network_rollback_buffers": {
+    "owner_system": "SystemID.CoreDeterminism",
+    "allocation_route": "GlobalDataVault generation handles in HectonRollbackNetcodeRuntime.TryEnsureBuffers",
+    "state_ring": {
+      "buffer_id": "RollbackNetcodeVault.StateRingBuffer = 70750",
+      "capacity_frames": 256,
+      "snapshot_header_bytes": 128,
+      "snapshot_payload_bytes_static_formula_result": 50688,
+      "snapshot_stride_bytes_static_formula_result": 50816,
+      "state_ring_bytes_static_formula_result": 13008896,
+      "page_index_rule": "pageIndex = Frame % RingFrameCapacity",
+      "evidence": [
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:19-45",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:58-80",
+        "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:854-857",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:1052-1058"
+      ]
+    },
+    "other_buffers": [
+      {
+        "name": "FrameSnapshots",
+        "element_type": "FrameSnapshotDTO",
+        "capacity": 256,
+        "evidence": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:857"
+      },
+      {
+        "name": "RuntimeState",
+        "element_type": "RollbackRuntimeStateDTO",
+        "capacity": 1,
+        "evidence": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:858"
+      },
+      {
+        "name": "RemoteInputRing",
+        "element_type": "RemoteInputFrameDTO",
+        "capacity": 512,
+        "evidence": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:859"
+      },
+      {
+        "name": "MerkleNodes",
+        "element_type": "H8NetMerkleNodeRecord32",
+        "capacity": 32,
+        "evidence": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:871"
+      },
+      {
+        "name": "RemoteMerkleNodes",
+        "element_type": "H8NetMerkleNodeRecord32",
+        "capacity": 32,
+        "evidence": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:872"
+      },
+      {
+        "name": "MerkleLeafDescriptors",
+        "element_type": "RollbackVaultBufferDescriptor32",
+        "capacity": 16,
+        "evidence": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:873"
+      },
+      {
+        "name": "LeafDeltaRecords",
+        "element_type": "H8NetLeafDeltaRecord64",
+        "capacity": 16,
+        "evidence": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:874"
+      },
+      {
+        "name": "TelemetryRing",
+        "element_type": "NetTelemetryEntry64",
+        "capacity": 300,
+        "evidence": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:863"
+      },
+      {
+        "name": "InputPredictionTelemetry",
+        "element_type": "InputPredictionTelemetryEntry",
+        "capacity": 300,
+        "evidence": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:864"
+      }
+    ]
+  },
+  "network_struct_layouts": [
+    {
+      "struct": "RollbackAup48",
+      "size_bytes": 48,
+      "alignment_assessment": "Explicit layout, 8-byte terminal padding, ARM64-safe fixed size.",
+      "fields": [
+        "GridX@0 long",
+        "GridY@8 long",
+        "GridZ@16 long",
+        "LocalX@24 float",
+        "LocalY@28 float",
+        "LocalZ@32 float",
+        "_pad0@36 float",
+        "_pad1@40 ulong"
+      ],
+      "evidence": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:172-185"
+    },
+    {
+      "struct": "FrameSnapshotDTO",
+      "size_bytes": 32,
+      "alignment_assessment": "Explicit 32-byte fixed record; 8-byte hash at offset 0.",
+      "evidence": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:187-197"
+    },
+    {
+      "struct": "StatePageHeaderDTO",
+      "size_bytes": 128,
+      "alignment_assessment": "Explicit 128-byte header with 8-byte reserved tail offsets 96,104,112,120.",
+      "evidence": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:199-229"
+    },
+    {
+      "struct": "RemoteInputFrameDTO",
+      "size_bytes": 48,
+      "alignment_assessment": "PredictedInputDTO at 0, frame/flags at 32/36, 8-byte padding at 40.",
+      "evidence": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:231-238"
+    },
+    {
+      "struct": "RollbackTuningDTO",
+      "size_bytes": 64,
+      "alignment_assessment": "Explicit fixed tuning DTO. Contains GlobalQualityWeight at offset 20.",
+      "evidence": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:251-270"
+    },
+    {
+      "struct": "RollbackRuntimeStateDTO",
+      "size_bytes": 96,
+      "alignment_assessment": "Explicit runtime state. Contains LastFrameHash64, LastRemoteHash64, LastBranchHash64, LastRemoteBranchHash64.",
+      "evidence": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:272-295"
+    },
+    {
+      "struct": "VisualStateDTO",
+      "size_bytes": 64,
+      "alignment_assessment": "Explicit presentation DTO. Not a Merkle descriptor leaf in audited source.",
+      "evidence": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:297-307"
+    },
+    {
+      "struct": "VisualStateHistoryDTO",
+      "size_bytes": 64,
+      "alignment_assessment": "Explicit presentation history DTO. Not a Merkle descriptor leaf in audited source.",
+      "evidence": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:309-320"
+    },
+    {
+      "struct": "NetTelemetryEntry64",
+      "size_bytes": 64,
+      "alignment_assessment": "Explicit telemetry DTO. Not a Merkle descriptor leaf in audited source.",
+      "evidence": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:322-339"
+    },
+    {
+      "struct": "RollbackVaultBufferDescriptor32",
+      "size_bytes": 32,
+      "alignment_assessment": "Explicit leaf descriptor with BufferId, ByteOffset, ByteLength, ElementStride, ElementCount, flags, leaf index, generation.",
+      "evidence": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:375-386"
+    },
+    {
+      "struct": "H8NetMerkleNodeRecord32",
+      "size_bytes": 32,
+      "alignment_assessment": "Explicit Merkle node record; HashLo@0 and HashHi@8 are 8-byte aligned.",
+      "evidence": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:388-397"
+    },
+    {
+      "struct": "H8NetLeafDeltaRecord64",
+      "size_bytes": 64,
+      "alignment_assessment": "Explicit mismatch delta record with 8-byte hash lanes and 64-byte fixed stride.",
+      "evidence": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:399-413"
+    },
+    {
+      "struct": "RollbackInputJournalSlot64",
+      "size_bytes": 128,
+      "alignment_assessment": "Explicit journal slot; predicted, remote, and target AUP payloads each occupy 32-byte lanes.",
+      "evidence": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:415-427"
+    },
+    {
+      "struct": "PredictedInputDTO",
+      "size_bytes": 32,
+      "alignment_assessment": "Explicit input ABI: TickNumber@0, float3 move@4, float2 look@16, buttons@24.",
+      "evidence": "Assets/_Project/Scripts/Core/InputDeterminismDtos.cs:46-57"
+    },
+    {
+      "struct": "PredictedInputAupTargetDTO",
+      "size_bytes": 32,
+      "alignment_assessment": "Explicit target AUP payload with double3 at offset 8.",
+      "evidence": "Assets/_Project/Scripts/Core/InputDeterminismDtos.cs:59-68"
+    },
+    {
+      "struct": "InputPredictionTelemetryEntry",
+      "size_bytes": 64,
+      "alignment_assessment": "Explicit 300-frame black-box input prediction telemetry record.",
+      "evidence": "Assets/_Project/Scripts/Core/InputDeterminismDtos.cs:70-90"
+    },
+    {
+      "struct": "LockstepPlayerKinematicState",
+      "size_bytes": 64,
+      "alignment_assessment": "Explicit player truth snapshot with double3 PositionAup at offset 0.",
+      "evidence": "Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:35-52"
+    }
+  ],
+  "network_merkle": {
+    "node_capacity": 32,
+    "leaf_capacity": 16,
+    "branch_capacity": 8,
+    "branch_node_start": 16,
+    "root_node_index": 31,
+    "leaf_hash": {
+      "algorithm": "XXHash3 64-bit via MemorySentinelMath.ComputeXXHash3Full64",
+      "packing": "((ulong)hash.y << 32) | hash.x",
+      "evidence": [
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:678-688",
+        "Assets/_Project/Scripts/Core/Memory/MemorySentinelContracts.cs:241-263"
+      ]
+    },
+    "parent_hash": {
+      "algorithm": "Custom MixHash64 finalizer/mixer, not a standard Merkle hash primitive",
+      "mix_constants": [
+        "0x9E3779B97F4A7C15",
+        "0xff51afd7ed558ccd",
+        "0xc4ceb9fe1a85ec53",
+        "0xA24BAED4963EE407 zero fallback"
+      ],
+      "branch_rule": "branch.HashLo = MixHash64(left.HashLo, right.HashLo); branch.HashHi = MixHash64(left.HashHi, right.HashHi ^ nodeIndex)",
+      "root_rule": "rootLo starts from 0x9E3779B97F4A7C15 ^ Frame; rootHi starts from 0xC2B2AE3D27D4EB4F ^ leafBudget; both fold all 8 branches.",
+      "evidence": [
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:713-723",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:963-1003"
+      ]
+    },
+    "leaf_descriptors": [
+      {
+        "leaf": 0,
+        "buffer": "BufferID.RigidbodyAUPs",
+        "element_stride_bytes": 24,
+        "element_count": 256,
+        "byte_length": 6144,
+        "flags": [
+          "Authoritative",
+          "AupExactDouble3"
+        ],
+        "hash_path": "HashDouble3Array exact double3 bytes",
+        "evidence": [
+          "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:925",
+          "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:857-858",
+          "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:931-946"
+        ]
+      },
+      {
+        "leaf": 1,
+        "buffer": "BufferID.PlayerKinematicState",
+        "element_stride_bytes": 64,
+        "element_count": 4,
+        "byte_length": 256,
+        "flags": [
+          "Authoritative"
+        ],
+        "hash_path": "HashNativeArray<LockstepPlayerKinematicState> exact bytes",
+        "evidence": [
+          "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:926",
+          "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:859-860",
+          "Assets/_Project/Scripts/Core/Determinism/LockstepStateValidator.cs:38-52"
+        ]
+      },
+      {
+        "leaf": 2,
+        "buffer": "BufferID.EntityAUPs",
+        "element_stride_bytes": 24,
+        "element_count": 512,
+        "byte_length": 12288,
+        "flags": [
+          "Authoritative",
+          "AupExactDouble3"
+        ],
+        "hash_path": "HashAupArray converts each RollbackAup48 to absolute double3 then MixHash64s each canonical AUP hash",
+        "evidence": [
+          "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:927",
+          "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:861-862",
+          "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:907-929"
+        ]
+      },
+      {
+        "leaf": 3,
+        "buffer": "BufferID.EntityVelocities",
+        "element_stride_bytes": 12,
+        "element_count": 512,
+        "byte_length": 6144,
+        "flags": [
+          "Authoritative"
+        ],
+        "hash_path": "HashNativeArray<float3> exact bytes",
+        "evidence": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:928"
+      },
+      {
+        "leaf": 4,
+        "buffer": "BufferID.RoomWaterLevels",
+        "element_stride_bytes": 4,
+        "element_count": 256,
+        "byte_length": 1024,
+        "flags": [
+          "Authoritative"
+        ],
+        "hash_path": "HashNativeArray<float> exact bytes",
+        "evidence": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:929"
+      },
+      {
+        "leaf": 5,
+        "buffer": "BufferID.EntityFlags",
+        "element_stride_bytes": 4,
+        "element_count": 512,
+        "byte_length": 2048,
+        "flags": [
+          "Authoritative"
+        ],
+        "hash_path": "HashNativeArray<uint> exact bytes",
+        "evidence": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:930"
+      },
+      {
+        "leaf": 6,
+        "buffer": "BufferID.EntityItemHashes",
+        "element_stride_bytes": 4,
+        "element_count": 512,
+        "byte_length": 2048,
+        "flags": [
+          "Authoritative"
+        ],
+        "hash_path": "HashNativeArray<uint> exact bytes",
+        "evidence": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:931"
+      },
+      {
+        "leaf": 7,
+        "buffer": "BufferID.EntityQuantities",
+        "element_stride_bytes": 2,
+        "element_count": 512,
+        "byte_length": 1024,
+        "flags": [
+          "Authoritative"
+        ],
+        "hash_path": "HashNativeArray<ushort> exact bytes",
+        "evidence": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:932"
+      },
+      {
+        "leaf": 8,
+        "buffer": "BufferID.ShinobuInventoryHashes",
+        "element_stride_bytes": 4,
+        "element_count": 512,
+        "byte_length": 2048,
+        "flags": [
+          "Authoritative",
+          "OptionalQualityLeaf"
+        ],
+        "hash_path": "HashNativeArray<uint> exact bytes",
+        "evidence": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:933"
+      },
+      {
+        "leaf": 9,
+        "buffer": "BufferID.ShinobuInventoryQuantities",
+        "element_stride_bytes": 4,
+        "element_count": 512,
+        "byte_length": 2048,
+        "flags": [
+          "Authoritative",
+          "OptionalQualityLeaf"
+        ],
+        "hash_path": "HashNativeArray<int> exact bytes",
+        "evidence": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:934"
+      },
+      {
+        "leaf": 10,
+        "buffer": "BufferID.ShinobuInventoryDurabilities",
+        "element_stride_bytes": 4,
+        "element_count": 512,
+        "byte_length": 2048,
+        "flags": [
+          "Authoritative",
+          "OptionalQualityLeaf"
+        ],
+        "hash_path": "HashNativeArray<float> exact bytes",
+        "evidence": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:935"
+      },
+      {
+        "leaf": 11,
+        "buffer": "BufferID.QuestDagGlobalStateMasks",
+        "element_stride_bytes": 8,
+        "element_count": 128,
+        "byte_length": 1024,
+        "flags": [
+          "Authoritative",
+          "OptionalQualityLeaf"
+        ],
+        "hash_path": "HashNativeArray<ulong> exact bytes",
+        "evidence": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:936"
+      },
+      {
+        "leaf": 12,
+        "buffer": "BufferID.PredatorCognitionChosenStates",
+        "element_stride_bytes": 1,
+        "element_count": 256,
+        "byte_length": 256,
+        "flags": [
+          "Authoritative",
+          "OptionalQualityLeaf"
+        ],
+        "hash_path": "HashNativeArray<byte> exact bytes",
+        "evidence": "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:937"
+      },
+      {
+        "leaf": "13-15",
+        "buffer": "none",
+        "flags": [
+          "PresentationExcluded",
+          "SkippedByQuality"
+        ],
+        "hash_path": "ComputeMerkleRootJob exits before hashing PresentationExcluded descriptors",
+        "evidence": [
+          "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:939-944",
+          "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:829-837"
+        ]
+      }
+    ],
+    "quality_dependency": {
+      "root_is_quality_sensitive": true,
+      "reason": "ScheduleFixedSimulation passes ResolveMerkleLeafBudget(tuning, quality) into both leaf and root jobs. ResolveMerkleLeafBudget lerps from minLeaves to maxLeaves from GlobalQualityWeight. FinalizeMerkleRootJob seeds rootHi with leafBudget.",
+      "evidence": [
+        "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:490-498",
+        "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:555-584",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:639-645",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:819-824",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:981-993"
+      ],
+      "assessment": "This is a correctness risk for heterogeneous peers. The same gameplay state can produce different roots if peers use different GlobalQualityWeight or tuning.MaxMerkleLeaves. The skipped leaves are named gameplay-state buffers, not pure presentation."
+    }
+  },
+  "snapshot_and_restore_flow": {
+    "snapshot_write_order": [
+      "RigidbodyAups",
+      "PlayerStates",
+      "EntityAups",
+      "EntityVelocities",
+      "RoomWaterLevels",
+      "EntityFlags",
+      "EntityItemHashes",
+      "EntityQuantities",
+      "InventoryHashes",
+      "InventoryQuantities",
+      "InventoryDurabilities",
+      "QuestMasks",
+      "PredatorChosenStates"
+    ],
+    "snapshot_hash_rule": "StatePageHeaderDTO.FrameHash64 uses Merkle root HashLo when available; otherwise it hashes raw page bytes including header plus written payload.",
+    "restore_read_order_matches_write_order": true,
+    "restore_validation": [
+      "page selected by RollbackFrame % RingFrameCapacity",
+      "header.Frame must equal RollbackFrame",
+      "header.PayloadBytes must be nonzero",
+      "payload bytes must fit snapshot stride",
+      "remainingPayloadBytes must reach zero after restore"
+    ],
+    "restore_risk": "TryCopyDestination copies min(serializedCount, destination.Length) but advances by serialized byte count and returns true. If a destination buffer is shorter than the serialized count, restore can silently truncate; if longer than serialized count, stale tail data is not cleared. Current static capacities appear matched, but the function does not enforce exact capacity equality.",
+    "evidence": [
+      "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:1047-1163",
+      "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:1188-1285"
+    ]
+  },
+  "rollback_execution_flow": {
+    "fixed_schedule": [
+      "GenerateMockNetworkJitterJob",
+      "ComputeMerkleRootJob over 16 leaves",
+      "FinalizeMerkleRootJob",
+      "RollbackFixedPipelineJob"
+    ],
+    "pipeline_order": [
+      "ResolveTuning",
+      "EvaluateInputMismatchJob.Execute",
+      "ExecuteRollback if RollbackRequired",
+      "SnapshotCurrentState",
+      "CheckRemoteHashFence",
+      "VisualStateInterpolatorJob.Execute",
+      "WriteTelemetry"
+    ],
+    "rollback_order": [
+      "restore snapshot for LastMismatchFrame",
+      "ApplyRemoteInputCorrectionJob.Execute",
+      "HeadlessResimulationCommandJob.Execute",
+      "estimate resimulation cost",
+      "write visual correction"
+    ],
+    "full_resimulation_loop_found": false,
+    "full_resimulation_assessment": "Audited code emits MockTickCommand with FramesToSimulate and sets audio suppression/resim flags. No audited source executes a deterministic multi-frame replay loop inside rollback.",
+    "remote_hash_fence": {
+      "cadence": "ResolveHashCadenceFrames(tuning, GlobalQualityWeight), clamped 15-180 frames",
+      "condition": "If LastRemoteHash64 and LastFrameHash64 are nonzero and differ at cadence, set HashMismatch and BranchProbeRequested, increment DesyncCount and DesyncRepairAttempts, resolve first Merkle mismatch, and request hard resync after 3 attempts.",
+      "evidence": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:1980-2010"
+    },
+    "leaf_delta": {
+      "record": "H8NetLeafDeltaRecord64",
+      "capacity": 16,
+      "write_behavior": "WriteLeafDelta writes only LeafDeltaRecords[0] in audited code.",
+      "evidence": [
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:399-413",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:2102-2123"
+      ]
+    },
+    "evidence": [
+      "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:541-660",
+      "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:1766-1828",
+      "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:1867-1935",
+      "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:1648-1692"
+    ]
+  },
+  "cosmetic_hash_assessment": {
+    "network_rollback": {
+      "visual_state_hashed": false,
+      "visual_history_hashed": false,
+      "net_telemetry_hashed": false,
+      "audio_suppression_hashed": false,
+      "tuning_dto_hashed_as_leaf": false,
+      "runtime_state_hashed_as_leaf": false,
+      "proof": "InitializeAuthoritativeMerkleDescriptors registers only leaves 0-12 as live buffers and marks 13+ PresentationExcluded. VisualStateDTO, VisualStateHistoryDTO, NetTelemetryEntry64, RollbackAudioSuppressionDTO, RollbackTuningDTO, and RollbackRuntimeStateDTO are allocated but not registered as leaf descriptors.",
+      "evidence": [
+        "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:861-866",
+        "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:925-944",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:829-837"
+      ],
+      "caveat": "GlobalQualityWeight is not a leaf, but it changes leaf budget and hash cadence, so it indirectly changes network root/cadence."
+    },
+    "save_merkle": {
+      "cosmetic_leaf_flag_excludes_root_hash": false,
+      "proof": "MerkleLeafHashJob skips tombstone only. It does not skip LeafFlagCosmetic. CosmeticDeltaPayloadPruneJob can drop cosmetic delta payload records later when the delta source length exceeds DropThresholdBytes.",
+      "evidence": [
+        "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:221-225",
+        "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:2012-2019",
+        "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:2144-2157",
+        "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:2652-2688"
+      ],
+      "assessment": "Persistence cosmetic leaves, if descriptors mark them cosmetic, still participate in the save Merkle root. The cosmetic flag is a pruning hint for delta payload volume, not a root-exclusion flag."
+    }
+  },
+  "save_merkle_and_save_hashes": {
+    "save_merkle_tree": {
+      "leaf_count": 4096,
+      "fanout": 16,
+      "level1_count": 16,
+      "level2_count": 256,
+      "branch_node_count": 273,
+      "total_node_count": 4369,
+      "root_index": 0,
+      "leaf_level_offset": 273,
+      "hash_algorithm": "xxHash3.Hash128 with per-leaf seed LeafSeed ^ SectorKey and parent seed NodeSeed ^ (level << 32) ^ parent",
+      "parent_hash_input": "Raw span of 16 MerkleNodeDTO child records, Fanout * sizeof(MerkleNodeDTO)",
+      "evidence": [
+        "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:205-245",
+        "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:1287-1299",
+        "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:1993-2070"
+      ]
+    },
+    "save_merkle_structs": [
+      {
+        "struct": "MerkleNodeDTO",
+        "size_bytes": 32,
+        "fields": [
+          "HashLo@0 ulong",
+          "HashHi@8 ulong",
+          "SectorKey@16 uint",
+          "ChildMask@20 uint",
+          "_pad0@24 ulong"
+        ],
+        "evidence": "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:19-28"
+      },
+      {
+        "struct": "StateDeltaRecordDTO",
+        "size_bytes": 64,
+        "evidence": "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:42-58"
+      },
+      {
+        "struct": "StateLeafDescriptor",
+        "size_bytes": 32,
+        "evidence": "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:60-72"
+      },
+      {
+        "struct": "SaveMerkleTelemetryEntry",
+        "size_bytes": 64,
+        "evidence": "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:108-125"
+      }
+    ],
+    "save_master_hash_v10": {
+      "result_struct_size": 32,
+      "header_v10_size": 72,
+      "header_master_offsets": {
+        "MasterStateHashLo": 56,
+        "MasterStateHashHi": 64
+      },
+      "algorithm": "Build preimage from file header fields, HashPayload64, worldSeed, sectorHash, and HectonContractVersion hash; compute two xxHash3 64-bit lanes; shuffle to stored 128-bit value.",
+      "evidence": [
+        "Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs:15-52",
+        "Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs:67-108",
+        "Assets/_Project/Scripts/SaveSystem/SaveMasterHashV10.cs:197-250"
+      ]
+    },
+    "save_binary_storage": {
+      "current_header_size": 56,
+      "current_header_hash_size_bytes": 48,
+      "hash64_algorithm": "xxHash3.Hash64 packed as ((ulong)hash.y << 32) | hash.x",
+      "header_hash_rule": "Copy header, zero HashHeader64, hash first 48 bytes for current headers.",
+      "payload_hash_rule": "Current non-indexed payload load validates Hash64(raw decompressed payload) against header.HashPayload64. Indexed save path validates metadataHash64 ^ directoryHash64.",
+      "evidence": [
+        "Assets/_Project/Scripts/SaveBinaryStorage.cs:2728-2753",
+        "Assets/_Project/Scripts/SaveBinaryStorage.cs:3461-3467",
+        "Assets/_Project/Scripts/SaveBinaryStorage.cs:3566-3573",
+        "Assets/_Project/Scripts/SaveBinaryStorage.cs:6541-6545",
+        "Assets/_Project/Scripts/SaveBinaryStorage.cs:6998-7086",
+        "Assets/_Project/Scripts/SaveBinaryStorage.cs:7357-7369"
+      ]
+    }
+  },
+  "black_box_and_dumps": {
+    "network_telemetry_ring_frames": 300,
+    "network_dump_path_in_source": "Docs/AgentLogs/Dump_SHINOBU_278.bin",
+    "network_dump_contents": [
+      "RollbackBlackBoxDumpHeader32",
+      "NetTelemetryEntry64 ring",
+      "InputPredictionTelemetryEntry ring when available"
+    ],
+    "save_telemetry_ring_frames": 300,
+    "save_default_dump_name": "Dump_SAVE_SURGEON.bin",
+    "assessment": "The audited runtime has fixed-size telemetry rings, but dump file names are subsystem/legacy-agent names, not Dump_X_014.bin. X_014 did not modify source because the assignment is read-only.",
+    "evidence": [
+      "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:21",
+      "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:35",
+      "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:1525-1570",
+      "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:219",
+      "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:241-242",
+      "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:2729-2775"
+    ]
+  },
+  "findings": [
+    {
+      "id": "X014-NET-001",
+      "severity": "HIGH_ARCHITECTURE_GAP",
+      "finding": "HectonNetworkManager.cs is not a real network manager. It is a mode facade over HectonRollbackNetcodeRuntime.",
+      "risk": "Future agents may attach transport/serialization assumptions to the wrong file and claim multiplayer readiness that does not exist.",
+      "evidence": [
+        "Assets/_Project/Scripts/Networking/HectonNetworkManager.cs:22-48",
+        "Docs/ARCHITECTURE/COOP_MERKLE_STATE_DELTA_PROTOCOL.md:8-20",
+        "Docs/README.md:30"
+      ]
+    },
+    {
+      "id": "X014-NET-002",
+      "severity": "CRITICAL_CORRECTNESS_RISK",
+      "finding": "Network Merkle root is quality-dependent. GlobalQualityWeight changes QualityLeafBudget, skipped leaves, and rootHi seed.",
+      "risk": "Two peers with identical authoritative gameplay state but different quality settings can produce different frame roots. This violates the doctrine that GlobalQualityWeight must not change gameplay truth ownership, DTO layout, save identity, or authority route.",
+      "evidence": [
+        "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:490-498",
+        "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:572-582",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:639-645",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:819-824",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:981-993"
+      ]
+    },
+    {
+      "id": "X014-NET-003",
+      "severity": "MEDIUM_HASH_STRENGTH_RISK",
+      "finding": "Runtime frame comparison primarily uses 64-bit LastFrameHash64 / LastRemoteHash64. HashHi is stored for branch/root context but InjectRemoteFrameHash only supplies a 64-bit remote frame hash.",
+      "risk": "Collision resistance and diagnostics are weaker when only 64-bit frame hash is injected. Save Merkle uses 128-bit hash lanes; runtime net root comparison can run in 64-bit-only mode.",
+      "evidence": [
+        "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:345-357",
+        "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:368-394",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:990-1003",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:1992-1997"
+      ]
+    },
+    {
+      "id": "X014-NET-004",
+      "severity": "MEDIUM_LAYOUT_OFFSET_RISK",
+      "finding": "EntityAUP leaf descriptor declares 24-byte double3 stride and byte length while the snapshot buffer stores RollbackAup48 records at 48 bytes each.",
+      "risk": "Current descriptors use ByteOffset = 0, so no active offset bug was proven. If future subrange hashing uses nonzero ByteOffset against EntityAUPs, HashAupArray divides by 24 while indexing RollbackAup48, which can select the wrong element.",
+      "evidence": [
+        "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:927",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:172-185",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:907-929",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:1072"
+      ]
+    },
+    {
+      "id": "X014-NET-005",
+      "severity": "MEDIUM_RESTORE_RISK",
+      "finding": "RestoreSnapshotJob.TryCopyDestination permits partial destination copy when destination.Length is smaller than serializedCount, advances the full serialized byte count, and returns true.",
+      "risk": "A future capacity mismatch can restore a truncated authoritative buffer without marking SnapshotMissing. If destination is longer than serializedCount, old tail data is not cleared.",
+      "evidence": "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:1257-1285"
+    },
+    {
+      "id": "X014-NET-006",
+      "severity": "HIGH_IMPLEMENTATION_GAP",
+      "finding": "Full deterministic rollback replay was not found in audited source. ExecuteRollback restores a snapshot, corrects remote input, emits MockTickCommand, estimates cost, and writes visual correction.",
+      "risk": "The code can record/request resimulation, but no audited line performs a multi-frame deterministic replay. Future agents must not claim rollback netcode is operational from this path alone.",
+      "evidence": [
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:1648-1692",
+        "Assets/_Project/Scripts/Networking/RollbackNetcodeContracts.cs:1867-1935"
+      ]
+    },
+    {
+      "id": "X014-SAVE-001",
+      "severity": "HIGH_DOC_CORRECTNESS_RISK",
+      "finding": "Save Merkle cosmetic leaves are not excluded from root hashing. LeafFlagCosmetic is used by delta payload pruning, not by MerkleLeafHashJob.",
+      "risk": "A cosmetic save leaf can change the persistent Merkle root if it is present in descriptors. Reports that say all cosmetic state is excluded from hashes are false for the save path.",
+      "evidence": [
+        "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:221-225",
+        "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:2012-2019",
+        "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:2144-2157",
+        "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:2681-2688"
+      ]
+    },
+    {
+      "id": "X014-BLACKBOX-001",
+      "severity": "LOW_IDENTITY_MISMATCH",
+      "finding": "Network and save dump paths in source use SHINOBU_278 / SAVE_SURGEON names, not Dump_X_014.bin.",
+      "risk": "This is not a runtime hash defect, but it fails the agent-specific dump naming convention stated in the current user protocol. X_014 did not edit source due read-only constraint.",
+      "evidence": [
+        "Assets/_Project/Scripts/Networking/HectonRollbackNetcodeRuntime.cs:35",
+        "Assets/_Project/Scripts/SaveSystem/SaveStateMerkleTree.cs:241-242"
+      ]
+    }
+  ],
+  "regression_model": {
+    "cpu": "No code changed. Static audit only. Measured CPU delta: 0 us. Any projected savings are not claimed.",
+    "gc": "No runtime code executed. GC proof absent. Source paths audited use NativeArray/Burst jobs for hot hashing; final report generation is editor/file-system activity only.",
+    "memory": "No runtime allocations changed. Static calculated state ring size is 13,008,896 bytes from source formulas and explicit struct sizes.",
+    "cadence": "Network hash cadence is quality-dependent via ResolveHashCadenceFrames; root membership is also quality-dependent via ResolveMerkleLeafBudget.",
+    "correctness": "Main correctness risks are quality-dependent authoritative root inputs, partial restore tolerance, 64-bit-only remote frame hash injection mode, and save cosmetic leaves participating in persistent root hashes."
+  },
+  "verification": {
+    "compile_run": false,
+    "compile_reason": "No C# source was edited; user requested read-only audit. AGENTS forbids unnecessary build under CPU/compiler contention.",
+    "runtime_test_run": false,
+    "runtime_reason": "Static source audit only. Docs already classify coop netcode as pending transport, packet fuzz, deterministic replay, profiler, and GC proof.",
+    "json_validation": "PASS via PowerShell ConvertFrom-Json",
+    "csharp_files_modified": false
+  },
+  "future_implementation_constraints": [
+    "Do not let GlobalQualityWeight change the authoritative leaf set or root seed for cross-peer frame equality.",
+    "Keep presentation buffers out of network Merkle descriptors unless a gameplay owner explicitly promotes them to truth state.",
+    "If EntityAUP subrange hashing is added, define whether ByteOffset is canonical double3-byte space or RollbackAup48-byte space and enforce it in the descriptor contract.",
+    "If true rollback replay is implemented, assign a single dispatcher owner for deterministic fast-forward and prove no hidden same-frame Complete/readback loop.",
+    "If remote frame hashes remain 64-bit, document collision budget and branch proof behavior; otherwise transport both HashLo and HashHi for root comparison.",
+    "If save cosmetic leaves are intended to be root-excluded, add an explicit hash-exclusion flag separate from LeafFlagCosmetic delta pruning."
+  ]
+}

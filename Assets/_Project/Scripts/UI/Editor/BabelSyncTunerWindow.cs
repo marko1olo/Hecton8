@@ -134,7 +134,7 @@ namespace Hecton8.UI.Editor
 
             bool found = LocRegistry.TryWriteVisualSpanFromUtf8(
                 hash,
-                new Span<char>(_decodedPreview),
+                _decodedPreview.AsSpan(),
                 out int decodedLength,
                 false);
             _decodedLabel.text = found && decodedLength > 0

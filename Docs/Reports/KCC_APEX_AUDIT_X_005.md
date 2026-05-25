@@ -1,4 +1,4 @@
-# KCC APEX Audit X_005
+﻿# KCC APEX Audit X_005
 
 ## Scoped PhysX Result
 - X_005 scoped forbidden call count: 0
@@ -14,6 +14,8 @@
 - Remaining velocity writes are central `PhysicsApplySystem` packet application or DTO/state assignments listed in JSON.
 - Unity `Collision`/`ContactPoint` DTO route count: 0
 - Unity collision DTO route removed: True
+- Unity `RaycastHit` DTO route count: 0
+- Unity `RaycastHit` DTO route removed: True
 
 ## Legacy Player Sweep Bridge Result
 - Player motor capsule sweep bridge removed: True
@@ -49,6 +51,10 @@
 - Legacy batch helper `QueryResult[]` mirrors: 0
 - Legacy batch helper Unity Physics calls: 0
 - Legacy batch helper Unity `RaycastHit` symbols: 0
+- Legacy batch helper surface-query counter exists: True
+- Legacy batch helper surface-query counter increments: True
+- Legacy batch helper old raycast counter removed: True
+- Performance monitor uses surface-query counter: True
 - Tool interaction surface Unity `RaycastHit` symbols: 0
 - Tool interaction legacy raycast method symbols: 0
 - Tool interaction uses typed surface hit: True
@@ -56,6 +62,35 @@
 - Kinematic surface hit has explicit 64-byte layout: True
 - Kinematic IK/VR/buoyancy Unity `RaycastHit` symbols: 0
 - Kinematic IK/VR/buoyancy uses typed surface hits: True
+- Physical hand root AUP uses player pose snapshot: True
+- Physical hand root AUP avoids controller-transform authority: True
+- Dispatcher surface probe Unity `RaycastHit` symbols: 0
+- Dispatcher surface probe uses typed hits: True
+- Dispatcher legacy raycast surface-probe symbol count: 0
+- Foveated surface probe Unity `RaycastHit` symbols: 0
+- Foveated surface probe uses typed hits: True
+- Foveated legacy deferred raycast symbol count: 0
+- Fauna surface probe Unity `RaycastHit` symbols: 0
+- Fauna surface probe uses typed hits: True
+- Fauna legacy obstacle raycast symbol count: 0
+- VR somatic dead head capsulecast job removed: True
+- VR somatic dead head collision-hit buffer removed: True
+- VR somatic fake head-collision job handle removed: True
+- VR somatic head collision uses ready-state wording: True
+- VR somatic root/hand micro-jobs removed: True
+- VR somatic root/hand job completions removed: True
+- Scoped direct managed SDF raymarch consumer count: 0
+- Scoped published-volume SDF raymarch consumer count: 0
+- Scoped encoded-SDF surface resolver consumers: 9
+- Encoded-SDF surface resolver present: True
+- Encoded-SDF surface resolver loop bounded: True
+- Encoded-SDF surface resolver uses ray-bounds interval: True
+- Encoded-SDF surface resolver prefers owner ray route: True
+- Encoded-SDF surface resolver overflow guard: True
+- Encoded-SDF surface resolver edit tested: True
+- Voxel engine interface raymarch uses encoded math: True
+- Voxel engine owner ray surface resolver present: True
+- Voxel engine interface calls published-volume raymarch: 0
 - Interaction target legacy raycast API symbols: 0
 - Interaction target uses spatial-target contract: True
 - Manta emergency legacy collision damage symbols: 0
@@ -73,11 +108,32 @@
 - Player noise uses KCC velocity signal: True
 - Player action interrupt uses KCC velocity signal: True
 - Player swim has no Rigidbody velocity fallback: True
+- Player swim has no serialized Rigidbody authority field: True
+- Player thruster audio uses KCC velocity and no Rigidbody fallback: True
+- Player footstep audio uses KCC velocity and no Rigidbody fallback: True
+- Landing impact VFX uses KCC velocity and no Rigidbody fallback: True
+- Flora player interaction uses KCC velocity and no player Rigidbody fallback: True
+- Cave bio roots use KCC velocity and no player Rigidbody cache: True
+- Foveated listener velocity uses KCC velocity and no player Rigidbody cache: True
+- Predictive voxel proxy uses KCC velocity/player motor and no player Rigidbody fallback: True
+- Player critical procedural audio uses KCC velocity and no player Rigidbody cache: True
+- Sargassum micro fauna has no player Rigidbody cache: True
+- MapMagic vegetation player motion uses KCC velocity and no player Rigidbody cache: True
+- Abyssal thermal player convection uses player movement queue and no Rigidbody route: True
 - Survival movement/save velocity uses KCC signal: True
 - Player spawner teleport velocity uses KCC signal: True
 - Player tool recoil uses deterministic equivalent mass: True
+- Harpoon has no player Rigidbody cache: True
+- Propulsion tractor uses no player Rigidbody anchor: True
 - Player inventory impact uses deterministic equivalent mass: True
 - Camera juice player speed uses KCC velocity signal: True
+- Underwater visuals use KCC velocity and no player Rigidbody cache: True
+- Mountable transport has no rider Rigidbody authority cache: True
+- Heavy tow has no player Rigidbody anchor cache: True
+- Heavy tow physics route is cached/hot-swap, no hot registry fallback: True
+- Tether legacy anchor wrapper intentionally ignores player Rigidbody: True
+- Tether player anchor uses motor/KCC velocity, not player Rigidbody: True
+- Tether voxel bend SDF uses owner resolver route: True
 - Airlock docking snap start uses Transform pose, not Rigidbody pose: True
 - Airlock Hydro teleport/snap routes through player motor: True
 - Save-load Hydro teleport routes through player motor: True
@@ -123,6 +179,8 @@
 - Player kinematics hot Rigidbody pose read count: 0
 - Player kinematics has no hot Rigidbody pose read: True
 - Player kinematics body position is snapshot-first: True
+- Player kinematics hand placement micro-job removed: True
+- Player kinematics hand placement completion removed: True
 - Motor Hydro force uses KCC velocity: True
 - Motor Hydro force uses authority mass: True
 - Motor Hydro impulse uses authority mass: True
@@ -132,7 +190,7 @@
 - Motor runtime position uses cached player context: True
 
 ## Player Force Route Authority
-- Direct player-body force/angular route sites: 4
+- Direct player-body force/angular route sites: 0
 - Ungated player-body force/angular route sites: 0
 - Central force router routes player force before Rigidbody kinematic rejection: True
 - Central force router routes player point force before Rigidbody kinematic rejection: True
@@ -147,6 +205,23 @@
 - Survival angular reset is Hydro-gated: True
 - Spawner angular reset is Hydro-gated: True
 - Save-load angular reset is Hydro-gated: True
+
+## Hydro Job Lifecycle
+- Runtime private `NativeArray<T>` field count: 0
+- Runtime private vault handle count: 27
+- Runtime private job handle count: 8
+- Runtime uses phase-local vault views: True
+- Fixed/Post/Late forced-complete count: 0
+- Fixed/Post/Late non-blocking finalize sites: 1
+- LateFrame finalize is non-blocking: True
+- Rollback forced-complete count: 0
+- Rollback non-blocking finalize sites: 1
+- No-wait abort prechecks all handles: True
+- No-wait abort forced-complete count: 0
+- Teardown forced-complete count: 8
+- Teardown is the only Hydro force-complete site: True
+- Dispatcher finalize checks `IsCompleted` before `Complete()`: True
+- Dispatcher non-forced complete also gates on `IsCompleted`: True
 
 ## Solver Bound
 - ResolveIterationCount max: 8
@@ -178,6 +253,9 @@
 - Late-frame fault scan requires full entity capacity: True
 - Telemetry aggregate requires valid state lane: True
 - Telemetry iteration count can record exact zero: True
+- Crash telemetry has no player Rigidbody cache: True
+- Crash telemetry samples player pose snapshot first: True
+- Crash telemetry packs KCC velocity signal: True
 
 ## LockstepPlayerKinematicState Layout
 - Size: 64 bytes

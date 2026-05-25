@@ -8,8 +8,10 @@ using Hecton8.Construction;
 using Hecton8.Building;
 using Hecton8.Audio;
 using Hecton8.Audio.Propagation;
+using Hecton8.Crafting;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Fluids;
+using Hecton8.Core.Contracts.Physics;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Memory.Layout;
@@ -18,7 +20,6 @@ using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Meta;
-using Hecton8.Physics;
 using Hecton8.Systems.AI;
 using Hecton8.Tools;
 using Hecton8.UI;
@@ -30,6 +31,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.RenderGraphModule;
 #if UNITY_ADDRESSABLES_EXIST
 using UnityEngine.ResourceManagement.AsyncOperations;
 #endif
@@ -1069,6 +1071,53 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Read-only player look-query cache route. Consumers cache this once and do not bind to the physics cache owner.
+    /// </summary>
+    public interface IPlayerLookQueryCache : ISystem
+    {
+        /// <summary>
+        /// Reads a cached player-look hit for the current dispatcher frame.
+        /// </summary>
+        bool TryGetHit(
+            Ray ray,
+            float distance,
+            int mask,
+            QueryTriggerInteraction triggerMode,
+            out InteractionSurfaceHit hit);
+
+        /// <summary>
+        /// Stores a player-look hit for the current dispatcher frame.
+        /// </summary>
+        void SetHit(
+            Ray ray,
+            float distance,
+            int mask,
+            QueryTriggerInteraction triggerMode,
+            InteractionSurfaceHit hit);
+    }
+
+    /// <summary>
+    /// Query telemetry counters exposed without binding diagnostics to physics implementation classes.
+    /// </summary>
+    public interface IPhysicsQueryTelemetryReadModel : ISystem
+    {
+        /// <summary>
+        /// Number of legacy surface queries processed during the current sampling window.
+        /// </summary>
+        int LegacySurfaceQueriesProcessed { get; }
+
+        /// <summary>
+        /// Number of player-look query cache hits during the current sampling window.
+        /// </summary>
+        int PlayerLookQueryCacheHits { get; }
+
+        /// <summary>
+        /// Clears query telemetry counters after a diagnostics sample has consumed them.
+        /// </summary>
+        void ResetPhysicsQueryTelemetryCounters();
+    }
+
+    /// <summary>
     /// Authoritative physics routing service contract exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
     public interface IPhysicsService : ISystem
@@ -1100,6 +1149,26 @@ namespace Hecton8.Core
         bool QueueForceAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition, ForceMode mode, bool wake = true);
 
         /// <summary>
+        /// Queues a cinematic breach vortex through the physics owner.
+        /// </summary>
+        bool QueueDepressurizationVortex(
+            Vector3 roomCenter,
+            Vector3 breachPosition,
+            float radiusMeters,
+            float baseAccelerationMetersPerSecondSquared,
+            float maximumAccelerationMetersPerSecondSquared,
+            float durationSeconds);
+
+        /// <summary>
+        /// Applies a cinematic room implosion impulse through the physics owner.
+        /// </summary>
+        bool QueueImplosionImpulse(
+            Vector3 roomCenter,
+            float radiusMeters,
+            float baseImpulseNewtonSeconds,
+            float maximumImpulseNewtonSeconds);
+
+        /// <summary>
         /// Queues an authoritative linear velocity assignment through the physics owner.
         /// </summary>
         /// <param name="body">Target rigidbody.</param>
@@ -1118,6 +1187,25 @@ namespace Hecton8.Core
         bool QueueAngularVelocitySet(Rigidbody body, Vector3 angularVelocity, bool wake = true);
 
         /// <summary>
+        /// Queues an authoritative pose assignment through the physics owner.
+        /// </summary>
+        /// <param name="body">Target rigidbody.</param>
+        /// <param name="position">World-space target position.</param>
+        /// <param name="rotation">World-space target rotation.</param>
+        /// <param name="wake">True to wake sleeping bodies before applying.</param>
+        /// <returns>True when the packet was accepted.</returns>
+        bool QueuePoseSet(Rigidbody body, Vector3 position, Quaternion rotation, bool wake = true);
+
+        /// <summary>
+        /// Applies a finite kinematic weld snap through the physics owner.
+        /// </summary>
+        /// <param name="body">Target rigidbody.</param>
+        /// <param name="targetPosition">World-space snapped position.</param>
+        /// <param name="targetRotation">World-space snapped rotation.</param>
+        /// <returns>True when the snap was accepted.</returns>
+        bool ApplyKinematicWeldSnap(Rigidbody body, Vector3 targetPosition, Quaternion targetRotation);
+
+        /// <summary>
         /// Queues a torque packet for deferred main-thread application.
         /// </summary>
         /// <param name="body">Target rigidbody.</param>
@@ -1128,9 +1216,109 @@ namespace Hecton8.Core
         bool QueueTorque(Rigidbody body, Vector3 torque, ForceMode mode, bool wake = true);
 
         /// <summary>
+        /// Queues an ambient environmental force packet through the physics owner.
+        /// </summary>
+        /// <param name="body">Target rigidbody.</param>
+        /// <param name="force">World-space force vector.</param>
+        /// <param name="mode">Force application mode.</param>
+        /// <param name="wake">True to wake sleeping bodies before applying.</param>
+        /// <returns>True when the packet was accepted.</returns>
+        bool QueueAmbientForce(Rigidbody body, Vector3 force, ForceMode mode, bool wake = true);
+
+        /// <summary>
+        /// Queues an ambient environmental force packet at a world-space point through the physics owner.
+        /// </summary>
+        /// <param name="body">Target rigidbody.</param>
+        /// <param name="force">World-space force vector.</param>
+        /// <param name="worldPosition">World-space application point.</param>
+        /// <param name="mode">Force application mode.</param>
+        /// <param name="wake">True to wake sleeping bodies before applying.</param>
+        /// <returns>True when the packet was accepted.</returns>
+        bool QueueAmbientForceAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition, ForceMode mode, bool wake = true);
+
+        /// <summary>
+        /// Queues an ambient environmental torque packet through the physics owner.
+        /// </summary>
+        /// <param name="body">Target rigidbody.</param>
+        /// <param name="torque">World-space torque vector.</param>
+        /// <param name="mode">Force application mode.</param>
+        /// <param name="wake">True to wake sleeping bodies before applying.</param>
+        /// <returns>True when the packet was accepted.</returns>
+        bool QueueAmbientTorque(Rigidbody body, Vector3 torque, ForceMode mode, bool wake = true);
+
+        /// <summary>
+        /// Queues a reduced-mass tractor-beam pull through the physics owner.
+        /// </summary>
+        /// <param name="anchorBody">Anchor body, or null for world anchor.</param>
+        /// <param name="payloadBody">Payload body to pull.</param>
+        /// <param name="targetPosition">World-space target point.</param>
+        /// <param name="currentPosition">World-space payload point.</param>
+        /// <param name="springStiffness">Spring stiffness scalar.</param>
+        /// <param name="overDampingMultiplier">Critical damping multiplier.</param>
+        /// <param name="maxForceMagnitude">Maximum force magnitude.</param>
+        /// <param name="applyReactionForce">True to push back on the anchor body.</param>
+        /// <param name="wake">True to wake sleeping bodies before applying.</param>
+        /// <returns>True when the packet was accepted.</returns>
+        bool QueueTractorBeamPd(
+            Rigidbody anchorBody,
+            Rigidbody payloadBody,
+            Vector3 targetPosition,
+            Vector3 currentPosition,
+            float springStiffness,
+            float overDampingMultiplier,
+            float maxForceMagnitude,
+            bool applyReactionForce = true,
+            bool wake = true);
+
+        /// <summary>
+        /// Number of physics-owned late-frame event payloads awaiting dispatch.
+        /// </summary>
+        int PendingLateFrameEventCount { get; }
+
+        /// <summary>
+        /// Flushes physics-owned late-frame event queues through the physics owner.
+        /// </summary>
+        void FlushLateFrameEvents();
+
+        /// <summary>
+        /// Registers a deferred electromagnetic pulse listener through the physics owner route.
+        /// </summary>
+        void RegisterElectromagneticPulseListener(IElectromagneticPulseEventListener listener);
+
+        /// <summary>
+        /// Unregisters a deferred electromagnetic pulse listener through the physics owner route.
+        /// </summary>
+        void UnregisterElectromagneticPulseListener(IElectromagneticPulseEventListener listener);
+
+        /// <summary>
         /// Clears all queued packets and cached body slots.
         /// </summary>
         void ClearQueuedPackets();
+
+        /// <summary>
+        /// Prepares physics-tracked bodies for an origin-shift rebase.
+        /// </summary>
+        void PrepareTrackedBodiesForOriginShift();
+
+        /// <summary>
+        /// Commits a runtime-space shift to physics-tracked bodies.
+        /// </summary>
+        void CommitTrackedBodiesForOriginShift(Vector3 shiftOffset);
+
+        /// <summary>
+        /// Finalizes physics-tracked bodies after an origin-shift rebase.
+        /// </summary>
+        void FinalizeTrackedBodiesAfterOriginShift();
+
+        /// <summary>
+        /// Resets physics-tracked body state before a safe teleport or AUP rebase window.
+        /// </summary>
+        void ResetTrackedBodiesForSafeTeleportState();
+
+        /// <summary>
+        /// Arms speculative CCD safeguards for the safe teleport window.
+        /// </summary>
+        void ArmSafeTeleportSpeculativeCcd();
     }
 
     /// <summary>
@@ -1146,6 +1334,27 @@ namespace Hecton8.Core
             Vector3 point,
             Vector3 normal,
             float impactSpeedMetersPerSecond);
+
+        void SetHydrodynamicSubmersion(Rigidbody body, float submersionFactor);
+
+        void RegisterBodyStateTracking(Rigidbody body);
+
+        void UnregisterBodyStateTracking(Rigidbody body);
+
+        void ArmSpeculativeCcdForImpulse(Rigidbody body);
+
+        float ResolveSpeculativeHoverHeightMeters(float baseHeightMeters, float timeSeconds);
+
+        void QueueKinematicImpact(
+            Rigidbody primaryBody,
+            Vector3 point,
+            Vector3 normal,
+            float impactSpeedMetersPerSecond,
+            Rigidbody secondaryBody = null);
+
+        void RegisterImpactListener(IPhysicsImpactEventListener listener);
+
+        void UnregisterImpactListener(IPhysicsImpactEventListener listener);
 
         void RegisterDockConnectionOwner(UnityEngine.Object owner, Rigidbody dockedBody);
 
@@ -2532,10 +2741,15 @@ namespace Hecton8.Core
     {
         int SpeciesId { get; }
         bool IsDead { get; }
+        bool IsAggressiveContact { get; }
+        bool IsFlockingContact { get; }
         bool HasActiveApexIntimidation { get; }
         bool IsLeviathanContact { get; }
         bool IsApexPredatorContact { get; }
         bool RespondsToParentalDefenseSignal { get; }
+        float ApexTerritoryRadiusMeters { get; }
+        float ApexTerritoryMassScore { get; }
+        uint PreyMaskBits { get; }
         Transform ContactTransform { get; }
 
         bool TryResolveLogicAup(out AbsoluteUniversePosition selfAup);
@@ -2558,6 +2772,25 @@ namespace Hecton8.Core
         bool IsBiolumFlashBangPrey { get; }
         void ApplyPredationDamage(float amount, Vector3 predatorPosition);
         void ForceApexRetreatFrom(Vector3 rivalPosition);
+    }
+
+    public interface IFaunaDirectorCueSink : IFaunaSpatialContact
+    {
+        bool UsesPackHuntBehaviorContact { get; }
+
+        bool ShouldIgnoreAcousticPing(float energyJoules, float intensity01);
+
+        void ApplyAcousticPingAggro(Vector3 sourcePosition, float intensity01, float durationSeconds);
+
+        void ApplyPredatorDeafening(Vector3 sourcePosition, float durationSeconds);
+
+        bool ApplyDirectorColdTickCull(bool enableColdTick);
+
+        void ApplyDirectorLineOfSight(
+            bool hasLineOfSight,
+            Vector3 playerPosition,
+            Vector3 playerForward,
+            Vector3 playerVelocity);
     }
 
     /// <summary>
@@ -2605,6 +2838,18 @@ namespace Hecton8.Core
         [FieldOffset(28)] private uint _pad0;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 64)]
+    public struct EmergencyRelayRouteTargetSnapshot
+    {
+        public const uint ActiveFlag = 1u << 0;
+
+        [FieldOffset(0)] public AbsoluteUniversePosition RelayAup;
+        [FieldOffset(48)] public uint RelayHash;
+        [FieldOffset(52)] public uint ChainHash;
+        [FieldOffset(56)] public int RelayOrder;
+        [FieldOffset(60)] public uint Flags;
+    }
+
     public interface IAtlasSignalReadModel
     {
         float CurrentAtlasSignalStrength01 { get; }
@@ -2616,6 +2861,27 @@ namespace Hecton8.Core
         bool TryReadAtlasSignalSnapshot(
             in AbsoluteUniversePosition observerAup,
             out AtlasSignalReadSnapshot snapshot);
+    }
+
+    public interface IAtlasSignalDecodeSink : ISystem
+    {
+        void DecodeSignal(uint messageHash);
+    }
+
+    public interface IAtlas6DirectiveCommandSink : ISystem
+    {
+        void RegisterBarterTransaction();
+    }
+
+    public interface IEmergencyRelayRouteReadModel
+    {
+        bool HasDiscoveredRelayInDrivenChain();
+
+        bool IsRelayDiscoveryHash(uint discoveryHash);
+
+        bool TryBuildContextualGuidanceMessageSpan(out ReadOnlySpan<char> message);
+
+        bool TryReadActiveRouteTarget(out EmergencyRelayRouteTargetSnapshot snapshot);
     }
 
     public interface INarrativeDiscoveryReadModel
@@ -2632,6 +2898,17 @@ namespace Hecton8.Core
     public interface IFirstHourRouteContactSink
     {
         void RegisterServiceRelayRouteContact();
+    }
+
+    public interface IEndingRuntimeService : ISystem
+    {
+        bool IsConditionMet { get; }
+        bool IsEndingComplete { get; }
+        bool CanChooseEnding { get; }
+
+        void ForceConditionMetFromQuestDAG();
+
+        void ChooseEnding(byte endingChoiceCode);
     }
 
     public interface IAudioLogRuntime
@@ -2738,6 +3015,19 @@ namespace Hecton8.Core
     public interface ILoreUnlockReadModel
     {
         bool IsLoreUnlocked(uint logHash);
+    }
+
+    public interface ILoreDatabaseReadModel
+    {
+        int UnlockedCount { get; }
+
+        bool TryGetRecordIndex(uint logHash, out int index);
+
+        bool TryGetPackedUnlockWords(out NativeArray<uint>.ReadOnly words);
+
+        bool TryGetTitleBuffer(uint logHash, out char[] buffer, out int length, out bool rtl);
+
+        bool TryGetBodyBuffer(uint logHash, out char[] buffer, out int length, out bool rtl);
     }
 
     public interface ILoreUnlockSink
@@ -2905,6 +3195,18 @@ namespace Hecton8.Core
         float GetToxicityIntensity(in AbsoluteUniversePosition pointAup);
 
         bool TrySampleHazardAvoidance(Vector3 runtimePoint, float sampleRadius, out Vector3 fleeDirection, out float hazardPressure01);
+    }
+
+    /// <summary>
+    /// Read-only buoyancy contact state for consumers that only need shelter/air exposure.
+    /// </summary>
+    public interface IBuoyancyAirStateReadModel
+    {
+        /// <summary>True when an owner-local shelter route marks the body as being inside a dry compartment.</summary>
+        bool IsInDryZone { get; }
+
+        /// <summary>True when the buoyancy body is not currently water-supported.</summary>
+        bool IsInAir { get; }
     }
 
     /// <summary>
@@ -3431,6 +3733,49 @@ namespace Hecton8.Core
         /// Version identifier for the active procedural world-generation algorithm.
         /// </summary>
         int RuntimeWorldGenerationVersionId { get; }
+    }
+
+    public interface IFaunaWorldSeedReadModel : ISystem
+    {
+        int WorldSeed { get; }
+    }
+
+    public interface IResourceScarcityReadModel : ISystem
+    {
+        int RuntimeVersion { get; }
+
+        float GetCraftPowerMultiplier(RecipeData recipe);
+
+        float GetIngredientMultiplier(int itemHashId);
+
+        int ResolveInflatedIngredientAmount(
+            int itemHashId,
+            int baseAmount,
+            in AbsoluteUniversePosition worldPosition,
+            int accessibleUnits);
+    }
+
+    public interface IPersistentDroppedItemRegistry : ISystem
+    {
+        bool TryRegisterDroppedItem(ItemData itemData, int quantity, Vector3 runtimePosition);
+
+        bool TryRegisterDroppedItem(ItemData itemData, int quantity, Vector3 runtimePosition, Vector3 initialImpulse);
+
+        bool TryRegisterDroppedItem(
+            ItemData itemData,
+            int quantity,
+            Vector3 runtimePosition,
+            Vector3 initialImpulse,
+            Vector3 inheritedVelocityChange);
+
+        bool TryRegisterDroppedItemWithState(
+            ItemData itemData,
+            int quantity,
+            Vector3 runtimePosition,
+            ulong geneticsMask,
+            ushort qualityMilli);
+
+        bool TryRegisterDroppedItem(int itemHashId, ItemCatalog itemCatalog, int quantity, Vector3 runtimePosition);
     }
 
     /// <summary>
@@ -4579,6 +4924,65 @@ namespace Hecton8.Core
         bool TryUploadActiveMaelstroms(GraphicsBuffer destination, int requestedCount);
     }
 
+    public struct FluidAdvectionRenderGraphPayload
+    {
+        public ComputeShader Compute;
+        public int Kernel;
+        public int DispatchGroups;
+        public GraphicsBuffer SiltRead;
+        public GraphicsBuffer SiltWrite;
+        public GraphicsBuffer BubbleRead;
+        public GraphicsBuffer BubbleWrite;
+        public GraphicsBuffer DebrisRead;
+        public GraphicsBuffer DebrisWrite;
+        public GraphicsBuffer EmptySiltBuffer;
+        public GraphicsBuffer EmptyBubbleBuffer;
+        public GraphicsBuffer EmptyDebrisBuffer;
+        public GraphicsBuffer AbyssalFlowBuffer;
+        public GraphicsBuffer EmptyAbyssalFlowBuffer;
+        public Texture AbyssalFlowTexture;
+        public Texture VoxelSdfTexture;
+        public Texture EmptyVoxelSdfTexture;
+        public RTHandle AbyssalFlowTextureHandle;
+        public RTHandle VoxelSdfTextureHandle;
+        public RTHandle EmptyVoxelSdfTextureHandle;
+        public Vector4 Counts;
+        public Vector4 Params;
+        public Vector4 Buoyancy;
+        public Vector4 AupShiftDelta;
+        public GraphicsBuffer DynamicWakeBuffer;
+        public GraphicsBuffer DynamicWakeVectorBuffer;
+        public Vector4 DynamicWakeParams;
+        public Vector4 AbyssalGridResolution;
+        public Vector4 AbyssalFlowCenter;
+        public Vector4 AbyssalFlowSpacing;
+        public Vector4 AbyssalFlowTextureParams;
+        public float AbyssalFlowTextureActive;
+        public float AbyssalFlowInterpolationAlpha;
+        public Matrix4x4 VoxelSdfWorldToLocal;
+        public Vector4 VoxelSdfInvDoubleHalfExtents;
+        public Vector4 SdfParams;
+    }
+
+    /// <summary>
+    /// RenderGraph fluid advection route exposed without binding presentation to the concrete physics runtime.
+    /// </summary>
+    public interface IFluidAdvectionRenderGraphReadModel : ISystem
+    {
+        bool TryBuildFluidAdvectionRenderGraphPayload(out FluidAdvectionRenderGraphPayload payload);
+
+        void BindFluidAdvectionCompute(
+            IComputeCommandBuffer cmd,
+            in FluidAdvectionRenderGraphPayload payload,
+            TextureHandle abyssalFlowTexture,
+            TextureHandle voxelSdfTexture);
+
+        void UnbindFluidAdvectionCompute(
+            IComputeCommandBuffer cmd,
+            in FluidAdvectionRenderGraphPayload payload,
+            TextureHandle emptyTexture);
+    }
+
     /// <summary>
     /// Read-only analytical flow sampler for physics consumers that need a scalar flow vector.
     /// </summary>
@@ -4595,6 +4999,8 @@ namespace Hecton8.Core
     public interface IAmbientCurrentReadModel : ISystem
     {
         bool TrySampleCombinedCurrent(Vector3 samplePosition, out Vector3 currentVector);
+
+        bool TrySampleAuthoredCurrent(Vector3 samplePosition, out Vector3 currentVector);
     }
 
     /// <summary>
@@ -4602,6 +5008,8 @@ namespace Hecton8.Core
     /// </summary>
     public interface IFluidSurfaceCurrentReadModel : ISystem
     {
+        event System.Action CurrentSettingsChanged;
+
         float WaterLevel { get; }
 
         float CurrentWaterLevelY { get; }
@@ -4645,6 +5053,11 @@ namespace Hecton8.Core
         bool TryGetAegirSkyDirection(out Vector3 direction);
     }
 
+    public interface ICelestialResonanceReadModel : ISystem
+    {
+        bool IsLunarResonanceActive { get; }
+    }
+
     /// <summary>
     /// Read-only depth-zone route used by spawn and presentation systems.
     /// </summary>
@@ -4668,6 +5081,14 @@ namespace Hecton8.Core
     {
         float MicroplasticStrain { get; }
         float GeneralPollution { get; }
+    }
+
+    /// <summary>
+    /// Narrow industrial-pollution write lane into the environmental strain owner.
+    /// </summary>
+    public interface IEnvironmentalStrainIndustrialSink : ISystem
+    {
+        void AccumulateIndustrialStrain(float generalPollutionDelta, float microplasticDelta);
     }
 
     /// <summary>
@@ -4857,7 +5278,15 @@ namespace Hecton8.Core
 
         void RegisterPressureSpray(Vector3 positionWS, Vector3 inwardDirectionWS, float intensity01);
 
+        void RegisterWakeSilt(Vector3 positionWS, Vector3 sourceVelocityWS, float intensity01);
+
+        void RegisterWaterSplash(Vector3 positionWS, Vector3 sourceVelocityWS, float intensity01);
+
         void RegisterSeismicDust(Vector3 positionWS, float radiusScale);
+
+        void RegisterVoxelCaveInDustAup(Vector3 absoluteUniversePosition, Vector3 impulseDirectionWS, float radiusScale);
+
+        void RegisterVoxelCaveInDustAup(double3 absoluteUniversePosition, Vector3 impulseDirectionWS, float radiusScale);
     }
 
     /// <summary>

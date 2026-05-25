@@ -59,24 +59,27 @@ namespace Hecton8.World.VoxelSurfaceNets
 
     public struct VoxelSurfaceNetsVaultBuffers
     {
-        public NativeArray<sbyte> Density;
-        public NativeArray<VoxelVertexDTO> Vertices;
-        public NativeArray<uint> Indices;
-        public NativeArray<int> CellVertexMap;
-        public NativeArray<ChunkMeshingStateDTO> States;
-        public NativeArray<VoxelMeshingTuningDTO> Tuning;
-        public NativeArray<VoxelMeshingTelemetryEntry> TelemetryRing;
-        public NativeArray<int> TelemetryCursor;
-        public NativeArray<byte> CsvScratch;
-        public NativeArray<uint> SurfaceEdgeMasks;
-        public NativeArray<float3> RawDebugVertices;
-        public NativeArray<VoxelSurfaceAabbDTO> ChunkAabbs;
-        public NativeArray<VoxelSurfaceModifiedSignal> ModifiedSignals;
-        public NativeArray<VoxelSurfacePriorityDTO> Priorities;
-        public NativeArray<VoxelSurfaceIndirectArgsDTO> IndirectArgs;
-        public NativeArray<MockVoxelDensityArray> MockDensityConfig;
-        public NativeArray<VoxelSurfacePhysicsBakeRequestDTO> PhysicsBakeRequests;
-        public NativeArray<VoxelSurfaceHzbTileDTO> HzbTiles;
+        public IDataVault Vault;
+        public VoxelSurfaceNetsVaultHandles Handles;
+
+        public NativeArray<sbyte> Density => ResolveView(Vault, in Handles.Density);
+        public NativeArray<VoxelVertexDTO> Vertices => ResolveView(Vault, in Handles.Vertices);
+        public NativeArray<uint> Indices => ResolveView(Vault, in Handles.Indices);
+        public NativeArray<int> CellVertexMap => ResolveView(Vault, in Handles.CellVertexMap);
+        public NativeArray<ChunkMeshingStateDTO> States => ResolveView(Vault, in Handles.States);
+        public NativeArray<VoxelMeshingTuningDTO> Tuning => ResolveView(Vault, in Handles.Tuning);
+        public NativeArray<VoxelMeshingTelemetryEntry> TelemetryRing => ResolveView(Vault, in Handles.TelemetryRing);
+        public NativeArray<int> TelemetryCursor => ResolveView(Vault, in Handles.TelemetryCursor);
+        public NativeArray<byte> CsvScratch => ResolveView(Vault, in Handles.CsvScratch);
+        public NativeArray<uint> SurfaceEdgeMasks => ResolveView(Vault, in Handles.SurfaceEdgeMasks);
+        public NativeArray<float3> RawDebugVertices => ResolveView(Vault, in Handles.RawDebugVertices);
+        public NativeArray<VoxelSurfaceAabbDTO> ChunkAabbs => ResolveView(Vault, in Handles.ChunkAabbs);
+        public NativeArray<VoxelSurfaceModifiedSignal> ModifiedSignals => ResolveView(Vault, in Handles.ModifiedSignals);
+        public NativeArray<VoxelSurfacePriorityDTO> Priorities => ResolveView(Vault, in Handles.Priorities);
+        public NativeArray<VoxelSurfaceIndirectArgsDTO> IndirectArgs => ResolveView(Vault, in Handles.IndirectArgs);
+        public NativeArray<MockVoxelDensityArray> MockDensityConfig => ResolveView(Vault, in Handles.MockDensityConfig);
+        public NativeArray<VoxelSurfacePhysicsBakeRequestDTO> PhysicsBakeRequests => ResolveView(Vault, in Handles.PhysicsBakeRequests);
+        public NativeArray<VoxelSurfaceHzbTileDTO> HzbTiles => ResolveView(Vault, in Handles.HzbTiles);
 
         public bool IsCreated()
         {
@@ -99,14 +102,69 @@ namespace Hecton8.World.VoxelSurfaceNets
                    PhysicsBakeRequests.IsCreated &&
                    HzbTiles.IsCreated;
         }
+
+        private static NativeArray<T> ResolveView<T>(IDataVault vault, in VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (vault != null &&
+                handle.BufferID != 0u &&
+                vault.TryResolveHandle(in handle, out NativeArray<T> buffer) &&
+                buffer.IsCreated)
+            {
+                return buffer;
+            }
+
+            return default;
+        }
+    }
+
+    public struct VoxelSurfaceNetsGpuUploadSourceLease
+    {
+        public IDataVault Vault;
+        public byte LockedMask;
+
+        public bool IsCreated()
+        {
+            return Vault != null && LockedMask != 0;
+        }
+    }
+
+    public struct VoxelSurfaceNetsJobBufferLease
+    {
+        public IDataVault Vault;
+        public VoxelSurfaceNetsVaultHandles Handles;
+        public uint LockedMask;
+        public uint WriteMask;
+
+        public bool IsCreated()
+        {
+            return Vault != null && (LockedMask != 0u || WriteMask != 0u);
+        }
     }
 
     public static unsafe class VoxelSurfaceNetsVault
     {
         private const int DumpVersion = 1;
         private const string DumpFileName = "Dump_MESH_SURGEON.bin";
-        private const string AgentDumpFileName = "Dump_SHINOBU_308_Voxel.bin";
+        private const string AgentDumpFileName = "Dump_1304_Voxel.bin";
         private const string CsvFileName = "meshing_profiles.csv";
+        private const byte GpuUploadVerticesLock = 1 << 0;
+        private const byte GpuUploadIndicesLock = 1 << 1;
+        private const byte GpuUploadIndirectArgsLock = 1 << 2;
+        private const uint JobDensityLock = 1u << 0;
+        private const uint JobVerticesLock = 1u << 1;
+        private const uint JobIndicesLock = 1u << 2;
+        private const uint JobCellVertexMapLock = 1u << 3;
+        private const uint JobStatesLock = 1u << 4;
+        private const uint JobTuningLock = 1u << 5;
+        private const uint JobSurfaceEdgeMasksLock = 1u << 6;
+        private const uint JobTelemetryRingLock = 1u << 7;
+        private const uint JobTelemetryCursorLock = 1u << 8;
+        private const uint JobRawDebugVerticesLock = 1u << 9;
+        private const uint JobIndirectArgsLock = 1u << 10;
+        private const uint JobChunkAabbsLock = 1u << 11;
+        private const uint JobPrioritiesLock = 1u << 12;
+        private const uint JobHzbTilesLock = 1u << 13;
+        private const uint JobMockDensityConfigLock = 1u << 14;
         private static readonly uint _globalQualityHash = HashAsciiLiteral("global_quality_weight");
         private static readonly uint _isoSurfaceHash = HashAsciiLiteral("iso_surface_threshold");
         private static readonly uint _normalAngleHash = HashAsciiLiteral("normal_smoothing_angle");
@@ -263,125 +321,380 @@ namespace Hecton8.World.VoxelSurfaceNets
             if (vault == null || !handles.IsCreated())
                 return false;
 
-            return TryResolveView(vault, in handles.Density, out buffers.Density) &&
-                   TryResolveView(vault, in handles.Vertices, out buffers.Vertices) &&
-                   TryResolveView(vault, in handles.Indices, out buffers.Indices) &&
-                   TryResolveView(vault, in handles.CellVertexMap, out buffers.CellVertexMap) &&
-                   TryResolveView(vault, in handles.States, out buffers.States) &&
-                   TryResolveView(vault, in handles.Tuning, out buffers.Tuning) &&
-                   TryResolveView(vault, in handles.TelemetryRing, out buffers.TelemetryRing) &&
-                   TryResolveView(vault, in handles.TelemetryCursor, out buffers.TelemetryCursor) &&
-                   TryResolveView(vault, in handles.CsvScratch, out buffers.CsvScratch) &&
-                   TryResolveView(vault, in handles.SurfaceEdgeMasks, out buffers.SurfaceEdgeMasks) &&
-                   TryResolveView(vault, in handles.RawDebugVertices, out buffers.RawDebugVertices) &&
-                   TryResolveView(vault, in handles.ChunkAabbs, out buffers.ChunkAabbs) &&
-                   TryResolveView(vault, in handles.ModifiedSignals, out buffers.ModifiedSignals) &&
-                   TryResolveView(vault, in handles.Priorities, out buffers.Priorities) &&
-                   TryResolveView(vault, in handles.IndirectArgs, out buffers.IndirectArgs) &&
-                   TryResolveView(vault, in handles.MockDensityConfig, out buffers.MockDensityConfig) &&
-                   TryResolveView(vault, in handles.PhysicsBakeRequests, out buffers.PhysicsBakeRequests) &&
-                   TryResolveView(vault, in handles.HzbTiles, out buffers.HzbTiles) &&
-                   buffers.IsCreated();
+            buffers.Vault = vault;
+            buffers.Handles = handles;
+            return buffers.IsCreated();
         }
 
-        public static ref ChunkMeshingStateDTO GetStateAsRef(IDataVault vault, ref VoxelSurfaceNetsVaultHandles handles, int index)
+        public static bool TryAcquireStatesWriteLock(
+            in VoxelSurfaceNetsVaultBuffers buffers,
+            out NativeArray<ChunkMeshingStateDTO> states)
         {
-            if (!TryResolveView(vault, in handles.States, out NativeArray<ChunkMeshingStateDTO> states) ||
-                (uint)index >= (uint)states.Length)
+            states = default;
+            if (buffers.Vault == null ||
+                buffers.Handles.States.BufferID == 0u ||
+                !buffers.Vault.TryAcquireWriteLock(in buffers.Handles.States, SystemID.WorldStreaming, out states))
             {
-                throw new InvalidOperationException("Voxel surface state view unavailable.");
+                return false;
             }
 
-            return ref UnsafeUtility.ArrayElementAsRef<ChunkMeshingStateDTO>(
-                NativeArrayUnsafeUtility.GetUnsafePtr(states),
-                index);
+            if (states.IsCreated)
+                return true;
+
+            buffers.Vault.ReleaseWriteLock(in buffers.Handles.States, SystemID.WorldStreaming);
+            states = default;
+            return false;
         }
 
-        public static ref readonly ChunkMeshingStateDTO GetStateAsReadOnlyRef(IDataVault vault, ref VoxelSurfaceNetsVaultHandles handles, int index)
+        public static void ReleaseStatesWriteLock(in VoxelSurfaceNetsVaultBuffers buffers)
         {
-            if (!TryResolveView(vault, in handles.States, out NativeArray<ChunkMeshingStateDTO> states) ||
-                (uint)index >= (uint)states.Length)
+            if (buffers.Vault != null && buffers.Handles.States.BufferID != 0u)
+                buffers.Vault.ReleaseWriteLock(in buffers.Handles.States, SystemID.WorldStreaming);
+        }
+
+        public static bool TryAcquireGpuUploadSourceLease(
+            in VoxelSurfaceNetsVaultBuffers buffers,
+            int vertexCount,
+            int indexCount,
+            out VoxelSurfaceNetsGpuUploadSourceLease lease,
+            out NativeArray<VoxelVertexDTO> vertices,
+            out NativeArray<uint> indices,
+            out NativeArray<VoxelSurfaceIndirectArgsDTO> indirectArgs)
+        {
+            lease = default;
+            vertices = default;
+            indices = default;
+            indirectArgs = default;
+            IDataVault vault = buffers.Vault;
+            if (vault == null || vertexCount <= 0 || indexCount <= 0)
+                return false;
+
+            lease.Vault = vault;
+            if (!TryLockGpuUploadBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Vertices, GpuUploadVerticesLock, ref lease) ||
+                !TryLockGpuUploadBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Indices, GpuUploadIndicesLock, ref lease) ||
+                !TryLockGpuUploadBuffer(vault, VoxelSurfaceNetsVaultBufferIds.IndirectArgs, GpuUploadIndirectArgsLock, ref lease))
             {
-                throw new InvalidOperationException("Voxel surface state view unavailable.");
+                ReleaseGpuUploadSourceLease(ref lease);
+                return false;
             }
 
-            return ref UnsafeUtility.ArrayElementAsRef<ChunkMeshingStateDTO>(
-                (void*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(states),
-                index);
+            if (!vault.TryResolveHandle(in buffers.Handles.Vertices, out vertices) ||
+                !vault.TryResolveHandle(in buffers.Handles.Indices, out indices) ||
+                !vault.TryResolveHandle(in buffers.Handles.IndirectArgs, out indirectArgs) ||
+                !vertices.IsCreated ||
+                !indices.IsCreated ||
+                !indirectArgs.IsCreated ||
+                vertices.Length < vertexCount ||
+                indices.Length < indexCount ||
+                indirectArgs.Length <= 0)
+            {
+                vertices = default;
+                indices = default;
+                indirectArgs = default;
+                ReleaseGpuUploadSourceLease(ref lease);
+                return false;
+            }
+
+            return true;
         }
 
-        private static bool TryResolveView<T>(
+        public static void ReleaseGpuUploadSourceLease(ref VoxelSurfaceNetsGpuUploadSourceLease lease)
+        {
+            IDataVault vault = lease.Vault;
+            if (vault != null)
+            {
+                if ((lease.LockedMask & GpuUploadIndirectArgsLock) != 0)
+                    vault.TryUnlockBuffer(VoxelSurfaceNetsVaultBufferIds.IndirectArgs, SystemID.WorldStreaming);
+                if ((lease.LockedMask & GpuUploadIndicesLock) != 0)
+                    vault.TryUnlockBuffer(VoxelSurfaceNetsVaultBufferIds.Indices, SystemID.WorldStreaming);
+                if ((lease.LockedMask & GpuUploadVerticesLock) != 0)
+                    vault.TryUnlockBuffer(VoxelSurfaceNetsVaultBufferIds.Vertices, SystemID.WorldStreaming);
+            }
+
+            lease = default;
+        }
+
+        public static bool TryAcquireMockDensityJobLease(
+            in VoxelSurfaceNetsVaultBuffers buffers,
+            out VoxelSurfaceNetsJobBufferLease lease)
+        {
+            lease = default;
+            IDataVault vault = buffers.Vault;
+            if (vault == null)
+                return false;
+
+            lease.Vault = vault;
+            lease.Handles = buffers.Handles;
+            if (!TryLockJobWriteBuffer(vault, in buffers.Handles.Density, JobDensityLock, ref lease) ||
+                !TryLockJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Tuning, JobTuningLock, ref lease) ||
+                !TryLockJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.MockDensityConfig, JobMockDensityConfigLock, ref lease))
+            {
+                ReleaseJobBufferLease(ref lease);
+                return false;
+            }
+
+            return true;
+        }
+
+        public static bool TryAcquireExtractionJobLease(
+            in VoxelSurfaceNetsVaultBuffers buffers,
+            out VoxelSurfaceNetsJobBufferLease lease)
+        {
+            lease = default;
+            IDataVault vault = buffers.Vault;
+            if (vault == null)
+                return false;
+
+            lease.Vault = vault;
+            lease.Handles = buffers.Handles;
+            if (!TryLockJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Density, JobDensityLock, ref lease) ||
+                !TryLockJobWriteBuffer(vault, in buffers.Handles.Vertices, JobVerticesLock, ref lease) ||
+                !TryLockJobWriteBuffer(vault, in buffers.Handles.Indices, JobIndicesLock, ref lease) ||
+                !TryLockJobWriteBuffer(vault, in buffers.Handles.CellVertexMap, JobCellVertexMapLock, ref lease) ||
+                !TryLockJobWriteBuffer(vault, in buffers.Handles.States, JobStatesLock, ref lease) ||
+                !TryLockJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Tuning, JobTuningLock, ref lease) ||
+                !TryLockJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.SurfaceEdgeMasks, JobSurfaceEdgeMasksLock, ref lease) ||
+                !TryLockJobWriteBuffer(vault, in buffers.Handles.TelemetryRing, JobTelemetryRingLock, ref lease) ||
+                !TryLockJobWriteBuffer(vault, in buffers.Handles.TelemetryCursor, JobTelemetryCursorLock, ref lease) ||
+                !TryLockJobWriteBuffer(vault, in buffers.Handles.RawDebugVertices, JobRawDebugVerticesLock, ref lease) ||
+                !TryLockJobWriteBuffer(vault, in buffers.Handles.IndirectArgs, JobIndirectArgsLock, ref lease))
+            {
+                ReleaseJobBufferLease(ref lease);
+                return false;
+            }
+
+            return true;
+        }
+
+        public static bool TryAcquireHzbCullJobLease(
+            in VoxelSurfaceNetsVaultBuffers buffers,
+            out VoxelSurfaceNetsJobBufferLease lease)
+        {
+            lease = default;
+            IDataVault vault = buffers.Vault;
+            if (vault == null)
+                return false;
+
+            lease.Vault = vault;
+            lease.Handles = buffers.Handles;
+            if (!TryLockJobWriteBuffer(vault, in buffers.Handles.ChunkAabbs, JobChunkAabbsLock, ref lease) ||
+                !TryLockJobWriteBuffer(vault, in buffers.Handles.Priorities, JobPrioritiesLock, ref lease) ||
+                !TryLockJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.HzbTiles, JobHzbTilesLock, ref lease))
+            {
+                ReleaseJobBufferLease(ref lease);
+                return false;
+            }
+
+            return true;
+        }
+
+        public static void ReleaseJobBufferLease(ref VoxelSurfaceNetsJobBufferLease lease)
+        {
+            IDataVault vault = lease.Vault;
+            if (vault != null)
+            {
+                ReleaseJobWriteBuffer(vault, in lease.Handles.Priorities, JobPrioritiesLock, lease.WriteMask);
+                ReleaseJobWriteBuffer(vault, in lease.Handles.ChunkAabbs, JobChunkAabbsLock, lease.WriteMask);
+                ReleaseJobWriteBuffer(vault, in lease.Handles.IndirectArgs, JobIndirectArgsLock, lease.WriteMask);
+                ReleaseJobWriteBuffer(vault, in lease.Handles.RawDebugVertices, JobRawDebugVerticesLock, lease.WriteMask);
+                ReleaseJobWriteBuffer(vault, in lease.Handles.TelemetryCursor, JobTelemetryCursorLock, lease.WriteMask);
+                ReleaseJobWriteBuffer(vault, in lease.Handles.TelemetryRing, JobTelemetryRingLock, lease.WriteMask);
+                ReleaseJobWriteBuffer(vault, in lease.Handles.States, JobStatesLock, lease.WriteMask);
+                ReleaseJobWriteBuffer(vault, in lease.Handles.CellVertexMap, JobCellVertexMapLock, lease.WriteMask);
+                ReleaseJobWriteBuffer(vault, in lease.Handles.Indices, JobIndicesLock, lease.WriteMask);
+                ReleaseJobWriteBuffer(vault, in lease.Handles.Vertices, JobVerticesLock, lease.WriteMask);
+                ReleaseJobWriteBuffer(vault, in lease.Handles.Density, JobDensityLock, lease.WriteMask);
+                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.MockDensityConfig, JobMockDensityConfigLock, lease.LockedMask);
+                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.HzbTiles, JobHzbTilesLock, lease.LockedMask);
+                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Priorities, JobPrioritiesLock, lease.LockedMask);
+                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.ChunkAabbs, JobChunkAabbsLock, lease.LockedMask);
+                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.IndirectArgs, JobIndirectArgsLock, lease.LockedMask);
+                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.RawDebugVertices, JobRawDebugVerticesLock, lease.LockedMask);
+                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.TelemetryCursor, JobTelemetryCursorLock, lease.LockedMask);
+                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.TelemetryRing, JobTelemetryRingLock, lease.LockedMask);
+                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.SurfaceEdgeMasks, JobSurfaceEdgeMasksLock, lease.LockedMask);
+                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Tuning, JobTuningLock, lease.LockedMask);
+                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.States, JobStatesLock, lease.LockedMask);
+                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.CellVertexMap, JobCellVertexMapLock, lease.LockedMask);
+                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Indices, JobIndicesLock, lease.LockedMask);
+                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Vertices, JobVerticesLock, lease.LockedMask);
+                ReleaseJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.Density, JobDensityLock, lease.LockedMask);
+            }
+
+            lease = default;
+        }
+
+        private static bool TryLockGpuUploadBuffer(
+            IDataVault vault,
+            BufferID bufferId,
+            byte bit,
+            ref VoxelSurfaceNetsGpuUploadSourceLease lease)
+        {
+            if (!vault.TryLockBuffer(bufferId, SystemID.WorldStreaming))
+                return false;
+
+            lease.LockedMask = (byte)(lease.LockedMask | bit);
+            return true;
+        }
+
+        private static bool TryLockJobBuffer(
+            IDataVault vault,
+            BufferID bufferId,
+            uint bit,
+            ref VoxelSurfaceNetsJobBufferLease lease)
+        {
+            if (!vault.TryLockBuffer(bufferId, SystemID.WorldStreaming))
+                return false;
+
+            lease.LockedMask |= bit;
+            return true;
+        }
+
+        private static bool TryLockJobWriteBuffer<T>(
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
-            out NativeArray<T> buffer) where T : struct
+            uint bit,
+            ref VoxelSurfaceNetsJobBufferLease lease)
+            where T : struct
         {
-            buffer = default;
-            return vault != null &&
-                   handle.BufferID != 0u &&
-                   vault.TryResolveHandle(in handle, out buffer) &&
-                   buffer.IsCreated;
+            if (handle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.WorldStreaming, out NativeArray<T> buffer))
+            {
+                return false;
+            }
+
+            if (!buffer.IsCreated)
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.WorldStreaming);
+                return false;
+            }
+
+            lease.WriteMask |= bit;
+            return true;
         }
 
-        public static bool TryCreateMockDensityJob(
+        private static void ReleaseJobBuffer(IDataVault vault, BufferID bufferId, uint bit, uint lockedMask)
+        {
+            if ((lockedMask & bit) != 0u)
+                vault.TryUnlockBuffer(bufferId, SystemID.WorldStreaming);
+        }
+
+        private static void ReleaseJobWriteBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            uint bit,
+            uint writeMask)
+            where T : struct
+        {
+            if ((writeMask & bit) != 0u)
+                vault.ReleaseWriteLock(in handle, SystemID.WorldStreaming);
+        }
+
+        private static bool TryCreateMockDensityJob(
             in VoxelSurfaceNetsVaultBuffers buffers,
             out GenerateMockVoxelDensitySphereJob job,
             out int scheduleLength)
         {
             job = default;
             scheduleLength = 0;
-            if (!buffers.Density.IsCreated || !buffers.MockDensityConfig.IsCreated || buffers.MockDensityConfig.Length <= 0)
+            NativeArray<sbyte> density = buffers.Density;
+            NativeArray<MockVoxelDensityArray> mockDensity = buffers.MockDensityConfig;
+            NativeArray<VoxelMeshingTuningDTO> tuningBuffer = buffers.Tuning;
+            if (!density.IsCreated || !mockDensity.IsCreated || mockDensity.Length <= 0)
                 return false;
 
-            VoxelMeshingTuningDTO tuning = buffers.Tuning.IsCreated && buffers.Tuning.Length > 0
-                ? SanitizeTuning(buffers.Tuning[0])
+            VoxelMeshingTuningDTO tuning = tuningBuffer.IsCreated && tuningBuffer.Length > 0
+                ? SanitizeTuning(tuningBuffer[0])
                 : VoxelSurfaceNetsDefaults.BuildDefaultTuning();
 
-            job.Densities = buffers.Density;
-            job.Config = SanitizeMockDensity(buffers.MockDensityConfig[0]);
+            job.Densities = density;
+            job.Config = SanitizeMockDensity(mockDensity[0]);
             job.GlobalQualityWeight = tuning.GlobalQualityWeight;
-            scheduleLength = math.min(buffers.Density.Length, VoxelSurfaceNetsConstants.DensitySampleCount);
+            scheduleLength = math.min(density.Length, VoxelSurfaceNetsConstants.DensitySampleCount);
             return scheduleLength > 0;
         }
 
+        [Obsolete("Use TryScheduleMockDensityPinned and release the returned VoxelSurfaceNetsJobBufferLease after the JobHandle completes.", false)]
         public static bool TryScheduleMockDensity(
             in VoxelSurfaceNetsVaultBuffers buffers,
             JobHandle inputDependency,
             out JobHandle outputDependency)
         {
             outputDependency = inputDependency;
-            if (!TryCreateMockDensityJob(in buffers, out GenerateMockVoxelDensitySphereJob job, out int scheduleLength))
+            return false;
+        }
+
+        public static bool TryScheduleMockDensityPinned(
+            in VoxelSurfaceNetsVaultBuffers buffers,
+            JobHandle inputDependency,
+            out JobHandle outputDependency,
+            out VoxelSurfaceNetsJobBufferLease lease)
+        {
+            outputDependency = inputDependency;
+            lease = default;
+            if (!TryAcquireMockDensityJobLease(in buffers, out lease))
                 return false;
+
+            if (!TryCreateMockDensityJob(in buffers, out GenerateMockVoxelDensitySphereJob job, out int scheduleLength))
+            {
+                ReleaseJobBufferLease(ref lease);
+                return false;
+            }
 
             outputDependency = job.Schedule(scheduleLength, 64, inputDependency);
             return true;
         }
 
-        public static bool TryCreateExtractionJob(
+        private static bool TryCreateExtractionJob(
             in VoxelSurfaceNetsVaultBuffers buffers,
             int chunkIndex,
             uint frame,
             out SurfaceNetExtractionJob job)
         {
             job = default;
-            if (!buffers.IsCreated())
+            NativeArray<sbyte> densities = buffers.Density;
+            NativeArray<VoxelVertexDTO> vertices = buffers.Vertices;
+            NativeArray<uint> indices = buffers.Indices;
+            NativeArray<int> cellVertexMap = buffers.CellVertexMap;
+            NativeArray<ChunkMeshingStateDTO> states = buffers.States;
+            NativeArray<VoxelMeshingTuningDTO> tuning = buffers.Tuning;
+            NativeArray<uint> surfaceEdgeMasks = buffers.SurfaceEdgeMasks;
+            NativeArray<VoxelMeshingTelemetryEntry> telemetryRing = buffers.TelemetryRing;
+            NativeArray<int> telemetryCursor = buffers.TelemetryCursor;
+            NativeArray<float3> rawDebugVertices = buffers.RawDebugVertices;
+            NativeArray<VoxelSurfaceIndirectArgsDTO> indirectArgs = buffers.IndirectArgs;
+            if (!densities.IsCreated ||
+                !vertices.IsCreated ||
+                !indices.IsCreated ||
+                !cellVertexMap.IsCreated ||
+                !states.IsCreated ||
+                !tuning.IsCreated ||
+                !surfaceEdgeMasks.IsCreated ||
+                !telemetryRing.IsCreated ||
+                !telemetryCursor.IsCreated ||
+                !rawDebugVertices.IsCreated ||
+                !indirectArgs.IsCreated)
+            {
                 return false;
+            }
 
-            job.Densities = buffers.Density;
-            job.Vertices = buffers.Vertices;
-            job.Indices = buffers.Indices;
-            job.CellVertexMap = buffers.CellVertexMap;
-            job.States = buffers.States;
-            job.Tuning = buffers.Tuning;
-            job.SurfaceEdgeMasks = buffers.SurfaceEdgeMasks;
-            job.TelemetryRing = buffers.TelemetryRing;
-            job.TelemetryCursor = buffers.TelemetryCursor;
-            job.RawDebugVertices = buffers.RawDebugVertices;
-            job.IndirectArgs = buffers.IndirectArgs;
+            job.Densities = densities;
+            job.Vertices = vertices;
+            job.Indices = indices;
+            job.CellVertexMap = cellVertexMap;
+            job.States = states;
+            job.Tuning = tuning;
+            job.SurfaceEdgeMasks = surfaceEdgeMasks;
+            job.TelemetryRing = telemetryRing;
+            job.TelemetryCursor = telemetryCursor;
+            job.RawDebugVertices = rawDebugVertices;
+            job.IndirectArgs = indirectArgs;
             job.ChunkIndex = chunkIndex;
             job.Frame = frame;
             return true;
         }
 
+        [Obsolete("Use TryScheduleExtractionPinned and release the returned VoxelSurfaceNetsJobBufferLease after the JobHandle completes.", false)]
         public static bool TryScheduleExtraction(
             in VoxelSurfaceNetsVaultBuffers buffers,
             int chunkIndex,
@@ -390,16 +703,39 @@ namespace Hecton8.World.VoxelSurfaceNets
             out JobHandle outputDependency)
         {
             outputDependency = inputDependency;
-            if (!ShouldEvaluateFrame(in buffers, chunkIndex, frame))
+            return false;
+        }
+
+        public static bool TryScheduleExtractionPinned(
+            in VoxelSurfaceNetsVaultBuffers buffers,
+            int chunkIndex,
+            uint frame,
+            JobHandle inputDependency,
+            out JobHandle outputDependency,
+            out VoxelSurfaceNetsJobBufferLease lease)
+        {
+            outputDependency = inputDependency;
+            lease = default;
+            if (!TryAcquireExtractionJobLease(in buffers, out lease))
                 return false;
 
-            if (!TryCreateExtractionJob(in buffers, chunkIndex, frame, out SurfaceNetExtractionJob job))
+            if (!ShouldEvaluateFrame(in buffers, chunkIndex, frame))
+            {
+                ReleaseJobBufferLease(ref lease);
                 return false;
+            }
+
+            if (!TryCreateExtractionJob(in buffers, chunkIndex, frame, out SurfaceNetExtractionJob job))
+            {
+                ReleaseJobBufferLease(ref lease);
+                return false;
+            }
 
             outputDependency = job.Schedule(inputDependency);
             return true;
         }
 
+        [Obsolete("Use TryScheduleHzbCullPinned and release the returned VoxelSurfaceNetsJobBufferLease after the JobHandle completes.", false)]
         public static bool TryScheduleHzbCull(
             in VoxelSurfaceNetsVaultBuffers buffers,
             in float4x4 cameraRelativeViewProjection,
@@ -410,33 +746,57 @@ namespace Hecton8.World.VoxelSurfaceNets
             out JobHandle outputDependency)
         {
             outputDependency = inputDependency;
-            if (!buffers.ChunkAabbs.IsCreated ||
-                !buffers.Priorities.IsCreated ||
-                !buffers.HzbTiles.IsCreated ||
+            return false;
+        }
+
+        public static bool TryScheduleHzbCullPinned(
+            in VoxelSurfaceNetsVaultBuffers buffers,
+            in float4x4 cameraRelativeViewProjection,
+            double3 cameraAup,
+            int hzbWidth,
+            int hzbHeight,
+            JobHandle inputDependency,
+            out JobHandle outputDependency,
+            out VoxelSurfaceNetsJobBufferLease lease)
+        {
+            outputDependency = inputDependency;
+            lease = default;
+            if (!TryAcquireHzbCullJobLease(in buffers, out lease))
+                return false;
+
+            NativeArray<VoxelSurfaceAabbDTO> chunkAabbs = buffers.ChunkAabbs;
+            NativeArray<VoxelSurfacePriorityDTO> priorities = buffers.Priorities;
+            NativeArray<VoxelSurfaceHzbTileDTO> hzbTiles = buffers.HzbTiles;
+            if (!chunkAabbs.IsCreated ||
+                !priorities.IsCreated ||
+                !hzbTiles.IsCreated ||
                 hzbWidth <= 0 ||
                 hzbHeight <= 0)
             {
+                ReleaseJobBufferLease(ref lease);
                 return false;
             }
 
             VoxelSurfaceHzbCullJob job = default;
-            job.Aabbs = buffers.ChunkAabbs;
-            job.Priorities = buffers.Priorities;
-            job.HzbTiles = buffers.HzbTiles;
+            job.Aabbs = chunkAabbs;
+            job.Priorities = priorities;
+            job.HzbTiles = hzbTiles;
             job.CameraRelativeViewProjection = cameraRelativeViewProjection;
             job.CameraAup = cameraAup;
             job.HzbWidth = hzbWidth;
             job.HzbHeight = hzbHeight;
-            int length = math.min(buffers.ChunkAabbs.Length, buffers.Priorities.Length);
+            int length = math.min(chunkAabbs.Length, priorities.Length);
             outputDependency = job.Schedule(length, 32, inputDependency);
             return true;
         }
 
         public static bool ShouldEvaluateFrame(in VoxelSurfaceNetsVaultBuffers buffers, int chunkIndex, uint frame)
         {
-            if (buffers.States.IsCreated && (uint)chunkIndex < (uint)buffers.States.Length)
+            if (buffers.Vault != null &&
+                buffers.Vault.TryReadOnlyHandle(in buffers.Handles.States, out NativeArray<ChunkMeshingStateDTO>.ReadOnly states) &&
+                (uint)chunkIndex < (uint)states.Length)
             {
-                ChunkMeshingStateDTO state = buffers.States[chunkIndex];
+                ChunkMeshingStateDTO state = states[chunkIndex];
                 bool urgent = (state.ChunkHash != 0u && state.Priority <= 1) ||
                               (state.Flags & (VoxelMeshingFlags.Dirty | VoxelMeshingFlags.ModifiedByLaser)) != 0;
                 if (urgent)
@@ -444,8 +804,12 @@ namespace Hecton8.World.VoxelSurfaceNets
             }
 
             float quality = 1f;
-            if (buffers.Tuning.IsCreated && buffers.Tuning.Length > 0)
-                quality = math.saturate(buffers.Tuning[0].GlobalQualityWeight);
+            if (buffers.Vault != null &&
+                buffers.Vault.TryReadOnlyHandle(in buffers.Handles.Tuning, out NativeArray<VoxelMeshingTuningDTO>.ReadOnly tuning) &&
+                tuning.Length > 0)
+            {
+                quality = math.saturate(tuning[0].GlobalQualityWeight);
+            }
 
             float qualityCurve = Smooth01(math.saturate((quality - 0.1f) * math.rcp(0.9f)));
             float updateHz = math.lerp(5f, 60f, qualityCurve);
@@ -456,30 +820,40 @@ namespace Hecton8.World.VoxelSurfaceNets
 
         public static bool TryBootstrapLookupTables(IDataVault vault, ref VoxelSurfaceNetsVaultHandles handles, string projectRoot)
         {
-            if (!TryResolveViews(vault, ref handles, out VoxelSurfaceNetsVaultBuffers buffers) ||
-                !buffers.SurfaceEdgeMasks.IsCreated ||
-                buffers.SurfaceEdgeMasks.Length < VoxelSurfaceNetsConstants.LookupCaseCount)
+            if (vault == null ||
+                handles.SurfaceEdgeMasks.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in handles.SurfaceEdgeMasks, SystemID.WorldStreaming, out NativeArray<uint> edgeMasks))
             {
                 return false;
             }
 
-            if (string.IsNullOrEmpty(projectRoot))
+            try
             {
-                GenerateEmergencyMockTables(buffers.SurfaceEdgeMasks);
+                if (!edgeMasks.IsCreated || edgeMasks.Length < VoxelSurfaceNetsConstants.LookupCaseCount)
+                    return false;
+
+                if (string.IsNullOrEmpty(projectRoot))
+                {
+                    GenerateEmergencyMockTables(edgeMasks);
+                    return true;
+                }
+
+                if (TryLoadLookupFile(edgeMasks, Path.Combine(projectRoot, "Docs", "Archive", "surface_nets_lut.h8bin")))
+                    return true;
+
+                if (TryLoadLookupFile(edgeMasks, Path.Combine(projectRoot, "Assets", "StreamingAssets", "surface_nets_lut.h8bin")))
+                    return true;
+
+                if (TryLoadLookupFile(edgeMasks, Path.Combine(projectRoot, "Assets", "StreamingAssets", "marching_cubes_edge_tables.bin")))
+                    return true;
+
+                GenerateEmergencyMockTables(edgeMasks);
                 return true;
             }
-
-            if (TryLoadLookupFile(buffers.SurfaceEdgeMasks, Path.Combine(projectRoot, "Docs", "Archive", "surface_nets_lut.h8bin")))
-                return true;
-
-            if (TryLoadLookupFile(buffers.SurfaceEdgeMasks, Path.Combine(projectRoot, "Assets", "StreamingAssets", "surface_nets_lut.h8bin")))
-                return true;
-
-            if (TryLoadLookupFile(buffers.SurfaceEdgeMasks, Path.Combine(projectRoot, "Assets", "StreamingAssets", "marching_cubes_edge_tables.bin")))
-                return true;
-
-            GenerateEmergencyMockTables(buffers.SurfaceEdgeMasks);
-            return true;
+            finally
+            {
+                vault.ReleaseWriteLock(in handles.SurfaceEdgeMasks, SystemID.WorldStreaming);
+            }
         }
 
         public static void GenerateEmergencyMockTables(NativeArray<uint> edgeMasks)
@@ -509,38 +883,39 @@ namespace Hecton8.World.VoxelSurfaceNets
 
         public static bool TryGetTuning(IDataVault vault, ref VoxelSurfaceNetsVaultHandles handles, out VoxelMeshingTuningDTO tuning)
         {
-            tuning = default;
-            if (!TryResolveViews(vault, ref handles, out VoxelSurfaceNetsVaultBuffers buffers) ||
-                !buffers.Tuning.IsCreated ||
-                buffers.Tuning.Length <= 0)
-            {
-                return false;
-            }
-
-            tuning = buffers.Tuning[0];
-            return true;
+            return TryReadTuning(vault, in handles, out tuning);
         }
 
         public static bool TrySetTuning(IDataVault vault, ref VoxelSurfaceNetsVaultHandles handles, in VoxelMeshingTuningDTO tuning)
         {
-            if (!TryResolveViews(vault, ref handles, out VoxelSurfaceNetsVaultBuffers buffers) ||
-                !buffers.Tuning.IsCreated ||
-                buffers.Tuning.Length <= 0)
+            if (vault == null ||
+                handles.Tuning.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in handles.Tuning, SystemID.WorldStreaming, out NativeArray<VoxelMeshingTuningDTO> tuningBuffer))
             {
                 return false;
             }
 
-            buffers.Tuning[0] = SanitizeTuning(in tuning);
-            return true;
+            try
+            {
+                if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
+                    return false;
+
+                tuningBuffer[0] = SanitizeTuning(in tuning);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handles.Tuning, SystemID.WorldStreaming);
+            }
         }
 
 #if UNITY_EDITOR
         public static bool TryLoadCsvOverrides(IDataVault vault, ref VoxelSurfaceNetsVaultHandles handles, string projectRoot)
         {
-            if (!TryResolveViews(vault, ref handles, out VoxelSurfaceNetsVaultBuffers buffers) ||
-                !buffers.CsvScratch.IsCreated ||
-                !buffers.Tuning.IsCreated ||
-                buffers.Tuning.Length <= 0)
+            if (vault == null ||
+                handles.CsvScratch.BufferID == 0u ||
+                handles.Tuning.BufferID == 0u ||
+                handles.States.BufferID == 0u)
             {
                 return false;
             }
@@ -550,28 +925,39 @@ namespace Hecton8.World.VoxelSurfaceNets
                 return false;
 
             ulong writeTicks = (ulong)File.GetLastWriteTimeUtc(path).Ticks;
-            int length = ReadFileIntoNativeScratch(path, buffers.CsvScratch);
-            if (length <= 0)
+            if (!vault.TryAcquireWriteLock(in handles.CsvScratch, SystemID.WorldStreaming, out NativeArray<byte> csvScratch))
                 return false;
 
-            VoxelMeshingTuningDTO tuning = buffers.Tuning[0];
-            bool changed = TryApplyCsvOverrides(buffers.CsvScratch, length, ref tuning);
-            if (!changed)
-                return false;
+            try
+            {
+                if (!csvScratch.IsCreated)
+                    return false;
 
-            tuning.ForceRemeshVersion++;
-            tuning.LastCsvHash = HashBytes(buffers.CsvScratch, length);
-            tuning.LastCsvWriteTicks = writeTicks;
-            buffers.Tuning[0] = SanitizeTuning(in tuning);
-            MarkVisibleChunksDirty(buffers.States, tuning.ForceRemeshVersion);
-            return true;
+                int length = ReadFileIntoNativeScratch(path, csvScratch);
+                if (length <= 0)
+                    return false;
+
+                if (!TryReadTuning(vault, in handles, out VoxelMeshingTuningDTO tuning))
+                    return false;
+
+                bool changed = TryApplyCsvOverrides(csvScratch, length, ref tuning);
+                if (!changed)
+                    return false;
+
+                tuning.ForceRemeshVersion++;
+                tuning.LastCsvHash = HashBytes(csvScratch, length);
+                tuning.LastCsvWriteTicks = writeTicks;
+                return TryCommitCsvTuning(vault, in handles, in tuning);
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handles.CsvScratch, SystemID.WorldStreaming);
+            }
         }
 
         public static bool TryPollCsvOverrides(IDataVault vault, ref VoxelSurfaceNetsVaultHandles handles, string projectRoot)
         {
-            if (!TryResolveViews(vault, ref handles, out VoxelSurfaceNetsVaultBuffers buffers) ||
-                !buffers.Tuning.IsCreated ||
-                buffers.Tuning.Length <= 0)
+            if (!TryReadTuning(vault, in handles, out VoxelMeshingTuningDTO tuning))
             {
                 return false;
             }
@@ -581,7 +967,7 @@ namespace Hecton8.World.VoxelSurfaceNets
                 return false;
 
             ulong writeTicks = (ulong)File.GetLastWriteTimeUtc(path).Ticks;
-            if (buffers.Tuning[0].LastCsvWriteTicks == writeTicks)
+            if (tuning.LastCsvWriteTicks == writeTicks)
                 return false;
 
             return TryLoadCsvOverrides(vault, ref handles, projectRoot);
@@ -658,27 +1044,47 @@ namespace Hecton8.World.VoxelSurfaceNets
 
         public static bool TryDumpBlackBoxOnSlowExtraction(in VoxelSurfaceNetsVaultBuffers buffers, string projectRoot)
         {
-            if (!buffers.TelemetryRing.IsCreated || !buffers.TelemetryCursor.IsCreated || buffers.TelemetryCursor.Length <= 0)
+            if (string.IsNullOrEmpty(projectRoot) ||
+                !TryAcquireTelemetryDumpLease(in buffers, out VoxelSurfaceNetsJobBufferLease lease))
                 return false;
 
-            int cursor = math.clamp(buffers.TelemetryCursor[0], 0, buffers.TelemetryRing.Length - 1);
-            VoxelMeshingTelemetryEntry entry = buffers.TelemetryRing[cursor];
-            if (entry.DumpReason == 0u && entry.ExtractionComputeTimeMs <= 2f)
-                return false;
+            try
+            {
+                if (!buffers.TelemetryRing.IsCreated || !buffers.TelemetryCursor.IsCreated || buffers.TelemetryCursor.Length <= 0)
+                    return false;
 
-            return TryDumpBlackBox(in buffers, projectRoot, entry.DumpReason == 0u ? VoxelSurfaceNetsConstants.FaultSlowExtraction : entry.DumpReason);
+                int cursor = math.clamp(buffers.TelemetryCursor[0], 0, buffers.TelemetryRing.Length - 1);
+                VoxelMeshingTelemetryEntry entry = buffers.TelemetryRing[cursor];
+                if (entry.DumpReason == 0u && entry.ExtractionComputeTimeMs <= 2f)
+                    return false;
+
+                uint reason = entry.DumpReason == 0u ? VoxelSurfaceNetsConstants.FaultSlowExtraction : entry.DumpReason;
+                return TryWriteDumpFiles(projectRoot, in buffers, reason);
+            }
+            finally
+            {
+                ReleaseJobBufferLease(ref lease);
+            }
         }
 
         public static bool TryDumpBlackBox(in VoxelSurfaceNetsVaultBuffers buffers, string projectRoot, uint reason)
         {
-            if (!buffers.TelemetryRing.IsCreated || string.IsNullOrEmpty(projectRoot))
+            if (buffers.Vault == null ||
+                buffers.Handles.TelemetryRing.BufferID == 0u ||
+                string.IsNullOrEmpty(projectRoot))
                 return false;
 
-            string dir = Path.Combine(projectRoot, "Docs", "AgentLogs");
-            Directory.CreateDirectory(dir);
-            bool primary = TryWriteDumpFile(Path.Combine(dir, DumpFileName), in buffers, reason);
-            bool agent = TryWriteDumpFile(Path.Combine(dir, AgentDumpFileName), in buffers, reason);
-            return primary && agent;
+            if (!TryAcquireTelemetryDumpLease(in buffers, out VoxelSurfaceNetsJobBufferLease lease))
+                return false;
+
+            try
+            {
+                return TryWriteDumpFiles(projectRoot, in buffers, reason);
+            }
+            finally
+            {
+                ReleaseJobBufferLease(ref lease);
+            }
         }
 
         public static bool TryMarkChunkDirty(NativeArray<ChunkMeshingStateDTO> states, uint chunkHash, uint version)
@@ -706,26 +1112,225 @@ namespace Hecton8.World.VoxelSurfaceNets
 
         private static void HydrateDefaultsIfNeeded(VoxelSurfaceNetsVaultBuffers buffers)
         {
-            bool firstHydration = buffers.Tuning.IsCreated && buffers.Tuning.Length > 0 && buffers.Tuning[0].Version == 0u;
+            bool firstHydration = TryReadTuning(buffers.Vault, in buffers.Handles, out VoxelMeshingTuningDTO tuning) &&
+                                  tuning.Version == 0u;
             if (firstHydration)
             {
-                ClearArray(buffers.States);
-                ClearArray(buffers.Vertices);
-                ClearArray(buffers.Indices);
-                ClearArray(buffers.CellVertexMap);
-                ClearArray(buffers.RawDebugVertices);
-                ClearArray(buffers.ChunkAabbs);
-                ClearArray(buffers.ModifiedSignals);
-                ClearArray(buffers.Priorities);
-                ClearArray(buffers.PhysicsBakeRequests);
-                ClearArray(buffers.HzbTiles);
-                ClearArray(buffers.CsvScratch);
-                GenerateEmergencyMockTables(buffers.SurfaceEdgeMasks);
-                buffers.Tuning[0] = VoxelSurfaceNetsDefaults.BuildDefaultTuning();
+                TryClearBuffer(buffers.Vault, in buffers.Handles.States);
+                TryClearBuffer(buffers.Vault, in buffers.Handles.Vertices);
+                TryClearBuffer(buffers.Vault, in buffers.Handles.Indices);
+                TryClearBuffer(buffers.Vault, in buffers.Handles.CellVertexMap);
+                TryClearBuffer(buffers.Vault, in buffers.Handles.RawDebugVertices);
+                TryClearBuffer(buffers.Vault, in buffers.Handles.ChunkAabbs);
+                TryClearBuffer(buffers.Vault, in buffers.Handles.ModifiedSignals);
+                TryClearBuffer(buffers.Vault, in buffers.Handles.Priorities);
+                TryClearBuffer(buffers.Vault, in buffers.Handles.PhysicsBakeRequests);
+                TryClearBuffer(buffers.Vault, in buffers.Handles.HzbTiles);
+                TryClearBuffer(buffers.Vault, in buffers.Handles.CsvScratch);
+                TryWriteEmergencyMockTables(buffers.Vault, in buffers.Handles);
+                TryWriteDefaultTuning(buffers.Vault, in buffers.Handles);
             }
 
-            if (buffers.MockDensityConfig.IsCreated && buffers.MockDensityConfig.Length > 0 && buffers.MockDensityConfig[0].Dimensions.x == 0)
-                buffers.MockDensityConfig[0] = VoxelSurfaceNetsDefaults.BuildDefaultMockDensity();
+            if (TryReadMockDensity(buffers.Vault, in buffers.Handles, out MockVoxelDensityArray mockDensity) &&
+                mockDensity.Dimensions.x == 0)
+            {
+                TryWriteDefaultMockDensity(buffers.Vault, in buffers.Handles);
+            }
+        }
+
+        private static bool TryReadTuning(
+            IDataVault vault,
+            in VoxelSurfaceNetsVaultHandles handles,
+            out VoxelMeshingTuningDTO tuning)
+        {
+            tuning = default;
+            if (vault == null ||
+                handles.Tuning.BufferID == 0u ||
+                !vault.TryReadOnlyHandle(in handles.Tuning, out NativeArray<VoxelMeshingTuningDTO>.ReadOnly tuningBuffer) ||
+                tuningBuffer.Length <= 0)
+            {
+                return false;
+            }
+
+            tuning = tuningBuffer[0];
+            return true;
+        }
+
+        private static bool TryReadMockDensity(
+            IDataVault vault,
+            in VoxelSurfaceNetsVaultHandles handles,
+            out MockVoxelDensityArray mockDensity)
+        {
+            mockDensity = default;
+            if (vault == null ||
+                handles.MockDensityConfig.BufferID == 0u ||
+                !vault.TryReadOnlyHandle(in handles.MockDensityConfig, out NativeArray<MockVoxelDensityArray>.ReadOnly mockDensityBuffer) ||
+                mockDensityBuffer.Length <= 0)
+            {
+                return false;
+            }
+
+            mockDensity = mockDensityBuffer[0];
+            return true;
+        }
+
+        private static bool TryCommitCsvTuning(
+            IDataVault vault,
+            in VoxelSurfaceNetsVaultHandles handles,
+            in VoxelMeshingTuningDTO tuning)
+        {
+            bool tuningLocked = false;
+            bool statesLocked = false;
+            try
+            {
+                if (vault == null ||
+                    !vault.TryAcquireWriteLock(in handles.Tuning, SystemID.WorldStreaming, out NativeArray<VoxelMeshingTuningDTO> tuningBuffer))
+                {
+                    return false;
+                }
+
+                tuningLocked = true;
+                if (!vault.TryAcquireWriteLock(in handles.States, SystemID.WorldStreaming, out NativeArray<ChunkMeshingStateDTO> states))
+                    return false;
+
+                statesLocked = true;
+                if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0 || !states.IsCreated)
+                    return false;
+
+                VoxelMeshingTuningDTO sanitized = SanitizeTuning(in tuning);
+                tuningBuffer[0] = sanitized;
+                MarkVisibleChunksDirty(states, sanitized.ForceRemeshVersion);
+                return true;
+            }
+            finally
+            {
+                if (statesLocked)
+                    vault.ReleaseWriteLock(in handles.States, SystemID.WorldStreaming);
+                if (tuningLocked)
+                    vault.ReleaseWriteLock(in handles.Tuning, SystemID.WorldStreaming);
+            }
+        }
+
+        private static bool TryClearBuffer<T>(IDataVault vault, in VaultGenerationHandle<T> handle)
+            where T : unmanaged
+        {
+            if (vault == null ||
+                handle.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.WorldStreaming, out NativeArray<T> buffer))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!buffer.IsCreated)
+                    return false;
+
+                ClearArray(buffer);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.WorldStreaming);
+            }
+        }
+
+        private static bool TryWriteEmergencyMockTables(
+            IDataVault vault,
+            in VoxelSurfaceNetsVaultHandles handles)
+        {
+            if (vault == null ||
+                handles.SurfaceEdgeMasks.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in handles.SurfaceEdgeMasks, SystemID.WorldStreaming, out NativeArray<uint> edgeMasks))
+            {
+                return false;
+            }
+
+            try
+            {
+                GenerateEmergencyMockTables(edgeMasks);
+                return edgeMasks.IsCreated;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handles.SurfaceEdgeMasks, SystemID.WorldStreaming);
+            }
+        }
+
+        private static bool TryWriteDefaultTuning(
+            IDataVault vault,
+            in VoxelSurfaceNetsVaultHandles handles)
+        {
+            if (vault == null ||
+                handles.Tuning.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in handles.Tuning, SystemID.WorldStreaming, out NativeArray<VoxelMeshingTuningDTO> tuningBuffer))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
+                    return false;
+
+                tuningBuffer[0] = VoxelSurfaceNetsDefaults.BuildDefaultTuning();
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handles.Tuning, SystemID.WorldStreaming);
+            }
+        }
+
+        private static bool TryWriteDefaultMockDensity(
+            IDataVault vault,
+            in VoxelSurfaceNetsVaultHandles handles)
+        {
+            if (vault == null ||
+                handles.MockDensityConfig.BufferID == 0u ||
+                !vault.TryAcquireWriteLock(in handles.MockDensityConfig, SystemID.WorldStreaming, out NativeArray<MockVoxelDensityArray> mockDensityBuffer))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!mockDensityBuffer.IsCreated || mockDensityBuffer.Length <= 0)
+                    return false;
+
+                mockDensityBuffer[0] = VoxelSurfaceNetsDefaults.BuildDefaultMockDensity();
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handles.MockDensityConfig, SystemID.WorldStreaming);
+            }
+        }
+
+        private static bool TryAcquireTelemetryDumpLease(
+            in VoxelSurfaceNetsVaultBuffers buffers,
+            out VoxelSurfaceNetsJobBufferLease lease)
+        {
+            lease = default;
+            IDataVault vault = buffers.Vault;
+            if (vault == null)
+                return false;
+
+            lease.Vault = vault;
+            if (!TryLockJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.TelemetryRing, JobTelemetryRingLock, ref lease))
+            {
+                ReleaseJobBufferLease(ref lease);
+                return false;
+            }
+
+            if (buffers.Handles.TelemetryCursor.BufferID != 0u &&
+                !TryLockJobBuffer(vault, VoxelSurfaceNetsVaultBufferIds.TelemetryCursor, JobTelemetryCursorLock, ref lease))
+            {
+                ReleaseJobBufferLease(ref lease);
+                return false;
+            }
+
+            return true;
         }
 
         private static bool TryLoadLookupFile(NativeArray<uint> edgeMasks, string path)
@@ -1015,6 +1620,15 @@ namespace Hecton8.World.VoxelSurfaceNets
             }
 
             return true;
+        }
+
+        private static bool TryWriteDumpFiles(string projectRoot, in VoxelSurfaceNetsVaultBuffers buffers, uint reason)
+        {
+            string dir = Path.Combine(projectRoot, "Docs", "AgentLogs");
+            Directory.CreateDirectory(dir);
+            bool primary = TryWriteDumpFile(Path.Combine(dir, DumpFileName), in buffers, reason);
+            bool agent = TryWriteDumpFile(Path.Combine(dir, AgentDumpFileName), in buffers, reason);
+            return primary && agent;
         }
 
         private static void WriteUInt32(Span<byte> target, int offset, uint value)

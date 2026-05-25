@@ -346,7 +346,7 @@ namespace Hecton8.Gameplay
         /// <summary>Applies the current swim presentation frame to the blockout rig. Safe to call from the presentation owner.</summary>
         public void SyncFromPresentation(float dt, bool forceFrame = false)
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (!forceFrame && _lastDrivenFrame == frame)
                 return;
 

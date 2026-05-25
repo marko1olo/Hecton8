@@ -890,7 +890,7 @@ namespace Hecton8.Audio
                 if (reportMissingConfig)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError("[HectonMusicDirector] Missing authored HectonMusicDirectorConfig for active scene.");
+                    Hecton8.Core.H8Debug.LogError("[HectonMusicDirector] Missing authored HectonMusicDirectorConfig for active scene.");
 #endif
                 }
 
@@ -900,7 +900,7 @@ namespace Hecton8.Audio
             if (sceneConfig.RuntimeDirectorPrefab == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[HectonMusicDirector] Missing authored RuntimeDirectorPrefab on active HectonMusicDirectorConfig.");
+                Hecton8.Core.H8Debug.LogError("[HectonMusicDirector] Missing authored RuntimeDirectorPrefab on active HectonMusicDirectorConfig.");
 #endif
                 return false;
             }
@@ -1117,7 +1117,7 @@ namespace Hecton8.Audio
 
         private void RefreshAudioServiceIfStale(int frame)
         {
-            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance, frame);
+            CacheAudioService(GlobalRegistry.Audio, frame);
         }
 
         private void RefreshAcousticZoneIfStale(int frame)
@@ -1889,20 +1889,16 @@ namespace Hecton8.Audio
             if (matrixProfile.musicBiomeProfile != null)
                 return matrixProfile.musicBiomeProfile;
 
-            string biomeName = matrixProfile.biomeName;
-            string description = matrixProfile.shortDescription;
-            string familyId = matrixProfile.familyId;
-
-            if (ContainsAnyToken(biomeName, ThermalTokens) ||
-                ContainsAnyToken(description, ThermalTokens) ||
-                ContainsAnyToken(familyId, ThermalTokens))
+            if (ContainsAnyToken(matrixProfile.biomeName, ThermalTokens) ||
+                ContainsAnyToken(matrixProfile.shortDescription, ThermalTokens) ||
+                ContainsAnyToken(matrixProfile.familyId, ThermalTokens))
             {
                 return _thermalProfile != null ? _thermalProfile : (_abyssProfile != null ? _abyssProfile : _fallbackProfile);
             }
 
-            if (ContainsAnyToken(biomeName, CaveTokens) ||
-                ContainsAnyToken(description, CaveTokens) ||
-                ContainsAnyToken(familyId, CaveTokens))
+            if (ContainsAnyToken(matrixProfile.biomeName, CaveTokens) ||
+                ContainsAnyToken(matrixProfile.shortDescription, CaveTokens) ||
+                ContainsAnyToken(matrixProfile.familyId, CaveTokens))
             {
                 return _caveProfile != null ? _caveProfile : (_shelfProfile != null ? _shelfProfile : _fallbackProfile);
             }
@@ -3098,7 +3094,7 @@ namespace Hecton8.Audio
             if (!_enableTelemetry)
                 return;
 
-            float now = Time.unscaledTime;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (now < _nextEditorDebugStateTime)
                 return;
 

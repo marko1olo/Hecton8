@@ -1152,15 +1152,21 @@ namespace Hecton8.AI
 
             NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
                 _indirectArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            try
             {
-                indexCountPerInstance = _crabBodyMesh.GetIndexCount(0),
-                instanceCount = (uint)instanceCount,
-                startIndex = _crabBodyMesh.GetIndexStart(0),
-                baseVertexIndex = (uint)Mathf.Max(0, _crabBodyMesh.GetBaseVertex(0)),
-                startInstance = 0u
-            };
-            _indirectArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+                argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+                {
+                    indexCountPerInstance = _crabBodyMesh.GetIndexCount(0),
+                    instanceCount = (uint)instanceCount,
+                    startIndex = _crabBodyMesh.GetIndexStart(0),
+                    baseVertexIndex = (uint)Mathf.Max(0, _crabBodyMesh.GetBaseVertex(0)),
+                    startInstance = 0u
+                };
+            }
+            finally
+            {
+                _indirectArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            }
             _argsUploadMesh = _crabBodyMesh;
             _argsUploadInstanceCount = instanceCount;
         }

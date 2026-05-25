@@ -1,5 +1,6 @@
 using System;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Hecton.Localization;
@@ -238,11 +239,11 @@ namespace Hecton8.Physics
     [AddComponentMenu("Hecton/Physics/Fluid Feedback Listener")]
     public sealed class FluidFeedbackListener : MonoBehaviour, IFluidSplashEventListener
     {
-        private AbyssalFluidDecalManager _fluidDecals;
+        private IFluidDecalPresentationSink _fluidDecals;
 
         private void OnEnable()
         {
-            _fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            _fluidDecals = GlobalRegistry.FluidDecalPresentation;
             FluidFeedbackEvents.Register(this);
         }
 

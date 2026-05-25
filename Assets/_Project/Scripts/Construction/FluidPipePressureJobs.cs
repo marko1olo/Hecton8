@@ -16,7 +16,10 @@ namespace Hecton8.Logistics
         public float DeltaTime;
         public float DefaultFlowRate;
 
-        [ReadOnly, NoAlias] public NativeParallelMultiHashMap<int, int> Connections;
+        public int ConnectionCount;
+
+        [ReadOnly, NoAlias] public NativeArray<int> ConnectionSources;
+        [ReadOnly, NoAlias] public NativeArray<int> ConnectionDestinations;
         [ReadOnly, NoAlias] public NativeArray<byte> PipeContentKinds;
         [ReadOnly, NoAlias] public NativeArray<int> PipeNetworkIds;
         [ReadOnly, NoAlias] public NativeArray<int> PipeRoomIndices;
@@ -33,7 +36,7 @@ namespace Hecton8.Logistics
         [NoAlias] public NativeArray<float> PipeRoomExchangeContents;
         [WriteOnly, NoAlias] public NativeArray<FluidPipeTelemetryEntry> TelemetryRing;
         [WriteOnly, NoAlias] public NativeArray<FluidPipeRuptureRecord> RuptureTelemetryRing;
-        [WriteOnly, NoAlias] public NativeQueue<FluidPipeRuptureRecord>.ParallelWriter Ruptures;
+        [WriteOnly, NoAlias] public NativeArray<FluidPipeRuptureRecord> Ruptures;
         [NativeDisableParallelForRestriction] public NativeArray<int> RuptureBudget;
 
         public void Execute()
@@ -81,29 +84,24 @@ namespace Hecton8.Logistics
                 PipeRoomExchangeContents[i] = 0f;
             }
 
-            for (int nodeIndex = 0; nodeIndex < count; nodeIndex++)
+            int edgeCount = math.max(0, math.min(ConnectionCount, math.min(ConnectionSources.Length, ConnectionDestinations.Length)));
+            for (int edgeIndex = 0; edgeIndex < edgeCount; edgeIndex++)
             {
+                int nodeIndex = ConnectionSources[edgeIndex];
+                int neighborIndex = ConnectionDestinations[edgeIndex];
+                if (nodeIndex < 0 ||
+                    nodeIndex >= count ||
+                    neighborIndex <= nodeIndex ||
+                    neighborIndex >= count)
+                    continue;
+
                 byte flags = PipeFlags[nodeIndex];
                 if ((flags & (byte)FluidPipeFlags.Active) == 0 ||
                     (flags & (byte)FluidPipeFlags.Disabled) != 0 ||
                     (flags & (byte)FluidPipeFlags.Ruptured) != 0)
-                {
-                    continue;
-                }
-
-                NativeParallelMultiHashMapIterator<int> iterator;
-                int neighborIndex;
-                if (!Connections.TryGetFirstValue(nodeIndex, out neighborIndex, out iterator))
                     continue;
 
-                do
-                {
-                    if (neighborIndex <= nodeIndex || neighborIndex < 0 || neighborIndex >= count)
-                        continue;
-
-                    TransferAcrossEdge(nodeIndex, neighborIndex, dt, defaultRate);
-                }
-                while (Connections.TryGetNextValue(out neighborIndex, ref iterator));
+                TransferAcrossEdge(nodeIndex, neighborIndex, dt, defaultRate);
             }
 
             float totalWater = 0f;
@@ -192,7 +190,8 @@ namespace Hecton8.Logistics
                    PipeFlags.IsCreated &&
                    PipeFlowVectors.IsCreated &&
                    PipeRoomExchangeContents.IsCreated &&
-                   Connections.IsCreated;
+                   ConnectionSources.IsCreated &&
+                   ConnectionDestinations.IsCreated;
         }
 
         private int ResolveSafeNodeCount()
@@ -324,7 +323,7 @@ namespace Hecton8.Logistics
                 Flags = flags
             };
 
-            TryEnqueueBounded(Ruptures, RuptureBudget, in record);
+            TryWriteRuptureBounded(Ruptures, RuptureBudget, in record);
             if (RuptureTelemetryRing.IsCreated && RuptureTelemetryRing.Length > 0)
             {
                 int index = (TelemetryIndex + ruptureSequence) % RuptureTelemetryRing.Length;
@@ -334,15 +333,16 @@ namespace Hecton8.Logistics
             }
         }
 
-        private static unsafe bool TryEnqueueBounded(
-            NativeQueue<FluidPipeRuptureRecord>.ParallelWriter writer,
+        private static unsafe bool TryWriteRuptureBounded(
+            NativeArray<FluidPipeRuptureRecord> writer,
             NativeArray<int> writerBudget,
             in FluidPipeRuptureRecord record)
         {
             const int remainingIndex = 0;
-            const int droppedIndex = 1;
-            const int budgetLength = 2;
-            if (!writerBudget.IsCreated || writerBudget.Length < budgetLength)
+            const int writtenIndex = 1;
+            const int droppedIndex = 2;
+            const int budgetLength = 3;
+            if (!writer.IsCreated || !writerBudget.IsCreated || writerBudget.Length < budgetLength)
                 return false;
 
             int* budget = (int*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(writerBudget);
@@ -353,8 +353,15 @@ namespace Hecton8.Logistics
                 return false;
             }
 
-            writer.Enqueue(record);
-            return true;
+            int writeIndex = Interlocked.Increment(ref budget[writtenIndex]) - 1;
+            if (writeIndex >= 0 && writeIndex < writer.Length)
+            {
+                writer[writeIndex] = record;
+                return true;
+            }
+
+            Interlocked.Increment(ref budget[droppedIndex]);
+            return false;
         }
 
         private void WriteTelemetry(

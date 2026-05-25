@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Physics;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -443,7 +444,7 @@ namespace Hecton8.Construction
 
             nodeCapacity = math.clamp(nodeCapacity, 16, SumpPumpPipeGridConstants.MaxPumpNodes);
             edgeCapacity = math.clamp(edgeCapacity, 16, SumpPumpPipeGridConstants.MaxPipeEdges);
-            int roomLockCapacity = math.max(nodeCapacity, Hecton8.Physics.HabitatFluidIncursionConstants.MaxCompartments);
+            int roomLockCapacity = math.max(nodeCapacity, HabitatFluidIncursionConstants.MaxCompartments);
             _pumpNodesHandle = _vault.EnsureGenerationHandle<DrainageNodeDTO>(SumpPumpDrainageBufferIds.PumpNodes, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
             _pipeEdgesHandle = _vault.EnsureGenerationHandle<PipeEdgeDTO>(SumpPumpDrainageBufferIds.PipeEdges, edgeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
             _nodeAupHandle = _vault.EnsureGenerationHandle<double3>(SumpPumpDrainageBufferIds.NodeAup, nodeCapacity, OwnerSystem, NativeArrayOptions.ClearMemory);
@@ -497,7 +498,7 @@ namespace Hecton8.Construction
         {
             int safeNodes = math.max(1, nodeCapacity);
             int safeEdges = math.max(1, edgeCapacity);
-            int safeRoomLocks = math.max(safeNodes, Hecton8.Physics.HabitatFluidIncursionConstants.MaxCompartments);
+            int safeRoomLocks = math.max(safeNodes, HabitatFluidIncursionConstants.MaxCompartments);
             return HasResolvedBuffer(in _pumpNodesHandle, safeNodes) &&
                    HasResolvedBuffer(in _pipeEdgesHandle, safeEdges) &&
                    HasResolvedBuffer(in _nodeAupHandle, safeNodes) &&
@@ -579,8 +580,8 @@ namespace Hecton8.Construction
             int nodeCount = ResolveNodeCount(counters);
             int edgeCount = ResolveEdgeCount(counters);
             uint telemetryFlags = SumpDrainageTelemetryFlags.None;
-            bool hasFluidFront = TryLockAndReadExistingBuffer(BufferID.ShinobuFluidCompartmentFront, 20, out NativeArray<Hecton8.Physics.FluidCompartmentDTO> fluidFront);
-            bool hasFluidBack = TryLockAndBorrowMutableExistingBuffer(BufferID.ShinobuFluidCompartmentBack, 21, out NativeArray<Hecton8.Physics.FluidCompartmentDTO> fluidBack);
+            bool hasFluidFront = TryLockAndReadExistingBuffer(BufferID.ShinobuFluidCompartmentFront, 20, out NativeArray<FluidCompartmentDTO> fluidFront);
+            bool hasFluidBack = TryLockAndBorrowMutableExistingBuffer(BufferID.ShinobuFluidCompartmentBack, 21, out NativeArray<FluidCompartmentDTO> fluidBack);
             bool hasPowerNodes = TryLockAndReadExistingBuffer(Hecton8.Power.PowerGridBufferIds.Nodes, 24, out NativeArray<Hecton8.Power.PowerNodeDTO> powerNodes);
             bool hasPowerPotential = TryLockAndReadExistingBuffer(Hecton8.Power.PowerGridBufferIds.PotentialFront, 25, out NativeArray<float> powerPotentialFront);
             int compartmentCount = hasFluidFront && hasFluidBack ? math.min(fluidFront.Length, fluidBack.Length) : 0;
@@ -694,8 +695,8 @@ namespace Hecton8.Construction
                 ExecuteWaterEvacuationJob evacuateJob = new ExecuteWaterEvacuationJob
                 {
                     PumpNodes = pumpPtr,
-                    FrontCompartments = (Hecton8.Physics.FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(fluidFront),
-                    BackCompartments = (Hecton8.Physics.FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(fluidBack),
+                    FrontCompartments = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(fluidFront),
+                    BackCompartments = (FluidCompartmentDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(fluidBack),
                     PumpRoomIndices = roomIndices,
                     PumpRemainderM3 = pumpRemainder,
                     PumpMassErrorM3 = pumpMassError,
@@ -1232,10 +1233,16 @@ namespace Hecton8.Construction
                 return;
 
             NativeArray<DrainagePipeFlowGpuDTO> mapped = target.LockBufferForWrite<DrainagePipeFlowGpuDTO>(0, safeCount);
-            void* dst = NativeArrayUnsafeUtility.GetUnsafePtr(mapped);
-            void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(flowGpu);
-            UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<DrainagePipeFlowGpuDTO>());
-            target.UnlockBufferAfterWrite<DrainagePipeFlowGpuDTO>(safeCount);
+            try
+            {
+                void* dst = NativeArrayUnsafeUtility.GetUnsafePtr(mapped);
+                void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(flowGpu);
+                UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<DrainagePipeFlowGpuDTO>());
+            }
+            finally
+            {
+                target.UnlockBufferAfterWrite<DrainagePipeFlowGpuDTO>(safeCount);
+            }
             Shader.SetGlobalBuffer(s_DrainagePipeEdgeFlowId, target);
             Shader.SetGlobalInt(s_DrainagePipeEdgeCountId, safeCount);
         }

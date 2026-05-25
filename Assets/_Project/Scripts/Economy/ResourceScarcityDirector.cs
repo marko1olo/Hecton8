@@ -24,7 +24,7 @@ namespace Hecton8.Economy
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6250)]
     [AddComponentMenu("Hecton8/Economy/Resource Scarcity Director")]
-    public sealed class ResourceScarcityDirector : MonoBehaviour, ISaveable, ISlowTickable, IInteractionEventListener, IGlobalRegistryHotSwapListener
+    public sealed class ResourceScarcityDirector : MonoBehaviour, ISaveable, ISlowTickable, IResourceScarcityReadModel, IInteractionEventListener, IGlobalRegistryHotSwapListener
     {
         private const int InitialTrackedCapacity = 64;
         private const int UnitsPerScarcityStep = 100;
@@ -940,10 +940,10 @@ namespace Hecton8.Economy
 
         private void CacheRegistryServicesCold()
         {
-            _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _cachedSaveService = GlobalRegistry.Save;
             _cachedQuestManager = GlobalRegistry.QuestSystem;
             _cachedInventoryService = GlobalRegistry.PlayerInventory;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
         }
 
         private void TryRegisterWithSaveManager()

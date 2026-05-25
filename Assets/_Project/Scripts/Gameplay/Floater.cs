@@ -24,7 +24,6 @@ using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Interaction;
 using Hecton.Localization;
-using Hecton8.Physics;
 using Hecton8.World;
 using System;
 using UnityEngine;
@@ -162,6 +161,7 @@ namespace Hecton8.Gameplay
         private bool _hotSwapRegistered;
         private IAudioService _audioService;
         private ILocalizationTextReadModel _localizationManager;
+        private IPhysicsService _physicsService;
         // COLD ALLOC: SpatialQueryHit[16] - registered owner attach probe buffer - owner: Floater
         private readonly SpatialQueryHit[] _attachQueryHits = new SpatialQueryHit[AttachQueryCapacity];
 
@@ -355,7 +355,7 @@ namespace Hecton8.Gameplay
             {
                 float safeMass = Mathf.Max(_attachedBody.mass, 0.0001f);
                 Vector3 buoyancyAcceleration = Vector3.up * (buoyancyForce / safeMass);
-                PhysicsForceRouter.QueueForce(_attachedBody, buoyancyAcceleration, ForceMode.Acceleration);
+                _physicsService?.QueueForce(_attachedBody, buoyancyAcceleration, ForceMode.Acceleration);
             }
 
             // Update position to follow attached object
@@ -613,7 +613,7 @@ namespace Hecton8.Gameplay
             if (_attachedBody == null || _attachedTransform == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[Floater] Cannot attach to object without Rigidbody.", this);
+                Hecton8.Core.H8Debug.LogWarning("[Floater] Cannot attach to object without Rigidbody.", this);
 #endif
                 return;
             }
@@ -696,8 +696,9 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
         private void CacheRegistryServicesCold()
         {
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _localizationManager = GlobalRegistry.LocalizationText;
+            _physicsService = GlobalRegistry.Physics;
         }
 
         private void TryRegisterHotSwapListener()
@@ -730,6 +731,9 @@ namespace Hecton8.Gameplay
                 case GlobalRegistryServiceSlot.LocalizationRuntime:
                     _localizationManager = currentService as ILocalizationTextReadModel;
                     RebuildLocalizedTextCache();
+                    break;
+                case GlobalRegistryServiceSlot.Physics:
+                    _physicsService = currentService as IPhysicsService;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _isRegistered = false;

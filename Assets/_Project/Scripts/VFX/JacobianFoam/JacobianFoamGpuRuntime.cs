@@ -210,40 +210,92 @@ namespace Hecton8.VFX
             CacheRenderContextCameraIfMissing();
             _currentScrollOffset = ResolveCameraScrollOffset(_primaryCamera, _textureWorldSizeMeters);
 
-            NativeArray<FoamComputeParamsDTO> paramsArray = ResolveParamsArray();
-            if (!paramsArray.IsCreated || paramsArray.Length <= 0)
+            if (!TryAcquireWriteBuffer(
+                    in _paramsHandle,
+                    1,
+                    out NativeArray<FoamComputeParamsDTO> paramsArray))
             {
                 ClearPreparedPayload();
                 return;
             }
 
-            NativeArray<FoamWakeImpactDTO> wakeArray = ResolveWakeArray();
-            if (_generateMockStormState)
+            bool wakeReadPinned = false;
+            bool wakeWriteLocked = false;
+            bool tuningWriteLocked = false;
+            NativeArray<FoamWakeImpactDTO> wakeArray = default;
+            NativeArray<FoamTuningDTO> tuningArray = default;
+            try
             {
-                GenerateMockStormStateJob job = new GenerateMockStormStateJob
+                if (_generateMockStormState)
                 {
-                    Params = paramsArray,
-                    Tuning = ResolveTuningArray(),
-                    WakeImpacts = wakeArray,
-                    TimeSeconds = phaseTime,
-                    GlobalQualityWeight = _qualityWeight,
-                    DeltaTime = _lastDeltaTime,
-                    ScrollOffset = _currentScrollOffset
-                };
-                job.Run();
-            }
-            else if (paramsArray.IsCreated && paramsArray.Length > 0)
-            {
-                ref FoamComputeParamsDTO paramRef = ref JacobianFoamContracts.MutableParamsRef(paramsArray);
-                paramRef = JacobianFoamContracts.BuildParams(in tuning, _qualityWeight, _lastDeltaTime, _currentScrollOffset);
-            }
+                    if (!TryAcquireWriteBuffer(
+                            in _tuningHandle,
+                            1,
+                            out tuningArray))
+                    {
+                        ClearPreparedPayload();
+                        return;
+                    }
 
-            _lastWakeCount = ResolveWakeCount(wakeArray, _qualityWeight);
-            UploadParams(paramsArray);
-            UploadWakes(wakeArray, _lastWakeCount);
-            RecordTelemetry(tuning);
-            PublishRenderGraphPayload();
-            _frame++;
+                    tuningWriteLocked = true;
+                    if (!TryAcquireWriteBuffer(
+                            in _wakeHandle,
+                            JacobianFoamContracts.WakeImpactCapacity,
+                            out wakeArray))
+                    {
+                        ClearPreparedPayload();
+                        return;
+                    }
+
+                    wakeWriteLocked = true;
+                    GenerateMockStormStateJob job = new GenerateMockStormStateJob
+                    {
+                        Params = paramsArray,
+                        Tuning = tuningArray,
+                        WakeImpacts = wakeArray,
+                        TimeSeconds = phaseTime,
+                        GlobalQualityWeight = _qualityWeight,
+                        DeltaTime = _lastDeltaTime,
+                        ScrollOffset = _currentScrollOffset
+                    };
+                    job.Run();
+                    if (tuningArray.IsCreated && tuningArray.Length > 0 && tuningArray[0].Version != 0u)
+                        tuning = tuningArray[0];
+                }
+                else
+                {
+                    if (!TryAcquireReadPin(
+                            in _wakeHandle,
+                            BufferID.JacobianFoamWakeImpacts,
+                            JacobianFoamContracts.WakeImpactCapacity,
+                            out wakeArray))
+                    {
+                        ClearPreparedPayload();
+                        return;
+                    }
+
+                    wakeReadPinned = true;
+                    ref FoamComputeParamsDTO paramRef = ref JacobianFoamContracts.MutableParamsRef(paramsArray);
+                    paramRef = JacobianFoamContracts.BuildParams(in tuning, _qualityWeight, _lastDeltaTime, _currentScrollOffset);
+                }
+
+                _lastWakeCount = ResolveWakeCount(wakeArray, _qualityWeight);
+                UploadParams(paramsArray);
+                UploadWakes(wakeArray, _lastWakeCount);
+                RecordTelemetry(tuning);
+                PublishRenderGraphPayload();
+                _frame++;
+            }
+            finally
+            {
+                if (wakeReadPinned)
+                    ReleaseReadPin(BufferID.JacobianFoamWakeImpacts);
+                if (wakeWriteLocked)
+                    ReleaseWriteBuffer(in _wakeHandle);
+                if (tuningWriteLocked)
+                    ReleaseWriteBuffer(in _tuningHandle);
+                ReleaseWriteBuffer(in _paramsHandle);
+            }
         }
 
         public bool TryReadRenderGraphPayload(out FoamRenderGraphPayload payload)
@@ -457,9 +509,8 @@ namespace Hecton8.VFX
                 return false;
             }
 
-            NativeArray<FoamTuningDTO> tuning = ResolveTuningArray();
-            if (allowCreate && tuning.IsCreated && tuning.Length > 0 && tuning[0].Version == 0u)
-                tuning[0] = JacobianFoamContracts.CreateDefaultTuning();
+            if (allowCreate && !TrySeedDefaultTuning())
+                return false;
 
             _vaultReady =
                 IsHandleCreated(in _paramsHandle, BufferID.JacobianFoamParams) &&
@@ -601,25 +652,25 @@ namespace Hecton8.VFX
 
         private FoamTuningDTO ResolveTuning()
         {
-            NativeArray<FoamTuningDTO> tuning = ResolveTuningArray();
-            return tuning.IsCreated && tuning.Length > 0 && tuning[0].Version != 0u
-                ? tuning[0]
-                : JacobianFoamContracts.CreateDefaultTuning();
-        }
+            if (!TryAcquireReadPin(
+                    in _tuningHandle,
+                    BufferID.JacobianFoamTuning,
+                    1,
+                    out NativeArray<FoamTuningDTO> tuning))
+            {
+                return JacobianFoamContracts.CreateDefaultTuning();
+            }
 
-        private NativeArray<FoamComputeParamsDTO> ResolveParamsArray()
-        {
-            return TryResolveHandle(in _paramsHandle, BufferID.JacobianFoamParams, 1, out NativeArray<FoamComputeParamsDTO> buffer) ? buffer : default;
-        }
-
-        private NativeArray<FoamTuningDTO> ResolveTuningArray()
-        {
-            return TryResolveHandle(in _tuningHandle, BufferID.JacobianFoamTuning, 1, out NativeArray<FoamTuningDTO> buffer) ? buffer : default;
-        }
-
-        private NativeArray<FoamWakeImpactDTO> ResolveWakeArray()
-        {
-            return TryResolveHandle(in _wakeHandle, BufferID.JacobianFoamWakeImpacts, JacobianFoamContracts.WakeImpactCapacity, out NativeArray<FoamWakeImpactDTO> buffer) ? buffer : default;
+            try
+            {
+                return tuning.IsCreated && tuning.Length > 0 && tuning[0].Version != 0u
+                    ? tuning[0]
+                    : JacobianFoamContracts.CreateDefaultTuning();
+            }
+            finally
+            {
+                ReleaseReadPin(BufferID.JacobianFoamTuning);
+            }
         }
 
         private void UploadParams(NativeArray<FoamComputeParamsDTO> paramsArray)
@@ -640,8 +691,14 @@ namespace Hecton8.VFX
                 Source = paramsArray,
                 Destination = mapped
             };
-            copyJob.Run();
-            writeBuffer.UnlockBufferAfterWrite<FoamComputeParamsDTO>(1);
+            try
+            {
+                copyJob.Run();
+            }
+            finally
+            {
+                writeBuffer.UnlockBufferAfterWrite<FoamComputeParamsDTO>(1);
+            }
             _activeParamsBuffer = writeBuffer;
         }
 
@@ -661,8 +718,14 @@ namespace Hecton8.VFX
                 Destination = mapped,
                 Count = wakeCount
             };
-            copyJob.Run();
-            writeBuffer.UnlockBufferAfterWrite<FoamWakeImpactDTO>(JacobianFoamContracts.WakeImpactCapacity);
+            try
+            {
+                copyJob.Run();
+            }
+            finally
+            {
+                writeBuffer.UnlockBufferAfterWrite<FoamWakeImpactDTO>(JacobianFoamContracts.WakeImpactCapacity);
+            }
             _activeWakeBuffer = writeBuffer;
         }
 
@@ -682,47 +745,57 @@ namespace Hecton8.VFX
             if (!IsHandleCreated(in _telemetryHandle, BufferID.JacobianFoamTelemetryRing) || _vault == null || _vault.IsCompactionFenceActive)
                 return;
 
-            if (!TryResolveHandle(in _telemetryHandle, BufferID.JacobianFoamTelemetryRing, JacobianFoamContracts.TelemetryCapacity, out NativeArray<FoamRenderTelemetryEntry> telemetry))
+            if (!TryAcquireWriteBuffer(
+                    in _telemetryHandle,
+                    JacobianFoamContracts.TelemetryCapacity,
+                    out NativeArray<FoamRenderTelemetryEntry> telemetry))
                 return;
 
-            if (!telemetry.IsCreated || telemetry.Length <= 0)
-                return;
-
-            int slot = _telemetryCursor % telemetry.Length;
-            float resolutionScale = _maxResolution <= 0 ? 1f : math.saturate(_resolution / (float)_maxResolution);
-            _lastEstimatedGpuMicroseconds = JacobianFoamContracts.EstimateGpuMicroseconds(_resolution, _lastWakeCount, _qualityWeight);
-            bool budgetSpike = _dumpOnBudgetSpike && _lastEstimatedGpuMicroseconds > GpuDumpThresholdMicroseconds;
-            uint flags = _clearHistoryNextDispatch ? 2u : 1u;
-            if (budgetSpike)
-                flags |= 4u;
-            telemetry[slot] = new FoamRenderTelemetryEntry
+            try
             {
-                Frame = _frame,
-                Resolution = _resolution,
-                WakeCount = _lastWakeCount,
-                DispatchGroups = math.max(
-                    JacobianFoamContracts.ResolveDispatchGroups(_resolution, _threadGroupSizeX),
-                    JacobianFoamContracts.ResolveDispatchGroups(_resolution, _threadGroupSizeY)),
-                GlobalQualityWeight = _qualityWeight,
-                ResolutionScale = resolutionScale,
-                EstimatedGpuMicroseconds = _lastEstimatedGpuMicroseconds,
-                ShorelineContribution = tuning.ShorelineDepthFade,
-                ScrollOffset = _currentScrollOffset,
-                StateHash = JacobianFoamContracts.HashState(_frame, _resolution, _lastWakeCount, _qualityWeight, _currentScrollOffset, JacobianFoamContracts.DefaultProfileHash),
-                Flags = flags,
-                Cursor = (uint)_telemetryCursor,
-                ProfileHash = JacobianFoamContracts.DefaultProfileHash,
-                DecayRate = tuning.DecayRate,
-                Pad0 = 0u
-            };
+                if (!telemetry.IsCreated || telemetry.Length <= 0)
+                    return;
 
-            _telemetryCursor = (_telemetryCursor + 1) % telemetry.Length;
-            _telemetryWritten = math.min(_telemetryWritten + 1, telemetry.Length);
-            if (budgetSpike)
+                int slot = _telemetryCursor % telemetry.Length;
+                float resolutionScale = _maxResolution <= 0 ? 1f : math.saturate(_resolution / (float)_maxResolution);
+                _lastEstimatedGpuMicroseconds = JacobianFoamContracts.EstimateGpuMicroseconds(_resolution, _lastWakeCount, _qualityWeight);
+                bool budgetSpike = _dumpOnBudgetSpike && _lastEstimatedGpuMicroseconds > GpuDumpThresholdMicroseconds;
+                uint flags = _clearHistoryNextDispatch ? 2u : 1u;
+                if (budgetSpike)
+                    flags |= 4u;
+                telemetry[slot] = new FoamRenderTelemetryEntry
+                {
+                    Frame = _frame,
+                    Resolution = _resolution,
+                    WakeCount = _lastWakeCount,
+                    DispatchGroups = math.max(
+                        JacobianFoamContracts.ResolveDispatchGroups(_resolution, _threadGroupSizeX),
+                        JacobianFoamContracts.ResolveDispatchGroups(_resolution, _threadGroupSizeY)),
+                    GlobalQualityWeight = _qualityWeight,
+                    ResolutionScale = resolutionScale,
+                    EstimatedGpuMicroseconds = _lastEstimatedGpuMicroseconds,
+                    ShorelineContribution = tuning.ShorelineDepthFade,
+                    ScrollOffset = _currentScrollOffset,
+                    StateHash = JacobianFoamContracts.HashState(_frame, _resolution, _lastWakeCount, _qualityWeight, _currentScrollOffset, JacobianFoamContracts.DefaultProfileHash),
+                    Flags = flags,
+                    Cursor = (uint)_telemetryCursor,
+                    ProfileHash = JacobianFoamContracts.DefaultProfileHash,
+                    DecayRate = tuning.DecayRate,
+                    Pad0 = 0u
+                };
+
+                _telemetryCursor = (_telemetryCursor + 1) % telemetry.Length;
+                _telemetryWritten = math.min(_telemetryWritten + 1, telemetry.Length);
+                if (budgetSpike)
+                {
+                    _deferredTelemetryDumpRequested = true;
+                    _deferredTelemetryDumpCursor = _telemetryCursor;
+                    _deferredTelemetryDumpWritten = _telemetryWritten;
+                }
+            }
+            finally
             {
-                _deferredTelemetryDumpRequested = true;
-                _deferredTelemetryDumpCursor = _telemetryCursor;
-                _deferredTelemetryDumpWritten = _telemetryWritten;
+                ReleaseWriteBuffer(in _telemetryHandle);
             }
         }
 
@@ -736,15 +809,26 @@ namespace Hecton8.VFX
             if (!_deferredTelemetryDumpRequested ||
                 _vault == null ||
                 _vault.IsCompactionFenceActive ||
-                !TryResolveHandle(in _telemetryHandle, BufferID.JacobianFoamTelemetryRing, JacobianFoamContracts.TelemetryCapacity, out NativeArray<FoamRenderTelemetryEntry> telemetry))
+                !TryAcquireReadPin(
+                    in _telemetryHandle,
+                    BufferID.JacobianFoamTelemetryRing,
+                    JacobianFoamContracts.TelemetryCapacity,
+                    out NativeArray<FoamRenderTelemetryEntry> telemetry))
             {
                 return false;
             }
 
-            bool wrote = FoamTelemetryDump.TryWrite(ProjectRoot(), telemetry, _deferredTelemetryDumpCursor, _deferredTelemetryDumpWritten);
-            if (wrote)
-                _deferredTelemetryDumpRequested = false;
-            return wrote;
+            try
+            {
+                bool wrote = FoamTelemetryDump.TryWrite(ProjectRoot(), telemetry, _deferredTelemetryDumpCursor, _deferredTelemetryDumpWritten);
+                if (wrote)
+                    _deferredTelemetryDumpRequested = false;
+                return wrote;
+            }
+            finally
+            {
+                ReleaseReadPin(BufferID.JacobianFoamTelemetryRing);
+            }
         }
 
         private void ClearPreparedPayload()
@@ -824,6 +908,84 @@ namespace Hecton8.VFX
                 _vault.TryResolveHandle(in handle, out buffer) &&
                 buffer.IsCreated &&
                 buffer.Length >= requiredLength;
+        }
+
+        private bool TryAcquireWriteBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (_vault == null ||
+                requiredLength <= 0 ||
+                !_vault.TryAcquireWriteLock(in handle, SystemID.Vfx, out buffer))
+            {
+                return false;
+            }
+
+            if (buffer.IsCreated && buffer.Length >= requiredLength)
+                return true;
+
+            _vault.ReleaseWriteLock(in handle, SystemID.Vfx);
+            buffer = default;
+            return false;
+        }
+
+        private void ReleaseWriteBuffer<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (_vault != null)
+                _vault.ReleaseWriteLock(in handle, SystemID.Vfx);
+        }
+
+        private bool TryAcquireReadPin<T>(
+            in VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            if (_vault == null ||
+                requiredLength <= 0 ||
+                !IsHandleCreated(in handle, bufferId) ||
+                !_vault.TryLockBuffer(bufferId, SystemID.Vfx))
+            {
+                return false;
+            }
+
+            if (TryResolveHandle(in handle, bufferId, requiredLength, out buffer))
+                return true;
+
+            _vault.TryUnlockBuffer(bufferId, SystemID.Vfx);
+            buffer = default;
+            return false;
+        }
+
+        private void ReleaseReadPin(BufferID bufferId)
+        {
+            if (_vault != null)
+                _vault.TryUnlockBuffer(bufferId, SystemID.Vfx);
+        }
+
+        private bool TrySeedDefaultTuning()
+        {
+            if (!TryAcquireWriteBuffer(
+                    in _tuningHandle,
+                    1,
+                    out NativeArray<FoamTuningDTO> tuning))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (tuning.IsCreated && tuning.Length > 0 && tuning[0].Version == 0u)
+                    tuning[0] = JacobianFoamContracts.CreateDefaultTuning();
+                return true;
+            }
+            finally
+            {
+                ReleaseWriteBuffer(in _tuningHandle);
+            }
         }
 
         private static float2 ResolveCameraScrollOffset(Camera camera, float textureWorldSizeMeters)

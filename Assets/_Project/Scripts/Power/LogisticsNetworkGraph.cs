@@ -3075,7 +3075,7 @@ namespace Hecton8.Power
             }
             catch (Exception)
             {
-                Debug.LogError("Power grid black-box dump failed.");
+                Hecton8.Core.H8Debug.LogError("Power grid black-box dump failed.");
             }
         }
 

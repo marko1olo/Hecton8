@@ -684,13 +684,13 @@ namespace Hecton8.Scavenging
     {
         [ReadOnly, NoAlias] public NativeArray<ScavengingResolvedYieldDTO> ResolvedYields;
         public int YieldCount;
-        public NativeQueue<ItemAcquiredSignal>.ParallelWriter ItemWriter;
+        public global::Hecton8.Core.MpscSignalRingBuffer<ItemAcquiredSignal>.ParallelWriter ItemWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> ItemWriterBudget;
-        public NativeQueue<VisualScavengeSignal>.ParallelWriter VisualWriter;
+        public global::Hecton8.Core.MpscSignalRingBuffer<VisualScavengeSignal>.ParallelWriter VisualWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> VisualWriterBudget;
-        public NativeQueue<ResourceDepletionDeltaSignal>.ParallelWriter DepletionWriter;
+        public global::Hecton8.Core.MpscSignalRingBuffer<ResourceDepletionDeltaSignal>.ParallelWriter DepletionWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> DepletionWriterBudget;
-        public NativeQueue<HUDNotificationSignal>.ParallelWriter HudWriter;
+        public global::Hecton8.Core.MpscSignalRingBuffer<HUDNotificationSignal>.ParallelWriter HudWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> HudWriterBudget;
         public void Execute()
         {

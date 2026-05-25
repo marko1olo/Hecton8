@@ -12,7 +12,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Barter Tab")]
-    public sealed class PDABarterTab : MonoBehaviour, IPDAEventListener, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class PDABarterTab : MonoBehaviour, IPDAEventListener, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.84f);
         private static readonly Color BoxBg = new Color(0.05f, 0.12f, 0.14f, 0.72f);
@@ -67,7 +67,6 @@ namespace Hecton8.UI
         private PDABarterActionButton[] _cardButtons;
         private PDAExchangeSystem.OfferSnapshot[] _snapshotBuffer;
         private PDAExchangeSystem.TransactionSnapshot[] _transactionBuffer;
-        private bool _registered;
         private bool _registeredLateFrame;
         private bool _hotSwapRegistered;
         private bool _refreshAllPending;
@@ -184,13 +183,10 @@ namespace Hecton8.UI
             _exchangeSourceId = RuntimeOriginRoute.FoldEntityIdToSourceId(EntityId.ToULong(current.GetEntityId()));
         }
 
-        public void Tick(float deltaTime)
-        {
-            ProcessExchangeSignals();
-        }
-
         public void LateFrameTick()
         {
+            ProcessExchangeSignals();
+
             if (!_refreshAllPending)
                 return;
 
@@ -232,8 +228,6 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_registered)
-                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
@@ -244,12 +238,6 @@ namespace Hecton8.UI
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _registeredLateFrame = false;
-            }
-
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registered = false;
             }
 
             _refreshAllPending = false;

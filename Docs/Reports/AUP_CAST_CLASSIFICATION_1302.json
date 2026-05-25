@@ -1,0 +1,56 @@
+{
+    "schema":  "hecton8.aup_cast_classification_1302.v1",
+    "generatedAt":  "2026-05-25",
+    "rawScanPath":  "Docs/Reports/AUP_CAST_SCAN_1302.txt",
+    "runtimeAuthorityViolations":  0,
+    "entries":  [
+                    {
+                        "path":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsJobs.cs",
+                        "lines":  "1274-1281",
+                        "classification":  "valid_runtime_double_delta_before_float3",
+                        "formula":  "local = float3(state.AUP_Position - cameraAup) after both double3 values sanitized"
+                    },
+                    {
+                        "path":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementJobs.cs",
+                        "lines":  "293-294",
+                        "classification":  "valid_runtime_double_delta_before_float3",
+                        "formula":  "deltaAup = state.CurrentAUP - request.OriginAup; localDelta = float3(deltaAup)"
+                    },
+                    {
+                        "path":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementJobs.cs",
+                        "lines":  "826-828",
+                        "classification":  "valid_runtime_double_delta_before_float3",
+                        "formula":  "originAup = select(sectorAup, config.SdfOriginAUP); localAup = objectAup - originAup; local = float3(localAup)"
+                    },
+                    {
+                        "path":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                        "lines":  "1943-1952",
+                        "classification":  "editor_gizmo_valid_double_delta_before_float",
+                        "formula":  "origin = ResolveCachedOriginAup(); y = state.LastHeightAupY - origin.y; x/z are cached local floats"
+                    },
+                    {
+                        "path":  "Assets/_Project/Scripts/Physics/KCC/KinematicSleepStateJobs.cs",
+                        "lines":  "262-264",
+                        "classification":  "valid_runtime_double_delta_before_float3",
+                        "formula":  "originAup = select(sectorAup, config.SdfOriginAUP); localAup = objectAup - originAup; rawLocal = float3(localAup)"
+                    },
+                    {
+                        "path":  "Assets/_Project/Scripts/Physics/KCC/HectonKccRuntime_SmokeTest.cs",
+                        "lines":  "481-487",
+                        "classification":  "test_metric_not_spatial_authority",
+                        "formula":  "drift residual = double abs(AUP_Position.x - round(AUP_Position.x*1000d)*0.001d), then cast bounded residual to float"
+                    },
+                    {
+                        "path":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                        "lines":  "748-760",
+                        "classification":  "editor_only_absolute_gizmo_cast",
+                        "formula":  "#if UNITY_EDITOR DrawGyroDebugGizmos only; not runtime physics authority"
+                    },
+                    {
+                        "path":  "Assets/_Project/Scripts/Physics/Seaglide/Editor/SeaglideHydrodynamicsEditorTools.cs",
+                        "lines":  "505-509",
+                        "classification":  "editor_only_double_delta_before_float",
+                        "formula":  "origin = float3(packet.CurrentAUP - HectonFloatingOrigin.CurrentTotalOffsetDouble)"
+                    }
+                ]
+}

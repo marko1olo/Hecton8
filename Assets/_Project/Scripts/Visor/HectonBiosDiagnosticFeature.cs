@@ -210,7 +210,7 @@ namespace Hecton8.Visor
             Shader shader = settings != null ? settings.shader : null;
             RecreateMaterial(ref _material, shader);
             TryRegisterHotSwapListener();
-            CachePlayerContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+            CachePlayerContext(Hecton8.Core.GlobalRegistry.Player);
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
@@ -232,7 +232,7 @@ namespace Hecton8.Visor
             if (camera == null)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             bool refreshLootCache = !_lootCacheInitialized;
             if (!refreshLootCache && _lastLootRefreshFrame != frame)
             {

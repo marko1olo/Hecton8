@@ -112,7 +112,7 @@ namespace Hecton8.Construction
         private int _cachedRoomIndex = -1;
         private byte _payloadIntegrity = MaxPayloadIntegrity;
         private IFluidDecalPresentationSink _fluidDecals;
-        private PersistentWorldRegistry _persistentWorldRegistry;
+        private IPersistentDroppedItemRegistry _persistentWorldRegistry;
 
         public float PowerRating => _inFlightItem != null ? -activePowerDraw : 0f;
         public int PowerPriority => powerPriority;
@@ -240,7 +240,7 @@ namespace Hecton8.Construction
                     _fluidDecals = currentService as IFluidDecalPresentationSink;
                     break;
                 case GlobalRegistryServiceSlot.PersistentWorldRegistry:
-                    _persistentWorldRegistry = currentService as PersistentWorldRegistry;
+                    _persistentWorldRegistry = currentService as IPersistentDroppedItemRegistry;
                     break;
             }
         }
@@ -360,7 +360,7 @@ namespace Hecton8.Construction
         private void CacheRegistryServicesCold()
         {
             _fluidDecals = GlobalRegistry.FluidDecalPresentation;
-            _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            _persistentWorldRegistry = GlobalRegistry.PersistentDroppedItems;
         }
 
         private void TryStageTransfer()
@@ -756,7 +756,7 @@ namespace Hecton8.Construction
             if (_inFlightItem == null)
                 return false;
 
-            PersistentWorldRegistry persistentWorldRegistry = _persistentWorldRegistry;
+            IPersistentDroppedItemRegistry persistentWorldRegistry = _persistentWorldRegistry;
             if (persistentWorldRegistry == null)
                 return false;
 

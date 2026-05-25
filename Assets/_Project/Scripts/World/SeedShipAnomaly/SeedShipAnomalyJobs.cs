@@ -64,7 +64,7 @@ namespace Hecton8.World.SeedShipAnomaly
         [WriteOnly, NoAlias] public NativeArray<AnomalyThermoSourceDTO> ThermoSources;
         [ReadOnly, NoAlias] public NativeArray<MockAupRebaseSignal> RebaseSignals;
         [WriteOnly, NoAlias] public NativeArray<AnomalyTelemetryEntry> Telemetry;
-        public NativeQueue<RadarJamSignal>.ParallelWriter RadarJamWriter;
+        public global::Hecton8.Core.MpscSignalRingBuffer<RadarJamSignal>.ParallelWriter RadarJamWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> RadarJamWriterBudget;
         public double3 PlayerAUP;
         public float DeltaSeconds;

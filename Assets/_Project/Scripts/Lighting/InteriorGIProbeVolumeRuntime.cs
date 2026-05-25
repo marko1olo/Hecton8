@@ -1369,7 +1369,7 @@ namespace Hecton8.Lighting
             if (completed != null && _gpuUploadPendingCount > 0)
             {
                 completed.UnlockBufferAfterWrite<CustomLightProbeDTO>(_gpuUploadPendingCount);
-                if (Time.frameCount > _gpuUploadPendingFrame)
+                if (SystemDispatcher.CurrentFrameIndex > _gpuUploadPendingFrame)
                 {
                     Shader.SetGlobalBuffer(InteriorGIProbeBufferId, completed);
                     Shader.SetGlobalVector(InteriorGIParamsId, _gpuUploadPendingParams);
@@ -1449,7 +1449,7 @@ namespace Hecton8.Lighting
             _gpuUploadHandle = uploadHandle;
             _gpuUploadPendingBufferIndex = _gpuProbeWriteIndex;
             _gpuUploadPendingCount = activeCount;
-            _gpuUploadPendingFrame = Time.frameCount;
+            _gpuUploadPendingFrame = SystemDispatcher.CurrentFrameIndex;
             _gpuUploadPendingParams = new Vector4(_activeResolution, math.max(1f, cellSizeMeters), tuning.GlobalQualityWeight, tuning.DirectionalWeight);
             _gpuUploadPendingOrigin = new Vector4(runtimeRoot.x, runtimeRoot.y, runtimeRoot.z, 1f);
             _gpuUploadPendingRootAup = new Vector4(rootResidue.x, rootResidue.y, rootResidue.z, (float)_rootHash);
@@ -1640,13 +1640,13 @@ namespace Hecton8.Lighting
                 }
 
                 if (rowsRejected > 0)
-                    Debug.LogWarning("Interior GI CSV rejected rows: " + rowsRejected);
+                    Hecton8.Core.H8Debug.LogWarning("Interior GI CSV rejected rows: " + rowsRejected);
 
                 TryReloadAmbientProfileCsv();
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("Interior GI CSV reload failed: " + ex.Message);
+                Hecton8.Core.H8Debug.LogWarning("Interior GI CSV reload failed: " + ex.Message);
             }
         }
 
@@ -1675,11 +1675,11 @@ namespace Hecton8.Lighting
                     profileCount[0] = parsedCount;
 
                 if (rowsRejected > 0)
-                    Debug.LogWarning("Ambient lighting profile CSV rejected rows: " + rowsRejected);
+                    Hecton8.Core.H8Debug.LogWarning("Ambient lighting profile CSV rejected rows: " + rowsRejected);
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("Ambient lighting profile CSV reload failed: " + ex.Message);
+                Hecton8.Core.H8Debug.LogWarning("Ambient lighting profile CSV reload failed: " + ex.Message);
             }
         }
 
@@ -1756,7 +1756,7 @@ namespace Hecton8.Lighting
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("Interior GI black box dump failed: " + ex.Message);
+                Hecton8.Core.H8Debug.LogWarning("Interior GI black box dump failed: " + ex.Message);
             }
         }
 

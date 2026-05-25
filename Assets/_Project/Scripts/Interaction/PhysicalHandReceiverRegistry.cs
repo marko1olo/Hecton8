@@ -195,7 +195,7 @@ namespace Hecton8.Interaction
             if (!s_saturationLogged)
             {
                 s_saturationLogged = true;
-                Debug.LogWarning("[PhysicalHandReceiverRegistry] Fixed receiver cache saturated. Increase MaxReceivers.");
+                Hecton8.Core.H8Debug.LogWarning("[PhysicalHandReceiverRegistry] Fixed receiver cache saturated. Increase MaxReceivers.");
             }
 #endif
             return false;

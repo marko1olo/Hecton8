@@ -16,6 +16,7 @@ internal static class Program
         "NativeList",
         "NativeHashMap",
         "NativeParallelHashMap",
+        "NativeParallelMultiHashMap",
         "NativeQueue",
         "UnsafeList"
     };
@@ -35,6 +36,7 @@ internal static class Program
         string repoRoot = ResolveRepoRoot(args);
         string sourceRoot = GetArg(args, "--root") ?? Path.Combine(repoRoot, "Assets", "_Project", "Scripts");
         string outputPath = GetArg(args, "--output") ?? Path.Combine(repoRoot, "Docs", "Reports", "VAULT_NATIVE_ALIAS_LEDGER_X_000.json");
+        string agentId = GetArg(args, "--agent-id") ?? "X_000";
 
         if (!Directory.Exists(sourceRoot))
         {
@@ -53,7 +55,7 @@ internal static class Program
         AuditSummary summary = BuildSummary(files.Length, findings, parseFailures);
         string canonical = BuildCanonicalHashInput(findings, parseFailures, summary);
         string hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical))).ToLowerInvariant();
-        string json = BuildJson(repoRoot, sourceRoot, outputPath, summary, findings, parseFailures, hash);
+        string json = BuildJson(repoRoot, sourceRoot, outputPath, agentId, summary, findings, parseFailures, hash);
 
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? ".");
         File.WriteAllText(outputPath, json, new UTF8Encoding(false));
@@ -121,9 +123,10 @@ internal static class Program
             string namespaceName = ResolveNamespace(owner);
             string bases = owner.BaseList?.ToString() ?? string.Empty;
             bool isJobField = IsJobOwner(owner, bases);
+            bool isStackOnlyRefStruct = IsStackOnlyRefStruct(owner);
             bool isMonoBehaviour = bases.Contains("MonoBehaviour", StringComparison.Ordinal);
             bool isCoreMemoryAllowed = IsCoreMemoryAuthority(relativePath, namespaceName, ownerName);
-            string classification = Classify(isCoreMemoryAllowed, isJobField);
+            string classification = Classify(isCoreMemoryAllowed, isJobField, isStackOnlyRefStruct);
             string attributes = string.Join(" ", field.AttributeLists.Select(static list => list.ToString()));
             string modifiers = field.Modifiers.ToString();
             int line = field.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
@@ -140,6 +143,7 @@ internal static class Program
                     isMonoBehaviour,
                     isJobField,
                     isCoreMemoryAllowed,
+                    isStackOnlyRefStruct,
                     collectionName,
                     typeText,
                     variable.Identifier.ValueText,
@@ -181,6 +185,12 @@ internal static class Program
         return owner.Identifier.ValueText.EndsWith("Job", StringComparison.Ordinal);
     }
 
+    private static bool IsStackOnlyRefStruct(TypeDeclarationSyntax owner)
+    {
+        return owner is StructDeclarationSyntax &&
+               owner.Modifiers.Any(static modifier => modifier.IsKind(SyntaxKind.RefKeyword));
+    }
+
     private static bool IsCoreMemoryAuthority(string relativePath, string namespaceName, string ownerName)
     {
         string normalized = relativePath.Replace('\\', '/');
@@ -196,13 +206,16 @@ internal static class Program
                string.Equals(ownerName, "NativeMemorySentinel", StringComparison.Ordinal);
     }
 
-    private static string Classify(bool isCoreMemoryAllowed, bool isJobField)
+    private static string Classify(bool isCoreMemoryAllowed, bool isJobField, bool isStackOnlyRefStruct)
     {
         if (isCoreMemoryAllowed)
             return "allowed_core_memory_authority";
 
         if (isJobField)
             return "allowed_transient_job_parameter";
+
+        if (isStackOnlyRefStruct)
+            return "allowed_stack_only_ref_struct_view";
 
         return "forbidden_persistent_native_alias_candidate";
     }
@@ -235,6 +248,8 @@ internal static class Program
                 summary.JobTransientFields++;
             else if (finding.Classification == "allowed_core_memory_authority")
                 summary.CoreMemoryAllowedFields++;
+            else if (finding.Classification == "allowed_stack_only_ref_struct_view")
+                summary.StackOnlyRefStructViewFields++;
 
             if (finding.CollectionName == "Pointer")
                 summary.RawPointerFields++;
@@ -285,6 +300,7 @@ internal static class Program
         string repoRoot,
         string sourceRoot,
         string outputPath,
+        string agentId,
         AuditSummary summary,
         List<Finding> findings,
         List<ParseFailure> parseFailures,
@@ -293,7 +309,7 @@ internal static class Program
         StringBuilder builder = new(capacity: Math.Max(4096, findings.Count * 512));
         builder.AppendLine("{");
         WriteProp(builder, 1, "schema", Schema, comma: true);
-        WriteProp(builder, 1, "agentId", "X_000", comma: true);
+        WriteProp(builder, 1, "agentId", agentId, comma: true);
         WriteProp(builder, 1, "repoRoot", repoRoot, comma: true);
         WriteProp(builder, 1, "sourceRoot", sourceRoot, comma: true);
         WriteProp(builder, 1, "outputPath", outputPath, comma: true);
@@ -305,6 +321,7 @@ internal static class Program
         WriteProp(builder, 2, "forbiddenPersistentCandidates", summary.ForbiddenPersistentCandidates, comma: true);
         WriteProp(builder, 2, "forbiddenMonoBehaviourCandidates", summary.ForbiddenMonoBehaviourCandidates, comma: true);
         WriteProp(builder, 2, "jobTransientFields", summary.JobTransientFields, comma: true);
+        WriteProp(builder, 2, "stackOnlyRefStructViewFields", summary.StackOnlyRefStructViewFields, comma: true);
         WriteProp(builder, 2, "coreMemoryAllowedFields", summary.CoreMemoryAllowedFields, comma: true);
         WriteProp(builder, 2, "rawPointerFields", summary.RawPointerFields, comma: false);
         Indent(builder, 1).AppendLine("},");
@@ -322,6 +339,7 @@ internal static class Program
             WriteProp(builder, 3, "isMonoBehaviour", finding.IsMonoBehaviour, comma: true);
             WriteProp(builder, 3, "isJobField", finding.IsJobField, comma: true);
             WriteProp(builder, 3, "isCoreMemoryAllowed", finding.IsCoreMemoryAllowed, comma: true);
+            WriteProp(builder, 3, "isStackOnlyRefStructView", finding.IsStackOnlyRefStructView, comma: true);
             WriteProp(builder, 3, "collection", finding.CollectionName, comma: true);
             WriteProp(builder, 3, "type", finding.TypeText, comma: true);
             WriteProp(builder, 3, "name", finding.VariableName, comma: true);
@@ -475,6 +493,7 @@ internal static class Program
         bool IsMonoBehaviour,
         bool IsJobField,
         bool IsCoreMemoryAllowed,
+        bool IsStackOnlyRefStructView,
         string CollectionName,
         string TypeText,
         string VariableName,
@@ -492,6 +511,7 @@ internal static class Program
         public int ForbiddenPersistentCandidates;
         public int ForbiddenMonoBehaviourCandidates;
         public int JobTransientFields;
+        public int StackOnlyRefStructViewFields;
         public int CoreMemoryAllowedFields;
         public int RawPointerFields;
     }

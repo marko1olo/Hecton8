@@ -50,7 +50,7 @@ namespace Hecton8.AI
             if (_editorValidateDepth > MaxEditorValidateDepth)
             {
                 _editorValidateDepth--;
-                Debug.LogError("FaunaPOI editor validation watchdog tripped.", this);
+                Hecton8.Core.H8Debug.LogError("FaunaPOI editor validation watchdog tripped.", this);
                 return;
             }
 

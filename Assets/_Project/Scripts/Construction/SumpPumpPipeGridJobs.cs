@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Hecton8.Core.Contracts.Physics;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
 using Unity.Collections;
@@ -557,8 +558,8 @@ namespace Hecton8.Construction
         // lock acquisition is bounded, and CompareExchange mutates only CurrentWaterVolume. The job never writes
         // FrontCompartments and never touches adjacent lock rows because DrainageRoomDrainLock64 is cache-line sized.
         [NoAlias, NativeDisableUnsafePtrRestriction] public DrainageNodeDTO* PumpNodes;
-        [NoAlias, NativeDisableUnsafePtrRestriction, ReadOnly] public Hecton8.Physics.FluidCompartmentDTO* FrontCompartments;
-        [NoAlias, NativeDisableUnsafePtrRestriction] public Hecton8.Physics.FluidCompartmentDTO* BackCompartments;
+        [NoAlias, NativeDisableUnsafePtrRestriction, ReadOnly] public FluidCompartmentDTO* FrontCompartments;
+        [NoAlias, NativeDisableUnsafePtrRestriction] public FluidCompartmentDTO* BackCompartments;
         [NoAlias, ReadOnly] public NativeArray<int> PumpRoomIndices;
         [NoAlias] public NativeArray<float> PumpRemainderM3;
         [NoAlias] public NativeArray<float> PumpMassErrorM3;
@@ -635,8 +636,8 @@ namespace Hecton8.Construction
                 return;
             }
 
-            ref Hecton8.Physics.FluidCompartmentDTO front = ref Hecton8.Physics.FluidCompartmentPointerUtility.ElementRef(FrontCompartments, roomIndex);
-            ref Hecton8.Physics.FluidCompartmentDTO back = ref Hecton8.Physics.FluidCompartmentPointerUtility.ElementRef(BackCompartments, roomIndex);
+            ref FluidCompartmentDTO front = ref FluidCompartmentPointerUtility.ElementRef(FrontCompartments, roomIndex);
+            ref FluidCompartmentDTO back = ref FluidCompartmentPointerUtility.ElementRef(BackCompartments, roomIndex);
             float frontWater = ReadCompartmentWater(ref front);
             float backWater = ReadCompartmentWater(ref back);
             float availableWater = math.min(frontWater, backWater);
@@ -685,7 +686,7 @@ namespace Hecton8.Construction
             Interlocked.Exchange(ref state, 0);
         }
 
-        private static float ReadCompartmentWater(ref Hecton8.Physics.FluidCompartmentDTO dto)
+        private static float ReadCompartmentWater(ref FluidCompartmentDTO dto)
         {
             float water = dto.CurrentWaterVolume;
             if (!math.isfinite(water))
@@ -702,7 +703,7 @@ namespace Hecton8.Construction
             return math.clamp(water, 0f, maxVolume);
         }
 
-        private static bool TryDeductWaterAtomic(ref Hecton8.Physics.FluidCompartmentDTO dto, float requested, out float drained)
+        private static bool TryDeductWaterAtomic(ref FluidCompartmentDTO dto, float requested, out float drained)
         {
             drained = 0f;
             float maxVolume = dto.MaxWaterVolume;
@@ -716,7 +717,7 @@ namespace Hecton8.Construction
                 float oldWater = math.asfloat(oldBits);
                 if (!math.isfinite(oldWater))
                 {
-                    dto.Flags |= Hecton8.Physics.FluidCompartmentFlags.NonFinite;
+                    dto.Flags |= FluidCompartmentFlags.NonFinite;
                     return false;
                 }
 
@@ -734,7 +735,7 @@ namespace Hecton8.Construction
 
         private static float ResolveFill01(float volume, float maxVolume)
         {
-            return maxVolume > Hecton8.Physics.HabitatFluidIncursionConstants.WaterEpsilonM3
+            return maxVolume > HabitatFluidIncursionConstants.WaterEpsilonM3
                 ? math.saturate(volume * math.rcp(maxVolume))
                 : 0f;
         }

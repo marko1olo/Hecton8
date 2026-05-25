@@ -204,7 +204,8 @@ namespace Hecton8.Ecosystem
                 RequestedCount = math.clamp(requestedCount, 0, CarrionCapacity),
                 Seed = seed == 0u ? 0xC314C314u : seed
             };
-            job.Schedule(CarrionCapacity, CarrionJobBatchSize).Complete(); // COLD_EDITOR_STRESS: explicit designer-triggered mass extinction harness.
+            JobHandle handle = job.Schedule(CarrionCapacity, CarrionJobBatchSize);
+            DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD_EDITOR_STRESS: explicit designer-triggered mass extinction harness.
             return true;
         }
 
@@ -265,7 +266,8 @@ namespace Hecton8.Ecosystem
                 FaunaStates = (FaunaStateDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(faunaStates),
                 FaultFlags = (uint*)NativeArrayUnsafeUtility.GetUnsafePtr(faultFlags)
             };
-            initJob.Schedule(CarrionCapacity, CarrionJobBatchSize).Complete(); // COLD_BOOTSTRAP_SYNC: Vault memory must be initialized before public editor reads.
+            JobHandle initHandle = initJob.Schedule(CarrionCapacity, CarrionJobBatchSize);
+            DispatcherJobFence.TryComplete(ref initHandle, forceComplete: true); // COLD_BOOTSTRAP_SYNC: Vault memory must be initialized before public editor reads.
 
             _carrionInitialized = true;
             if (!_carrionProfilesLoadAttemptedCold)
@@ -723,6 +725,9 @@ namespace Hecton8.Ecosystem
 
         private static string ResolveCarrionProfileCsvPath()
         {
+#if !UNITY_EDITOR
+            return string.Empty;
+#else
             string dataPath = Application.dataPath;
             string first = Path.Combine(dataPath, "_Project", "Data", CarrionProfileCsvFileName);
             if (File.Exists(first))
@@ -737,6 +742,7 @@ namespace Hecton8.Ecosystem
                 return first;
 
             return Path.Combine(root.FullName, "Data", CarrionProfileCsvFileName);
+#endif
         }
 
         private void ReleaseCarrionVaultHandles(IDataVault vault)

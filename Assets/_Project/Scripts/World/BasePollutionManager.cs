@@ -76,7 +76,7 @@ namespace Hecton8.World
         private int _lastDroneLaunchTotal;
         private int _lastProcessedRecycleTotal;
         private int _lastCompletedDrillCycles;
-        private EnvironmentalStrainManager _cachedEnvironmentalStrain;
+        private IEnvironmentalStrainIndustrialSink _cachedEnvironmentalStrain;
         private bool _hotSwapRegistered;
         private static BasePollutionManager s_activeRuntime;
 
@@ -123,7 +123,7 @@ namespace Hecton8.World
                 return;
 
             TryRegister();
-            CacheEnvironmentalStrain(GlobalRegistry.EnvironmentalStrain);
+            CacheEnvironmentalStrain(GlobalRegistry.EnvironmentalStrainIndustrialSink);
             TryRegisterHotSwapListener();
         }
 
@@ -225,7 +225,7 @@ namespace Hecton8.World
             _currentNoiseLevel = _currentNoiseLevel * noiseRetention + emittedNoise;
             _currentMicroplasticLevel = _currentMicroplasticLevel * microplasticRetention + emittedMicroplastic;
 
-            EnvironmentalStrainManager strainManager = _cachedEnvironmentalStrain;
+            IEnvironmentalStrainIndustrialSink strainManager = _cachedEnvironmentalStrain;
             if (strainManager != null)
             {
                 strainManager.AccumulateIndustrialStrain(
@@ -251,10 +251,10 @@ namespace Hecton8.World
             object currentService)
         {
             if (serviceSlot == GlobalRegistryServiceSlot.EnvironmentalStrainRuntime)
-                CacheEnvironmentalStrain(currentService as EnvironmentalStrainManager);
+                CacheEnvironmentalStrain(currentService as IEnvironmentalStrainIndustrialSink);
         }
 
-        private void CacheEnvironmentalStrain(EnvironmentalStrainManager strainManager)
+        private void CacheEnvironmentalStrain(IEnvironmentalStrainIndustrialSink strainManager)
         {
             _cachedEnvironmentalStrain = strainManager;
         }

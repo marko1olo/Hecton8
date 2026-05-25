@@ -121,7 +121,7 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
         }
 
         private void TryRegisterHotSwapListener()
@@ -276,7 +276,7 @@ namespace Hecton8.World
                 {
                     if (seamIndex >= ProceduralWorldStateDTO.MaxGeologySeamStates)
                     {
-                        Debug.LogWarning($"[SeamRegistry] Max seam states ({ProceduralWorldStateDTO.MaxGeologySeamStates}) reached. Extra entries were not saved.");
+                        Hecton8.Core.H8Debug.LogWarning($"[SeamRegistry] Max seam states ({ProceduralWorldStateDTO.MaxGeologySeamStates}) reached. Extra entries were not saved.");
                         break;
                     }
 
@@ -293,7 +293,7 @@ namespace Hecton8.World
                 {
                     if (caveEntranceIndex >= ProceduralWorldStateDTO.MaxGeologyCaveEntrances)
                     {
-                        Debug.LogWarning($"[SeamRegistry] Max cave entrance states ({ProceduralWorldStateDTO.MaxGeologyCaveEntrances}) reached. Extra entries were not saved.");
+                        Hecton8.Core.H8Debug.LogWarning($"[SeamRegistry] Max cave entrance states ({ProceduralWorldStateDTO.MaxGeologyCaveEntrances}) reached. Extra entries were not saved.");
                         break;
                     }
 

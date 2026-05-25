@@ -71,16 +71,6 @@ namespace Hecton8.UI
         [SerializeField] private GameObject[] configuredTabs = new GameObject[8];
         // COLD ALLOC: List<RaycastResult>(16) — reusable diegetic PDA UI hit cache — owner: DiegeticPDAController
         private readonly List<RaycastResult> _raycastResults = new List<RaycastResult>(16);
-        // COLD ALLOC: List<Renderer>[8] — tablet visual visibility cache — owner: DiegeticPDAController
-        private readonly List<Renderer> _tabletRenderers = new List<Renderer>(8);
-        // COLD ALLOC: List<Collider>[4] — tablet collision visibility cache — owner: DiegeticPDAController
-        private readonly List<Collider> _tabletColliders = new List<Collider>(4);
-        // COLD ALLOC: List<CanvasGroup>[4] — tablet UI visibility cache — owner: DiegeticPDAController
-        private readonly List<CanvasGroup> _tabletCanvasGroups = new List<CanvasGroup>(4);
-        // COLD ALLOC: List<MonoBehaviour>(512) — PDA pointer target discovery scratch — owner: DiegeticPDAController
-        private readonly List<MonoBehaviour> _pointerHandlerScratch = new List<MonoBehaviour>(PointerDiscoveryCapacity);
-        // COLD ALLOC: MonoBehaviour[256] — cached PDA pointer dispatch components — owner: DiegeticPDAController
-        private readonly MonoBehaviour[] _pointerTargetHandlers = new MonoBehaviour[PointerTargetCapacity];
         // COLD ALLOC: RectTransform[256] — cached PDA pointer bounds — owner: DiegeticPDAController
         private readonly RectTransform[] _pointerTargetRects = new RectTransform[PointerTargetCapacity];
         // COLD ALLOC: GameObject[256] — cached PDA pointer target game objects — owner: DiegeticPDAController
@@ -278,7 +268,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private void TryRegisterHotSwapListener()
@@ -564,7 +554,7 @@ namespace Hecton8.UI
 
             absoluteAup = AbsoluteUniversePosition.OffsetMeters(
                 in originAup,
-                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
+                math.double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
             return absoluteAup.IsFinite();
         }
 
@@ -616,17 +606,7 @@ namespace Hecton8.UI
         private void RebuildTabletVisibilityCache()
         {
             _cachedTabletRoot = tabletRoot;
-            _tabletRenderers.Clear();
-            _tabletColliders.Clear();
-            _tabletCanvasGroups.Clear();
             _tabletVisibilityInitialized = false;
-
-            if (tabletRoot == null)
-                return;
-
-            tabletRoot.GetComponentsInChildren(true, _tabletRenderers);
-            tabletRoot.GetComponentsInChildren(true, _tabletColliders);
-            tabletRoot.GetComponentsInChildren(true, _tabletCanvasGroups);
         }
 
         private void SetTabletVisible(bool visible)
@@ -634,33 +614,32 @@ namespace Hecton8.UI
             if (tabletRoot == null || (_tabletVisibilityInitialized && _tabletVisible == visible))
                 return;
 
-            for (int i = 0; i < _tabletRenderers.Count; i++)
-            {
-                Renderer target = _tabletRenderers[i];
-                if (target != null)
-                    target.enabled = visible;
-            }
-
-            for (int i = 0; i < _tabletColliders.Count; i++)
-            {
-                Collider target = _tabletColliders[i];
-                if (target != null)
-                    target.enabled = visible;
-            }
-
-            for (int i = 0; i < _tabletCanvasGroups.Count; i++)
-            {
-                CanvasGroup target = _tabletCanvasGroups[i];
-                if (target == null)
-                    continue;
-
-                target.alpha = visible ? 1f : 0f;
-                target.interactable = visible;
-                target.blocksRaycasts = visible;
-            }
+            SetTabletVisibleInHierarchy(tabletRoot.transform, visible);
 
             _tabletVisible = visible;
             _tabletVisibilityInitialized = true;
+        }
+
+        private static void SetTabletVisibleInHierarchy(Transform root, bool visible)
+        {
+            if (root == null)
+                return;
+
+            if (root.TryGetComponent(out Renderer renderer))
+                renderer.enabled = visible;
+
+            if (root.TryGetComponent(out Collider collider))
+                collider.enabled = visible;
+
+            if (root.TryGetComponent(out CanvasGroup canvasGroup))
+            {
+                canvasGroup.alpha = visible ? 1f : 0f;
+                canvasGroup.interactable = visible;
+                canvasGroup.blocksRaycasts = visible;
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+                SetTabletVisibleInHierarchy(root.GetChild(i), visible);
         }
 
         private bool EnsureUiInteractionState(bool allowColdCreateFallback)
@@ -725,7 +704,10 @@ namespace Hecton8.UI
         {
             _raycastResults.Clear();
             _pointerEventData.Reset();
-            _pointerEventData.position = new Vector2(canvasHitPoint.x, canvasHitPoint.y);
+            Vector2 pointerPosition = default;
+            pointerPosition.x = canvasHitPoint.x;
+            pointerPosition.y = canvasHitPoint.y;
+            _pointerEventData.position = pointerPosition;
             _pointerEventData.delta = Vector2.zero;
             _pointerEventData.button = PointerEventData.InputButton.Left;
             _pointerEventData.scrollDelta = Vector2.zero;
@@ -802,13 +784,10 @@ namespace Hecton8.UI
 
         private bool IsCachedPointerTargetEnabled(int index)
         {
-            MonoBehaviour handler = _pointerTargetHandlers[index];
             RectTransform rectTransform = _pointerTargetRects[index];
             GameObject target = _pointerTargetObjects[index];
-            if (handler == null ||
-                rectTransform == null ||
+            if (rectTransform == null ||
                 target == null ||
-                !handler.isActiveAndEnabled ||
                 !target.activeInHierarchy)
             {
                 return false;
@@ -844,14 +823,14 @@ namespace Hecton8.UI
                 ? diegeticPanel.ReferenceResolutionPixels
                 : SanitizeTabletResolution(tabletRenderTextureResolution);
 
-            float2 uv = new float2(
+            float2 uv = math.float2(
                 math.saturate(canvasHitPoint.x / math.max(1, referenceResolution.x)),
                 math.saturate(canvasHitPoint.y / math.max(1, referenceResolution.y)));
 
-            Vector3 localPoint = new Vector3(
-                rect.xMin + (rect.width * uv.x),
-                rect.yMin + (rect.height * uv.y),
-                0f);
+            Vector3 localPoint = default;
+            localPoint.x = rect.xMin + (rect.width * uv.x);
+            localPoint.y = rect.yMin + (rect.height * uv.y);
+            localPoint.z = 0f;
             worldPoint = canvasRect.TransformPoint(localPoint);
             return true;
         }
@@ -865,51 +844,86 @@ namespace Hecton8.UI
             if (diegeticPanelRoot == null)
                 return;
 
-            diegeticPanelRoot.GetComponentsInChildren(true, _pointerHandlerScratch);
-            for (int i = 0; i < _pointerHandlerScratch.Count; i++)
+            CollectPointerTargetsInHierarchy(diegeticPanelRoot.transform);
+        }
+
+        private void CollectPointerTargetsInHierarchy(Transform root)
+        {
+            if (root == null || _pointerTargetCacheOverflow)
+                return;
+
+            if (TryResolvePointerDispatchTarget(root.gameObject, out GameObject target))
+                AddPointerTarget(target);
+
+            for (int i = 0; i < root.childCount; i++)
+                CollectPointerTargetsInHierarchy(root.GetChild(i));
+        }
+
+        private static bool TryResolvePointerDispatchTarget(GameObject source, out GameObject target)
+        {
+            target = null;
+            if (source == null)
+                return false;
+
+            target = ExecuteEvents.GetEventHandler<IPointerClickHandler>(source);
+            if (target != null)
+                return true;
+            target = ExecuteEvents.GetEventHandler<IPointerDownHandler>(source);
+            if (target != null)
+                return true;
+            target = ExecuteEvents.GetEventHandler<IPointerUpHandler>(source);
+            if (target != null)
+                return true;
+            target = ExecuteEvents.GetEventHandler<IPointerEnterHandler>(source);
+            if (target != null)
+                return true;
+            target = ExecuteEvents.GetEventHandler<IPointerExitHandler>(source);
+            if (target != null)
+                return true;
+            target = ExecuteEvents.GetEventHandler<IDragHandler>(source);
+            if (target != null)
+                return true;
+            target = ExecuteEvents.GetEventHandler<IBeginDragHandler>(source);
+            if (target != null)
+                return true;
+            target = ExecuteEvents.GetEventHandler<IEndDragHandler>(source);
+            if (target != null)
+                return true;
+            target = ExecuteEvents.GetEventHandler<IDropHandler>(source);
+            return target != null;
+        }
+
+        private void AddPointerTarget(GameObject target)
+        {
+            if (target == null)
+                return;
+
+            RectTransform targetRect = target.transform as RectTransform;
+            if (targetRect == null)
+                return;
+
+            for (int targetIndex = 0; targetIndex < _pointerTargetCount; targetIndex++)
             {
-                MonoBehaviour handler = _pointerHandlerScratch[i];
-                if (handler == null || !IsPointerDispatchTarget(handler))
-                    continue;
-
-                RectTransform handlerRect = handler.transform as RectTransform;
-                if (handlerRect == null)
-                    continue;
-
-                GameObject target = handler.gameObject;
-                bool duplicateTarget = false;
-                for (int targetIndex = 0; targetIndex < _pointerTargetCount; targetIndex++)
-                {
-                    if (ReferenceEquals(_pointerTargetObjects[targetIndex], target))
-                    {
-                        duplicateTarget = true;
-                        break;
-                    }
-                }
-
-                if (duplicateTarget)
-                    continue;
-
-                if (_pointerTargetCount >= PointerTargetCapacity)
-                {
-                    _pointerTargetCacheOverflow = true;
-                    break;
-                }
-
-                CanvasGroup canvasGroup = ResolveNearestParentComponent<CanvasGroup>(handler.transform);
-                handler.TryGetComponent(out Selectable selectable);
-                handler.TryGetComponent(out Graphic graphic);
-
-                _pointerTargetHandlers[_pointerTargetCount] = handler;
-                _pointerTargetRects[_pointerTargetCount] = handlerRect;
-                _pointerTargetObjects[_pointerTargetCount] = target;
-                _pointerTargetCanvasGroups[_pointerTargetCount] = canvasGroup;
-                _pointerTargetSelectables[_pointerTargetCount] = selectable;
-                _pointerTargetGraphics[_pointerTargetCount] = graphic;
-                _pointerTargetCount++;
+                if (ReferenceEquals(_pointerTargetObjects[targetIndex], target))
+                    return;
             }
 
-            _pointerHandlerScratch.Clear();
+            if (_pointerTargetCount >= PointerTargetCapacity)
+            {
+                _pointerTargetCacheOverflow = true;
+                return;
+            }
+
+            CanvasGroup canvasGroup = ResolveNearestParentComponent<CanvasGroup>(targetRect);
+            target.TryGetComponent(out Selectable selectable);
+            target.TryGetComponent(out Graphic graphic);
+
+            _pointerTargetRects[_pointerTargetCount] = targetRect;
+            _pointerTargetObjects[_pointerTargetCount] = target;
+            _pointerTargetCanvasGroups[_pointerTargetCount] = canvasGroup;
+            _pointerTargetSelectables[_pointerTargetCount] = selectable;
+            _pointerTargetGraphics[_pointerTargetCount] = graphic;
+            _pointerTargetCount++;
         }
 
         private static T ResolveNearestParentComponent<T>(Transform start) where T : Component
@@ -927,7 +941,6 @@ namespace Hecton8.UI
         {
             for (int i = 0; i < _pointerTargetCount; i++)
             {
-                _pointerTargetHandlers[i] = null;
                 _pointerTargetRects[i] = null;
                 _pointerTargetObjects[i] = null;
                 _pointerTargetCanvasGroups[i] = null;
@@ -937,25 +950,11 @@ namespace Hecton8.UI
 
             _pointerTargetCount = 0;
             _pointerTargetCacheOverflow = false;
-            _pointerHandlerScratch.Clear();
         }
 
         private void InvalidatePointerTargetCache()
         {
             _pointerTargetCacheDirty = true;
-        }
-
-        private static bool IsPointerDispatchTarget(MonoBehaviour handler)
-        {
-            return handler is IPointerClickHandler ||
-                   handler is IPointerDownHandler ||
-                   handler is IPointerUpHandler ||
-                   handler is IPointerEnterHandler ||
-                   handler is IPointerExitHandler ||
-                   handler is IDragHandler ||
-                   handler is IBeginDragHandler ||
-                   handler is IEndDragHandler ||
-                   handler is IDropHandler;
         }
 
         private void UpdateHoverTarget(GameObject hitTarget)
@@ -1107,9 +1106,10 @@ namespace Hecton8.UI
 
         private static Vector2Int SanitizeTabletResolution(Vector2Int resolution)
         {
-            return new Vector2Int(
-                math.clamp(resolution.x, 64, 512),
-                math.clamp(resolution.y, 64, 512));
+            Vector2Int safeResolution = default;
+            safeResolution.x = math.clamp(resolution.x, 64, 512);
+            safeResolution.y = math.clamp(resolution.y, 64, 512);
+            return safeResolution;
         }
 
 #if UNITY_EDITOR

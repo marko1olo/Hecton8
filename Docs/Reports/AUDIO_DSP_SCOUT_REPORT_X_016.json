@@ -1,0 +1,639 @@
+{
+  "agent_id": "X_016",
+  "role": "SPATIAL_AUDIO_DSP_AND_PORTAL_GRAPH_SCOUT",
+  "domain": "Echelon 8 Presentation and UX / spatial audio DSP and portal graph audit",
+  "batch_source": "Docs/Tasks/CURRENT_BATCH.md",
+  "task_count": 4,
+  "mode": {
+    "csharp_source_mutation": "none",
+    "compile_run": "not_run_read_only_static_audit",
+    "runtime_profiler_capture": "absent"
+  },
+  "mandates_used": [
+    ".agents-skills/AUD_DSP_Audio_Synthesis_ThreadSafe_SPSC.txt",
+    ".agents-skills/AUD_Acoustic_Sonar_Occlusion_Sensory_Simulation.txt",
+    ".agents-skills/AUDIO_Hrtf_Binaural_Spatialization.txt",
+    ".agents-skills/DATA_Runtime_Struct_Layout_ARM64.txt",
+    ".agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt",
+    ".agents-skills/OPT_Native_Memory_Collections_JobSystem_Protocol.txt",
+    ".agents-skills/ARCH_Signal_Lane_Segregation.txt",
+    ".agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt"
+  ],
+  "audited_sources": [
+    "Assets/_Project/Scripts/SpatialAudioManager.cs",
+    "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs",
+    "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs",
+    "Assets/_Project/Scripts/Audio/AudioVirtualizationJobs.cs",
+    "Assets/_Project/Scripts/Audio/Synthesis/HullStressGranularDspKernel.cs",
+    "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+    "Assets/_Project/Scripts/Audio/PlayerCriticalBufferJobs.cs",
+    "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs",
+    "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs",
+    "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs"
+  ],
+  "portal_graph": {
+    "capacities": {
+      "max_nodes": {
+        "value": 30,
+        "evidence": "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs:12-16; Assets/_Project/Scripts/SpatialAudioManager.cs:523"
+      },
+      "max_edges": {
+        "value": 60,
+        "evidence": "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs:12-16; Assets/_Project/Scripts/SpatialAudioManager.cs:524"
+      },
+      "telemetry_frames": {
+        "value": 300,
+        "evidence": "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs:16; Assets/_Project/Scripts/SpatialAudioManager.cs:8829-8833"
+      },
+      "cache_entries": {
+        "value": 16,
+        "evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:525"
+      },
+      "max_play_delay_seconds": {
+        "value": 1.25,
+        "evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:528; Assets/_Project/Scripts/SpatialAudioManager.cs:7133-7142"
+      }
+    },
+    "struct_layouts": [
+      {
+        "name": "AcousticAup",
+        "file": "Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs",
+        "lines": "10-19",
+        "layout": "Explicit",
+        "size_bytes": 40,
+        "fields": [
+          { "name": "GridX", "type": "long", "offset": 0, "size_bytes": 8 },
+          { "name": "GridY", "type": "long", "offset": 8, "size_bytes": 8 },
+          { "name": "GridZ", "type": "long", "offset": 16, "size_bytes": 8 },
+          { "name": "Local", "type": "float3", "offset": 24, "size_bytes": 12 },
+          { "name": "_pad0", "type": "uint", "offset": 36, "size_bytes": 4 }
+        ],
+        "arm64_status": "aligned_size_multiple_of_8"
+      },
+      {
+        "name": "AcousticPortalNode",
+        "file": "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs",
+        "lines": "49-66",
+        "layout": "Explicit",
+        "size_bytes": 56,
+        "fields": [
+          { "name": "Position", "type": "AcousticAup", "offset": 0, "size_bytes": 40 },
+          { "name": "FirstEdge", "type": "int", "offset": 40, "size_bytes": 4 },
+          { "name": "EdgeCount", "type": "int", "offset": 44, "size_bytes": 4 },
+          { "name": "RoomVolumeCubicMeters", "type": "float", "offset": 48, "size_bytes": 4 },
+          { "name": "Flags", "type": "AcousticPortalFlags(byte)", "offset": 52, "size_bytes": 1 },
+          { "name": "_reserved0", "type": "byte", "offset": 53, "size_bytes": 1 },
+          { "name": "_reserved1", "type": "ushort", "offset": 54, "size_bytes": 2 }
+        ],
+        "arm64_status": "aligned_size_multiple_of_8_no_implicit_tail_padding"
+      },
+      {
+        "name": "AcousticPortalEdge",
+        "file": "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs",
+        "lines": "68-83",
+        "layout": "Explicit",
+        "size_bytes": 16,
+        "fields": [
+          { "name": "ToNode", "type": "int", "offset": 0, "size_bytes": 4 },
+          { "name": "DistanceMeters", "type": "float", "offset": 4, "size_bytes": 4 },
+          { "name": "Flags", "type": "AcousticPortalFlags(byte)", "offset": 8, "size_bytes": 1 },
+          { "name": "_reserved0", "type": "byte", "offset": 9, "size_bytes": 1 },
+          { "name": "_reserved1", "type": "ushort", "offset": 10, "size_bytes": 2 },
+          { "name": "_reserved2", "type": "uint", "offset": 12, "size_bytes": 4 }
+        ],
+        "arm64_status": "aligned_size_multiple_of_8_no_implicit_tail_padding"
+      },
+      {
+        "name": "AcousticPathQuery",
+        "file": "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs",
+        "lines": "85-108",
+        "layout": "Explicit",
+        "size_bytes": 112,
+        "fields": [
+          { "name": "SourceAup", "type": "AcousticAup", "offset": 0, "size_bytes": 40 },
+          { "name": "ListenerAup", "type": "AcousticAup", "offset": 40, "size_bytes": 40 },
+          { "name": "ListenerRight", "type": "float3", "offset": 80, "size_bytes": 12 },
+          { "name": "NodeCount", "type": "int", "offset": 92, "size_bytes": 4 },
+          { "name": "EdgeCount", "type": "int", "offset": 96, "size_bytes": 4 },
+          { "name": "MaxNodeExpansions", "type": "int", "offset": 100, "size_bytes": 4 },
+          { "name": "GlobalQualityWeight", "type": "float", "offset": 104, "size_bytes": 4 },
+          { "name": "DisablePortalPath", "type": "byte", "offset": 108, "size_bytes": 1 },
+          { "name": "_reserved0", "type": "byte", "offset": 109, "size_bytes": 1 },
+          { "name": "_reserved1", "type": "ushort", "offset": 110, "size_bytes": 2 }
+        ],
+        "arm64_status": "aligned_size_multiple_of_8_no_implicit_tail_padding"
+      },
+      {
+        "name": "SoundEmissionSignal",
+        "file": "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs",
+        "lines": "110-147",
+        "layout": "Explicit",
+        "size_bytes": 64,
+        "fields": [
+          { "name": "SourceAup", "type": "AcousticAup", "offset": 0, "size_bytes": 40 },
+          { "name": "Volume", "type": "float", "offset": 40, "size_bytes": 4 },
+          { "name": "Pitch", "type": "float", "offset": 44, "size_bytes": 4 },
+          { "name": "EventID", "type": "uint", "offset": 48, "size_bytes": 4 },
+          { "name": "StationaryCacheKey", "type": "int", "offset": 52, "size_bytes": 4 },
+          { "name": "Flags", "type": "AcousticPortalFlags(byte)", "offset": 56, "size_bytes": 1 },
+          { "name": "_reserved0", "type": "byte", "offset": 57, "size_bytes": 1 },
+          { "name": "_reserved1", "type": "ushort", "offset": 58, "size_bytes": 2 }
+        ],
+        "implicit_padding": "bytes_60_63_unnamed",
+        "arm64_status": "aligned_size_multiple_of_8_with_unnamed_tail_padding"
+      },
+      {
+        "name": "AcousticPathResult",
+        "file": "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs",
+        "lines": "149-217",
+        "layout": "Explicit",
+        "size_bytes": 104,
+        "fields": [
+          { "name": "LastPortalAup", "type": "AcousticAup", "offset": 0, "size_bytes": 40 },
+          { "name": "TrueDistanceMeters", "type": "float", "offset": 40, "size_bytes": 4 },
+          { "name": "DelaySeconds", "type": "float", "offset": 44, "size_bytes": 4 },
+          { "name": "Transmission01", "type": "float", "offset": 48, "size_bytes": 4 },
+          { "name": "LowPassCutoffHz", "type": "float", "offset": 52, "size_bytes": 4 },
+          { "name": "ItdSeconds", "type": "float", "offset": 56, "size_bytes": 4 },
+          { "name": "RoomVolumeCubicMeters", "type": "float", "offset": 60, "size_bytes": 4 },
+          { "name": "PathfindingMs", "type": "float", "offset": 64, "size_bytes": 4 },
+          { "name": "NodeCount", "type": "int", "offset": 68, "size_bytes": 4 },
+          { "name": "CornerCount", "type": "int", "offset": 72, "size_bytes": 4 },
+          { "name": "ExpandedNodeCount", "type": "int", "offset": 76, "size_bytes": 4 },
+          { "name": "SourceNodeIndex", "type": "int", "offset": 80, "size_bytes": 4 },
+          { "name": "ListenerNodeIndex", "type": "int", "offset": 84, "size_bytes": 4 },
+          { "name": "StateHash", "type": "uint", "offset": 88, "size_bytes": 4 },
+          { "name": "Status", "type": "AcousticPathStatus(byte)", "offset": 92, "size_bytes": 1 },
+          { "name": "UsedPortalPath", "type": "byte", "offset": 93, "size_bytes": 1 },
+          { "name": "UsedSealedBulkhead", "type": "byte", "offset": 94, "size_bytes": 1 },
+          { "name": "UsedReprojectionCache", "type": "byte", "offset": 95, "size_bytes": 1 },
+          { "name": "_reserved0", "type": "uint", "offset": 96, "size_bytes": 4 }
+        ],
+        "implicit_padding": "bytes_100_103_unnamed",
+        "arm64_status": "aligned_size_multiple_of_8_with_unnamed_tail_padding"
+      },
+      {
+        "name": "AcousticPortalCacheEntry",
+        "file": "Assets/_Project/Scripts/SpatialAudioManager.cs",
+        "lines": "642-677",
+        "layout": "Explicit",
+        "size_bytes": 256,
+        "fields_summary": "SourceAup 0-39, ListenerAup 40-79, Result 80-183, Key 184, Frame 188, Valid 192, explicit pad/reserved through 255",
+        "arm64_status": "aligned_size_multiple_of_8_no_implicit_tail_padding"
+      }
+    ],
+    "graph_build_flow": [
+      {
+        "step": "TryResolveAcousticPortalPath returns false when quality gate is below smoothstep threshold.",
+        "evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:7229-7242; Assets/_Project/Scripts/SpatialAudioManager.cs:7335-7339"
+      },
+      {
+        "step": "Cache key lookup occurs before graph build; cache hit writes black box and returns only if PathFound plus UsedPortalPath.",
+        "evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:7244-7251"
+      },
+      {
+        "step": "Work buffers are DataVault-backed NativeArrays for nodes, edges, result, costs, cameFrom, states, open set, closed set.",
+        "evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:7253-7259; Assets/_Project/Scripts/SpatialAudioManager.cs:8788-8833"
+      },
+      {
+        "step": "Habitat graph is preferred; voxel macro portal route is fallback.",
+        "evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:7342-7368"
+      },
+      {
+        "step": "Voxel route copies at most 30 waypoints and emits adjacent bidirectional edges under the 60-edge cap.",
+        "evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:7370-7433"
+      },
+      {
+        "step": "Habitat graph BFS maps source/listener and neighbors until nodeCount reaches 30, then emits local edges until 60.",
+        "evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:7448-7586"
+      },
+      {
+        "step": "AcousticPathJob is executed synchronously through IJob.Execute, not scheduled.",
+        "evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:7296-7311"
+      }
+    ],
+    "pathfinding_algorithm": {
+      "job": "AcousticPathJob",
+      "evidence": "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs:244-597",
+      "bounds": "NodeCount clamped to 30, EdgeCount clamped to 60, MaxNodeExpansions clamped to 1..30.",
+      "bounds_evidence": "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs:287-310",
+      "loop_exit": "Main expansion loop terminates on openCount <= 0 or expanded >= maxExpansions.",
+      "loop_exit_evidence": "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs:343-398",
+      "result_model": "Corners and sealed bulkheads reduce transmission, reduce low-pass cutoff, and add delay; ITD is derived from listener right vector.",
+      "result_evidence": "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs:462-573"
+    },
+    "black_box": {
+      "capacity": 300,
+      "write_evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:7746-7804",
+      "dump_path": "Docs/AgentLogs/Dump_ACOUSTIC_PORTAL_PROPAGATION.bin",
+      "dump_evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:529; Assets/_Project/Scripts/SpatialAudioManager.cs:7817-7865",
+      "dump_trigger": "nonfinite AcousticPathResult fields"
+    }
+  },
+  "virtual_voice": {
+    "capacities": {
+      "max_virtual_voices": {
+        "value": 1000,
+        "evidence": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs:732-735; Assets/_Project/Scripts/SpatialAudioManager.cs:495"
+      },
+      "max_physical_voices": {
+        "value": 64,
+        "evidence": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs:735; Assets/_Project/Scripts/SpatialAudioManager.cs:496"
+      },
+      "low_tier_physical_voices": {
+        "value": 12,
+        "evidence": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs:736; Assets/_Project/Scripts/SpatialAudioManager.cs:497"
+      },
+      "continuous_budget_function": {
+        "formula": "clamp((int)lerp(12, 64, saturate(GlobalQualityWeight)), 12, 64)",
+        "evidence": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs:871-879"
+      },
+      "leviathan_category_limit": {
+        "value": 3,
+        "evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:436; Assets/_Project/Scripts/SpatialAudioManager.cs:9666-9677"
+      },
+      "bubble_category_limit": {
+        "value": 10,
+        "evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:437; Assets/_Project/Scripts/SpatialAudioManager.cs:9666-9677"
+      }
+    },
+    "struct_layouts": [
+      {
+        "name": "VirtualVoiceDTO",
+        "file": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs",
+        "lines": "52-73",
+        "layout": "Explicit",
+        "size_bytes": 48,
+        "fields": [
+          { "name": "AupMeters", "type": "double3", "offset": 0, "size_bytes": 24 },
+          { "name": "Volume", "type": "float", "offset": 24, "size_bytes": 4 },
+          { "name": "Pitch", "type": "float", "offset": 28, "size_bytes": 4 },
+          { "name": "ClipHash", "type": "uint", "offset": 32, "size_bytes": 4 },
+          { "name": "SourceEntityID", "type": "uint", "offset": 36, "size_bytes": 4 },
+          { "name": "Importance", "type": "float", "offset": 40, "size_bytes": 4 },
+          { "name": "Padding", "type": "uint", "offset": 44, "size_bytes": 4 }
+        ],
+        "arm64_status": "aligned_size_multiple_of_8_no_implicit_tail_padding"
+      },
+      {
+        "name": "AcousticSourceDTO",
+        "file": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs",
+        "lines": "78-92",
+        "layout": "Explicit",
+        "size_bytes": 64,
+        "fields_summary": "SourceHash 0, BaseVolume 4, BasePitch 8, Flags 12, AUP_Position double3 16-39, ComputedOcclusion 40, ComputedReverb 44, pads 48/52/56/60",
+        "arm64_status": "aligned_size_multiple_of_8_no_implicit_tail_padding"
+      },
+      {
+        "name": "AcousticDspOutputDTO",
+        "file": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs",
+        "lines": "97-116",
+        "layout": "Explicit",
+        "size_bytes": 64,
+        "fields_summary": "SourceHash 0, Volume 4, Pitch 8, Occlusion01 12, ReverbRt60Seconds 16, LowPassHertz 20, DelaySeconds 24, DopplerRatio 28, ItdSeconds 32, Ild01 36, DistanceSq 40, Flags 44, pads 48/52/56/60",
+        "arm64_status": "aligned_size_multiple_of_8_no_implicit_tail_padding"
+      },
+      {
+        "name": "VirtualVoiceRequest",
+        "file": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs",
+        "lines": "138-255",
+        "layout": "Explicit",
+        "size_bytes": 128,
+        "implicit_padding": "bytes_105_107_and_112_127_unnamed",
+        "arm64_status": "aligned_size_multiple_of_8_with_unnamed_padding"
+      },
+      {
+        "name": "VirtualVoice",
+        "file": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs",
+        "lines": "261-312",
+        "layout": "Explicit",
+        "size_bytes": 160,
+        "implicit_padding": "bytes_125_159_unnamed",
+        "arm64_status": "aligned_size_multiple_of_8_with_unnamed_padding"
+      },
+      {
+        "name": "VirtualVoiceSortKey",
+        "file": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs",
+        "lines": "318-329",
+        "layout": "Explicit",
+        "size_bytes": 16,
+        "fields_summary": "Weight float 0, StableKey uint 4, VoiceIndex int 8, reserved uint 12",
+        "arm64_status": "aligned_size_multiple_of_8_no_implicit_tail_padding"
+      },
+      {
+        "name": "VirtualVoiceSelection",
+        "file": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs",
+        "lines": "334-381",
+        "layout": "Explicit",
+        "size_bytes": 144,
+        "implicit_padding": "bytes_117_143_unnamed",
+        "arm64_status": "aligned_size_multiple_of_8_with_unnamed_padding"
+      },
+      {
+        "name": "VirtualVoiceStatistics",
+        "file": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs",
+        "lines": "386-421",
+        "layout": "Explicit",
+        "size_bytes": 64,
+        "arm64_status": "aligned_size_multiple_of_8"
+      },
+      {
+        "name": "AcousticTelemetryEntry",
+        "file": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs",
+        "lines": "426-471",
+        "layout": "Explicit",
+        "size_bytes": 64,
+        "arm64_status": "aligned_size_multiple_of_8"
+      },
+      {
+        "name": "VirtualVoiceTelemetryEntry",
+        "file": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs",
+        "lines": "476-521",
+        "layout": "Explicit",
+        "size_bytes": 64,
+        "arm64_status": "aligned_size_multiple_of_8_no_implicit_tail_padding"
+      },
+      {
+        "name": "VirtualVoiceTuningSnapshot",
+        "file": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs",
+        "lines": "526-588",
+        "layout": "Explicit",
+        "size_bytes": 32,
+        "fields_summary": "SoundSpeed 0, GlobalOcclusionPenalty 4, OccludedLowPass 8, SabineDecayScale 12, MaxHydratedVoices 16, DisableSdfOcclusion 20, reserved 21-27",
+        "implicit_padding": "bytes_28_31_unnamed",
+        "arm64_status": "aligned_size_multiple_of_8_with_unnamed_tail_padding"
+      }
+    ],
+    "allocation_flow": [
+      {
+        "step": "SoundEmissionSignal is rejected if the write pool is unavailable, voice count is already 1000, AUP is nonfinite, or clip lookup fails.",
+        "evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:2442-2455"
+      },
+      {
+        "step": "AppendVirtualVoice computes stable key from event, clip hash, source entity, stationary key, and AUP.",
+        "evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:2685-2703; Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs:755-782"
+      },
+      {
+        "step": "AppendVirtualVoice writes VirtualVoice, VirtualVoiceDTO, AcousticSourceDTO, and previous AUP into DataVault-backed NativeArray pools.",
+        "evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:2704-2768; Assets/_Project/Scripts/SpatialAudioManager.cs:2792-2838"
+      },
+      {
+        "step": "FastTick swaps write/sort pools, clamps writeCount, zeroes write count, then schedules VirtualVoiceSortJob.",
+        "evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:1670-1796"
+      },
+      {
+        "step": "LateFrameTick attempts no-wait finalization and then injects selections into pooled AudioSources.",
+        "evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:1848-1866; Assets/_Project/Scripts/SpatialAudioManager.cs:3420-3482"
+      }
+    ],
+    "sort_and_cull_algorithm": {
+      "job": "VirtualVoiceSortJob",
+      "evidence": "Assets/_Project/Scripts/Audio/AudioVirtualizationJobs.cs:14-404",
+      "weight_inputs": "volume, priority, distance attenuation, SDF/dear-lie occlusion, foveation tier, rollback suppression",
+      "weight_evidence": "Assets/_Project/Scripts/Audio/AudioVirtualizationJobs.cs:80-190",
+      "sort": "iterative quicksort with stackalloc int[64] left/right stacks and shell sort fallback; comparator sorts Weight descending then StableKey ascending.",
+      "sort_evidence": "Assets/_Project/Scripts/Audio/AudioVirtualizationJobs.cs:269-375",
+      "selection_limit": "selectedCount = min(safeLimit, audibleCount), where safeLimit is clamped by physical voice limit and output selection capacity.",
+      "selection_evidence": "Assets/_Project/Scripts/Audio/AudioVirtualizationJobs.cs:197-229",
+      "starvation_behavior": "Audible voices beyond selectedCount become StolenVoices. If a sort job overruns, current write batch is accounted as dropped instead of completing on the hot path.",
+      "starvation_evidence": "Assets/_Project/Scripts/Audio/AudioVirtualizationJobs.cs:221-226; Assets/_Project/Scripts/SpatialAudioManager.cs:3342-3359"
+    },
+    "physical_voice_injection": {
+      "pool_type": "Unity AudioSource pool",
+      "world_pool_default": 32,
+      "world_pool_range": "4..32",
+      "two_d_pool_default": 8,
+      "two_d_pool_range": "2..16",
+      "evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:721-729",
+      "eviction": "AcquireSourceIndex chooses first inactive source, otherwise quietest active source with oldest start time as tiebreaker.",
+      "eviction_evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:5560-5607",
+      "play_calls": "Virtual voice hydration ultimately calls source.Play or source.PlayDelayed; no first-party PlayOneShot call was found in SpatialAudioManager.",
+      "play_evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:3538-3685; Assets/_Project/Scripts/SpatialAudioManager.cs:7133-7142"
+    },
+    "black_box": {
+      "capacity": 300,
+      "dump_path": "Docs/AgentLogs/Dump_ACOUSTIC_SURGEON.bin",
+      "write_evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:4699-4776",
+      "dump_evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:501; Assets/_Project/Scripts/SpatialAudioManager.cs:4811-4855",
+      "dump_trigger": "nonfinite loudest weight, nonfinite sort/occlusion time, sort time > 0.5 ms, or acoustic occlusion time > 1.0 ms"
+    }
+  },
+  "dsp_synthesis": {
+    "hull_stress_kernel": {
+      "file": "Assets/_Project/Scripts/Audio/Synthesis/HullStressGranularDspKernel.cs",
+      "callback_type": "Burst function pointer delegate using raw unmanaged pointers",
+      "callback_evidence": "Assets/_Project/Scripts/Audio/Synthesis/HullStressGranularDspKernel.cs:118-128; Assets/_Project/Scripts/Audio/Synthesis/HullStressGranularDspKernel.cs:231-265",
+      "struct_layouts": [
+        {
+          "name": "GranularVoiceDTO",
+          "lines": "18-43",
+          "layout": "Explicit",
+          "size_bytes": 64,
+          "fields_summary": "EpicenterAUP double3 0-23, AudioBankHashID 24, PlayheadPosition 28, GrainLength 32, PitchMultiplier 36, Amplitude 40, pads 44/48/52/56/60",
+          "arm64_status": "aligned_size_multiple_of_8_no_implicit_tail_padding"
+        },
+        {
+          "name": "AudioDspTelemetryEntry",
+          "lines": "48-72",
+          "layout": "Explicit",
+          "size_bytes": 64,
+          "fields_summary": "SampleIndex 0, DspExecutionTicks 8, MaxAmplitude 16, ActiveVoices 20, StolenVoices 24, VoiceLimit 28, Flags 32, NanSampleCount 36, OutputRms 40, GlobalQualityWeight 44, pads 48/52/56/60",
+          "arm64_status": "aligned_size_multiple_of_8_no_implicit_tail_padding"
+        },
+        {
+          "name": "HullStressAudioProfileDTO",
+          "lines": "77-90",
+          "layout": "Explicit",
+          "size_bytes": 32,
+          "arm64_status": "aligned_size_multiple_of_8"
+        },
+        {
+          "name": "HullStressAudioBlockParamsDTO",
+          "lines": "95-116",
+          "layout": "Explicit",
+          "size_bytes": 96,
+          "fields_summary": "ListenerAUP double3 0-23, SampleIndexBase 24, DspExecutionTicks 32, ListenerRight float3 40-51, GlobalQualityWeight 52, DistanceRolloff 56, FrameCount 60, Channels 64, SampleRate 68, StolenVoices 72, Flags 76, OutputSampleCapacity 80, pad0 84, pad1 88",
+          "arm64_status": "aligned_size_multiple_of_8_no_implicit_tail_padding"
+        }
+      ],
+      "polyphony": {
+        "formula": "ceil/round lerp from 8 to 64 by GlobalQualityWeight, clamped by capacity",
+        "evidence": "Assets/_Project/Scripts/Audio/Synthesis/HullStressGranularDspKernel.cs:146-153"
+      },
+      "inner_loop": {
+        "allocation_status": "no managed allocations found in EvaluateBlock static inner loop; it uses pointer arithmetic, math functions, and bounded for loops.",
+        "evidence": "Assets/_Project/Scripts/Audio/Synthesis/HullStressGranularDspKernel.cs:270-470"
+      },
+      "voice_steal": {
+        "algorithm": "ResolveVoiceSlot returns first inactive slot, otherwise steals the lowest priority voice only when new amplitude exceeds victim priority.",
+        "evidence": "Assets/_Project/Scripts/Audio/Synthesis/HullStressGranularDspKernel.cs:668-705"
+      }
+    },
+    "player_critical_renderer": {
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs",
+      "voice_capacity": 64,
+      "telemetry_capacity": 300,
+      "evidence": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:136-138",
+      "synthesis_block_frames_range": "256..4096 serialized, default 1024",
+      "ring_buffer_capacity_default_frames": 65536,
+      "worker_target_lead_default_frames": 16384,
+      "buffer_evidence": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:518-524; Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:13",
+      "struct_layouts": [
+        {
+          "name": "GranularAudioTelemetryEntry",
+          "lines": "1384-1415",
+          "layout": "Explicit",
+          "size_bytes": 64,
+          "arm64_status": "aligned_size_multiple_of_8_no_implicit_tail_padding"
+        },
+        {
+          "name": "AudioThreadDiagnostics",
+          "lines": "1477-1494",
+          "layout": "Explicit",
+          "size_bytes": 32,
+          "arm64_status": "aligned_size_multiple_of_8_no_implicit_tail_padding"
+        },
+        {
+          "name": "GranularSynthTuningSnapshot",
+          "lines": "1499-1514",
+          "layout": "Explicit",
+          "size_bytes": 16,
+          "arm64_status": "aligned_size_multiple_of_8_no_implicit_tail_padding"
+        },
+        {
+          "name": "AudioParameterSnapshot",
+          "lines": "1516-1639",
+          "layout": "Explicit",
+          "size_bytes": 256,
+          "arm64_status": "aligned_size_multiple_of_8_no_implicit_tail_padding"
+        },
+        {
+          "name": "AudioParameterSnapshotSlot",
+          "lines": "1641-1648",
+          "layout": "Explicit",
+          "size_bytes": 320,
+          "arm64_status": "aligned_size_multiple_of_8_no_implicit_tail_padding"
+        }
+      ],
+      "parameter_publish": {
+        "producer": "PublishAudioParameterSnapshot builds a 256-byte unmanaged snapshot, writes inactive cache-line-padded slot, then Interlocked.Exchange publishes the read index.",
+        "evidence": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:11662-11733"
+      },
+      "producer_thread": {
+        "model": "managed background Thread named Hecton8ProceduralAudioProducer produces blocks into SPSC ring; no IAudioOutputJob usage found in audited first-party files.",
+        "start_evidence": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:2786-2818",
+        "loop_evidence": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:2849-2876",
+        "block_evidence": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:3070-3232"
+      },
+      "ring_buffer": {
+        "type": "AudioFrameSpscRingBuffer",
+        "capacity_default_frames": 65536,
+        "write_model": "TryWriteInterleaved reads shared read/write indices with Volatile.Read, writes samples into NativeArray<float>, and publishes write index with Volatile.Write.",
+        "write_evidence": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:150-217; Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:318-340",
+        "native_descriptor": "NativeAudioKernelRingBufferDescriptor explicit size 56",
+        "descriptor_evidence": "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:27-66"
+      }
+    }
+  },
+  "quality_scaling": {
+    "virtual_voice_physical_budget": "GlobalQualityWeight continuous 0..1 maps 12..64 physical voices.",
+    "virtual_voice_physical_budget_evidence": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs:871-879",
+    "sdf_occlusion_taps": "GlobalQualityWeight smoothstep curve maps to 1..8 taps.",
+    "sdf_occlusion_taps_evidence": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs:881-887",
+    "portal_path_gate": "smoothstep(0.12, 0.92, quality) gates portal path use.",
+    "portal_path_gate_evidence": "Assets/_Project/Scripts/SpatialAudioManager.cs:7335-7339",
+    "granular_polyphony": "GlobalQualityWeight maps hull-stress granular voice cap from 8 to 64.",
+    "granular_polyphony_evidence": "Assets/_Project/Scripts/Audio/Synthesis/HullStressGranularDspKernel.cs:146-153",
+    "depth_lowpass": "Depth low-pass floor lerps by GlobalQualityWeight.",
+    "depth_lowpass_evidence": "Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs:889-897"
+  },
+  "audio_thread_and_synchronization_risks": [
+    {
+      "severity": "critical",
+      "id": "NATIVE_RING_WRITE_INDEX_ALIGNMENT",
+      "fact": "NativeAudioKernelRingBufferDescriptor requires 8-byte alignment for WriteIndex, but TryCreateNativeDescriptor points WriteIndex to sharedStatePtr + WriteIndexSlot where sharedStatePtr is int* and WriteIndexSlot is 1. If sharedStatePtr is 8-aligned, WriteIndex is base+4 and IsDescriptorValid sets AlignmentInvalid.",
+      "evidence": [
+        "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:31-38",
+        "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:85-90",
+        "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:254-267"
+      ],
+      "impact": "Native HectonAudioKernel registration can be rejected before registration; procedural master-bus output is not registered.",
+      "impact_evidence": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:7224-7265"
+    },
+    {
+      "severity": "high",
+      "id": "PORTAL_PATH_SYNC_EXECUTE",
+      "fact": "AcousticPathJob is invoked with pathJob.Execute inside TryResolveAcousticPortalPath. This is bounded to 30 nodes and 60 edges but still synchronous on the caller path.",
+      "evidence": [
+        "Assets/_Project/Scripts/SpatialAudioManager.cs:7296-7311",
+        "Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs:287-398"
+      ],
+      "impact": "Portal path cost is paid inline before AudioSource play/hydration."
+    },
+    {
+      "severity": "medium",
+      "id": "FORCE_COMPLETE_BARRIERS",
+      "fact": "Normal finalization is no-wait, but origin shifts and explicit barriers can force complete virtual sort and acoustic occlusion jobs.",
+      "evidence": [
+        "Assets/_Project/Scripts/SpatialAudioManager.cs:1834-1843",
+        "Assets/_Project/Scripts/SpatialAudioManager.cs:2990-2999",
+        "Assets/_Project/Scripts/SpatialAudioManager.cs:3370-3380"
+      ],
+      "impact": "Predictable barrier path exists; not an invisible same-frame schedule/readback loop in FastTick/LateFrameTick."
+    },
+    {
+      "severity": "medium",
+      "id": "MANAGED_AUDIO_CALLBACKS_ADJACENT",
+      "fact": "PlayerCriticalProceduralAudioRenderer has no OnAudioFilterRead match, but adjacent first-party synthesis modules still declare OnAudioFilterRead.",
+      "evidence": [
+        "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs:318",
+        "Assets/_Project/Scripts/Audio/Synthesis/DynamicMusic/DynamicMusicGranularSynthesizer.cs:616"
+      ],
+      "impact": "Not part of the audited player-critical structural renderer path, but violates a strict unmanaged-DSP-only target if these modules are included in the same runtime audio budget."
+    },
+    {
+      "severity": "medium",
+      "id": "UNNAMED_TAIL_PADDING",
+      "fact": "Several explicit-layout DTOs have explicit Size larger than the last named field end, leaving unnamed tail bytes.",
+      "affected_structs": [
+        "SoundEmissionSignal bytes 60-63",
+        "AcousticPathResult bytes 100-103",
+        "VirtualVoiceRequest bytes 105-107 and 112-127",
+        "VirtualVoice bytes 125-159",
+        "VirtualVoiceSelection bytes 117-143",
+        "VirtualVoiceTuningSnapshot bytes 28-31"
+      ],
+      "impact": "ARM64 size alignment is valid, but DATA_Runtime padding hygiene is weaker than DTOs with named pad fields."
+    },
+    {
+      "severity": "low",
+      "id": "DUMP_PATH_OWNER_NAMES",
+      "fact": "Black-box dump paths use owner/system names, not Dump_X_016.bin.",
+      "evidence": [
+        "Assets/_Project/Scripts/SpatialAudioManager.cs:501",
+        "Assets/_Project/Scripts/SpatialAudioManager.cs:529",
+        "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:10731-10736"
+      ],
+      "impact": "Existing runtime crash artifacts do not match this scout agent ID. This audit did not alter source ownership."
+    }
+  ],
+  "zero_gc_static_result": {
+    "jobs_and_kernels": "VirtualVoiceSortJob, AcousticOcclusionJob, AcousticPathJob, HullStressGranularDspKernel.EvaluateBlock, BinauralVoxelAcousticsOutputJob, and GranularSynthesisBlockJob use NativeArrays, stackalloc, raw pointers, and value structs in inner loops. No managed allocation instruction was found in the audited inner loops.",
+    "cold_allocations": "SpatialAudioManager and PlayerCriticalProceduralAudioRenderer allocate managed arrays/GraphicsBuffers during initialization or cache setup with COLD ALLOC comments; not observed inside the DSP sample loops.",
+    "cold_allocation_evidence": [
+      "Assets/_Project/Scripts/SpatialAudioManager.cs:8624-8842",
+      "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:6546-6555"
+    ],
+    "unity_audio_source_path": "SpatialAudioManager still hydrates selected virtual voices onto Unity AudioSource instances for world presentation; this is a presentation voice pool, not an unmanaged sample callback.",
+    "unity_audio_source_evidence": [
+      "Assets/_Project/Scripts/SpatialAudioManager.cs:3538-3685",
+      "Assets/_Project/Scripts/SpatialAudioManager.cs:7133-7142"
+    ]
+  },
+  "verification": {
+    "json_written_by": "X_016 static audit",
+    "csharp_files_modified_by_x_016": [],
+    "compile_attempted": false,
+    "reason_compile_not_attempted": "read-only C# audit with no source mutation"
+  }
+}

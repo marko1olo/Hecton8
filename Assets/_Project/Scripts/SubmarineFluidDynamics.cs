@@ -5454,7 +5454,7 @@ namespace Hecton8.Physics
         private void RefreshRuntimeActorContextsIfMissing()
         {
             if (_playerRuntime == null || IsUnityObjectInvalid(_playerRuntime))
-                _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerRuntime = GlobalRegistry.Player;
 
             if (_submarineRuntime == null || IsUnityObjectInvalid(_submarineRuntime))
                 _submarineRuntime = GlobalRegistry.Submarine;
@@ -5964,7 +5964,7 @@ namespace Hecton8.Physics
 
             _hydroBlackBox[index] = new HydroBlackBoxEntry
             {
-                Frame = Time.frameCount,
+                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                 FixedTime = Time.fixedTime,
                 Position = ToFloat3(position),
                 Velocity = ToFloat3(velocity),

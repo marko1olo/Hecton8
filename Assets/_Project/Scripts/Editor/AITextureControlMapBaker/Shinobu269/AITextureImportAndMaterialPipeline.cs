@@ -327,7 +327,7 @@ namespace Hecton8.Editor.AITextureControlMaps
                 Shader shader = FindUberNoirShader();
                 if (shader == null)
                 {
-                    Debug.LogError("[AITextureMaterialBinder] UberNoir shader missing; material not created for " + materialPath + ".");
+                    Hecton8.Core.H8Debug.LogError("[AITextureMaterialBinder] UberNoir shader missing; material not created for " + materialPath + ".");
                     WritePrefabBindingReport(assetKey, "NONE", "BLOCKED_MISSING_UBERNOIR_SHADER", string.Empty, string.Empty, -1);
                     return;
                 }

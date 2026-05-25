@@ -1,6 +1,6 @@
 ﻿# HECTON-8 Build / Playtest Issues
 
-Date: 2026-05-23
+Date: 2026-05-26
 Status: PENDING VERIFICATION
 Owner: build/playtest issue anchor
 Evidence: STATIC_DOC only unless a build/playtest artifact is cited
@@ -15,14 +15,15 @@ Do not mark `[x]` without current player build, Play Mode, user confirmation, pr
 
 ## Current Build Evidence
 
-Last local CLI PASS cited by documentation:
+Latest local full-solution CLI PASS:
 
-- `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup52_cultivation_inventory_rebind_retry4.log`
-- Scope: `Hecton8.Editor.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false`
-- Text scan: 0 `: warning ` / 0 `: error `
+- `Docs/Reports/BUILD_UNKNOWN_RECHECK_20260526_020504.log`
+- Command: `dotnet build .\Hecton8.slnx -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false`
+- Exit code: `0`
+- Proof lines: `66 Build succeeded.`, `67 0 Warning(s)`, `68 0 Error(s)`
 - Evidence class: CLI_COMPILE only
 
-Loops 55-73 after this log are source-only. Source gates passed for hot registry/quality cleanup, owner-cache cleanup, warning cleanup, BeaconNetwork static-action fallback cleanup, dead armor job removal, runtime `?? GlobalRegistry` cleanup, and Scanner/FloatingOrigin/Combat/Analytics DataVault owner-cache cleanup; guarded compile is still blocked by CPU/compiler contention.
+This supersedes older root-doc statements that compile was blocked by CPU/compiler contention. It does not prove Unity import, Play Mode, player build, profiler, GC, scene wiring, or visual quality.
 
 Not proven by that log:
 

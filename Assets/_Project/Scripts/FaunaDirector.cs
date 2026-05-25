@@ -794,7 +794,7 @@ namespace Hecton8.AI
             if (_vegetationThreatBridge == null)
                 _vegetationThreatBridge = GlobalRegistry.VegetationThreat;
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -859,7 +859,7 @@ namespace Hecton8.AI
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
             if (_saveService == null)
                 return;
 
@@ -3199,7 +3199,7 @@ namespace Hecton8.AI
                 if (savedCount >= ProceduralWorldStateDTO.MaxHibernatedFaunaStates)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning(MaxHibernatedFaunaStatesWarning, this);
+                    Hecton8.Core.H8Debug.LogWarning(MaxHibernatedFaunaStatesWarning, this);
 #endif
                     break;
                 }

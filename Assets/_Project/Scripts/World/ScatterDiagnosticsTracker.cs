@@ -117,7 +117,7 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return true;
 
-            float now = Time.unscaledTime;
+            float now = (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (now < _nextRuntimeReportLogTime)
                 return false;
 

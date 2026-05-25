@@ -538,7 +538,7 @@ namespace Hecton8.World
         [ReadOnly, NoAlias] public NativeArray<AbsoluteUniversePositionBlit128> MockPlayerAup;
         [WriteOnly, NoAlias] public NativeArray<BiomeInfluenceDTO> Influence;
         [NoAlias] public NativeArray<BiomeTransitionCounterDTO> Counters;
-        [WriteOnly, NoAlias] public NativeQueue<BiomeChangedSignal>.ParallelWriter BiomeChangedWriter;
+        [WriteOnly, NoAlias] public global::Hecton8.Core.MpscSignalRingBuffer<BiomeChangedSignal>.ParallelWriter BiomeChangedWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> BiomeChangedWriterBudget;
         public AbsoluteUniversePositionBlit128 PlayerAup;
         public float GlobalQualityWeight;

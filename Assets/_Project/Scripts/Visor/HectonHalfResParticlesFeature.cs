@@ -65,9 +65,6 @@ namespace Hecton8.Visor
             }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Half-Res Particles");
-            private readonly ShaderTagId _universalForwardTag;
-            private readonly ShaderTagId _universalForwardOnlyTag;
-            private readonly ShaderTagId _srpDefaultUnlitTag;
             private FeatureSettings _settings;
             private Material _compositeMaterial;
             private GraphicsBuffer _halfResParticlesGlobalsBuffer;
@@ -81,9 +78,6 @@ namespace Hecton8.Visor
             {
                 profilingSampler = _profilingSampler;
                 requiresIntermediateTexture = true;
-                _universalForwardTag = new ShaderTagId("UniversalForward");
-                _universalForwardOnlyTag = new ShaderTagId("UniversalForwardOnly");
-                _srpDefaultUnlitTag = new ShaderTagId("SRPDefaultUnlit");
             }
 
             public void Setup(FeatureSettings settings, Material compositeMaterial)
@@ -141,13 +135,13 @@ namespace Hecton8.Visor
                 UniversalLightData lightData = frameData.Get<UniversalLightData>();
                 UniversalRenderingData renderingData = frameData.Get<UniversalRenderingData>();
                 DrawingSettings drawingSettings = CreateDrawingSettings(
-                    _universalForwardTag,
+                    HectonVisorShaderTagIds.UniversalForward,
                     renderingData,
                     cameraData,
                     lightData,
                     SortingCriteria.CommonTransparent);
-                drawingSettings.SetShaderPassName(1, _universalForwardOnlyTag);
-                drawingSettings.SetShaderPassName(2, _srpDefaultUnlitTag);
+                drawingSettings.SetShaderPassName(1, HectonVisorShaderTagIds.UniversalForwardOnly);
+                drawingSettings.SetShaderPassName(2, HectonVisorShaderTagIds.SrpDefaultUnlit);
 
                 int sanitizedLayerMask = HectonLayerMasks.SanitizeAuthoringLayerMask(_settings.particleLayerMask.value);
                 FilteringSettings filteringSettings = new FilteringSettings(

@@ -88,7 +88,7 @@ namespace Hecton8.Dev
             LogVerbose("[UISmoke] Run begin.");
             if (playerPDA == null || pauseMenu == null)
             {
-                Debug.LogWarning("[UISmoke] Missing PlayerPDA or PauseMenuController.");
+                Hecton8.Core.H8Debug.LogWarning("[UISmoke] Missing PlayerPDA or PauseMenuController.");
                 return;
             }
 
@@ -202,7 +202,7 @@ namespace Hecton8.Dev
                 else
                 {
                     builderOk = false;
-                    Debug.LogWarning("[UISmoke] Skipping builder handoff smoke: missing PDAConstructionTab or PlayerToolManager.");
+                    Hecton8.Core.H8Debug.LogWarning("[UISmoke] Skipping builder handoff smoke: missing PDAConstructionTab or PlayerToolManager.");
                 }
 
                 completed = true;
@@ -213,9 +213,9 @@ namespace Hecton8.Dev
             }
             catch (Exception exception)
             {
-                Debug.LogError("[UISmoke] EXCEPTION smoke pass.");
+                Hecton8.Core.H8Debug.LogError("[UISmoke] EXCEPTION smoke pass.");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogException(exception);
+                Hecton8.Core.H8Debug.LogException(exception);
 #endif
             }
             finally
@@ -246,7 +246,7 @@ namespace Hecton8.Dev
                 }
                 catch (System.Exception)
                 {
-                    Debug.LogError("[UISmoke] Exception in wait predicate.");
+                    Hecton8.Core.H8Debug.LogError("[UISmoke] Exception in wait predicate.");
                     return false;
                 }
 
@@ -259,7 +259,7 @@ namespace Hecton8.Dev
                 await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
             }
 
-            Debug.LogWarning("[UISmoke] Wait predicate timed out.");
+            Hecton8.Core.H8Debug.LogWarning("[UISmoke] Wait predicate timed out.");
             return false;
         }
 

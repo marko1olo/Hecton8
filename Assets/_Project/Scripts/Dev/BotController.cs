@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using Hecton8.Core;
-using Hecton8.Physics;
+using Hecton8.Core.Contracts;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -110,6 +110,7 @@ namespace Hecton8.Dev
         private bool _hasFailure;
         private bool _hasDriveCommand;
         private IPlayerRuntimeContext _playerRuntime;
+        private IPhysicsService _physicsService;
         private string _csvDirectoryPath;
         private string _failureReason = FailureNone;
 
@@ -148,11 +149,13 @@ namespace Hecton8.Dev
             _cachedTransform = transform;
             TryGetComponent(out _playerBody);
             CachePlayerRuntimeCold();
+            CachePhysicsServiceCold();
         }
 
         private void OnEnable()
         {
             CachePlayerRuntimeCold();
+            CachePhysicsServiceCold();
             TryRegisterHotSwapListener();
             _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
             if (_autoStart)
@@ -264,7 +267,7 @@ namespace Hecton8.Dev
             {
                 float acceleration = _accelerationMetersPerSecondSq * _driveScale;
                 Vector3 command = _driveDirection * acceleration;
-                PhysicsForceRouter.QueueForce(
+                _physicsService?.QueueForce(
                     _playerBody,
                     command,
                     ForceMode.Acceleration);
@@ -323,6 +326,11 @@ namespace Hecton8.Dev
             _playerRuntime = Hecton8.Core.GlobalRegistry.Player;
         }
 
+        private void CachePhysicsServiceCold()
+        {
+            _physicsService = GlobalRegistry.Physics;
+        }
+
         private void TryRegisterHotSwapListener()
         {
             if (_registeredHotSwap)
@@ -345,10 +353,14 @@ namespace Hecton8.Dev
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.Player)
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _playerRuntime = currentService as IPlayerRuntimeContext;
                 return;
+            }
 
-            _playerRuntime = currentService as IPlayerRuntimeContext;
+            if (serviceSlot == GlobalRegistryServiceSlot.Physics)
+                _physicsService = currentService as IPhysicsService;
         }
 
         private void RecordCsvSample(float sampleSeconds, int sampleFrames)

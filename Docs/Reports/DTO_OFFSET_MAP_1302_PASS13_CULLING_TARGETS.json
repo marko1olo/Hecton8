@@ -1,0 +1,816 @@
+﻿{
+    "schema":  3,
+    "agent":  1302,
+    "pass":  13,
+    "generatedUtc":  "2026-05-25T19:47:34.9230707Z",
+    "structCount":  10,
+    "violationCount":  0,
+    "structs":  [
+                    {
+                        "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                        "struct":  "PhysicsImpactEventData",
+                        "size":  112,
+                        "sizeMultipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "access":  "public",
+                                           "type":  "AbsoluteUniversePosition",
+                                           "field":  "PointAup",
+                                           "rank":  8
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "access":  "public",
+                                           "type":  "ulong",
+                                           "field":  "PrimaryBodyId",
+                                           "rank":  8
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "access":  "public",
+                                           "type":  "ulong",
+                                           "field":  "SecondaryBodyId",
+                                           "rank":  8
+                                       },
+                                       {
+                                           "offset":  64,
+                                           "access":  "public",
+                                           "type":  "float3",
+                                           "field":  "Point",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  76,
+                                           "access":  "public",
+                                           "type":  "float3",
+                                           "field":  "Normal",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  88,
+                                           "access":  "public",
+                                           "type":  "float",
+                                           "field":  "Force",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  92,
+                                           "access":  "public",
+                                           "type":  "float",
+                                           "field":  "Intensity",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  96,
+                                           "access":  "public",
+                                           "type":  "float",
+                                           "field":  "MassVelocity",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  100,
+                                           "access":  "public",
+                                           "type":  "PhysicsImpactWeightClass",
+                                           "field":  "WeightClass",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  101,
+                                           "access":  "public",
+                                           "type":  "byte",
+                                           "field":  "PrimaryAudioMaterialId",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  102,
+                                           "access":  "public",
+                                           "type":  "byte",
+                                           "field":  "SecondaryAudioMaterialId",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  103,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad0",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  104,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad1",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  105,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad2",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  106,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad3",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  107,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad4",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  108,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad5",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  109,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad6",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  110,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad7",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  111,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad8",
+                                           "rank":  1
+                                       }
+                                   ],
+                        "violations":  [
+
+                                       ]
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                        "struct":  "PhysicsCullingTelemetryEntry",
+                        "size":  32,
+                        "sizeMultipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "access":  "public",
+                                           "type":  "int",
+                                           "field":  "FrameIndex",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "access":  "public",
+                                           "type":  "int",
+                                           "field":  "TrackedBodyCount",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "access":  "public",
+                                           "type":  "int",
+                                           "field":  "CulledBodyCount",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "access":  "public",
+                                           "type":  "uint",
+                                           "field":  "BodyId",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "access":  "public",
+                                           "type":  "float",
+                                           "field":  "DistanceSq",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  20,
+                                           "access":  "private",
+                                           "type":  "uint",
+                                           "field":  "_pad0",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "access":  "public",
+                                           "type":  "ushort",
+                                           "field":  "CcdInterventions",
+                                           "rank":  2
+                                       },
+                                       {
+                                           "offset":  26,
+                                           "access":  "public",
+                                           "type":  "byte",
+                                           "field":  "Command",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  27,
+                                           "access":  "public",
+                                           "type":  "byte",
+                                           "field":  "AwakeResult",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "access":  "public",
+                                           "type":  "byte",
+                                           "field":  "Flags",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  29,
+                                           "access":  "public",
+                                           "type":  "byte",
+                                           "field":  "Reserved",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  30,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad1",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  31,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad2",
+                                           "rank":  1
+                                       }
+                                   ],
+                        "violations":  [
+
+                                       ]
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                        "struct":  "PhysicsCullingDTO",
+                        "size":  40,
+                        "sizeMultipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "access":  "public",
+                                           "type":  "double3",
+                                           "field":  "AUP",
+                                           "rank":  8
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "access":  "public",
+                                           "type":  "int",
+                                           "field":  "InstanceId",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "access":  "public",
+                                           "type":  "float",
+                                           "field":  "ActivationRadiusSq",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "access":  "public",
+                                           "type":  "uint",
+                                           "field":  "CullingFlags",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "access":  "public",
+                                           "type":  "byte",
+                                           "field":  "IsAsleep",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  37,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad0",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  38,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad1",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  39,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad2",
+                                           "rank":  1
+                                       }
+                                   ],
+                        "violations":  [
+
+                                       ]
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                        "struct":  "FrozenVelocityDTO",
+                        "size":  32,
+                        "sizeMultipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "access":  "public",
+                                           "type":  "float3",
+                                           "field":  "LinearVelocity",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "access":  "public",
+                                           "type":  "float3",
+                                           "field":  "AngularVelocity",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "access":  "private",
+                                           "type":  "uint",
+                                           "field":  "_pad0",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "access":  "public",
+                                           "type":  "byte",
+                                           "field":  "HasVelocity",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  29,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad1",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  30,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad2",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  31,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad3",
+                                           "rank":  1
+                                       }
+                                   ],
+                        "violations":  [
+
+                                       ]
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                        "struct":  "PhysicsCullingTargetWakeRequestSignal",
+                        "size":  16,
+                        "sizeMultipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "access":  "public",
+                                           "type":  "float3",
+                                           "field":  "ImpulseVector",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "access":  "public",
+                                           "type":  "uint",
+                                           "field":  "TargetInstanceId",
+                                           "rank":  4
+                                       }
+                                   ],
+                        "violations":  [
+
+                                       ]
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                        "struct":  "MockSeismicShockwaveSignal",
+                        "size":  48,
+                        "sizeMultipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "access":  "public",
+                                           "type":  "double3",
+                                           "field":  "EpicenterAup",
+                                           "rank":  8
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "access":  "public",
+                                           "type":  "float",
+                                           "field":  "RadiusMeters",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "access":  "public",
+                                           "type":  "uint",
+                                           "field":  "Seed",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "access":  "public",
+                                           "type":  "uint",
+                                           "field":  "Frame",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "access":  "public",
+                                           "type":  "byte",
+                                           "field":  "Fire",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  37,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad0",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  38,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad1",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  39,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad2",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad3",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  41,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad4",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  42,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad5",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  43,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad6",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  44,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad7",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  45,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad8",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  46,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad9",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  47,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad10",
+                                           "rank":  1
+                                       }
+                                   ],
+                        "violations":  [
+
+                                       ]
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                        "struct":  "PhysicsCullingFrameTelemetry",
+                        "size":  32,
+                        "sizeMultipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "access":  "public",
+                                           "type":  "int",
+                                           "field":  "FrameIndex",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "access":  "public",
+                                           "type":  "int",
+                                           "field":  "TotalTrackedBodies",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "access":  "public",
+                                           "type":  "int",
+                                           "field":  "ActiveBodies",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "access":  "public",
+                                           "type":  "int",
+                                           "field":  "AsleepBodies",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "access":  "public",
+                                           "type":  "float",
+                                           "field":  "StateSyncTimeMs",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  20,
+                                           "access":  "public",
+                                           "type":  "int",
+                                           "field":  "ChangedIndices",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "access":  "public",
+                                           "type":  "uint",
+                                           "field":  "Flags",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "access":  "private",
+                                           "type":  "uint",
+                                           "field":  "_pad0",
+                                           "rank":  4
+                                       }
+                                   ],
+                        "violations":  [
+
+                                       ]
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                        "struct":  "PhysicsCullingCounter64",
+                        "size":  64,
+                        "sizeMultipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "access":  "private",
+                                           "type":  "ulong",
+                                           "field":  "_pad0",
+                                           "rank":  8
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "access":  "private",
+                                           "type":  "ulong",
+                                           "field":  "_pad1",
+                                           "rank":  8
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "access":  "private",
+                                           "type":  "ulong",
+                                           "field":  "_pad2",
+                                           "rank":  8
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "access":  "private",
+                                           "type":  "ulong",
+                                           "field":  "_pad3",
+                                           "rank":  8
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "access":  "private",
+                                           "type":  "ulong",
+                                           "field":  "_pad4",
+                                           "rank":  8
+                                       },
+                                       {
+                                           "offset":  40,
+                                           "access":  "private",
+                                           "type":  "ulong",
+                                           "field":  "_pad5",
+                                           "rank":  8
+                                       },
+                                       {
+                                           "offset":  48,
+                                           "access":  "private",
+                                           "type":  "ulong",
+                                           "field":  "_pad6",
+                                           "rank":  8
+                                       },
+                                       {
+                                           "offset":  56,
+                                           "access":  "public",
+                                           "type":  "int",
+                                           "field":  "Value",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  60,
+                                           "access":  "public",
+                                           "type":  "uint",
+                                           "field":  "Flags",
+                                           "rank":  4
+                                       }
+                                   ],
+                        "violations":  [
+
+                                       ]
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                        "struct":  "PhysicsCullingTuningDTO",
+                        "size":  32,
+                        "sizeMultipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "access":  "public",
+                                           "type":  "float",
+                                           "field":  "DebrisWakeRadiusMeters",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  4,
+                                           "access":  "public",
+                                           "type":  "float",
+                                           "field":  "VehicleWakeRadiusMeters",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  8,
+                                           "access":  "public",
+                                           "type":  "float",
+                                           "field":  "FrustumClampDistanceMeters",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  12,
+                                           "access":  "public",
+                                           "type":  "float",
+                                           "field":  "HysteresisDelaySeconds",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  16,
+                                           "access":  "public",
+                                           "type":  "float",
+                                           "field":  "SpatialCellSizeMeters",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  20,
+                                           "access":  "public",
+                                           "type":  "float",
+                                           "field":  "MockShockwaveRadiusMeters",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "access":  "public",
+                                           "type":  "uint",
+                                           "field":  "Flags",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "access":  "private",
+                                           "type":  "uint",
+                                           "field":  "_pad0",
+                                           "rank":  4
+                                       }
+                                   ],
+                        "violations":  [
+
+                                       ]
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                        "struct":  "PhysicsCullingDebugBody",
+                        "size":  40,
+                        "sizeMultipleOf8":  true,
+                        "fields":  [
+                                       {
+                                           "offset":  0,
+                                           "access":  "public",
+                                           "type":  "double3",
+                                           "field":  "Aup",
+                                           "rank":  8
+                                       },
+                                       {
+                                           "offset":  24,
+                                           "access":  "public",
+                                           "type":  "float",
+                                           "field":  "AgeSeconds",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  28,
+                                           "access":  "public",
+                                           "type":  "int",
+                                           "field":  "InstanceId",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  32,
+                                           "access":  "private",
+                                           "type":  "uint",
+                                           "field":  "_pad0",
+                                           "rank":  4
+                                       },
+                                       {
+                                           "offset":  36,
+                                           "access":  "public",
+                                           "type":  "byte",
+                                           "field":  "IsAsleep",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  37,
+                                           "access":  "public",
+                                           "type":  "byte",
+                                           "field":  "IsHysteresisLocked",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  38,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad1",
+                                           "rank":  1
+                                       },
+                                       {
+                                           "offset":  39,
+                                           "access":  "private",
+                                           "type":  "byte",
+                                           "field":  "_pad2",
+                                           "rank":  1
+                                       }
+                                   ],
+                        "violations":  [
+
+                                       ]
+                    }
+                ],
+    "violations":  [
+
+                   ]
+}

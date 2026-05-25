@@ -111,7 +111,7 @@ namespace Hecton8.VFX
 
         public void LateFrameTick()
         {
-            float deltaTime = Time.unscaledDeltaTime;
+            float deltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             if (_samples == null || _mesh == null)
                 EnsureBuffers();
 

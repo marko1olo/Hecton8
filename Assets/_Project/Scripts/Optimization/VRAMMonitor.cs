@@ -321,9 +321,10 @@ namespace Hecton8.Optimization
             if (IsTextureMemoryOverBudget || IsRenderTextureMemoryOverBudget || IsTotalVRAMOverBudget)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                if (Time.time >= _nextLogTime)
+                float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+                if (now >= _nextLogTime)
                 {
-                    _nextLogTime = Time.time + 5f; // Throttle to once per 5s
+                    _nextLogTime = now + 5f; // Throttle to once per 5s
                     LogVRAMWarning();
                 }
 #endif
@@ -427,7 +428,7 @@ namespace Hecton8.Optimization
             _reportBuilder.Append("RT=").Append((RenderTextureMemoryBytes / (1024f * 1024f)).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB ");
             _reportBuilder.Append("Total=").Append((TotalVRAMBytes / (1024f * 1024f)).ToString("0.0", CultureInfo.InvariantCulture)).Append("MB");
             
-            Debug.LogWarning(_reportBuilder.ToString(), this);
+            Hecton8.Core.H8Debug.LogWarning(_reportBuilder.ToString(), this);
         }
 #endif
     }

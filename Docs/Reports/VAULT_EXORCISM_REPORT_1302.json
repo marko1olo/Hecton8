@@ -1,0 +1,312 @@
+﻿{
+    "schema":  "hecton8.vault_exorcism_report.v14.pass13_root_bridge_exorcism",
+    "generatedAt":  "2026-05-25T19:53:16.7519974Z",
+    "agentId":  "1302",
+    "sourceRoot":  "Assets/_Project/Scripts/Physics",
+    "excluded":  [
+                     "Tether",
+                     "Tethers",
+                     "Cable",
+                     "Cable132",
+                     "HarpoonTension"
+                 ],
+    "buildLaunched":  false,
+    "dotnetBuildLaunched":  false,
+    "promptTaskCount":  20,
+    "roslynPostPatchHash":  "f46a8ed40d0ba7701efaca1cc9024bcfa0fd77729a08235f6e1e64b212aa635e",
+    "counts":  {
+                   "rawScannedFiles":  78,
+                   "rawForbiddenPersistentNativeCollectionCandidates":  1,
+                   "scopedForbiddenPersistentNativeCollectionCandidates":  0,
+                   "scopedForbiddenMonoBehaviourCandidates":  0,
+                   "excludedForbiddenPersistentCandidates":  1,
+                   "hotPathForbiddenManagedHits":  0,
+                   "dtoLayoutViolations":  0,
+                   "strictTouchedSourceHits":  0,
+                   "strictTouchedSourceColdManagedIoOrPathDebt":  0,
+                   "strictTouchedSourceEditorGuarded":  0,
+                   "strictTouchedSourceRuntimeUnclassified":  0,
+                   "tasksDone":  16,
+                   "tasksBlocked":  4
+               },
+    "beforeAfter":  {
+                        "beforeScopedForbiddenPersistentNativeCollectionCandidates":  0,
+                        "afterScopedForbiddenPersistentNativeCollectionCandidates":  0,
+                        "note":  "Before/after within 1302 scope is zero because the only raw offender is excluded cable/tether ownership; no phantom migration was performed."
+                    },
+    "blocked":  [
+                    {
+                        "task":  14,
+                        "name":  "TELEMETRY_RING_IMPLEMENTATION",
+                        "status":  "blocked_by_empty_hit_list",
+                        "proof":  "No migrated buffer failure branches; adding unused ring would violate route-card discipline"
+                    },
+                    {
+                        "task":  15,
+                        "name":  "BLACKBOX_DUMP_ROUTING",
+                        "status":  "partial_physics_route_core_native_writer_absent",
+                        "proof":  "Vehicle local dump writer removed; CoreDiagnostics blackbox route used. Native-only Core dump writer remains absent."
+                    },
+                    {
+                        "task":  16,
+                        "name":  "MOCK_PHYSICS_STRESS_HARNESS",
+                        "status":  "blocked_by_no_migrated_lock_logic",
+                        "proof":  "No new TryAcquireWriteLock path to stress; compile/build not launched by user order"
+                    },
+                    {
+                        "task":  17,
+                        "name":  "DEFRAGMENTATION_RACE_CONDITION_FUZZER",
+                        "status":  "blocked_by_no_migrated_lock_logic",
+                        "proof":  "No migrated direct-pointer owner in scoped hit list to fuzz"
+                    }
+                ],
+    "excludedFindings":  [
+                             {
+                                 "path":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                                 "line":  585,
+                                 "namespace":  "Hecton8.Physics",
+                                 "ownerType":  "VerletCableNodeBuffer",
+                                 "ownerKind":  "StructDeclaration",
+                                 "bases":  "",
+                                 "isMonoBehaviour":  false,
+                                 "isJobField":  false,
+                                 "isCoreMemoryAllowed":  false,
+                                 "collection":  "NativeArray",
+                                 "type":  "NativeArray\u003cVerletNodeDTO\u003e",
+                                 "name":  "Nodes",
+                                 "modifiers":  "public",
+                                 "attributes":  "",
+                                 "classification":  "forbidden_persistent_native_alias_candidate"
+                             }
+                         ],
+    "pass4DumpRoute":  {
+                           "removedLocalVehicleDumpWriter":  true,
+                           "route":  "VehicleComponentDamageRuntime.cs:903-904 -\u003e GlobalTelemetryBus.PushEvent + TryDumpBlackboxNow",
+                           "strictScan":  "Docs/Reports/STRICT_TOUCHED_SOURCE_MANAGED_SCAN_1302_POST_DUMP_ROUTE.json",
+                           "residual":  "Core GlobalTelemetryBus writer still managed IO; no native-only dump plugin found."
+                       },
+    "pass5FaultRoute":  {
+                            "removedPhysicsLocalFaultWriters":  [
+                                                                    "VehicleComponentDamageRuntime.TryWriteBlackBoxDump",
+                                                                    "SubmarineDynamicsRuntime.TryWriteHydrodynamicsBlackBoxDump",
+                                                                    "SubmarineDynamicsRuntime_Gyroscopes.TryWriteGyroBlackBoxDump",
+                                                                    "SubmarineAutopilotSdfNavigator.WriteTelemetryDump"
+                                                                ],
+                            "warmup":  "GlobalTelemetryBus.Initialize() called only from OnEnable/DataVault hot-swap; fault path guarded by BlackboxActiveFrameCount.",
+                            "strictScan":  "Docs/Reports/STRICT_PHYSICS_FAULT_ROUTE_SCAN_1302_PASS5.json",
+                            "dtoOffsetMap":  "Docs/Reports/DTO_OFFSET_MAP_1302_PASS5_TARGETS.json",
+                            "touchedFaultWriterHits":  0,
+                            "broadRuntimeScopedDumpHitCount":  62,
+                            "residual":  "Broader Physics tree still contains runtime local dump writers in Cavitation/Buoyancy/KCC/Exosuit/Seaglide/HabitatFluid and excluded Tether/Cable lanes. Core GlobalTelemetryBus writer is still managed IO internally."
+                        },
+    "pass6RuntimeDumpRoute":  {
+                                  "removedLocalFaultWriters":  [
+                                                                   "Cavitation",
+                                                                   "Exosuit",
+                                                                   "KCC",
+                                                                   "Seaglide",
+                                                                   "HabitatFluidIncursion",
+                                                                   "AnalyticalGerstnerWave",
+                                                                   "AsyncBuoyancyReadback",
+                                                                   "BuoyancyDisplacement",
+                                                                   "VehicleDamage",
+                                                                   "SubmarineDynamics",
+                                                                   "SubmarineGyro",
+                                                                   "SubmarineAutopilot"
+                                                               ],
+                                  "strictScan":  "Docs/Reports/STRICT_PHYSICS_FAULT_ROUTE_SCAN_1302_PASS6.json",
+                                  "dtoOffsetMap":  "Docs/Reports/DTO_OFFSET_MAP_1302_PASS6_TARGETS.json",
+                                  "touchedForbiddenFaultWriterHitCount":  0,
+                                  "coreBlackboxBridgeHitCount":  58,
+                                  "touchedColdReadIoHitCount":  45,
+                                  "broadRuntimeResidualNotEditorNotTetherCount":  1,
+                                  "broadRuntimeResidual":  "GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs:1415 accepts BinaryWriter from root GlobalPhysicsStateManager stream; not a local FileMode.Create writer in the Physics partial.",
+                                  "excludedTetherOrCableHitCount":  15,
+                                  "residual":  "Core GlobalTelemetryBus writer remains managed IO internally; 1302 did not modify Core native writer ownership."
+                              },
+    "pass7ParanoidReview":  {
+                                "sourcePatch":  "HydrodynamicKccRuntime.cs:3462-3464 removed added new float2 from PlanarSpeedSq",
+                                "paranoidReview":  "Docs/Reports/APEX_PASS7_PARANOID_REVIEW_1302.md",
+                                "addedLineTokenScan":  "Docs/Reports/PATCH_ADDED_LINES_TOKEN_SCAN_1302_PASS7.json",
+                                "strictFaultRouteScan":  "Docs/Reports/STRICT_PHYSICS_FAULT_ROUTE_SCAN_1302_PASS7.json",
+                                "dtoOffsetMap":  "Docs/Reports/DTO_OFFSET_MAP_1302_PASS7_TARGETS.json",
+                                "dependencyAudit":  "Docs/Reports/DEPENDENCY_USING_AUDIT_1302_PASS7.json",
+                                "addedForbiddenTokenHitCount":  0,
+                                "touchedForbiddenFaultWriterHitCount":  0,
+                                "dtoLayoutViolations":  0,
+                                "forbiddenUsingCount":  0,
+                                "broadRuntimeResidualNotEditorNotTetherCount":  1,
+                                "residual":  "Core GlobalTelemetryBus writer remains managed IO internally; GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs:1415 still accepts BinaryWriter from root owner."
+                            },
+    "pass8ReleaseIoFence":  {
+                                "sourcePatch":  "Fenced player-compiled cold CSV/File IO behind UNITY_EDITOR in 10 touched runtime files; runtime path now uses vault/default profiles or deterministic mock fallback instead of File/Path APIs.",
+                                "ioGuardScan":  "Docs/Reports/RUNTIME_IO_GUARD_SCAN_1302_PASS8.json",
+                                "diffTokenAudit":  "Docs/Reports/PATCH_FULL_PHYSICS_DIFF_AUDIT_1302_PASS8.json",
+                                "apexReport":  "Docs/Reports/APEX_PASS8_RELEASE_IO_FENCE_1302.md",
+                                "scannedTouchedRuntimeFiles":  18,
+                                "unguardedRuntimeIoTokenHits":  0,
+                                "editorGuardedIoTokenHits":  112,
+                                "inScopePlayerForbiddenDiffTokenHits":  0,
+                                "excludedDiffTokenHits":  24,
+                                "dotnetBuildLaunched":  false,
+                                "roslynExeLaunched":  false,
+                                "roslynSkipReason":  "Win32_Processor LoadPercentage was 67 (\u003e50), user forbids dotnet/build when CPU under work; Pass 8 used CLI/static text scans only.",
+                                "residual":  "Core GlobalTelemetryBus writer remains managed IO internally; excluded Tether/Cable diff lines still contain managed/thread/file tokens outside 1302 scope."
+                            },
+    "pass9CsvScratchVaultTrim":  {
+                                     "sourcePatch":  "Guarded editor-only CSV scratch byte handles/descriptors/constants behind UNITY_EDITOR in 9 runtime nodes; player cold boot no longer registers authoring-only CSV scratch buffers.",
+                                     "csvScratchScan":  "Docs/Reports/CSV_SCRATCH_PLAYER_ALLOCATION_SCAN_1302_PASS9.json",
+                                     "ioGuardScan":  "Docs/Reports/RUNTIME_IO_GUARD_SCAN_1302_PASS9.json",
+                                     "diffTokenAudit":  "Docs/Reports/PATCH_FULL_PHYSICS_DIFF_AUDIT_1302_PASS9.json",
+                                     "apexReport":  "Docs/Reports/APEX_PASS9_CSV_SCRATCH_VAULT_TRIM_1302.md",
+                                     "scannedCsvScratchFiles":  9,
+                                     "csvScratchHitCount":  65,
+                                     "editorGuardedCsvScratchHitCount":  65,
+                                     "unguardedPlayerCsvScratchHitCount":  0,
+                                     "unguardedPlayerCsvScratchAllocationLikeCount":  0,
+                                     "scannedModifiedInScopeFilesForIo":  30,
+                                     "unguardedRuntimeIoTokenHits":  0,
+                                     "editorGuardedIoTokenHits":  110,
+                                     "inScopePlayerForbiddenDiffTokenHits":  0,
+                                     "excludedDiffTokenHits":  17,
+                                     "dotnetBuildLaunched":  false,
+                                     "roslynExeLaunched":  false,
+                                     "roslynSkipReason":  "Win32_Processor LoadPercentage was 87 (\u003e50), user forbids dotnet/build when CPU under work; Pass 9 used CLI/static text scans only.",
+                                     "residual":  "Core GlobalTelemetryBus writer remains managed IO internally; excluded Tether/Cable diff lines still contain managed/thread/file tokens outside 1302 scope."
+                                 },
+    "pass10ParanoidStaticReview":  {
+                                       "prompt":  "Docs/Reports/PROMPT_1302_REEXTRACTED_PASS10.txt",
+                                       "promptTaskCount":  "Docs/Reports/PROMPT_1302_TASK_COUNT_PASS10.json",
+                                       "apexReport":  "Docs/Reports/APEX_PASS10_PARANOID_STATIC_REVIEW_1302.md",
+                                       "managedRiskScan":  "Docs/Reports/PLAYER_SURFACE_MANAGED_RISK_SCAN_1302_PASS10.json",
+                                       "addedTokenScan":  "Docs/Reports/IN_SCOPE_PLAYER_ADDED_TOKEN_SCAN_1302_PASS10.json",
+                                       "boxingScan":  "Docs/Reports/BOXING_CANDIDATE_SCAN_1302_PASS10.json",
+                                       "nativeCollectionFieldScan":  "Docs/Reports/NATIVE_COLLECTION_FIELD_TEXT_SCAN_1302_PASS10.json",
+                                       "aupCastScan":  "Docs/Reports/AUP_CAST_SCAN_1302_PASS10.json",
+                                       "dtoOffsetMap":  "Docs/Reports/DTO_OFFSET_MAP_1302_PASS10_TARGETS.json",
+                                       "dependencyAudit":  "Docs/Reports/DEPENDENCY_USING_AUDIT_1302_PASS10.json",
+                                       "failClosedScan":  "Docs/Reports/FAIL_CLOSED_SCAN_1302_PASS10.json",
+                                       "overengineeringScan":  "Docs/Reports/OVERENGINEERING_ADDED_LINE_SCAN_1302_PASS10.json",
+                                       "scannedModifiedInScopePlayerFiles":  30,
+                                       "existingTextualNewCount":  559,
+                                       "playerManagedRiskHitCount":  0,
+                                       "inScopePlayerAddedForbiddenTokenHits":  0,
+                                       "boxingCandidateCount":  0,
+                                       "nativeCollectionFieldLikeHits":  230,
+                                       "transientJobNativeFieldCount":  230,
+                                       "nonJobOrUnknownNativeFieldCount":  0,
+                                       "possibleAbsoluteAupFloatCastViolations":  0,
+                                       "dtoLayoutViolations":  0,
+                                       "systemLinqUsingCount":  0,
+                                       "addedInScopeForbiddenUsingCount":  0,
+                                       "existingWorldAupDirectDependencyCount":  8,
+                                       "throwNewCount":  0,
+                                       "addedSolverLoopScheduleCompleteHits":  0,
+                                       "dotnetBuildLaunched":  false,
+                                       "roslynExeLaunched":  false,
+                                       "residual":  "Core GlobalTelemetryBus writer remains managed IO internally; existing Hecton8.World AUP dependencies require Core route-card migration if project wants namespace isolation."
+                                   },
+    "pass11PlayerPreprocessorSurfaceFence":  {
+                                                 "prompt":  "Docs/Reports/PROMPT_1302_REEXTRACTED_PASS11.txt",
+                                                 "promptTaskCount":  "Docs/Reports/PROMPT_1302_TASK_COUNT_PASS11.json",
+                                                 "apexReport":  "Docs/Reports/APEX_PASS11_PLAYER_SURFACE_FENCE_1302.md",
+                                                 "touchedPlayerSurfaceScan":  "Docs/Reports/PLAYER_PREPROCESSOR_SURFACE_SCAN_1302_PASS11.json",
+                                                 "allDomainPlayerSurfaceScan":  "Docs/Reports/PLAYER_PREPROCESSOR_SURFACE_SCAN_1302_PASS11_DOMAIN.json",
+                                                 "addedLineScan":  "Docs/Reports/PATCH_ADDED_LINES_TOKEN_SCAN_1302_PASS11.json",
+                                                 "touchedScannedFiles":  32,
+                                                 "touchedBlockingPlayerFilePathCsvScratchHits":  0,
+                                                 "touchedBridgeResidualHits":  2,
+                                                 "allDomainScannedFiles":  48,
+                                                 "allDomainResidualHits":  13,
+                                                 "addedLinePlayerActiveForbiddenHits":  0,
+                                                 "sourceFilesPatched":  [
+                                                                            "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveContracts.cs",
+                                                                            "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackContracts.cs",
+                                                                            "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementContracts.cs",
+                                                                            "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationContracts.cs",
+                                                                            "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsContracts.cs",
+                                                                            "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                                                                            "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageContracts.cs",
+                                                                            "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs"
+                                                                        ],
+                                                 "dotnetBuildLaunched":  false,
+                                                 "residual":  "GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs still imports System.IO for the existing root BinaryWriter dump bridge; HarpoonTensionSolver328.cs residuals are excluded Harpoon/tension ownership."
+                                             },
+    "pass12BridgeRelocationAndHarpoonFence":  {
+                                                  "promptExtractPath":  "Docs/Reports/PROMPT_1302_REEXTRACTED_PASS12.txt",
+                                                  "taskCount":  20,
+                                                  "dotnetBuildLaunched":  false,
+                                                  "buildSkipReason":  "User ordered rare dotnet/build usage; Pass 12 used static/preprocessor scans and small source fences. Unity compile not launched.",
+                                                  "patchedFiles":  [
+                                                                       "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                                                                       "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                                                                       "Assets/_Project/Scripts/Physics/HarpoonTensionSolver328.cs",
+                                                                       "Assets/_Project/Scripts/Physics/HabitatFluidIncursionContracts.cs",
+                                                                       "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs"
+                                                                   ],
+                                                  "rootBridgeRelocated":  true,
+                                                  "harpoonPlayerDumpFailClosed":  true,
+                                                  "restoredCompileCriticalContract":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionContracts.cs",
+                                                  "playerPreprocessorTouched":  {
+                                                                                    "files":  34,
+                                                                                    "blockingHits":  0,
+                                                                                    "bridgeHits":  0
+                                                                                },
+                                                  "playerPreprocessorDomain":  {
+                                                                                   "files":  50,
+                                                                                   "blockingHits":  0,
+                                                                                   "bridgeHits":  0
+                                                                               },
+                                                  "managedRisk":  {
+                                                                      "touchedFiles":  34,
+                                                                      "domainFiles":  50,
+                                                                      "touchedHits":  0,
+                                                                      "domainHits":  0
+                                                                  },
+                                                  "dtoOffsetMap":  {
+                                                                       "files":  50,
+                                                                       "structs":  100,
+                                                                       "sizeViolations":  0,
+                                                                       "boolFields":  0
+                                                                   },
+                                                  "aupCastScan":  {
+                                                                      "files":  50,
+                                                                      "candidates":  8,
+                                                                      "possibleAbsoluteCastViolations":  0
+                                                                  },
+                                                  "dependencyAudit":  {
+                                                                          "files":  50,
+                                                                          "directWorldUsingHits":  12,
+                                                                          "systemLinq":  0,
+                                                                          "modifiedAsmdefs":  0
+                                                                      },
+                                                  "preprocessorBalance":  {
+                                                                              "files":  35,
+                                                                              "bad":  0
+                                                                          },
+                                                  "residuals":  [
+                                                                    "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs still owns root/global FileStream/BinaryWriter blackbox dump bridge at lines 3316/3340; this is outside Physics folder player-preprocessor surface.",
+                                                                    "Core GlobalTelemetryBus native-only writer remains unresolved cross-domain bridge debt; no local Physics native P/Invoke writer was introduced."
+                                                                ]
+                                              },
+    "pass13RootBridgeExorcism":  {
+                                     "promptExtractPath":  "Docs/Reports/PROMPT_1302_REEXTRACTED_PASS13.txt",
+                                     "taskCount":  20,
+                                     "dotnetBuildLaunched":  false,
+                                     "playerStaticScan":  "Docs/Reports/PASS13_PLAYER_STATIC_SCAN_1302.json",
+                                     "dtoOffsetMap":  "Docs/Reports/DTO_OFFSET_MAP_1302_PASS13_CULLING_TARGETS.json",
+                                     "aupCastScan":  "Docs/Reports/AUP_CAST_SCAN_1302_PASS13.json",
+                                     "dependencyAudit":  "Docs/Reports/DEPENDENCY_USING_AUDIT_1302_PASS13.json",
+                                     "overengineeringScan":  "Docs/Reports/OVERENGINEERING_FAILCLOSED_SCAN_1302_PASS13.json",
+                                     "rootBridgeForbiddenPlayerHits":  0,
+                                     "playerManagedRiskHitCount":  0,
+                                     "playerManagedAllocationNewHitCount":  16,
+                                     "addedForbiddenTokenHitCount":  0,
+                                     "cullingDtoLayoutViolations":  0,
+                                     "possibleAbsoluteAupFloatCastViolations":  0,
+                                     "residuals":  [
+                                                       "Full changed-file player surface still contains 16 pre-existing cold managed field allocations in root/physics listener scratch storage; not Pass 13 additions and not hot per-frame.",
+                                                       "Core GlobalTelemetryBus disk writer remains managed IO in Core owner code; 1302 removed local physics culling FileStream/BinaryWriter but did not implement fake native Core bridge."
+                                                   ]
+                                 }
+}

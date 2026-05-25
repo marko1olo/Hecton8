@@ -2062,11 +2062,11 @@ namespace Hecton8.World
                 DynamicClearanceFallbackScheduleCount);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            float now = Time.unscaledTime;
+            float now = (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (now >= _nextDynamicClearanceWarningTime)
             {
                 _nextDynamicClearanceWarningTime = now + DynamicClearanceWarningCooldownSeconds;
-                Debug.LogWarning(DynamicClearanceBudgetWarningMessage);
+                Hecton8.Core.H8Debug.LogWarning(DynamicClearanceBudgetWarningMessage);
             }
 #endif
         }

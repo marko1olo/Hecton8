@@ -26,9 +26,7 @@ namespace Hecton8.Environment
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class HectonMarineSnowRenderer : MonoBehaviour,
-        ITickable,
         ILateFrameTickable,
-        IUpdatable,
         IOriginShiftListener,
         IVehicleCommandSignalListener,
         IGlobalRegistryHotSwapListener,
@@ -601,7 +599,6 @@ namespace Hecton8.Environment
         private byte _resolvedPressureLevel = byte.MaxValue;
         private float _resolvedGlobalQualityWeight = -1f;
         private ulong _resolvedKillSwitchMask = ulong.MaxValue;
-        private bool _registeredTick;
         private bool _registeredLateFrame;
         private bool _pendingVisualTickDirty;
         private float _pendingVisualTickDeltaTime;
@@ -814,7 +811,6 @@ namespace Hecton8.Environment
             RegisterVehicleCommandListener();
             HectonFloatingOrigin.RegisterListener(this);
             EnsureCsvProfileBackgroundReader();
-            TryRegisterTick();
             TryRegisterLateFrame();
         }
 
@@ -832,11 +828,6 @@ namespace Hecton8.Environment
             StopCsvProfileBackgroundReader();
             SetUnderwaterState(false, 0f, 0f, 1f, 0f);
             SetBubbleTrailState(0f, 0f);
-            if (_registeredTick)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = false;
-            }
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -994,11 +985,6 @@ namespace Hecton8.Environment
                     ITickDispatcher tickDispatcher = currentService as ITickDispatcher;
                     if (!ReferenceEquals(_tickDispatcher, tickDispatcher))
                     {
-                        if (_registeredTick)
-                        {
-                            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                            _registeredTick = false;
-                        }
                         if (_registeredLateFrame)
                         {
                             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
@@ -1011,7 +997,6 @@ namespace Hecton8.Environment
                     _dispatcherReady = tickDispatcher != null;
                     if (_dispatcherReady)
                     {
-                        TryRegisterTick();
                         TryRegisterLateFrame();
                     }
                     break;
@@ -1094,15 +1079,16 @@ namespace Hecton8.Environment
             ResetSpeedLineHistory();
         }
 
-        public void Tick(float dt)
+        private void AdvanceMarineSnowVisualState(float dt)
         {
             _pendingVisualTickDeltaTime += math.max(0f, dt);
             _pendingVisualTickDirty = true;
-            TryRegisterLateFrame();
         }
 
         public void LateFrameTick()
         {
+            AdvanceMarineSnowVisualState(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (!_pendingVisualTickDirty)
                 return;
 
@@ -1186,7 +1172,7 @@ namespace Hecton8.Environment
 
         private void RefreshFluidBinding(bool force)
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (!force && frame < _nextFluidRebindFrame)
                 return;
 
@@ -1195,7 +1181,7 @@ namespace Hecton8.Environment
 
         private bool RefreshDataVaultBinding(bool force)
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_dataVault != null && _dataVault.IsCompactionFenceActive)
             {
                 _nativeStateReady = false;
@@ -1323,7 +1309,7 @@ namespace Hecton8.Environment
                 return;
             }
 
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (!force && frame < _nextProceduralWakeSourceProbeFrame)
                 return;
 
@@ -1736,7 +1722,7 @@ namespace Hecton8.Environment
                 ThrustVector = result.VectorWS,
                 Intensity = result.Intensity,
                 Radius = math.min(result.Radius, radiusLimit),
-                Frame = Time.frameCount,
+                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                 GlobalQualityWeight = quality,
                 ProfileHash = PropwashGpuContracts.DefaultWakeProfileHash
             };
@@ -2087,8 +2073,14 @@ namespace Hecton8.Environment
                 return;
 
             NativeArray<T> mapped = buffer.LockBufferForWrite<T>(0, safeCount);
-            mapped[0] = value;
-            buffer.UnlockBufferAfterWrite<T>(safeCount);
+            try
+            {
+                mapped[0] = value;
+            }
+            finally
+            {
+                buffer.UnlockBufferAfterWrite<T>(safeCount);
+            }
         }
 
         private static void ClearGraphicsBuffer<T>(GraphicsBuffer buffer, int requestedCount) where T : struct
@@ -2098,9 +2090,15 @@ namespace Hecton8.Environment
                 return;
 
             NativeArray<T> mapped = buffer.LockBufferForWrite<T>(0, safeCount);
-            for (int i = 0; i < safeCount; i++)
-                mapped[i] = default;
-            buffer.UnlockBufferAfterWrite<T>(safeCount);
+            try
+            {
+                for (int i = 0; i < safeCount; i++)
+                    mapped[i] = default;
+            }
+            finally
+            {
+                buffer.UnlockBufferAfterWrite<T>(safeCount);
+            }
         }
 
         private static DynamicWakeDTO SanitizeDynamicWake(DynamicWakeDTO wake)
@@ -2135,28 +2133,33 @@ namespace Hecton8.Environment
             NativeArray<DynamicWakeDTO> dtoMap = _mockWakeDtoBuffer.LockBufferForWrite<DynamicWakeDTO>(0, safeCount);
             NativeArray<Vector4> wakeMap = _mockWakeBuffer.LockBufferForWrite<Vector4>(0, safeCount);
             NativeArray<Vector4> vectorMap = _mockWakeVectorBuffer.LockBufferForWrite<Vector4>(0, safeCount);
-            int sourceCount = wakes.IsCreated ? wakes.Length : 0;
-            int enabledCount = math.min(math.max(0, activeCount), sourceCount);
-            for (int i = 0; i < safeCount; i++)
+            try
             {
-                if (i >= enabledCount)
+                int sourceCount = wakes.IsCreated ? wakes.Length : 0;
+                int enabledCount = math.min(math.max(0, activeCount), sourceCount);
+                for (int i = 0; i < safeCount; i++)
                 {
-                    dtoMap[i] = default;
-                    wakeMap[i] = Vector4.zero;
-                    vectorMap[i] = Vector4.zero;
-                    continue;
+                    if (i >= enabledCount)
+                    {
+                        dtoMap[i] = default;
+                        wakeMap[i] = Vector4.zero;
+                        vectorMap[i] = Vector4.zero;
+                        continue;
+                    }
+
+                    DynamicWakeDTO wake = SanitizeDynamicWake(wakes[i]);
+                    dtoMap[i] = wake;
+                    float intensity = math.length(wake.Force) * wake.Falloff;
+                    wakeMap[i] = new Vector4(wake.Position.x, wake.Position.y, wake.Position.z, intensity);
+                    vectorMap[i] = new Vector4(wake.Force.x, wake.Force.y, wake.Force.z, math.max(0.001f, wake.Radius));
                 }
-
-                DynamicWakeDTO wake = SanitizeDynamicWake(wakes[i]);
-                dtoMap[i] = wake;
-                float intensity = math.length(wake.Force) * wake.Falloff;
-                wakeMap[i] = new Vector4(wake.Position.x, wake.Position.y, wake.Position.z, intensity);
-                vectorMap[i] = new Vector4(wake.Force.x, wake.Force.y, wake.Force.z, math.max(0.001f, wake.Radius));
             }
-
-            _mockWakeDtoBuffer.UnlockBufferAfterWrite<DynamicWakeDTO>(safeCount);
-            _mockWakeBuffer.UnlockBufferAfterWrite<Vector4>(safeCount);
-            _mockWakeVectorBuffer.UnlockBufferAfterWrite<Vector4>(safeCount);
+            finally
+            {
+                _mockWakeDtoBuffer.UnlockBufferAfterWrite<DynamicWakeDTO>(safeCount);
+                _mockWakeBuffer.UnlockBufferAfterWrite<Vector4>(safeCount);
+                _mockWakeVectorBuffer.UnlockBufferAfterWrite<Vector4>(safeCount);
+            }
         }
 
         private void UploadPropwashEventGpuBuffer(NativeArray<PropwashEventDTO> events, PropwashRingCursorDTO cursor)
@@ -2178,25 +2181,31 @@ namespace Hecton8.Environment
             float maxIntensity = 0f;
             float3 strongestLocalPosition = default;
             NativeArray<PropwashEventDTO> mapped = uploadBuffer.LockBufferForWrite<PropwashEventDTO>(0, safeCount);
-            for (int i = 0; i < safeCount; i++)
+            try
             {
-                if (i < enabledCount)
+                for (int i = 0; i < safeCount; i++)
                 {
-                    int sourceIndex = WrapPropwashUploadIndex(sourceStart + i, sourceCount);
-                    PropwashEventDTO evt = SanitizePropwashEvent(events[sourceIndex]);
-                    mapped[i] = evt;
-                    if (evt.Intensity > maxIntensity)
+                    if (i < enabledCount)
                     {
-                        maxIntensity = evt.Intensity;
-                        strongestLocalPosition = evt.LocalPosition;
+                        int sourceIndex = WrapPropwashUploadIndex(sourceStart + i, sourceCount);
+                        PropwashEventDTO evt = SanitizePropwashEvent(events[sourceIndex]);
+                        mapped[i] = evt;
+                        if (evt.Intensity > maxIntensity)
+                        {
+                            maxIntensity = evt.Intensity;
+                            strongestLocalPosition = evt.LocalPosition;
+                        }
+                    }
+                    else
+                    {
+                        mapped[i] = default;
                     }
                 }
-                else
-                {
-                    mapped[i] = default;
-                }
             }
-            uploadBuffer.UnlockBufferAfterWrite<PropwashEventDTO>(safeCount);
+            finally
+            {
+                uploadBuffer.UnlockBufferAfterWrite<PropwashEventDTO>(safeCount);
+            }
 
             _propwashEventBuffer = uploadBuffer;
             _debugPropwashEventCount = enabledCount;
@@ -2289,7 +2298,7 @@ namespace Hecton8.Environment
                     TimeSeconds = _simulationTime,
                     GlobalQualityWeight = quality,
                     RequestedCount = activePropwashCount,
-                    Frame = Time.frameCount
+                    Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId)
                 };
                 // Emergency mock is a tiny immediate ring write; scheduling would require a same-frame fence.
                 propwashJob.Run();
@@ -2361,7 +2370,7 @@ namespace Hecton8.Environment
                 CameraAup = cameraAup.ToAbsoluteDouble3(),
                 SourceScanLimit = scanLimit,
                 WriteLimit = writeLimit,
-                Frame = Time.frameCount,
+                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                 GlobalQualityWeight = quality,
                 ProfileHash = PropwashGpuContracts.DefaultWakeProfileHash
             };
@@ -2371,7 +2380,7 @@ namespace Hecton8.Environment
             PropwashRingCursorDTO after = propwashCursor[0];
             if (after.WriteCursor != before.WriteCursor ||
                 after.EventCount != before.EventCount ||
-                (after.LastFrame == Time.frameCount && (after.Flags & 4u) != 0u))
+                (after.LastFrame == SystemDispatcher.CurrentFrameIndex && (after.Flags & 4u) != 0u))
             {
                 UploadPropwashEventGpuBuffer(propwashEvents, after);
             }
@@ -2446,7 +2455,7 @@ namespace Hecton8.Environment
 
         private void ResolveTargetCamera()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (targetCamera == null)
             {
                 if (_targetCameraComponent == null && frame < _nextCameraResolveFrame)
@@ -2468,16 +2477,6 @@ namespace Hecton8.Environment
                 _lastCameraResolveTarget = targetCamera;
                 _nextCameraResolveFrame = _targetCameraComponent == null ? frame + CameraResolveRetryFrames : 0;
             }
-        }
-
-        private void TryRegisterTick()
-        {
-            if (_registeredTick)
-                return;
-            if (!Application.isPlaying || !_dispatcherReady)
-                return;
-
-            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryRegisterLateFrame()
@@ -2634,7 +2633,7 @@ namespace Hecton8.Environment
         private static void LogMissingMainKernel()
         {
 #if UNITY_EDITOR
-            Debug.LogError("HectonMarineSnowRenderer: compute kernel CSMain not found. Disabling compute marine snow.");
+            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel CSMain not found. Disabling compute marine snow.");
 #endif
         }
 
@@ -2642,7 +2641,7 @@ namespace Hecton8.Environment
         private static void LogMissingInitializeKernel()
         {
 #if UNITY_EDITOR
-            Debug.LogError("HectonMarineSnowRenderer: compute kernel InitializeParticles not found. Disabling compute marine snow.");
+            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel InitializeParticles not found. Disabling compute marine snow.");
 #endif
         }
 
@@ -2650,7 +2649,7 @@ namespace Hecton8.Environment
         private static void LogMissingVisibleKernel()
         {
 #if UNITY_EDITOR
-            Debug.LogError("HectonMarineSnowRenderer: compute kernel ClearVisibleParticles not found. Disabling compute marine snow.");
+            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: compute kernel ClearVisibleParticles not found. Disabling compute marine snow.");
 #endif
         }
 
@@ -2658,7 +2657,7 @@ namespace Hecton8.Environment
         private static void LogMissingAuxiliaryKernels()
         {
 #if UNITY_EDITOR
-            Debug.LogError("HectonMarineSnowRenderer: auxiliary compute kernels not found. Disabling compute marine snow.");
+            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: auxiliary compute kernels not found. Disabling compute marine snow.");
 #endif
         }
 
@@ -2666,7 +2665,7 @@ namespace Hecton8.Environment
         private static void LogMissingPropwashKernels()
         {
 #if UNITY_EDITOR
-            Debug.LogError("HectonMarineSnowRenderer: propwash compute kernels not found. Disabling compute marine snow.");
+            Hecton8.Core.H8Debug.LogError("HectonMarineSnowRenderer: propwash compute kernels not found. Disabling compute marine snow.");
 #endif
         }
 
@@ -3082,7 +3081,7 @@ namespace Hecton8.Environment
                 MetaParams = new Vector4(
                     _activeParticleCount,
                     _flowFieldResolution,
-                    Time.frameCount & 1023,
+                    SystemDispatcher.CurrentFrameIndex & 1023,
                     activeFlag),
                 CameraVelocityStretch = new Vector4(
                     cameraVelocity.x,
@@ -3095,6 +3094,9 @@ namespace Hecton8.Environment
             GraphicsBuffer frameConstantsWriteBuffer = (_frameConstantsUploadBufferIndex & 1) == 0
                 ? _frameConstantsBufferA
                 : _frameConstantsBufferB;
+            if (frameConstantsWriteBuffer == null || !frameConstantsWriteBuffer.IsValid())
+                return;
+
             UploadSingleGraphicsBuffer(frameConstantsWriteBuffer, frameConstants);
             _activeFrameConstantsBuffer = frameConstantsWriteBuffer;
             _frameConstantsUploadBufferIndex ^= 1;
@@ -3813,7 +3815,7 @@ namespace Hecton8.Environment
                 return false;
             }
 
-            return Time.timeSinceLevelLoad <= Shader.GetGlobalFloat(ShaderIds.SonarRevealExpireTimeId);
+            return (float)SystemDispatcher.CurrentUnscaledTimeSeconds <= Shader.GetGlobalFloat(ShaderIds.SonarRevealExpireTimeId);
         }
 
         private bool IsFogDensityInjectionActive()
@@ -4557,7 +4559,7 @@ namespace Hecton8.Environment
 
             telemetryRing[_telemetryWriteIndex] = new MarineSnowTelemetryEntry
             {
-                Frame = Time.frameCount,
+                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                 DispatchedParticleCount = math.max(0, _activeParticleCount),
                 Capacity = math.max(0, _allocatedParticleCapacity),
                 DynamicWakeCount = math.max(0, _debugDynamicWakeCount),
@@ -4579,7 +4581,7 @@ namespace Hecton8.Environment
             _telemetryWrittenCount = math.min(_telemetryWrittenCount + 1, TelemetryCapacity);
             RecordPropwashTelemetry(mockGpuMicroseconds, flags);
 
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (frame - _lastTelemetryPublishFrame >= TelemetryPublishFrameCadence)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(
@@ -4613,11 +4615,11 @@ namespace Hecton8.Environment
                 cursorValue = cursor.WriteCursor;
             }
 
-            uint stateHash = PropwashGpuContracts.HashState(Time.frameCount, eventCount, quality, tuning.Version);
+            uint stateHash = PropwashGpuContracts.HashState(unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId), eventCount, quality, tuning.Version);
 
             telemetryRing[_propwashTelemetryWriteIndex] = new PropwashTelemetryEntry
             {
-                Frame = Time.frameCount,
+                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                 EventCount = eventCount,
                 ParticleBudgetLimit = PropwashGpuContracts.ResolveParticleBudget(quality),
                 OverflowCount = overflowCount,

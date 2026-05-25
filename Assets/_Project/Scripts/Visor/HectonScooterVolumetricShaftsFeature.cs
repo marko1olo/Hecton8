@@ -3,7 +3,6 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Environment;
-using Hecton8.Physics;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -538,8 +537,14 @@ namespace Hecton8.Visor
                     exposureState.y = 0f;
                     exposureState.z = ExposureStateDefaultMultiplier;
                     exposureState.w = 0f;
-                    mapped[0] = exposureState;
-                    _exposureStateBuffer.UnlockBufferAfterWrite<Vector4>(1);
+                    try
+                    {
+                        mapped[0] = exposureState;
+                    }
+                    finally
+                    {
+                        _exposureStateBuffer.UnlockBufferAfterWrite<Vector4>(1);
+                    }
                 }
 
                 if (_exposureStateBuffer != null &&
@@ -760,7 +765,7 @@ namespace Hecton8.Visor
                 if (playerMovement != null)
                     return ToFloat3(playerMovement.InterpolatedLinearVelocity);
 
-                return PhysicsDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityShaftMaxAgeFrames, out float3 velocity)
+                return CoreDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityShaftMaxAgeFrames, out float3 velocity)
                     ? velocity
                     : default;
             }
@@ -917,7 +922,7 @@ namespace Hecton8.Visor
                     float underwaterNoirBlend,
                     float thermalHazeIntensity)
                 {
-                    MaterialParameterState state;
+                    MaterialParameterState state = default;
                     float underwaterBlend = math.saturate(underwaterNoirBlend);
                     state.RenderScale = math.clamp(settings.renderScale, 0.25f, 1f);
                     state.MaxRayDistance = math.max(1f, settings.maxRayDistance);
@@ -953,7 +958,6 @@ namespace Hecton8.Visor
                     state.ThermalHazeIntensity = math.max(0f, thermalHazeIntensity) * underwaterBlend;
                     state.ThermalHazeScale = math.max(0.001f, settings.thermalHazeScale);
                     state.HasExposureState = exposureAvailable ? 1f : 0f;
-                    state._pad0 = 0f;
                     return state;
                 }
             }
@@ -1010,7 +1014,7 @@ namespace Hecton8.Visor
             RecreateMaterial(ref _compositeMaterial, shader);
             TryRegisterHotSwapListener();
             _cachedUnderwaterVisuals = GlobalRegistry.UnderwaterVisuals;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         /// <inheritdoc />

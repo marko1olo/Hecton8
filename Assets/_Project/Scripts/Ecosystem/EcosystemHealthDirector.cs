@@ -30,8 +30,8 @@ namespace Hecton8.Ecosystem
         private bool _hotSwapRegistered;
         private bool _duplicateServiceSuppressed;
         private IPlayerExplorationChunkReadModel _playerExploration;
-        private FaunaGeneticsManager _faunaGenetics;
-        private EnvironmentalStrainManager _environmentalStrain;
+        private IFaunaWorldSeedReadModel _faunaGenetics;
+        private IEnvironmentalStrainReadModel _environmentalStrain;
         private ISaveService _saveService;
 
         /// <summary>Active runtime owner while the gameplay scene is loaded.</summary>
@@ -199,7 +199,7 @@ namespace Hecton8.Ecosystem
             if (exploredCount <= 0)
                 return;
 
-            FaunaGeneticsManager geneticsManager = _faunaGenetics;
+            IFaunaWorldSeedReadModel geneticsManager = _faunaGenetics;
             int seed = geneticsManager != null ? geneticsManager.WorldSeed : 0;
             int dayIndex;
             float dayTimeHours;
@@ -255,7 +255,7 @@ namespace Hecton8.Ecosystem
 
         private float ResolveInfectionPressure01()
         {
-            EnvironmentalStrainManager environmentalStrainManager = _environmentalStrain;
+            IEnvironmentalStrainReadModel environmentalStrainManager = _environmentalStrain;
             if (environmentalStrainManager == null)
                 return 0f;
 
@@ -286,13 +286,13 @@ namespace Hecton8.Ecosystem
         private void CacheRuntimeDependencies()
         {
             _playerExploration = GlobalRegistry.PlayerExplorationReadModel;
-            _faunaGenetics = GlobalRegistry.FaunaGenetics;
-            _environmentalStrain = GlobalRegistry.EnvironmentalStrain;
+            _faunaGenetics = GlobalRegistry.FaunaWorldSeed;
+            _environmentalStrain = GlobalRegistry.EnvironmentalStrainReadModel;
         }
 
         private void CacheSaveServiceCold()
         {
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
         }
 
         private void ClearRuntimeDependencies()
@@ -330,10 +330,10 @@ namespace Hecton8.Ecosystem
                     _playerExploration = currentService as IPlayerExplorationChunkReadModel;
                     break;
                 case GlobalRegistryServiceSlot.FaunaGeneticsRuntime:
-                    _faunaGenetics = currentService as FaunaGeneticsManager;
+                    _faunaGenetics = currentService as IFaunaWorldSeedReadModel;
                     break;
                 case GlobalRegistryServiceSlot.EnvironmentalStrainRuntime:
-                    _environmentalStrain = currentService as EnvironmentalStrainManager;
+                    _environmentalStrain = currentService as IEnvironmentalStrainReadModel;
                     break;
                 case GlobalRegistryServiceSlot.Save:
                     if (Application.isPlaying && previousService is ISaveService previousSave)

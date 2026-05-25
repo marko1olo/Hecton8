@@ -699,7 +699,7 @@ namespace Hecton8.Core
         private static void LogStorageReservationCommitListenerCapacityExceeded()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[ThreadSafeCommandQueue] Storage reservation commit listener capacity exceeded. capacity=" +
+            Hecton8.Core.H8Debug.LogError("[ThreadSafeCommandQueue] Storage reservation commit listener capacity exceeded. capacity=" +
                            StorageReservationCommitListenerCapacity);
 #endif
         }

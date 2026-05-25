@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Hecton.Localization;
-using Hecton8.AtlasSignal;
 using System;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -15,7 +14,7 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4020)]
     [AddComponentMenu("Hecton8/World/Emergency Service Relay Director")]
-    public sealed class EmergencyServiceRelayDirector : MonoBehaviour, IEmergencyServiceRelayEventListener, IGlobalRegistryHotSwapListener
+    public sealed class EmergencyServiceRelayDirector : MonoBehaviour, IEmergencyServiceRelayEventListener, IEmergencyRelayRouteReadModel, IGlobalRegistryHotSwapListener
     {
         private const string DefaultIntroChainId = "intro_service_route";
         private const string DefaultRelayFallback =
@@ -24,6 +23,13 @@ namespace Hecton8.World
         private static EmergencyServiceRelayDirector s_activeRuntime;
 
         public static EmergencyServiceRelayDirector ActiveRuntimeInstance => s_activeRuntime;
+
+        internal static void NotifyRelayRegistryChanged()
+        {
+            EmergencyServiceRelayDirector runtime = s_activeRuntime;
+            if (runtime != null && runtime.isActiveAndEnabled)
+                runtime.RefreshRelayCacheAndDiscoveryState();
+        }
 
         [Header("── Relay Chain ────────────────────────────")]
         [Tooltip("Chain ID used by the first-hour breadcrumb route.")]
@@ -42,7 +48,6 @@ namespace Hecton8.World
         [Tooltip("Fallback message used if the active target relay has no authored breadcrumb copy.")]
         [SerializeField, TextArea(2, 4)] private string relayFallbackMessage = DefaultRelayFallback;
 
-        private uint _lastGuidanceRelayHash;
         private uint _introChainHash;
         private bool _hasAnyRelayDiscovery;
         private EmergencyServiceRelay _currentRouteTarget;
@@ -78,7 +83,7 @@ namespace Hecton8.World
             TryRegisterHotSwapListener();
             EmergencyServiceRelayEvents.Register(this);
             InvalidateRelayCache();
-            RefreshRelayDiscoveryState();
+            RefreshRelayCacheAndDiscoveryState();
         }
 
         private void OnDisable()
@@ -88,7 +93,6 @@ namespace Hecton8.World
             EmergencyServiceRelayEvents.Unregister(this);
             InvalidateRelayCache();
             _currentRouteTarget = null;
-            _lastGuidanceRelayHash = 0u;
         }
 
         private void OnDestroy()
@@ -204,7 +208,6 @@ namespace Hecton8.World
         /// <summary>Returns true when the first-hour relay chain already made real route contact with the player.</summary>
         public bool HasDiscoveredRelayInDrivenChain()
         {
-            RefreshRelayDiscoveryState();
             return _hasAnyRelayDiscovery;
         }
 
@@ -214,7 +217,6 @@ namespace Hecton8.World
             if (discoveryHash == 0u)
                 return false;
 
-            EnsureChainCache();
             return !_ambiguousRelayHashes.Contains(discoveryHash) && _relayByHash.ContainsKey(discoveryHash);
         }
 
@@ -225,15 +227,11 @@ namespace Hecton8.World
             if (!ShouldDriveBreadcrumbs())
                 return false;
 
-            EnsureChainCache();
             EmergencyServiceRelay nextRelay = ResolveCurrentRouteTarget();
             if (nextRelay == null)
                 return false;
 
             uint nextRelayHash = nextRelay.RelayHash;
-            if (_lastGuidanceRelayHash != 0u && _lastGuidanceRelayHash == nextRelayHash)
-                return false;
-
             message = _hasAnyRelayDiscovery
                 ? nextRelay.BuildBreadcrumbMessageSpan()
                 : nextRelay.BuildInitialRouteMessageSpan();
@@ -241,8 +239,7 @@ namespace Hecton8.World
             if (IsWhiteSpace(message))
                 message = ResolveLocalizedSpan(LocalizationKeys.RELAY_DIRECTOR_FALLBACK, relayFallbackMessage);
 
-            _lastGuidanceRelayHash = nextRelayHash;
-            return !IsWhiteSpace(message);
+            return nextRelayHash != 0u && !IsWhiteSpace(message);
         }
 
         /// <summary>
@@ -250,8 +247,6 @@ namespace Hecton8.World
         /// </summary>
         public EmergencyServiceRelay GetActiveRouteTarget()
         {
-            EnsureChainCache();
-
             if (_currentRouteTarget != null &&
                 IsValidRelayForRouting(_currentRouteTarget) &&
                 !_currentRouteTarget.IsDiscovered &&
@@ -265,14 +260,36 @@ namespace Hecton8.World
                 : null;
         }
 
+        public bool TryReadActiveRouteTarget(out EmergencyRelayRouteTargetSnapshot snapshot)
+        {
+            snapshot = default;
+
+            EmergencyServiceRelay target = GetActiveRouteTarget();
+            if (target == null || !target.isActiveAndEnabled)
+                return false;
+
+            AbsoluteUniversePosition relayAup = target.RelayAup;
+            if (!relayAup.IsFinite())
+                return false;
+
+            snapshot = new EmergencyRelayRouteTargetSnapshot
+            {
+                RelayAup = relayAup,
+                RelayHash = target.RelayHash,
+                ChainHash = target.ChainHash,
+                RelayOrder = target.RelayOrder,
+                Flags = EmergencyRelayRouteTargetSnapshot.ActiveFlag
+            };
+            return snapshot.RelayHash != 0u;
+        }
+
         private void HandleRelayActivated(EmergencyServiceRelay relay, bool firstActivation)
         {
-            EnsureChainCache();
+            RefreshRelayCacheIfVersionChanged();
             if (!IsValidRelayForRouting(relay))
                 return;
 
             _hasAnyRelayDiscovery = true;
-            _lastGuidanceRelayHash = 0u;
             EmergencyServiceRelay nextRelay = ResolveRouteTargetAfterActivation(relay);
             _currentRouteTarget = nextRelay;
 
@@ -286,8 +303,6 @@ namespace Hecton8.World
             if (!IsWhiteSpace(routeMessage))
                 NotificationEvents.TryPushInfo(routeMessage);
 
-            if (nextRelay != null)
-                _lastGuidanceRelayHash = nextRelay.RelayHash;
         }
 
         void IEmergencyServiceRelayEventListener.OnEmergencyServiceRelayActivated(EmergencyServiceRelay relay, bool firstActivation)
@@ -295,9 +310,14 @@ namespace Hecton8.World
             HandleRelayActivated(relay, firstActivation);
         }
 
-        private void RefreshRelayDiscoveryState()
+        private void RefreshRelayCacheAndDiscoveryState()
         {
-            EnsureChainCache();
+            RefreshRelayCacheIfVersionChanged();
+            RefreshRelayDiscoveryStateFromCache();
+        }
+
+        private void RefreshRelayDiscoveryStateFromCache()
+        {
             _hasAnyRelayDiscovery = false;
             _currentRouteTarget = null;
             EmergencyServiceRelay highestDiscoveredRelay = null;
@@ -341,8 +361,6 @@ namespace Hecton8.World
 
         private EmergencyServiceRelay ResolveCurrentRouteTarget()
         {
-            EnsureChainCache();
-
             if (_currentRouteTarget != null &&
                 IsValidRelayForRouting(_currentRouteTarget) &&
                 !_currentRouteTarget.IsDiscovered &&
@@ -351,8 +369,7 @@ namespace Hecton8.World
                 return _currentRouteTarget;
             }
 
-            RefreshRelayDiscoveryState();
-            return _currentRouteTarget;
+            return ResolveRouteTargetFromDiscoveryState(null);
         }
 
         private EmergencyServiceRelay ResolveRouteTargetAfterActivation(EmergencyServiceRelay currentRelay)
@@ -443,7 +460,7 @@ namespace Hecton8.World
             return explicitNextRelay.RelayOrder > currentRelay.RelayOrder;
         }
 
-        private void EnsureChainCache()
+        private void RefreshRelayCacheIfVersionChanged()
         {
             if (_introChainHash == 0u)
                 RefreshCachedHashes();
@@ -508,11 +525,6 @@ namespace Hecton8.World
             if (!IsValidRelayForRouting(_currentRouteTarget) || (_currentRouteTarget != null && _currentRouteTarget.IsDiscovered))
                 _currentRouteTarget = null;
 
-            if (_lastGuidanceRelayHash != 0u &&
-                (_ambiguousRelayHashes.Contains(_lastGuidanceRelayHash) || !_relayByHash.ContainsKey(_lastGuidanceRelayHash)))
-            {
-                _lastGuidanceRelayHash = 0u;
-            }
         }
 
         private void SortDrivenRelaysByOrder()

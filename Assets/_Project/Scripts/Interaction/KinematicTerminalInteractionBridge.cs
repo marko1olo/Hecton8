@@ -256,7 +256,7 @@ namespace Hecton8.Interaction
                     CanvasHitPoint = canvasPosition,
                     AnalogDelta = analogDelta,
                     EventType = panelEventType,
-                    Timestamp = Time.unscaledTime
+                    Timestamp = (float)SystemDispatcher.CurrentUnscaledTimeSeconds
                 };
                 _panelReceiver.ReceiveCanvasInput(in inputEvent);
             }
@@ -357,7 +357,7 @@ namespace Hecton8.Interaction
                     PanelId = panelId,
                     CanvasHitPoint = float2.zero,
                     EventType = DiegeticPanelInputEventType.Up,
-                    Timestamp = Time.unscaledTime
+                    Timestamp = (float)SystemDispatcher.CurrentUnscaledTimeSeconds
                 };
                 _panelReceiver.ReceiveCanvasInput(in inputEvent);
             }

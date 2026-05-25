@@ -11,7 +11,7 @@
 //
 // ARCHITECTURE:
 //   • GlobalRegistry.DynamicResolution is the authoritative runtime lookup.
-//   • ITickable — registers with GameTickManager
+//   • ILateFrameTickable - applies render-scale policy in VISUAL_SYNC
 //   • Zero-GC — no allocations in hot paths
 //
 // PERFORMANCE:
@@ -20,7 +20,7 @@
 //   • Smooth scale adjustments
 //
 // INTEGRATION:
-//   • GameTickManager — ITickable registration
+//   • SystemDispatcher - late-frame presentation registration
 //   • LODSystemManager — quality preset integration
 //   • UniversalRenderPipeline.asset — render scale application
 // ============================================================================
@@ -51,7 +51,7 @@ namespace Hecton8.World
     /// </remarks>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-130)] // Run after CullingManager
-    public sealed class DynamicResolutionScaler : MonoBehaviour, ITickable, ILateFrameTickable, ISaveable, IDynamicResolutionRuntime, IGlobalRegistryHotSwapListener
+    public sealed class DynamicResolutionScaler : MonoBehaviour, ILateFrameTickable, ISaveable, IDynamicResolutionRuntime, IGlobalRegistryHotSwapListener
     {
         private const string StablePressureStateLabel = "Stable";
         private const string RecoveringPressureStateLabel = "Recovering";
@@ -131,7 +131,6 @@ namespace Hecton8.World
         private int _consecutiveFastFrames = 0;
         private int _recoveryHoldFramesRemaining = 0;
         private float _startupGraceRemainingSeconds;
-        private bool _registered;
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
         private bool _saveRegistered;
@@ -246,7 +245,7 @@ namespace Hecton8.World
             if (registered != null && registered != this)
             {
                 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[DynamicResolutionScaler] Duplicate instance detected. Destroying duplicate.");
+                Hecton8.Core.H8Debug.LogWarning("[DynamicResolutionScaler] Duplicate instance detected. Destroying duplicate.");
                 #endif
                 Destroy(gameObject);
                 return;
@@ -257,7 +256,7 @@ namespace Hecton8.World
             if (_urpAsset == null)
             {
                 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[DynamicResolutionScaler] UniversalRenderPipeline.asset is null. Dynamic resolution disabled.");
+                Hecton8.Core.H8Debug.LogError("[DynamicResolutionScaler] UniversalRenderPipeline.asset is null. Dynamic resolution disabled.");
                 #endif
                 _enabled = false;
             }
@@ -326,10 +325,9 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             if (!_lateFrameRegistered)
                 _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
@@ -342,11 +340,6 @@ namespace Hecton8.World
                 _lateFrameRegistered = false;
             }
 
-            if (!_registered)
-                return;
-
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _registered = false;
         }
 
         private void TryRegisterService()
@@ -410,7 +403,7 @@ namespace Hecton8.World
         private void CacheRegistryServicesCold()
         {
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
         }
 
         private void TryRegisterHotSwapListener()
@@ -488,7 +481,7 @@ namespace Hecton8.World
         /// Monitor frame time and adjust render scale.
         /// </summary>
         /// <param name="dt">Delta time from GameTickManager</param>
-        public void Tick(float dt)
+        private void AdvanceDynamicResolutionState(float dt)
         {
             if (_urpAsset == null)
                 return;
@@ -787,6 +780,8 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
+            AdvanceDynamicResolutionState(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
+
             if (!_renderScaleApplyQueued)
                 return;
 

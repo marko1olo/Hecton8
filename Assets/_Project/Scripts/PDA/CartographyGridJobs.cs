@@ -1574,11 +1574,7 @@ namespace Hecton8.Cartography
                 radiusInput,
                 CartographyGridConstants.MacroCellSizeMeters,
                 CartographyGridConstants.MaxRevealRadiusMeters);
-            float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
-            double softShell = math.lerp(
-                math.max(0.25f, SurfaceThicknessMeters),
-                math.max(0.25f, SurfaceThicknessMeters) * 2.5f,
-                1f - quality);
+            double softShell = math.max(0.25f, SurfaceThicknessMeters);
             double radiusSq = radius * radius;
             int radiusCells = math.max(0, (int)math.ceil(radius / cellSize));
             int changedCount = 0;
@@ -1967,7 +1963,7 @@ namespace Hecton8.Cartography
         public void Execute(int wordIndex)
         {
             int localWordIndex = wordIndex % CartographyGridConstants.WordCount;
-            float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
+            const float quality = 1f;
             ulong result = 0UL;
             for (int bit = 0; bit < 64; bit++)
             {
@@ -2033,8 +2029,7 @@ namespace Hecton8.Cartography
                 math.isfinite(SurfaceThicknessMeters) ? SurfaceThicknessMeters : CartographyGridConstants.DefaultSurfaceThicknessMeters,
                 0.25f,
                 8f);
-            float quality = math.saturate(math.isfinite(GlobalQualityWeight) ? GlobalQualityWeight : 1f);
-            float lowQualityBand = math.lerp(thickness * 3f, thickness, quality);
+            float lowQualityBand = thickness;
             ulong word = 0UL;
             for (int bit = 0; bit < 64; bit++)
             {

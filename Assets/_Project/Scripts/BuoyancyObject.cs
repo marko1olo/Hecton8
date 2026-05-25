@@ -54,7 +54,7 @@ namespace Hecton8.Physics
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     [AddComponentMenu("Hecton/Physics/Buoyancy Object")]
-    public sealed class BuoyancyObject : MonoBehaviour, IFixedTickable, IGlobalRegistryHotSwapListener
+    public sealed class BuoyancyObject : MonoBehaviour, IFixedTickable, IGlobalRegistryHotSwapListener, IBuoyancyAirStateReadModel
     {
         private static int _WaterLayer = -1;
         private static bool _layerCacheInitialized;
@@ -658,17 +658,13 @@ namespace Hecton8.Physics
             if (readModel == null)
                 return false;
 
-            if (!readModel.TryRaymarchNearestSonarSdf(
+            if (!VoxelSonarSdfMath.TryResolveNearestSdfSurface(
+                    readModel,
                     new float3(origin.x, origin.y, origin.z),
                     new float3(0f, -1f, 0f),
                     range,
                     ResolveGroundSdfStepMeters(range),
-                    out VoxelSonarSdfRaycastHit sdfHit,
-                    out NativeArray<byte>.ReadOnly _,
-                    out int3 _,
-                    out float3 _,
-                    out float3 _,
-                    out float _) ||
+                    out VoxelSonarSdfRaycastHit sdfHit) ||
                 (sdfHit.Flags & VoxelSonarSdfRaycastHit.FlagHit) == 0u ||
                 !math.all(math.isfinite(sdfHit.Point)) ||
                 !math.all(math.isfinite(sdfHit.Normal)) ||

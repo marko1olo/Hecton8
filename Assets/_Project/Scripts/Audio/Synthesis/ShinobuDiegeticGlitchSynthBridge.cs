@@ -27,7 +27,6 @@ namespace Hecton8.Audio.Synthesis
         }
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         public struct SynthParametersPitchBendJob : IJobParallelFor
         {
             [NoAlias] public NativeArray<SynthParametersDTO> SynthParameters;

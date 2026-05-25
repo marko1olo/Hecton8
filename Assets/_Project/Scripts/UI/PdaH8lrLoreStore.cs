@@ -56,10 +56,8 @@ namespace Hecton8.UI
 #if HECTON8_PDA_H8LR_MMF_AVAILABLE
         private MemoryMappedFile _mappedFile;
         private MemoryMappedViewAccessor _accessor;
-        private bool _viewPointerAcquired;
 #endif
         private FileStream _fileStream;
-        private byte* _basePointer;
         private int _mappedBytes;
         private int _entryCount;
         private uint _btreeOffset;
@@ -72,7 +70,7 @@ namespace Hecton8.UI
         private bool _vaultMirrorBacked;
         private bool _btreeAvailable;
 
-        public bool IsOpen => (_vaultMirrorBacked || _basePointer != null) && _mappedBytes >= HeaderSizeBytes && _entryCount > 0;
+        public bool IsOpen => _vaultMirrorBacked && _mappedBytes >= HeaderSizeBytes && _entryCount > 0;
         public int EntryCount => _entryCount;
         public int MappedBytes => _mappedBytes;
         public bool IsVaultMirrorBacked => _vaultMirrorBacked;
@@ -107,11 +105,6 @@ namespace Hecton8.UI
             if (info.Length < HeaderSizeBytes || info.Length > int.MaxValue)
                 return false;
 
-#if HECTON8_PDA_H8LR_MMF_AVAILABLE
-            if (TryOpenMemoryMapped(path, (int)info.Length))
-                return true;
-#endif
-
             return TryOpenVaultMirror(path, (int)info.Length, vault, in vaultMirrorHandle);
         }
 
@@ -142,7 +135,7 @@ namespace Hecton8.UI
             if (record.Hash != hash || !IsRecordInBounds(in record, mappedBytes))
                 return false;
 
-            utf8 = new ReadOnlySpan<byte>(basePointer + record.ByteOffset, (int)record.ByteLength);
+            utf8 = MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(basePointer + record.ByteOffset), (int)record.ByteLength);
             return true;
         }
 
@@ -162,10 +155,6 @@ namespace Hecton8.UI
 #if HECTON8_PDA_H8LR_MMF_AVAILABLE
             if (_accessor != null)
             {
-                if (_viewPointerAcquired)
-                    _accessor.SafeMemoryMappedViewHandle.ReleasePointer();
-
-                _viewPointerAcquired = false;
                 _accessor.Dispose();
                 _accessor = null;
             }
@@ -182,7 +171,6 @@ namespace Hecton8.UI
                 _fileStream = null;
             }
 
-            _basePointer = null;
             _mappedBytes = 0;
             _entryCount = 0;
             _btreeOffset = 0u;
@@ -199,36 +187,6 @@ namespace Hecton8.UI
 #if HECTON8_PDA_H8LR_MMF_AVAILABLE
         private bool TryOpenMemoryMapped(string path, int fileBytes)
         {
-            try
-            {
-                _fileStream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, FileStreamBufferBytes, FileOptions.RandomAccess);
-                _mappedFile = MemoryMappedFile.CreateFromFile(
-                    _fileStream,
-                    null,
-                    fileBytes,
-                    MemoryMappedFileAccess.Read,
-                    HandleInheritability.None,
-                    true);
-                _accessor = _mappedFile.CreateViewAccessor(0L, fileBytes, MemoryMappedFileAccess.Read);
-                _accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref _basePointer);
-                _viewPointerAcquired = true;
-                _mappedBytes = fileBytes;
-                _vault = null;
-                _vaultMirrorHandle = default;
-                _vaultMirrorBacked = false;
-
-                if (ValidateMappedBytes())
-                    return true;
-            }
-            catch (Exception exception) when (
-                exception is IOException ||
-                exception is UnauthorizedAccessException ||
-                exception is NotSupportedException ||
-                exception is ArgumentException)
-            {
-            }
-
-            Dispose();
             return false;
         }
 #endif
@@ -241,19 +199,22 @@ namespace Hecton8.UI
         {
             if (vault == null ||
                 vaultMirrorHandle.BufferID == 0u ||
-                !vault.TryResolveHandle(in vaultMirrorHandle, out NativeArray<byte> vaultMirror) ||
-                !vaultMirror.IsCreated ||
-                fileBytes <= 0 ||
-                fileBytes > vaultMirror.Length)
+                fileBytes <= 0)
             {
                 return false;
             }
 
-            byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(vaultMirror);
-            Span<byte> mirrorSpan = new Span<byte>(destination, fileBytes);
-            int totalRead = 0;
+            if (!vault.TryAcquireWriteLock(in vaultMirrorHandle, SystemID.UI, out NativeArray<byte> vaultMirror))
+                return false;
+
             try
             {
+                if (!vaultMirror.IsCreated || fileBytes > vaultMirror.Length)
+                    return false;
+
+                byte* destination = (byte*)NativeArrayUnsafeUtility.GetUnsafePtr(vaultMirror);
+                Span<byte> mirrorSpan = MemoryMarshal.CreateSpan(ref UnsafeUtility.AsRef<byte>(destination), fileBytes);
+                int totalRead = 0;
                 using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, FileStreamBufferBytes, FileOptions.SequentialScan))
                 {
                     while (totalRead < fileBytes)
@@ -265,6 +226,28 @@ namespace Hecton8.UI
                         totalRead += read;
                     }
                 }
+
+                if (totalRead != fileBytes)
+                    return false;
+
+                if (!ValidateMappedBytes(destination, fileBytes))
+                {
+                    _mappedBytes = 0;
+                    _entryCount = 0;
+                    _btreeOffset = 0u;
+                    _btreeRootOffset = 0u;
+                    _btreeEndOffset = 0u;
+                    _btreeNodeCount = 0u;
+                    _btreeAvailable = false;
+                    return false;
+                }
+
+                _mappedBytes = fileBytes;
+                _vault = vault;
+                _vaultMirrorHandle = vaultMirrorHandle;
+                _vaultMirrorLength = vaultMirror.Length;
+                _vaultMirrorBacked = true;
+                return true;
             }
             catch (Exception exception) when (
                 exception is IOException ||
@@ -274,39 +257,22 @@ namespace Hecton8.UI
             {
                 return false;
             }
-
-            if (totalRead != fileBytes)
-                return false;
-
-            _basePointer = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(vaultMirror);
-            _mappedBytes = fileBytes;
-            _vault = vault;
-            _vaultMirrorHandle = vaultMirrorHandle;
-            _vaultMirrorLength = vaultMirror.Length;
-            _vaultMirrorBacked = true;
-
-            if (ValidateMappedBytes())
+            finally
             {
-                _basePointer = null;
-                return true;
+                vault.ReleaseWriteLock(in vaultMirrorHandle, SystemID.UI);
             }
-
-            Dispose();
-            return false;
         }
 
-        private bool ValidateMappedBytes()
+        private bool ValidateMappedBytes(byte* basePointer, int mappedBytes)
         {
-            if (_basePointer == null || _mappedBytes < HeaderSizeBytes)
+            if (basePointer == null || mappedBytes < HeaderSizeBytes)
                 return false;
 
-            PdaH8lrHeaderDTO header = new PdaH8lrHeaderDTO
-            {
-                Magic = ReadUInt32LittleEndian(_basePointer, 0),
-                Version = ReadUInt32LittleEndian(_basePointer, 4),
-                Count = ReadUInt32LittleEndian(_basePointer, 8),
-                Reserved0 = ReadUInt32LittleEndian(_basePointer, 12)
-            };
+            PdaH8lrHeaderDTO header = default;
+            header.Magic = ReadUInt32LittleEndian(basePointer, 0);
+            header.Version = ReadUInt32LittleEndian(basePointer, 4);
+            header.Count = ReadUInt32LittleEndian(basePointer, 8);
+            header.Reserved0 = ReadUInt32LittleEndian(basePointer, 12);
 
             if (header.Magic != MagicH8lr ||
                 header.Version != CurrentVersion ||
@@ -319,20 +285,20 @@ namespace Hecton8.UI
 
             int count = (int)header.Count;
             int recordTableBytes = HeaderSizeBytes + (count * RecordSizeBytes);
-            if (recordTableBytes > _mappedBytes)
+            if (recordTableBytes > mappedBytes)
                 return false;
 
             uint previousHash = 0u;
             uint payloadStart = uint.MaxValue;
             for (int i = 0; i < count; i++)
             {
-                PdaH8lrRecordDTO record = ReadRecordUnchecked(_basePointer, i);
+                PdaH8lrRecordDTO record = ReadRecordUnchecked(basePointer, i);
                 if (record.Reserved0 != 0u ||
                     record.Hash == 0u ||
                     (i > 0 && record.Hash <= previousHash) ||
                     (record.ByteOffset & 15u) != 0u ||
                     record.ByteLength == 0u ||
-                    !IsRecordInBounds(in record, _mappedBytes))
+                    !IsRecordInBounds(in record, mappedBytes))
                 {
                     return false;
                 }
@@ -356,19 +322,19 @@ namespace Hecton8.UI
 
             _btreeEndOffset = payloadStart;
             _entryCount = count;
-            if (!ValidateBTreeEdge())
+            if (!ValidateBTreeEdge(basePointer))
                 return false;
 
             _btreeAvailable = true;
             return true;
         }
 
-        private bool ValidateBTreeEdge()
+        private bool ValidateBTreeEdge(byte* basePointer)
         {
-            PdaH8lrRecordDTO first = ReadRecordUnchecked(_basePointer, 0);
-            PdaH8lrRecordDTO last = ReadRecordUnchecked(_basePointer, _entryCount - 1);
+            PdaH8lrRecordDTO first = ReadRecordUnchecked(basePointer, 0);
+            PdaH8lrRecordDTO last = ReadRecordUnchecked(basePointer, _entryCount - 1);
             return H8CacheBTree.TryFindValue(
-                    _basePointer,
+                    basePointer,
                     _btreeOffset,
                     _btreeRootOffset,
                     _btreeEndOffset,
@@ -380,7 +346,7 @@ namespace Hecton8.UI
                     out _) &&
                 firstIndex == 0u &&
                 H8CacheBTree.TryFindValue(
-                    _basePointer,
+                    basePointer,
                     _btreeOffset,
                     _btreeRootOffset,
                     _btreeEndOffset,
@@ -429,7 +395,7 @@ namespace Hecton8.UI
 
         private bool TryResolveReadableBasePointer(out byte* basePointer, out int mappedBytes)
         {
-            basePointer = _basePointer;
+            basePointer = null;
             mappedBytes = _mappedBytes;
             if (_vaultMirrorBacked)
             {

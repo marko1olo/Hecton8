@@ -370,7 +370,7 @@ namespace Hecton8.Atmosphere
         private static void LogListenerDispatchException(Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.LogException(exception);
+            Hecton8.Core.H8Debug.LogException(exception);
 #endif
         }
 
@@ -530,7 +530,7 @@ namespace Hecton8.Atmosphere
         private static void ReportListenerRegistrationRejected()
         {
             _droppedListenerRegistrationCount++;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerRejectedTelemetryFrame == frame)
                 return;
 
@@ -544,7 +544,7 @@ namespace Hecton8.Atmosphere
         private static void ReportListenerDispatchException()
         {
             _listenerExceptionCount++;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 
@@ -942,7 +942,7 @@ namespace Hecton8.Atmosphere
                 TryRegisterLateFrame();
                 if (!_registeredToTickManager)
                 {
-                    Debug.LogError(
+                    Hecton8.Core.H8Debug.LogError(
                         "[HectonAtmosphere] SystemDispatcher registration failed in Start(). " +
                         "Atmosphere will NOT update.", this);
                 }
@@ -1441,8 +1441,9 @@ namespace Hecton8.Atmosphere
         {
             long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - timelineStartTicks;
             double elapsedMilliseconds = elapsedTicks * 1000.0d / System.Diagnostics.Stopwatch.Frequency;
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (elapsedMilliseconds <= AtmosphereTimelineBudgetMilliseconds ||
-                Time.frameCount < _nextAtmosphereTimelineWarningFrame)
+                currentFrame < _nextAtmosphereTimelineWarningFrame)
             {
                 return;
             }
@@ -1451,7 +1452,7 @@ namespace Hecton8.Atmosphere
                 _AtmosphereTimelineBudgetWarningHash,
                 _AtmosphereTimelineContextHash,
                 (float)elapsedMilliseconds);
-            _nextAtmosphereTimelineWarningFrame = Time.frameCount + AtmosphereTimelineWarningCooldownFrames;
+            _nextAtmosphereTimelineWarningFrame = currentFrame + AtmosphereTimelineWarningCooldownFrames;
         }
 
         private void RunAtmosphereTimeline(float deltaTime)

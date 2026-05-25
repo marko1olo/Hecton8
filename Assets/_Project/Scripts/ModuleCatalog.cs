@@ -428,7 +428,7 @@ namespace Hecton8.Construction
                 {
                     RegisterLookupAmbiguity(id, existing, data);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning($"[ModuleCatalog] Duplicate ID alias '{id}'. Skipping duplicate entry.", data);
+                    Hecton8.Core.H8Debug.LogWarning($"[ModuleCatalog] Duplicate ID alias '{id}'. Skipping duplicate entry.", data);
 #endif
                 }
 

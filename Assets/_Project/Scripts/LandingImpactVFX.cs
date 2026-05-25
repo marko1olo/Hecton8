@@ -29,6 +29,8 @@ namespace Hecton8.VFX
     [RequireComponent(typeof(Volume))]
     public sealed class LandingImpactVFX : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
+        private const uint KccVelocityLandingImpactMaxAgeFrames = 12u;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -141,8 +143,6 @@ namespace Hecton8.VFX
         private ChromaticAberration _chromatic;
         private Vignette _vignette;
 
-        private Rigidbody _playerRb;
-
         // ══════════════════════════════════════════════════════════
         //  STATE
         // ══════════════════════════════════════════════════════════
@@ -183,7 +183,7 @@ namespace Hecton8.VFX
 
             if (_volume.profile == null)
             {
-                Debug.LogWarning("[LandingImpactVFX] Volume has no profile assigned.", this);
+                Hecton8.Core.H8Debug.LogWarning("[LandingImpactVFX] Volume has no profile assigned.", this);
                 enabled = false;
                 return;
             }
@@ -214,16 +214,11 @@ namespace Hecton8.VFX
 
             if (!_hasChromatic && !_hasVignette)
             {
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     "[LandingImpactVFX] Volume profile has neither ChromaticAberration " +
                     "nor Vignette. Add at least one override.", this);
                 enabled = false;
                 return;
-            }
-
-            if (playerMovement != null)
-            {
-                playerMovement.TryGetComponent(out _playerRb);
             }
 
             _currentIntensity = 0f;
@@ -285,7 +280,7 @@ namespace Hecton8.VFX
             // ── Track pre-landing velocity (while airborne) ──
             if (!isGrounded)
             {
-                _preLandingVelocityY = _playerRb.linearVelocity.y;
+                _preLandingVelocityY = 0f;
             }
 
             // ── Detect landing edge ──
@@ -459,14 +454,16 @@ namespace Hecton8.VFX
 
         private void UpdateLandingEffect(float deltaTime)
         {
-            if (playerMovement == null || _playerRb == null)
+            if (playerMovement == null)
                 return;
 
             bool isGrounded = playerMovement.IsGrounded;
 
             if (!isGrounded)
             {
-                _preLandingVelocityY = _playerRb.linearVelocity.y;
+                _preLandingVelocityY = TryResolveKccVelocity(out Vector3 velocity)
+                    ? velocity.y
+                    : 0f;
             }
 
             if (isGrounded && !_wasGrounded)
@@ -515,6 +512,16 @@ namespace Hecton8.VFX
             {
                 _currentIntensity = 0f;
             }
+        }
+
+        private static bool TryResolveKccVelocity(out Vector3 velocity)
+        {
+            velocity = Vector3.zero;
+            if (!CoreDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityLandingImpactMaxAgeFrames, out float3 velocity3))
+                return false;
+
+            velocity = new Vector3(velocity3.x, velocity3.y, velocity3.z);
+            return true;
         }
 
         private void UpdateWaterTransitionEffect(float deltaTime)

@@ -1,0 +1,224 @@
+{
+    "schema":  "hecton8.owned_file_inventory_1302.v1",
+    "generatedAt":  "2026-05-25",
+    "fileCount":  31,
+    "files":  [
+                  {
+                      "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                      "category":  "modified_runtime_source",
+                      "bytes":  60410,
+                      "sha256":  "E27189DACF735AF50717F49DEC5397AA386763C821A06D113CED225F1A010077",
+                      "runtimeRisk":  "source_review_required"
+                  },
+                  {
+                      "path":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                      "category":  "modified_runtime_source",
+                      "bytes":  13705,
+                      "sha256":  "1393A93F76C8B45D3FA07E14CAC3B2E6E2A0D7E9466E697FF8BC9F39C0100A4D",
+                      "runtimeRisk":  "source_review_required"
+                  },
+                  {
+                      "path":  "Docs\\AgentLogs\\LOG_1302.md",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  5868,
+                      "sha256":  "64E9E6CA7011DF006C0857D530EA9E747A748A73ABBDDD6784A5AD2768647D00",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\AgentLogs\\Rationale_1302.md",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  11474,
+                      "sha256":  "54007A9EE8097297D6848DE684161DF6C73D9DAC5430FAB8A928E2C9A95B9230",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\APEX_RECHECK_1302.md",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  10740,
+                      "sha256":  "3BB5A930142D48D2CC068C8B98C3BA07B1A702DC0A2ABE3493369E9F6C4BE5CC",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\AUP_CAST_CLASSIFICATION_1302.json",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  3625,
+                      "sha256":  "AAED71155A45502CAEFF35336BC7B32CBA6D1ABCE9767FE656BAA7205BE385EC",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\AUP_CAST_SCAN_1302.txt",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  2066,
+                      "sha256":  "EFA1D6C84723DE475DB0B9EBDD1C53FD4CC736741EF98887F6BF9DC4818B952B",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\DEPENDENCY_TEXT_SCAN_1302.txt",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  75658,
+                      "sha256":  "99124E27A0A5AEF7CE23555E01A9F283319E61EC407F9FE05365DACDEB6CB558",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\DTO_OFFSET_MAP_1302.json",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  716783,
+                      "sha256":  "6359E28DCB8BADC68A9613CA5BD16D0FB5B216D2F213B6CC86E0B222076370E3",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\DTO_OFFSET_MAP_1302_POSTPATCH.json",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  562,
+                      "sha256":  "7AAD001A7FE221C88994199853B5D0C0BCB22089F570BC347261861F816AC2E6",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\MANAGED_TEXT_SCAN_1302.json",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  3144,
+                      "sha256":  "5809CCCAA7FFB42027F64C797910D881C3525CA7B9435B68AB753DB219AE8FE6",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\MANAGED_TEXT_SCAN_1302_POSTPATCH.json",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  16913,
+                      "sha256":  "6FEADEE30C5290C013CCF38599D4A126336CECC86A898CC882EBA66DDF376036",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\OWN_FILES_TEXT_SCAN_1302.json",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  4476,
+                      "sha256":  "9425800279FC9AB8C2C45E32E7BA32ED486831DAAFB6ACA6D91D5E528F0F7673",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\PATCHED_FILES_TOKEN_SCAN_1302.json",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  21152,
+                      "sha256":  "B206E135FE9FDDC4ABB6C6F830590571E766F3597BBE6C8855C10605F375E244",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\PATCHED_SOURCE_DIFF_1302.diff",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  1794,
+                      "sha256":  "0B4B40E5707900AF9DB715A58DC712D3CB4A252A1175775D196FF02C4E2F5A3F",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\PATCHED_SOURCE_DIFF_1302_FULLCONTEXT.diff",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  24671,
+                      "sha256":  "304A2023A268DDCFA42F4117999FC9C67795C14CFA3C47C74A6BB3000CBD73E2",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\PATCH_ADDED_LINES_TOKEN_SCAN_1302.json",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  300,
+                      "sha256":  "28787A6446625B331FA9AA8D1B9F8DED748840CC7A6224590CC504339AC701E0",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\PHASE0_MEMORY_SOVEREIGNTY_1302.md",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  7651,
+                      "sha256":  "DD7EF7320EE41D006DF8CB36983EA9E9C881F07142FFEFA3D52C31704063E10F",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\PROMPT_1302_REEXTRACTED.txt",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  22205,
+                      "sha256":  "01127D5D9319EB1632F0C1EA46B591E59446213DC69D18E7FA0F6923DB5C3B35",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\PROMPT_1302_REEXTRACTED_PASS2.txt",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  22205,
+                      "sha256":  "01127D5D9319EB1632F0C1EA46B591E59446213DC69D18E7FA0F6923DB5C3B35",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\PROMPT_1302_REEXTRACTED_PASS3.txt",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  22205,
+                      "sha256":  "01127D5D9319EB1632F0C1EA46B591E59446213DC69D18E7FA0F6923DB5C3B35",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\STRICT_TOUCHED_SOURCE_MANAGED_SCAN_1302.json",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  10398,
+                      "sha256":  "5D393C0B5A5162D538DBA24C01DC93DF30432005F5094B672F20CEE916B312C8",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\VAULT_EXORCISM_REPORT_1302.json",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  2949,
+                      "sha256":  "F3F4A2F93A909B087AAD8A933A2F54788A46BF197B867A08B0E065B6C508BC00",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\VAULT_NATIVE_ALIAS_LEDGER_1302.json",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  582398,
+                      "sha256":  "D8363057B514D48162EBB8C8E902697024FBD69D90F49E98F3B116A04C4A78EF",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\VAULT_NATIVE_ALIAS_LEDGER_1302_POSTPATCH_RAW.json",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  359406,
+                      "sha256":  "91A6EB7685C67B789BA4FED9BB7AA03ABA2AA6D4857FC1432730226148F47379",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\VAULT_NATIVE_ALIAS_LEDGER_1302_RAW.json",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  359396,
+                      "sha256":  "EF9991DBD673F10DA59ACE7DB81EB4D98C489D018E3A9C94497CEFA16277CE4B",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\VAULT_NATIVE_ALIAS_LEDGER_1302_RECHECK_RAW.json",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  359404,
+                      "sha256":  "F9A955DC3EE4480D692CB128D1BE96B6AD766D577E25840247A0166189868D2F",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\VAULT_NATIVE_ALIAS_POSTPATCH_1302.json",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  1646,
+                      "sha256":  "1DFA99518CE744132C1A720353B4E08B49947A534486836C1C06BAB2C2E88090",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\VAULT_NATIVE_ALIAS_RECHECK_1302.json",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  1646,
+                      "sha256":  "E448FD3EABADF5FD455ABE4134151130D073CFAEFBD513DF1B71BA50D65D347D",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Reports\\ZERO_GC_HOTPATH_SCAN_1302.json",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  315,
+                      "sha256":  "9DF2A0A6996DF6D4BDAD871EA7FF5FBD33FD3DF8B6043456B55A85588B3D4E2E",
+                      "runtimeRisk":  "not_runtime_code"
+                  },
+                  {
+                      "path":  "Docs\\Tasks\\Status_1302.md",
+                      "category":  "created_or_updated_1302_artifact",
+                      "bytes":  5718,
+                      "sha256":  "5E1B241709593105166153406A8F959D5CBDA527421F5CD69926AD481AD2E50D",
+                      "runtimeRisk":  "not_runtime_code"
+                  }
+              ]
+}

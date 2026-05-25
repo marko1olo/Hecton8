@@ -29,6 +29,7 @@ using System;
 using System.Threading;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.World;
@@ -79,7 +80,7 @@ public class HectonPlayerSpawner : MonoBehaviour
     private static void LogSpawnerWarning(string message)
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.LogWarning(message);
+        Hecton8.Core.H8Debug.LogWarning(message);
 #endif
     }
 
@@ -88,7 +89,7 @@ public class HectonPlayerSpawner : MonoBehaviour
     private static void LogSpawnerError(string message)
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.LogError(message);
+        Hecton8.Core.H8Debug.LogError(message);
 #endif
     }
 
@@ -97,7 +98,7 @@ public class HectonPlayerSpawner : MonoBehaviour
     private static void LogSpawnerError(string message, UnityEngine.Object context)
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.LogError(message, context);
+        Hecton8.Core.H8Debug.LogError(message, context);
 #endif
     }
 
@@ -848,7 +849,7 @@ public class HectonPlayerSpawner : MonoBehaviour
 
     private static Vector3 ResolveKccVelocityForTeleport()
     {
-        if (!Hecton8.Physics.PhysicsDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal) ||
+        if (!CoreDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal) ||
             signal.Sequence == 0u)
         {
             return Vector3.zero;
@@ -938,12 +939,12 @@ public class HectonPlayerSpawner : MonoBehaviour
         if (playerMotor != null)
             playerMotor.MovePosition(position);
         else
-            Hecton8.Physics.PhysicsForceRouter.QueuePoseSet(playerRigidbody, position, ResolvePlayerRuntimeRotationForTeleport());
+            GlobalRegistry.Physics?.QueuePoseSet(playerRigidbody, position, ResolvePlayerRuntimeRotationForTeleport());
 
         if (playerMotor != null)
             playerMotor.SetLinearVelocity(targetLinearVelocity);
-        if (playerMotor == null || !playerMotor.HydrodynamicKccOwnsCollisionAuthority)
-            Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(playerRigidbody, targetAngularVelocity);
+        if (playerMotor != null)
+            playerMotor.SetAngularVelocity(targetAngularVelocity);
         RestoreLegacyRigidbodyAfterTeleport(playerRigidbody);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

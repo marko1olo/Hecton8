@@ -943,7 +943,7 @@ namespace Hecton8.UI
             if (label == null || destination == null || template == null)
                 return;
 
-            if (!LocNumericBuffer.TryWrite(new ReadOnlySpan<char>(template), destination.AsSpan(), value0, out int length))
+            if (!LocNumericBuffer.TryWrite(template.AsSpan(), destination.AsSpan(), value0, out int length))
                 length = 0;
 
             SetBufferText(label, destination, length);
@@ -954,7 +954,7 @@ namespace Hecton8.UI
             if (label == null || destination == null || template == null)
                 return;
 
-            if (!LocNumericBuffer.TryWrite(new ReadOnlySpan<char>(template), destination.AsSpan(), value0, value1, out int length))
+            if (!LocNumericBuffer.TryWrite(template.AsSpan(), destination.AsSpan(), value0, value1, out int length))
                 length = 0;
 
             SetBufferText(label, destination, length);

@@ -8,7 +8,8 @@ using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
-using FluidCompartmentDTO = Hecton8.Physics.FluidCompartmentDTO;
+using FluidCompartmentDTO = global::Hecton8.Core.Contracts.Physics.FluidCompartmentDTO;
+using FluidCompartmentFlags = global::Hecton8.Core.Contracts.Physics.FluidCompartmentFlags;
 using StructuralIntegrityStateDTO = Hecton8.Habitat.Deformation.IntegrityStateDTO;
 
 namespace Hecton8.Construction
@@ -81,7 +82,7 @@ namespace Hecton8.Construction
             float volumeFill = math.saturate(compartment.CurrentWaterVolume / maxWater);
             float heightFill = math.saturate(compartment.WaterLevelHeight01);
             float fill01 = math.max(volumeFill, heightFill);
-            float breachBonus = (compartment.Flags & Hecton8.Physics.FluidCompartmentFlags.Breached) != 0u ? 0.25f : 0f;
+            float breachBonus = (compartment.Flags & FluidCompartmentFlags.Breached) != 0u ? 0.25f : 0f;
             return 1f + fill01 + breachBonus;
         }
 
@@ -192,9 +193,9 @@ namespace Hecton8.Construction
                 CurrentWaterVolume = maxVolume * highFill,
                 MaxWaterVolume = maxVolume,
                 WaterLevelHeight01 = highFill,
-                Flags = Hecton8.Physics.FluidCompartmentFlags.Flooded |
-                        Hecton8.Physics.FluidCompartmentFlags.Breached |
-                        Hecton8.Physics.FluidCompartmentFlags.MockBreach
+                Flags = FluidCompartmentFlags.Flooded |
+                        FluidCompartmentFlags.Breached |
+                        FluidCompartmentFlags.MockBreach
             };
             MockCompartments[roomBIndex] = new FluidCompartmentDTO
             {
@@ -203,7 +204,7 @@ namespace Hecton8.Construction
                 CurrentWaterVolume = maxVolume * lowFill,
                 MaxWaterVolume = maxVolume,
                 WaterLevelHeight01 = lowFill,
-                Flags = Hecton8.Physics.FluidCompartmentFlags.MockBreach
+                Flags = FluidCompartmentFlags.MockBreach
             };
 
             hatch.RoomAHashID = roomA;
@@ -364,7 +365,7 @@ namespace Hecton8.Construction
         [NativeDisableUnsafePtrRestriction, NoAlias] public float* ModuleIntegrity01;
         [NativeDisableUnsafePtrRestriction, NoAlias] public StructuralIntegrityStateDTO* StructuralStates;
         [NativeDisableUnsafePtrRestriction, NoAlias] public double3* HatchAups;
-        [NoAlias] public NativeQueue<MovementAcousticSignal>.ParallelWriter AcousticWriter;
+        [NoAlias] public global::Hecton8.Core.MpscSignalRingBuffer<MovementAcousticSignal>.ParallelWriter AcousticWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> AcousticWriterBudget;
         public int Count;
         public int ModuleIntegrityCount;

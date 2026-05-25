@@ -20,35 +20,46 @@ namespace Hecton8.EditorValidation
         public void OnPreprocessBuild(BuildReport report)
         {
             bool development = report != null && (report.summary.options & BuildOptions.Development) != 0;
-            H8DataMonolithReleaseParserScanner.Scan(writeReport: true, blockOnFindings: !development, developmentBuild: development);
+            BuildTarget target = report != null ? report.summary.platform : EditorUserBuildSettings.activeBuildTarget;
+            H8DataMonolithReleaseParserScanner.Scan(writeReport: true, blockOnFindings: !development, developmentBuild: development, target: target);
         }
     }
 
     internal static class H8DataMonolithReleaseParserScanner
     {
         private const string AgentId = "X_002";
+        private const string AgentId1313 = "1313";
         private const string RuntimeRoot = "Assets/_Project/Scripts";
         private const string ReleaseReportPath = "Docs/Reports/DATA_MONOLITH_RELEASE_BUILD_GATE_X_002.json";
         private const string DevelopmentReportPath = "Docs/Reports/DATA_MONOLITH_DEVELOPMENT_BUILD_GATE_X_002.json";
+        private const string ReleaseReportPath1313 = "Docs/Reports/DATA_MONOLITH_RELEASE_BUILD_GATE_1313.json";
+        private const string DevelopmentReportPath1313 = "Docs/Reports/DATA_MONOLITH_DEVELOPMENT_BUILD_GATE_1313.json";
         private const int MaxFindingsWritten = 256;
 
         [MenuItem("Hecton8/Data Monolith/Run Release Parser Build Gate")]
         private static void RunFromMenu()
         {
-            Scan(writeReport: true, blockOnFindings: false, developmentBuild: false);
+            Scan(writeReport: true, blockOnFindings: false, developmentBuild: false, target: EditorUserBuildSettings.activeBuildTarget);
         }
 
         [MenuItem("Hecton8/Data Monolith/Run Development Parser Warning Gate")]
         private static void RunDevelopmentFromMenu()
         {
-            Scan(writeReport: true, blockOnFindings: false, developmentBuild: true);
+            Scan(writeReport: true, blockOnFindings: false, developmentBuild: true, target: EditorUserBuildSettings.activeBuildTarget);
         }
 
         internal static ScanResult Scan(bool writeReport, bool blockOnFindings, bool developmentBuild)
         {
+            return Scan(writeReport, blockOnFindings, developmentBuild, EditorUserBuildSettings.activeBuildTarget);
+        }
+
+        internal static ScanResult Scan(bool writeReport, bool blockOnFindings, bool developmentBuild, BuildTarget target)
+        {
             string projectRoot = ResolveProjectRoot();
             ScanResult result = default;
             result.DevelopmentBuild = developmentBuild;
+            result.TargetName = target.ToString();
+            result.TargetHasNativeMonolithPal = IsSupportedProductionMonolithTarget(target);
             StringBuilder findingsJson = new StringBuilder(32768);
 
             string root = Path.Combine(projectRoot, RuntimeRoot.Replace('/', Path.DirectorySeparatorChar));
@@ -60,7 +71,19 @@ namespace Hecton8.EditorValidation
             {
                 string[] files = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories);
                 for (int i = 0; i < files.Length; i++)
-                    ScanFile(projectRoot, files[i], ref result, findingsJson);
+                    ScanFile(projectRoot, files[i], target, ref result, findingsJson);
+            }
+
+            if (!developmentBuild && !result.TargetHasNativeMonolithPal)
+            {
+                result.UnsupportedPlatformPalFindingCount++;
+                AppendFinding(
+                    findingsJson,
+                    ref result,
+                    "BUILD_TARGET:" + result.TargetName,
+                    0,
+                    "unsupportedStaticDataMonolithPlatformPal",
+                    "Production target has no zero-GC static_data.h8bin native/PAL loader; current non-Windows runtime branch fails closed.");
             }
 
             result.Status = result.BlockingFindingCount == 0
@@ -71,21 +94,24 @@ namespace Hecton8.EditorValidation
 
             string reportPath = GetReportPath(developmentBuild);
             if (writeReport)
-                WriteText(Path.Combine(projectRoot, reportPath), BuildReport(in result, findingsJson));
+            {
+                WriteText(Path.Combine(projectRoot, reportPath), BuildReport(in result, findingsJson, AgentId));
+                WriteText(Path.Combine(projectRoot, GetReportPath1313(developmentBuild)), BuildReport(in result, findingsJson, AgentId1313));
+            }
 
             if (blockOnFindings && result.BlockingFindingCount > 0)
             {
                 throw new BuildFailedException(
                     "[H8DataMonolithReleaseBuildGate] Release build blocked: " +
                     result.BlockingFindingCount +
-                    " production static-data parser/file-IO findings. Report: " +
+                    " production static-data parser/file-IO/platform-PAL findings. Report: " +
                     reportPath);
             }
 
             if (result.BlockingFindingCount > 0)
             {
                 Debug.LogWarning(
-                    "[H8DataMonolithReleaseBuildGate] Production parser residue findings=" +
+                    "[H8DataMonolithReleaseBuildGate] Production gate findings=" +
                     result.BlockingFindingCount +
                     " report=" +
                     reportPath);
@@ -94,7 +120,13 @@ namespace Hecton8.EditorValidation
             return result;
         }
 
-        private static void ScanFile(string projectRoot, string absolutePath, ref ScanResult result, StringBuilder findingsJson)
+        private static bool IsSupportedProductionMonolithTarget(BuildTarget target)
+        {
+            return target == BuildTarget.StandaloneWindows ||
+                   target == BuildTarget.StandaloneWindows64;
+        }
+
+        private static void ScanFile(string projectRoot, string absolutePath, BuildTarget target, ref ScanResult result, StringBuilder findingsJson)
         {
             string relativePath = MakeRelative(projectRoot, absolutePath);
             result.FilesScanned++;
@@ -126,7 +158,7 @@ namespace Hecton8.EditorValidation
                 string trimmed = line.TrimStart();
                 if (trimmed.StartsWith("#", StringComparison.Ordinal))
                 {
-                    ApplyPreprocessorDirective(trimmed, preprocessor, result.DevelopmentBuild);
+                    ApplyPreprocessorDirective(trimmed, preprocessor, result.DevelopmentBuild, target);
                     continue;
                 }
 
@@ -210,6 +242,13 @@ namespace Hecton8.EditorValidation
 
         private static bool IsCsvParserRouteLine(string line)
         {
+            string trimmed = line.TrimStart();
+            if (trimmed.StartsWith("[", StringComparison.Ordinal) ||
+                trimmed.StartsWith("//", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
             bool hasCsv = line.IndexOf("Csv", StringComparison.OrdinalIgnoreCase) >= 0 ||
                           line.IndexOf(".csv", StringComparison.OrdinalIgnoreCase) >= 0;
             if (!hasCsv)
@@ -219,7 +258,11 @@ namespace Hecton8.EditorValidation
             if (hasCallable &&
                 (line.IndexOf("Parse", StringComparison.OrdinalIgnoreCase) >= 0 ||
                  line.IndexOf("TryApply", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                 line.IndexOf("TryIngest", StringComparison.OrdinalIgnoreCase) >= 0))
+                 line.IndexOf("TryIngest", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 line.IndexOf("TryLoad", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 line.IndexOf("TryReload", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 line.IndexOf("Reload", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 line.IndexOf("Load", StringComparison.OrdinalIgnoreCase) >= 0))
             {
                 return true;
             }
@@ -242,12 +285,12 @@ namespace Hecton8.EditorValidation
                    line.IndexOf("FileStream", StringComparison.Ordinal) >= 0;
         }
 
-        private static void ApplyPreprocessorDirective(string trimmed, List<PreprocessorFrame> stack, bool developmentBuild)
+        private static void ApplyPreprocessorDirective(string trimmed, List<PreprocessorFrame> stack, bool developmentBuild, BuildTarget target)
         {
             if (trimmed.StartsWith("#if", StringComparison.Ordinal))
             {
                 string expression = trimmed.Length > 3 ? trimmed.Substring(3).Trim() : string.Empty;
-                stack.Add(new PreprocessorFrame(EvaluateForPlayer(expression, developmentBuild)));
+                stack.Add(new PreprocessorFrame(EvaluateForPlayer(expression, developmentBuild, target)));
                 return;
             }
 
@@ -264,7 +307,7 @@ namespace Hecton8.EditorValidation
                 else
                 {
                     string expression = trimmed.Length > 5 ? trimmed.Substring(5).Trim() : string.Empty;
-                    bool active = EvaluateForPlayer(expression, developmentBuild);
+                    bool active = EvaluateForPlayer(expression, developmentBuild, target);
                     frame.CurrentActive = active;
                     frame.BranchTaken = active;
                 }
@@ -298,12 +341,12 @@ namespace Hecton8.EditorValidation
             return true;
         }
 
-        private static bool EvaluateForPlayer(string expression, bool developmentBuild)
+        private static bool EvaluateForPlayer(string expression, bool developmentBuild, BuildTarget target)
         {
             if (string.IsNullOrWhiteSpace(expression))
                 return false;
 
-            PreprocessorExpressionParser parser = new PreprocessorExpressionParser(expression, developmentBuild);
+            PreprocessorExpressionParser parser = new PreprocessorExpressionParser(expression, developmentBuild, target);
             return parser.ParseExpression();
         }
 
@@ -329,23 +372,27 @@ namespace Hecton8.EditorValidation
             result.WrittenFindingCount++;
         }
 
-        private static string BuildReport(in ScanResult result, StringBuilder findingsJson)
+        private static string BuildReport(in ScanResult result, StringBuilder findingsJson, string agentId)
         {
             StringBuilder report = new StringBuilder(65536);
             report.AppendLine("{");
             report.AppendLine("  \"schema\": \"HECTON8_DATA_MONOLITH_RELEASE_BUILD_GATE_V1\",");
-            report.AppendLine("  \"agent\": \"" + AgentId + "\",");
+            report.AppendLine("  \"agent\": \"" + agentId + "\",");
             report.AppendLine("  \"scanner\": \"H8DataMonolithReleaseParserScanner\",");
             report.AppendLine("  \"status\": \"" + result.Status + "\",");
-            report.AppendLine("  \"policy\": \"Non-editor player builds are scanned with the matching DEVELOPMENT_BUILD symbol. Non-development players are blocked on production static-data parser routes; development players emit warning evidence for editor-only CSV policy enforcement.\",");
+            report.AppendLine("  \"policy\": \"Non-editor player builds are scanned with the matching DEVELOPMENT_BUILD symbol. Non-development players are blocked on production static-data parser routes and on targets without a zero-GC native/PAL static_data.h8bin loader; development players emit warning evidence for editor-only CSV policy enforcement.\",");
             report.AppendLine("  \"developmentBuild\": " + LowerBool(result.DevelopmentBuild) + ",");
-            report.AppendLine("  \"symbolModel\": \"UNITY_EDITOR=false, DEVELOPMENT_BUILD=" + LowerBool(result.DevelopmentBuild) + ", DEBUG=" + LowerBool(result.DevelopmentBuild) + ", unknown_symbols=true\",");
+            report.AppendLine("  \"buildTarget\": \"" + Escape(result.TargetName) + "\",");
+            report.AppendLine("  \"targetHasNativeMonolithPal\": " + LowerBool(result.TargetHasNativeMonolithPal) + ",");
+            report.AppendLine("  \"platformPalStatus\": \"" + Escape(GetPlatformPalStatus(in result)) + "\",");
+            report.AppendLine("  \"symbolModel\": \"UNITY_EDITOR=false, DEVELOPMENT_BUILD=" + LowerBool(result.DevelopmentBuild) + ", DEBUG=" + LowerBool(result.DevelopmentBuild) + ", platform_symbols=BuildTarget, unknown_symbols=true\",");
             report.AppendLine("  \"filesScanned\": " + result.FilesScanned + ",");
             report.AppendLine("  \"productionFilesScanned\": " + result.ProductionFilesScanned + ",");
             report.AppendLine("  \"editorOrTestFilesSkipped\": " + result.EditorOrTestFilesSkipped + ",");
             report.AppendLine("  \"releaseInactiveLinesSkipped\": " + result.ReleaseInactiveLinesSkipped + ",");
             report.AppendLine("  \"missingRoots\": " + result.MissingRoots + ",");
             report.AppendLine("  \"blockingFindingCount\": " + result.BlockingFindingCount + ",");
+            report.AppendLine("  \"unsupportedPlatformPalFindingCount\": " + result.UnsupportedPlatformPalFindingCount + ",");
             report.AppendLine("  \"allowedPersistenceFindingCount\": " + result.AllowedPersistenceFindingCount + ",");
             report.AppendLine("  \"writtenFindingLimit\": " + MaxFindingsWritten + ",");
             report.AppendLine("  \"writtenFindingCount\": " + result.WrittenFindingCount + ",");
@@ -367,6 +414,21 @@ namespace Hecton8.EditorValidation
         private static string GetReportPath(bool developmentBuild)
         {
             return developmentBuild ? DevelopmentReportPath : ReleaseReportPath;
+        }
+
+        private static string GetReportPath1313(bool developmentBuild)
+        {
+            return developmentBuild ? DevelopmentReportPath1313 : ReleaseReportPath1313;
+        }
+
+        private static string GetPlatformPalStatus(in ScanResult result)
+        {
+            if (result.TargetHasNativeMonolithPal)
+                return "NATIVE_MONOLITH_PAL_PRESENT";
+
+            return result.DevelopmentBuild
+                ? "DEVELOPMENT_TARGET_NOT_RELEASE_PROOF"
+                : "FAIL_NO_NATIVE_MONOLITH_PAL";
         }
 
         private static bool IsEditorOrTestPath(string relativePath)
@@ -520,13 +582,16 @@ namespace Hecton8.EditorValidation
         internal struct ScanResult
         {
             public string Status;
+            public string TargetName;
             public bool DevelopmentBuild;
+            public bool TargetHasNativeMonolithPal;
             public int FilesScanned;
             public int ProductionFilesScanned;
             public int EditorOrTestFilesSkipped;
             public int ReleaseInactiveLinesSkipped;
             public int MissingRoots;
             public int BlockingFindingCount;
+            public int UnsupportedPlatformPalFindingCount;
             public int WrittenFindingCount;
             public int AllowedPersistenceFindingCount;
         }
@@ -547,12 +612,14 @@ namespace Hecton8.EditorValidation
         {
             private readonly string _text;
             private readonly bool _developmentBuild;
+            private readonly BuildTarget _target;
             private int _index;
 
-            public PreprocessorExpressionParser(string text, bool developmentBuild)
+            public PreprocessorExpressionParser(string text, bool developmentBuild, BuildTarget target)
             {
                 _text = text;
                 _developmentBuild = developmentBuild;
+                _target = target;
                 _index = 0;
             }
 
@@ -647,9 +714,38 @@ namespace Hecton8.EditorValidation
                 if (string.Equals(symbol, "UNITY_EDITOR", StringComparison.Ordinal))
                     return false;
 
+                if (symbol.StartsWith("UNITY_EDITOR_", StringComparison.Ordinal))
+                    return false;
+
                 if (string.Equals(symbol, "DEVELOPMENT_BUILD", StringComparison.Ordinal) ||
                     string.Equals(symbol, "DEBUG", StringComparison.Ordinal))
                     return _developmentBuild;
+
+                if (string.Equals(symbol, "UNITY_ANDROID", StringComparison.Ordinal))
+                    return _target == BuildTarget.Android;
+
+                if (string.Equals(symbol, "UNITY_IOS", StringComparison.Ordinal) ||
+                    string.Equals(symbol, "UNITY_IPHONE", StringComparison.Ordinal))
+                    return _target == BuildTarget.iOS;
+
+                if (string.Equals(symbol, "UNITY_WEBGL", StringComparison.Ordinal))
+                    return _target == BuildTarget.WebGL;
+
+                if (string.Equals(symbol, "UNITY_STANDALONE_WIN", StringComparison.Ordinal))
+                    return _target == BuildTarget.StandaloneWindows ||
+                           _target == BuildTarget.StandaloneWindows64;
+
+                if (string.Equals(symbol, "UNITY_STANDALONE_LINUX", StringComparison.Ordinal))
+                    return _target == BuildTarget.StandaloneLinux64;
+
+                if (string.Equals(symbol, "UNITY_STANDALONE_OSX", StringComparison.Ordinal))
+                    return _target == BuildTarget.StandaloneOSX;
+
+                if (string.Equals(symbol, "UNITY_STANDALONE", StringComparison.Ordinal))
+                    return _target == BuildTarget.StandaloneWindows ||
+                           _target == BuildTarget.StandaloneWindows64 ||
+                           _target == BuildTarget.StandaloneLinux64 ||
+                           _target == BuildTarget.StandaloneOSX;
 
                 if (string.Equals(symbol, "true", StringComparison.OrdinalIgnoreCase))
                     return true;

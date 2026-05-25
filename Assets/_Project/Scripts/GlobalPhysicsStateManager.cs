@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
@@ -31,41 +30,12 @@ namespace Hecton8.Physics
         Dock = 2
     }
 
-    /// <summary>
-    /// Coarse impact weight bucket used by downstream audio/VFX listeners.
-    /// </summary>
-    public enum PhysicsImpactWeightClass : byte
-    {
-        Light = 0,
-        Medium = 1,
-        Heavy = 2
-    }
-
     [Flags]
     internal enum PhysicsStateMask : byte
     {
         None = 0,
         WasAsleep = 1 << 4,
         NanDetected = 1 << 6
-    }
-
-    /// <summary>
-    /// Optional rigidbody-side metadata provider for procedural impact material synthesis.
-    /// </summary>
-    public interface IPhysicsImpactMaterialProvider : IImpactMaterialProvider
-    {
-    }
-
-    /// <summary>
-    /// Runtime-owned collider LOD participant controlled by the global physics hysteresis gate.
-    /// </summary>
-    public interface IPhysicsColliderLodHysteresisSink
-    {
-        /// <summary>
-        /// Enables or disables simplified collider LOD based on distance hysteresis.
-        /// </summary>
-        /// <param name="allowSimplifiedColliderLod">True after the body stays outside the LOD0 radius long enough.</param>
-        void SetColliderLodDistanceGate(bool allowSimplifiedColliderLod);
     }
 
     /// <summary>
@@ -131,189 +101,6 @@ namespace Hecton8.Physics
     {
         /// <summary>Authored flags consumed by the global physics culling overseer.</summary>
         PhysicsCullingFlags CullingFlags { get; }
-    }
-
-    /// <summary>
-    /// Immutable gameplay impact payload flushed in LateUpdate after the fixed-step collision phase.
-    /// </summary>
-    [BinaryBlittableSafe]
-    [StructLayout(LayoutKind.Explicit, Size = 128)]
-    public readonly struct PhysicsImpactSignal
-    {
-        /// <summary>Primary tracked rigidbody instance ID.</summary>
-        [FieldOffset(0)] public readonly ulong PrimaryBodyId;
-
-        /// <summary>Secondary tracked rigidbody instance ID, or zero for static geometry.</summary>
-        [FieldOffset(8)] public readonly ulong SecondaryBodyId;
-
-        [FieldOffset(16)] private readonly AbsoluteUniversePosition _pointAup;
-
-        /// <summary>Resolved world-space impact point.</summary>
-        [FieldOffset(64)] public readonly Vector3 Point;
-
-        /// <summary>Resolved world-space impact normal.</summary>
-        [FieldOffset(76)] public readonly Vector3 Normal;
-
-        /// <summary>Average impact force derived from collision impulse.</summary>
-        [FieldOffset(88)] public readonly float Force;
-
-        /// <summary>Perceived impact intensity computed from the force-domain logarithmic mapping.</summary>
-        [FieldOffset(92)] public readonly float Intensity;
-
-        /// <summary>Strict item impact loudness scalar: impact velocity magnitude multiplied by primary body mass.</summary>
-        [FieldOffset(96)] public readonly float MassVelocity;
-
-        /// <summary>Discrete impact-weight bucket for downstream presentation systems.</summary>
-        [FieldOffset(100)] public readonly PhysicsImpactWeightClass WeightClass;
-
-        /// <summary>Primary collision body's compact authored impact material family.</summary>
-        [FieldOffset(101)] public readonly byte PrimaryAudioMaterialId;
-
-        /// <summary>Secondary collision body's compact authored impact material family.</summary>
-        [FieldOffset(102)] public readonly byte SecondaryAudioMaterialId;
-
-        [FieldOffset(103)] private readonly byte _hasPointAup;
-        [FieldOffset(104)] private readonly uint _pad0;
-        [FieldOffset(108)] private readonly uint _pad1;
-        [FieldOffset(112)] private readonly ulong _pad2;
-        [FieldOffset(120)] private readonly ulong _pad3;
-
-        /// <summary>
-        /// Creates a queued gameplay physics-impact payload.
-        /// </summary>
-        public PhysicsImpactSignal(
-            ulong primaryBodyId,
-            ulong secondaryBodyId,
-            Vector3 point,
-            Vector3 normal,
-            float force,
-            float intensity,
-            float massVelocity,
-            PhysicsImpactWeightClass weightClass,
-            byte primaryAudioMaterialId,
-            byte secondaryAudioMaterialId)
-        {
-            PrimaryBodyId = primaryBodyId;
-            SecondaryBodyId = secondaryBodyId;
-            Point = point;
-            if (TryResolveAupFromRuntimeOrigin(point, out AbsoluteUniversePosition pointAup))
-            {
-                _pointAup = pointAup;
-                _hasPointAup = 1;
-            }
-            else
-            {
-                _pointAup = default;
-                _hasPointAup = 0;
-            }
-            Normal = normal;
-            Force = force;
-            Intensity = intensity;
-            MassVelocity = massVelocity;
-            WeightClass = weightClass;
-            PrimaryAudioMaterialId = primaryAudioMaterialId;
-            SecondaryAudioMaterialId = secondaryAudioMaterialId;
-            _pad0 = 0u;
-            _pad1 = 0u;
-            _pad2 = 0UL;
-            _pad3 = 0UL;
-        }
-
-        /// <summary>
-        /// Creates a queued gameplay physics-impact payload with authoritative AUP already resolved.
-        /// </summary>
-        public PhysicsImpactSignal(
-            ulong primaryBodyId,
-            ulong secondaryBodyId,
-            Vector3 point,
-            in AbsoluteUniversePosition pointAup,
-            Vector3 normal,
-            float force,
-            float intensity,
-            float massVelocity,
-            PhysicsImpactWeightClass weightClass,
-            byte primaryAudioMaterialId,
-            byte secondaryAudioMaterialId)
-        {
-            PrimaryBodyId = primaryBodyId;
-            SecondaryBodyId = secondaryBodyId;
-            Point = point;
-            _pointAup = pointAup;
-            _hasPointAup = 1;
-            Normal = normal;
-            Force = force;
-            Intensity = intensity;
-            MassVelocity = massVelocity;
-            WeightClass = weightClass;
-            PrimaryAudioMaterialId = primaryAudioMaterialId;
-            SecondaryAudioMaterialId = secondaryAudioMaterialId;
-            _pad0 = 0u;
-            _pad1 = 0u;
-            _pad2 = 0UL;
-            _pad3 = 0UL;
-        }
-
-        /// <summary>True when the impact point already carries floating-origin-safe AUP.</summary>
-        public static bool HasPointAup(in PhysicsImpactSignal signal)
-        {
-            return signal._hasPointAup != 0;
-        }
-
-        /// <summary>Returns the impact point as AUP, falling back only for default/legacy payloads.</summary>
-        public AbsoluteUniversePosition ResolvePointAup()
-        {
-            return _hasPointAup != 0
-                ? _pointAup
-                : TryResolveAupFromRuntimeOrigin(Point, out AbsoluteUniversePosition pointAup)
-                    ? pointAup
-                    : default;
-        }
-
-        /// <summary>True when the event falls into the heavy feedback bucket.</summary>
-        public static bool IsHeavy(in PhysicsImpactSignal signal)
-        {
-            return signal.WeightClass == PhysicsImpactWeightClass.Heavy;
-        }
-
-        private static bool TryResolveAupFromRuntimeOrigin(Vector3 runtimePosition, out AbsoluteUniversePosition positionAup)
-        {
-            positionAup = default;
-            if (!IsFinite(runtimePosition))
-                return false;
-
-            double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;
-            if (!math.all(math.isfinite(origin)))
-                return false;
-
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromAbsolutePosition(origin);
-            positionAup = AbsoluteUniversePosition.OffsetMeters(
-                in originAup,
-                new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));
-            return IsFinite(in positionAup);
-        }
-
-        private static bool IsFinite(Vector3 value)
-        {
-            float3 value3 = new float3(value.x, value.y, value.z);
-            return math.all(math.isfinite(value3));
-        }
-
-        private static bool IsFinite(in AbsoluteUniversePosition value)
-        {
-            return math.isfinite(value.LocalX) &&
-                math.isfinite(value.LocalY) &&
-                math.isfinite(value.LocalZ);
-        }
-    }
-
-    /// <summary>
-    /// Listener contract for deferred physics-impact feedback.
-    /// </summary>
-    public interface IPhysicsImpactEventListener
-    {
-        /// <summary>Called once for each queued impact after the fixed-step collision phase.</summary>
-        /// <param name="impactSignal">Impact payload.</param>
-        void OnPhysicsImpact(in PhysicsImpactSignal impactSignal);
     }
 
     /// <summary>
@@ -717,8 +504,15 @@ namespace Hecton8.Physics
             [FieldOffset(100)] public PhysicsImpactWeightClass WeightClass;
             [FieldOffset(101)] public byte PrimaryAudioMaterialId;
             [FieldOffset(102)] public byte SecondaryAudioMaterialId;
-            [FieldOffset(103)] public byte _pad0;
-            [FieldOffset(104)] public ulong _pad1;
+            [FieldOffset(103)] private byte _pad0;
+            [FieldOffset(104)] private byte _pad1;
+            [FieldOffset(105)] private byte _pad2;
+            [FieldOffset(106)] private byte _pad3;
+            [FieldOffset(107)] private byte _pad4;
+            [FieldOffset(108)] private byte _pad5;
+            [FieldOffset(109)] private byte _pad6;
+            [FieldOffset(110)] private byte _pad7;
+            [FieldOffset(111)] private byte _pad8;
         }
 
         [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -729,19 +523,23 @@ namespace Hecton8.Physics
             [FieldOffset(8)] public int CulledBodyCount;
             [FieldOffset(12)] public uint BodyId;
             [FieldOffset(16)] public float DistanceSq;
-            [FieldOffset(20)] public byte Command;
-            [FieldOffset(21)] public byte AwakeResult;
-            [FieldOffset(22)] public byte Flags;
-            [FieldOffset(23)] public byte Reserved;
+            [FieldOffset(20)] private uint _pad0;
             [FieldOffset(24)] public ushort CcdInterventions;
-            [FieldOffset(26)] public ushort _pad0;
-            [FieldOffset(28)] public uint _pad1;
+            [FieldOffset(26)] public byte Command;
+            [FieldOffset(27)] public byte AwakeResult;
+            [FieldOffset(28)] public byte Flags;
+            [FieldOffset(29)] public byte Reserved;
+            [FieldOffset(30)] private byte _pad1;
+            [FieldOffset(31)] private byte _pad2;
         }
 
         private const int MaxTrackedBodies = 2048;
         private const int MaxTrackedConnections = 128;
         private const int MaxQueuedImpactEvents = 256;
         private const int PhysicsCullingTelemetryCapacity = 300;
+        private const uint PhysicsCullingRigidBodyNanHash = 0x50434E41u;
+        private const uint PhysicsCullingStateSyncOverBudgetHash = 0x50435359u;
+        private const uint PhysicsCullingInvalidInputHash = 0x5043494Eu;
         private const int MaxImpactFlushIterations = MaxQueuedImpactEvents;
         private const int MaxMeshCollidersPerBody = 4;
         private const int MaxTrackedMeshColliderRefs = MaxTrackedBodies * MaxMeshCollidersPerBody;
@@ -919,6 +717,71 @@ namespace Hecton8.Physics
                 return;
 
             QueueKinematicImpactInternal(primaryBody, secondaryBody, point, normal, impactSpeedMetersPerSecond);
+        }
+
+        /// <inheritdoc />
+        void IPhysicsStateEventService.SetHydrodynamicSubmersion(Rigidbody body, float submersionFactor)
+        {
+            if (body == null)
+                return;
+
+            SetHydrodynamicSubmersionInternal(body, submersionFactor);
+        }
+
+        /// <inheritdoc />
+        void IPhysicsStateEventService.RegisterBodyStateTracking(Rigidbody body)
+        {
+            RegisterTrackedBodyInternal(body, PhysicsCullingFlags.None);
+        }
+
+        /// <inheritdoc />
+        void IPhysicsStateEventService.UnregisterBodyStateTracking(Rigidbody body)
+        {
+            if (body == null)
+                return;
+
+            UnregisterTrackedBodyInternal(body);
+        }
+
+        /// <inheritdoc />
+        void IPhysicsStateEventService.ArmSpeculativeCcdForImpulse(Rigidbody body)
+        {
+            if (body == null)
+                return;
+
+            ArmSafeTeleportSpeculativeCcd(body);
+        }
+
+        /// <inheritdoc />
+        float IPhysicsStateEventService.ResolveSpeculativeHoverHeightMeters(float baseHeightMeters, float timeSeconds)
+        {
+            return ResolveSpeculativeHoverHeightMeters(baseHeightMeters, timeSeconds);
+        }
+
+        /// <inheritdoc />
+        void IPhysicsStateEventService.QueueKinematicImpact(
+            Rigidbody primaryBody,
+            Vector3 point,
+            Vector3 normal,
+            float impactSpeedMetersPerSecond,
+            Rigidbody secondaryBody)
+        {
+            if (primaryBody == null)
+                return;
+
+            QueueKinematicImpactInternal(primaryBody, secondaryBody, point, normal, impactSpeedMetersPerSecond);
+        }
+
+        /// <inheritdoc />
+        void IPhysicsStateEventService.RegisterImpactListener(IPhysicsImpactEventListener listener)
+        {
+            PhysicsEvents.Register(listener);
+        }
+
+        /// <inheritdoc />
+        void IPhysicsStateEventService.UnregisterImpactListener(IPhysicsImpactEventListener listener)
+        {
+            PhysicsEvents.Unregister(listener);
         }
 
         /// <inheritdoc />
@@ -1434,7 +1297,7 @@ namespace Hecton8.Physics
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!_nativeStateAllocationFailureReported)
             {
-                Debug.LogError("[GlobalPhysicsStateManager] Required native state unavailable; rigidbody tracking rejected.");
+                Hecton8.Core.H8Debug.LogError("[GlobalPhysicsStateManager] Required native state unavailable; rigidbody tracking rejected.");
                 _nativeStateAllocationFailureReported = true;
             }
 #endif
@@ -2402,10 +2265,10 @@ namespace Hecton8.Physics
             if (body == null)
                 return 0;
 
-            if (body.TryGetComponent(out IPhysicsImpactMaterialProvider directProvider))
+            if (body.TryGetComponent(out Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider directProvider))
                 return directProvider.ImpactAudioMaterialId;
 
-            IPhysicsImpactMaterialProvider provider = body.GetComponentInParent<IPhysicsImpactMaterialProvider>();
+            Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider provider = body.GetComponentInParent<Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider>();
             return provider != null ? provider.ImpactAudioMaterialId : (byte)0;
         }
 
@@ -2431,7 +2294,7 @@ namespace Hecton8.Physics
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     if (!_connectionCapacityOverflowReported)
                     {
-                        Debug.LogWarning("[GlobalPhysicsStateManager] Connection registry capacity exceeded.");
+                        Hecton8.Core.H8Debug.LogWarning("[GlobalPhysicsStateManager] Connection registry capacity exceeded.");
                         _connectionCapacityOverflowReported = true;
                     }
 #endif
@@ -2748,7 +2611,7 @@ namespace Hecton8.Physics
                 if (!math.any(positionNaNMask | linearNaNMask | angularNaNMask) && !math.any(rotationNaNMask))
                     continue;
 
-                DumpPhysicsCullingBlackBox("rigidbody_nan");
+                DumpPhysicsCullingBlackBox(PhysicsCullingRigidBodyNanHash, 1f);
                 RigidbodyState bodyState = _bodyStates[i];
                 float3 lastValidPosition = bodyState.HasLastValidAup != 0
                     ? bodyState.LastValidAup.ToRuntimeFloat3()
@@ -3053,7 +2916,7 @@ namespace Hecton8.Physics
             float syncTimeMs = (float)((syncEndTicks - syncStartTicks) * 1000.0 / System.Diagnostics.Stopwatch.Frequency);
             RecordShinobu37PhysicsCullingFrameTelemetry(syncTimeMs, changedCount, activeBodies, asleepBodies);
             if (syncTimeMs > PhysicsCullingStateSyncDumpThresholdMs)
-                DumpPhysicsCullingBlackBox("state_sync_over_1ms");
+                DumpPhysicsCullingBlackBox(PhysicsCullingStateSyncOverBudgetHash, syncTimeMs);
         }
 
         private bool ApplyPhysicsCullingCommand(
@@ -3067,7 +2930,7 @@ namespace Hecton8.Physics
             if ((command & CullingCommandInvalidInput) != 0)
             {
                 RestoreAllPhysicsCullingState(bodyIndex, body, ref bodyState, forceWake: true);
-                DumpPhysicsCullingBlackBox("invalid_input");
+                DumpPhysicsCullingBlackBox(PhysicsCullingInvalidInputHash, command);
                 return false;
             }
 
@@ -3434,54 +3297,13 @@ namespace Hecton8.Physics
             return (ushort)math.min(_kinematicCcdInterventionsThisFrame, ushort.MaxValue);
         }
 
-        private void DumpPhysicsCullingBlackBox(string reason)
+        private void DumpPhysicsCullingBlackBox(uint reasonHash, float scalarValue)
         {
-            if (!_physicsCullingTelemetry.IsCreated)
+            if (reasonHash == 0u || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
                 return;
 
-            try
-            {
-                string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-                string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
-                Directory.CreateDirectory(logDirectory);
-                string dumpPath = Path.Combine(logDirectory, "Dump_PHYSICS_CULLING.bin");
-                WritePhysicsCullingBlackBoxFile(dumpPath, reason);
-                if (!string.Equals(reason, "state_sync_over_1ms", StringComparison.Ordinal))
-                    WritePhysicsCullingBlackBoxFile(Path.Combine(logDirectory, "Dump_PHYSICS_CULLING.h8dump"), reason);
-            }
-            catch (Exception exception)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[GlobalPhysicsStateManager] Failed to dump physics culling black box: " + exception.Message);
-#endif
-            }
-        }
-
-        private void WritePhysicsCullingBlackBoxFile(string dumpPath, string reason)
-        {
-            using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
-            {
-                writer.Write(reason ?? string.Empty);
-                writer.Write(_physicsCullingTelemetryWriteIndex);
-                writer.Write(PhysicsCullingTelemetryCapacity);
-                for (int i = 0; i < PhysicsCullingTelemetryCapacity; i++)
-                {
-                    PhysicsCullingTelemetryEntry entry = _physicsCullingTelemetry[i];
-                    writer.Write(entry.FrameIndex);
-                    writer.Write(entry.TrackedBodyCount);
-                    writer.Write(entry.CulledBodyCount);
-                    writer.Write(entry.BodyId);
-                    writer.Write(entry.DistanceSq);
-                    writer.Write(entry.Command);
-                    writer.Write(entry.AwakeResult);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.Reserved);
-                    writer.Write(entry.CcdInterventions);
-                }
-
-                WriteShinobu37PhysicsCullingFrameDump(writer);
-            }
+            float safeScalar = math.isfinite(scalarValue) ? scalarValue : 0f;
+            GlobalTelemetryBus.PushEvent(reasonHash, safeScalar);
         }
 
         void IAcousticPingEventListener.OnAcousticPing(in AcousticPingEvent pingEvent)
@@ -4012,7 +3834,7 @@ namespace Hecton8.Physics
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!_trackedBodyCapacityOverflowReported)
             {
-                Debug.LogError("[GlobalPhysicsStateManager] MaxTrackedBodies capacity exceeded. Increase MaxTrackedBodies; runtime buffer growth is forbidden.");
+                Hecton8.Core.H8Debug.LogError("[GlobalPhysicsStateManager] MaxTrackedBodies capacity exceeded. Increase MaxTrackedBodies; runtime buffer growth is forbidden.");
                 _trackedBodyCapacityOverflowReported = true;
             }
 #endif

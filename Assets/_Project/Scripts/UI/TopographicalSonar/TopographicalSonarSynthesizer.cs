@@ -1180,7 +1180,7 @@ namespace Hecton8.UI
             float quality = ResolveQualityWeight();
             telemetry[index] = new TopographicalSonarTelemetryEntry
             {
-                TimeSeconds = Time.realtimeSinceStartupAsDouble,
+                TimeSeconds = SystemDispatcher.CurrentUnscaledTimeSeconds,
                 PingAupX = _lastPingAup.x,
                 PingAupY = _lastPingAup.y,
                 PingAupZ = _lastPingAup.z,
@@ -1299,7 +1299,7 @@ namespace Hecton8.UI
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
             if (vault == null || requiredLength <= 0 || handle.BufferID == 0u)
@@ -1312,7 +1312,7 @@ namespace Hecton8.UI
         }
 
         private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
-            where T : struct
+            where T : unmanaged
         {
             if (vault != null && handle.BufferID != 0u)
                 vault.ReleaseBuffer(in handle);
@@ -1468,8 +1468,14 @@ namespace Hecton8.UI
 
             NativeArray<SonarProceduralArgsDTO> argsWrite =
                 _argsBuffer.LockBufferForWrite<SonarProceduralArgsDTO>(0, 1);
-            argsWrite[0] = args;
-            _argsBuffer.UnlockBufferAfterWrite<SonarProceduralArgsDTO>(1);
+            try
+            {
+                argsWrite[0] = args;
+            }
+            finally
+            {
+                _argsBuffer.UnlockBufferAfterWrite<SonarProceduralArgsDTO>(1);
+            }
         }
 
         private GraphicsBuffer ResolveReadPointBuffer()
@@ -1513,8 +1519,14 @@ namespace Hecton8.UI
 
             NativeArray<TopographicalSonarShaderGlobalsDTO> mapped =
                 shaderGlobalsWriteBuffer.LockBufferForWrite<TopographicalSonarShaderGlobalsDTO>(0, 1);
-            mapped[0] = globals;
-            shaderGlobalsWriteBuffer.UnlockBufferAfterWrite<TopographicalSonarShaderGlobalsDTO>(1);
+            try
+            {
+                mapped[0] = globals;
+            }
+            finally
+            {
+                shaderGlobalsWriteBuffer.UnlockBufferAfterWrite<TopographicalSonarShaderGlobalsDTO>(1);
+            }
             _activeShaderGlobalsBuffer = shaderGlobalsWriteBuffer;
             _shaderGlobalsWriteIndex ^= 1;
         }
@@ -1534,13 +1546,13 @@ namespace Hecton8.UI
                 void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
                 using (FileStream stream = new FileStream(BlackBoxDumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 {
-                    stream.Write(new ReadOnlySpan<byte>(source, byteCount));
+                    stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(source), byteCount));
                 }
                 return true;
             }
             catch (Exception exception)
             {
-                Debug.LogError("[TopographicalSonar] Failed to dump topographical sonar blackbox.", this);
+                Hecton8.Core.H8Debug.LogError("[TopographicalSonar] Failed to dump topographical sonar blackbox.", this);
                 return false;
             }
         }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
@@ -26,7 +26,6 @@ using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Narrative;
 using Hecton8.Optimization;
-using Hecton8.Physics;
 using Hecton8.Power;
 using Hecton8.Quest;
 using Hecton8.SaveSystem;
@@ -83,7 +82,7 @@ namespace Hecton8.Core
         private const double SlowJobCompleteWarningMilliseconds = 1.0;
         private const double SlowDispatcherPhaseWarningMilliseconds = 100.0;
         private const float JobAdmissionFrameBudgetMissThresholdSeconds = 1.0f / 60.0f;
-        private const int MaxQueuedDispatcherRaycasts = 1024;
+        private const int MaxQueuedDispatcherSurfaceProbes = 1024;
         private const int DispatcherBlackBoxFrameCount = 300;
         private const int DispatcherBlackBoxEntrySizeBytes = 64;
         private const string DispatcherBlackBoxDumpPath = "Docs/AgentLogs/Dump_CORE_TICK_DILATION.bin";
@@ -175,8 +174,8 @@ namespace Hecton8.Core
         private static readonly ProfilerMarker _postFixedProfilerMarker = new ProfilerMarker("H8.Dispatcher.PostFixed");
         private static readonly ProfilerMarker _lateFrameCommandQueueDrainProfilerMarker = new ProfilerMarker("H8.Dispatcher.CommandQueue.Drain");
         private static readonly ProfilerMarker _foveatedCompleteProfilerMarker = new ProfilerMarker("H8.Dispatcher.Foveated.Complete");
-        private static readonly ProfilerMarker _dispatcherRaycastScheduleProfilerMarker = new ProfilerMarker("H8.Dispatcher.Raycast.Schedule");
-        private static readonly ProfilerMarker _dispatcherRaycastCompleteProfilerMarker = new ProfilerMarker("H8.Dispatcher.Raycast.Complete");
+        private static readonly ProfilerMarker _dispatcherSurfaceProbeScheduleProfilerMarker = new ProfilerMarker("H8.Dispatcher.SurfaceProbe.Schedule");
+        private static readonly ProfilerMarker _dispatcherSurfaceProbeCompleteProfilerMarker = new ProfilerMarker("H8.Dispatcher.SurfaceProbe.Complete");
         private static readonly ProfilerMarker _masterPreSimulationProfilerMarker = new ProfilerMarker("H8.Dispatcher.Master.PreSimulation");
         private static readonly ProfilerMarker _masterSimulationProfilerMarker = new ProfilerMarker("H8.Dispatcher.Master.Simulation");
         private static readonly ProfilerMarker _masterPostSimulationProfilerMarker = new ProfilerMarker("H8.Dispatcher.Master.PostSimulation");
@@ -397,13 +396,13 @@ namespace Hecton8.Core
         private static int _homeostasisFoveatedTier;
         private static IModdingBridge _moddingBridgeProjectionRuntime;
         // COLD ALLOC: object[256] - dispatcher-owned pending raycast receivers - owner: SystemDispatcher
-        private static readonly object[] _pendingDispatcherRaycastReceivers = new object[MaxQueuedDispatcherRaycasts];
+        private static readonly object[] _pendingDispatcherSurfaceProbeReceivers = new object[MaxQueuedDispatcherSurfaceProbes];
         // COLD ALLOC: int[256] - dispatcher-owned pending raycast request ids - owner: SystemDispatcher
-        private static readonly int[] _pendingDispatcherRaycastRequestIds = new int[MaxQueuedDispatcherRaycasts];
+        private static readonly int[] _pendingDispatcherSurfaceProbeRequestIds = new int[MaxQueuedDispatcherSurfaceProbes];
         // COLD ALLOC: object[256] - dispatcher-owned scheduled raycast receivers - owner: SystemDispatcher
-        private static readonly object[] _scheduledDispatcherRaycastReceivers = new object[MaxQueuedDispatcherRaycasts];
+        private static readonly object[] _scheduledDispatcherSurfaceProbeReceivers = new object[MaxQueuedDispatcherSurfaceProbes];
         // COLD ALLOC: int[256] - dispatcher-owned scheduled raycast request ids - owner: SystemDispatcher
-        private static readonly int[] _scheduledDispatcherRaycastRequestIds = new int[MaxQueuedDispatcherRaycasts];
+        private static readonly int[] _scheduledDispatcherSurfaceProbeRequestIds = new int[MaxQueuedDispatcherSurfaceProbes];
         // COLD ALLOC: uint[32] - late-frame circuit-breaker lane hash counters - owner: SystemDispatcher
         private static readonly uint[] _lateFrameCircuitBreakerLaneHashes = new uint[LateFrameCircuitBreakerLaneCapacity];
         // COLD ALLOC: ushort[32] - late-frame circuit-breaker lane hit counters - owner: SystemDispatcher
@@ -536,9 +535,9 @@ namespace Hecton8.Core
         private static IDataVault _cachedDispatcherDataVault;
         private static ICameraJuiceSystem _cachedCameraJuiceSystem;
 
-        internal static float CurrentFrameDeltaTime { get; private set; }
+        public static float CurrentFrameDeltaTime { get; private set; }
 
-        internal static float CurrentFrameUnscaledDeltaTime { get; private set; }
+        public static float CurrentFrameUnscaledDeltaTime { get; private set; }
 
         internal static float CurrentFixedInterpolationAlpha { get; private set; }
 
@@ -546,7 +545,7 @@ namespace Hecton8.Core
 
         internal static bool IsOriginShiftBootstrapLocked => Volatile.Read(ref _originShiftBootstrapLockCount) > 0;
 
-        internal static bool IsOriginShiftFrameLockedForCurrentFrame => Volatile.Read(ref _originShiftFrameLockFrame) == Time.frameCount;
+        internal static bool IsOriginShiftFrameLockedForCurrentFrame => Volatile.Read(ref _originShiftFrameLockFrame) == CurrentFrameIndex;
 
         public float TimeDilationScalar => _timeDilationScalar;
 
@@ -591,12 +590,12 @@ namespace Hecton8.Core
         private static bool _pauseDepthOfFieldTargetActive;
         private static int _temporalCompressionFrameCount;
         private static int _pdaOverBudgetConsecutiveFrames;
-        private static VaultGenerationHandle<RaycastHit> _scheduledDispatcherRaycastHitsHandle;
-        private static bool _scheduledDispatcherRaycastHitsVaultLocked;
-        private static JobHandle _scheduledDispatcherRaycastHandle;
-        private static bool _dispatcherRaycastsScheduled;
-        private static int _pendingDispatcherRaycastCount;
-        private static int _scheduledDispatcherRaycastCount;
+        private static VaultGenerationHandle<KinematicSurfaceHit> _scheduledDispatcherSurfaceProbeHitsHandle;
+        private static bool _scheduledDispatcherSurfaceProbeHitsVaultLocked;
+        private static JobHandle _scheduledDispatcherSurfaceProbeHandle;
+        private static bool _dispatcherSurfaceProbesScheduled;
+        private static int _pendingDispatcherSurfaceProbeCount;
+        private static int _scheduledDispatcherSurfaceProbeCount;
 
         [StructLayout(LayoutKind.Explicit, Size = DispatcherBlackBoxEntrySizeBytes)]
         private struct DispatcherBlackBoxEntry
@@ -610,8 +609,8 @@ namespace Hecton8.Core
             [FieldOffset(32)] public float TimeDilationScalar;
             [FieldOffset(36)] public float TickOverheadMilliseconds;
             [FieldOffset(40)] public ushort Flags;
-            [FieldOffset(42)] public ushort PendingRaycasts;
-            [FieldOffset(44)] public ushort ScheduledRaycasts;
+            [FieldOffset(42)] public ushort PendingSurfaceProbes;
+            [FieldOffset(44)] public ushort ScheduledSurfaceProbes;
             [FieldOffset(46)] public byte HomeostasisPressureLevel;
             [FieldOffset(47)] public byte HomeostasisFoveatedTier;
             [FieldOffset(48)] public uint AupPreShiftSequence;
@@ -701,7 +700,7 @@ namespace Hecton8.Core
             _foveatedSimulationManager.Dispose();
             _foveatedSimulationManager = new FoveatedSimulationManager();
             _foveatedSimulationManager.InitializeRuntime();
-            DisposeDispatcherRaycastBuffers();
+            DisposeDispatcherSurfaceProbeBuffers();
             ThreadSafeCommandQueue.Shutdown();
             ClearAllLanes();
             _lateFrameEventDispatchBudget = 0;
@@ -974,7 +973,7 @@ namespace Hecton8.Core
         /// <returns>True when the caller may process this cascade event.</returns>
         internal static bool TryConsumeBaseStressCascadeEvent(int islandId, uint eventHash)
         {
-            int currentFrame = Time.frameCount;
+            int currentFrame = CurrentFrameIndex;
             if (_baseStressCascadeBreakerFrame != currentFrame)
                 _baseStressCascadeBreakerFrame = currentFrame;
 
@@ -1023,7 +1022,7 @@ namespace Hecton8.Core
 #if UNITY_EDITOR
         internal static void ResetBaseStressCascadeCircuitBreakerForSmokeTest()
         {
-            ResetBaseStressCascadeCircuitBreakerStateForFrame(Time.frameCount);
+            ResetBaseStressCascadeCircuitBreakerStateForFrame(CurrentFrameIndex);
         }
 
         internal static int DebugGetBaseStressCascadeDroppedCount(int islandId)
@@ -1157,9 +1156,9 @@ namespace Hecton8.Core
         }
 
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-        private static IDispatcherRaycastReceiver GetScheduledDispatcherRaycastReceiverAt(int index)
+        private static IDispatcherSurfaceProbeReceiver GetScheduledDispatcherSurfaceProbeReceiverAt(int index)
         {
-            return _scheduledDispatcherRaycastReceivers[index] as IDispatcherRaycastReceiver;
+            return _scheduledDispatcherSurfaceProbeReceivers[index] as IDispatcherSurfaceProbeReceiver;
         }
 
         /// <summary>
@@ -1969,7 +1968,7 @@ namespace Hecton8.Core
             {
                 HomeostasisBrain.ShutdownRuntime();
                 _foveatedSimulationManager.Dispose();
-                DisposeDispatcherRaycastBuffers();
+                DisposeDispatcherSurfaceProbeBuffers();
                 DisposeDispatcherBlackBox();
                 DisposeH8TimeArray();
                 DisposeMasterDispatcherRuntime();
@@ -2064,7 +2063,7 @@ namespace Hecton8.Core
             RefreshJobAdmissionDependency();
             RefreshInputDeterminismDependency();
             RefreshPeripheralDependencies();
-            EnsureDispatcherRaycastBuffers();
+            EnsureDispatcherSurfaceProbeBuffers();
             EnsureH8TimeArray();
             EnsureDispatcherBlackBox();
             InitializeMasterDispatcherRuntime();
@@ -3492,7 +3491,7 @@ namespace Hecton8.Core
         private void TryReloadMasterExecutionPriorityCsv()
         {
 #if UNITY_EDITOR
-            int frame = Time.frameCount;
+            int frame = CurrentFrameIndex;
             if (_masterCsvPollFrame == frame || (frame & MasterDispatcherBucketMask) != 0)
                 return;
 
@@ -4128,10 +4127,10 @@ namespace Hecton8.Core
 
         private void ReleaseSystemDispatcherVaultHandles(IDataVault dataVault)
         {
-            if (!_dispatcherRaycastsScheduled &&
+            if (!_dispatcherSurfaceProbesScheduled &&
                 !_masterSimulationJobsPending &&
                 !_masterFixedJobsPending &&
-                !IsVaultGenerationHandleCreated(in _scheduledDispatcherRaycastHitsHandle) &&
+                !IsVaultGenerationHandleCreated(in _scheduledDispatcherSurfaceProbeHitsHandle) &&
                 !IsVaultGenerationHandleCreated(in _h8TimeHandle) &&
                 !IsVaultGenerationHandleCreated(in _dispatcherBlackBoxHandle) &&
                 !IsVaultGenerationHandleCreated(in _dispatcherBlackBoxCursorHandle) &&
@@ -4149,7 +4148,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            DisposeDispatcherRaycastBuffers(dataVault);
+            DisposeDispatcherSurfaceProbeBuffers(dataVault);
             DisposeDispatcherBlackBox(dataVault);
             DisposeH8TimeArray(dataVault);
             DisposeMasterDispatcherRuntime(dataVault);
@@ -4515,8 +4514,8 @@ namespace Hecton8.Core
                 : 0f;
             entry.TickOverheadMilliseconds = SanitizeNonNegativeMilliseconds(ResolveCurrentFrameMilliseconds());
             entry.Flags = flags;
-            entry.PendingRaycasts = unchecked((ushort)math.min(ushort.MaxValue, math.max(0, _pendingDispatcherRaycastCount)));
-            entry.ScheduledRaycasts = unchecked((ushort)math.min(ushort.MaxValue, math.max(0, _scheduledDispatcherRaycastCount)));
+            entry.PendingSurfaceProbes = unchecked((ushort)math.min(ushort.MaxValue, math.max(0, _pendingDispatcherSurfaceProbeCount)));
+            entry.ScheduledSurfaceProbes = unchecked((ushort)math.min(ushort.MaxValue, math.max(0, _scheduledDispatcherSurfaceProbeCount)));
             entry.HomeostasisPressureLevel = HomeostasisPressureLevel;
             entry.HomeostasisFoveatedTier = HomeostasisFoveatedTier;
             entry.AupPreShiftSequence = _aupPreShiftPauseSequence;
@@ -4542,8 +4541,8 @@ namespace Hecton8.Core
         {
             uint hash = 2166136261u;
             hash = unchecked((hash ^ dispatcherFrameId) * 16777619u);
-            hash = unchecked((hash ^ (uint)_pendingDispatcherRaycastCount) * 16777619u);
-            hash = unchecked((hash ^ (uint)_scheduledDispatcherRaycastCount) * 16777619u);
+            hash = unchecked((hash ^ (uint)_pendingDispatcherSurfaceProbeCount) * 16777619u);
+            hash = unchecked((hash ^ (uint)_scheduledDispatcherSurfaceProbeCount) * 16777619u);
             hash = unchecked((hash ^ (uint)flags) * 16777619u);
             hash = unchecked((hash ^ (uint)HomeostasisPressureLevel) * 16777619u);
             hash = unchecked((hash ^ (uint)HomeostasisFoveatedTier) * 16777619u);
@@ -4607,8 +4606,8 @@ namespace Hecton8.Core
                     writer.Write(entry.TimeDilationScalar);
                     writer.Write(entry.TickOverheadMilliseconds);
                     writer.Write(entry.Flags);
-                    writer.Write(entry.PendingRaycasts);
-                    writer.Write(entry.ScheduledRaycasts);
+                    writer.Write(entry.PendingSurfaceProbes);
+                    writer.Write(entry.ScheduledSurfaceProbes);
                     writer.Write(entry.HomeostasisPressureLevel);
                     writer.Write(entry.HomeostasisFoveatedTier);
                     writer.Write(entry.AupPreShiftSequence);
@@ -5018,7 +5017,7 @@ namespace Hecton8.Core
         private void RunDispatcherUpdate()
         {
             AdvanceDispatcherFrameId();
-            FrameTimeWatchdog.TickMathPrecisionTransition(Time.frameCount);
+            FrameTimeWatchdog.TickMathPrecisionTransition(CurrentFrameIndex);
 #if UNITY_EDITOR
             RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.DispatcherUpdate);
 #endif
@@ -5033,7 +5032,7 @@ namespace Hecton8.Core
 
                 long dispatcherTickStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
                 long preSimulationStartTimestamp = dispatcherTickStartTimestamp;
-                HectonXRRuntimeState.RefreshFrameState(Time.frameCount);
+                HectonXRRuntimeState.RefreshFrameState(CurrentFrameIndex);
                 float measuredUnscaledDeltaTime = HectonXRRuntimeState.IsXRActive ? Time.smoothDeltaTime : Time.unscaledDeltaTime;
                 float unscaledDeltaTime = HectonXRRuntimeState.ResolveDispatcherDeltaTime(measuredUnscaledDeltaTime);
                 if (!math.isfinite(unscaledDeltaTime) || unscaledDeltaTime < 0f)
@@ -5044,7 +5043,7 @@ namespace Hecton8.Core
                 IInputDeterminismService inputDeterminism = _inputDeterminism;
                 if (inputDeterminism != null && inputDeterminism.IsInitialized)
                     inputDeterminism.PreSimulationInputTick(unscaledDeltaTime);
-                SignalCorridorRuntime.FlushPreSimulation();
+                SignalCorridorRuntime.PreSimulationHeartbeat();
                 if (SignalBusRegistry.IsSimulationHalted)
                     return;
 
@@ -5126,7 +5125,7 @@ namespace Hecton8.Core
 #if UNITY_EDITOR
                 EndDispatcherPhaseTiming(beginDispatcherTimestamp, "FoveatedSimulationManager.BeginDispatcherFrame");
 #endif
-                PredatorCognitionDomain.BeginDispatcherFrame(Time.frameCount);
+                PredatorCognitionDomain.BeginDispatcherFrame(CurrentFrameIndex);
                 bool blockGameplayLanes = Application.isPlaying &&
                                           BootstrapState.HasActiveInstance &&
                                           !BootstrapState.IsGameReady;
@@ -5169,7 +5168,7 @@ namespace Hecton8.Core
                     return;
 
                 CombatDamageRuntime.FrameTick(deltaTime);
-                PredatorCognitionDomain.ScheduleFrameEvaluation(Time.frameCount);
+                PredatorCognitionDomain.ScheduleFrameEvaluation(CurrentFrameIndex);
                 _foveatedSimulationManager.ScheduleFrameJobs();
                 RunFastTick(deltaTime, blockGameplayLanes);
                 RunUnscaledFastTick(CurrentFrameUnscaledDeltaTime, blockGameplayLanes: false);
@@ -5178,7 +5177,7 @@ namespace Hecton8.Core
                 RunSlowTick(deltaTime, blockGameplayLanes);
                 RunColdTick(deltaTime, blockGameplayLanes);
                 RunFrostTick(deltaTime, blockGameplayLanes);
-                ScheduleDispatcherRaycasts();
+                ScheduleDispatcherSurfaceProbes();
                 masterTiming = BuildMasterDispatcherTiming(CurrentFrameDeltaTime, CurrentFrameUnscaledDeltaTime);
                 RunMasterPostSimulationPhase(in masterTiming);
                 IModdingBridge moddingBridge = _moddingBridgeProjectionRuntime;
@@ -5239,7 +5238,7 @@ namespace Hecton8.Core
             if ((flags & criticalFlags) == 0u)
                 return;
 
-            int currentFrame = Time.frameCount;
+            int currentFrame = CurrentFrameIndex;
             float currentFrameMs = ResolveCurrentFrameMilliseconds();
             if ((flags & SimulationBucketPacingFlags.HomeostasisKillRequested) != 0u &&
                 _lastFramePacingHomeostasisFrame != currentFrame)
@@ -5376,7 +5375,7 @@ namespace Hecton8.Core
             DispatcherJobFence.BeginLateFrameSwapWindow();
             try
             {
-                CompleteDispatcherRaycasts();
+                CompleteDispatcherSurfaceProbes();
                 UpdatePauseFreezeFrameDitherState();
                 UpdateVisualStaticGlitchState();
                 TickPauseDepthOfField(Time.unscaledTime);
@@ -5447,11 +5446,11 @@ namespace Hecton8.Core
                 try
                 {
                     GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime);
-                    WorldSpatialHashGrid.LateFrameMaintenance(Time.frameCount);
+                    WorldSpatialHashGrid.LateFrameMaintenance(CurrentFrameIndex);
                 }
                 finally
                 {
-                    SignalCorridorRuntime.ClearPostSimulationSnapshots();
+                    SignalCorridorRuntime.FlushPostSimulation();
                     NativeArenaAllocator.Reset();
 
 #if UNITY_EDITOR
@@ -5514,8 +5513,7 @@ namespace Hecton8.Core
                     CelestialEvents.PendingCount +
                     EclipseGameplayEvents.PendingCount +
                     AcousticZoneEvents.PendingCount +
-                    PhysicsEventBus.PendingCount +
-                    FluidFeedbackEvents.PendingCount +
+                    ResolvePhysicsLateFramePendingCount() +
                     ElectrolysisAcousticEvents.PendingCount +
                     AudioCaptionEvents.PendingCount +
                     SpectrumEvents.PendingCount +
@@ -5534,8 +5532,7 @@ namespace Hecton8.Core
                 AtmosphereEvents.FlushPending();
                 HighPressureEvents.FlushPending();
                 FatalPressureImplosionEvents.FlushPending();
-                PhysicsEventBus.FlushPending();
-                FluidFeedbackEvents.FlushPending();
+                FlushPhysicsLateFrameEvents();
 
                 if (ShouldDropAmbientLateFrameEvents(_EnvironmentEventsArteryHash))
                 {
@@ -5565,6 +5562,18 @@ namespace Hecton8.Core
             {
                 EndLateFrameFlushPass(_EnvironmentEventsArteryHash, passStartTimestamp);
             }
+        }
+
+        private static int ResolvePhysicsLateFramePendingCount()
+        {
+            IPhysicsService physics = GlobalRegistry.Physics;
+            return physics != null ? physics.PendingLateFrameEventCount : 0;
+        }
+
+        private static void FlushPhysicsLateFrameEvents()
+        {
+            IPhysicsService physics = GlobalRegistry.Physics;
+            physics?.FlushLateFrameEvents();
         }
 
         private static void FlushPlayerEventsArtery()
@@ -5886,7 +5895,7 @@ namespace Hecton8.Core
 
             if (Time.unscaledTime < _visualStaticGlitchUntilTime)
             {
-                Shader.SetGlobalFloat(_HectonVisualStaticGlitchSeedId, Time.frameCount & 1023);
+                Shader.SetGlobalFloat(_HectonVisualStaticGlitchSeedId, CurrentFrameIndex & 1023);
                 return;
             }
 
@@ -5898,7 +5907,7 @@ namespace Hecton8.Core
 
         private static uint CaptureCriticalPerformanceStackHash(uint laneHash)
         {
-            uint frameHash = unchecked((uint)Time.frameCount * 747796405u);
+            uint frameHash = unchecked((uint)CurrentFrameIndex * 747796405u);
             uint budgetHash = unchecked((uint)_lateFrameEventDispatchBudget * 2891336453u);
             return laneHash ^ _CriticalPerformanceSpikeHash ^ frameHash ^ budgetHash;
         }
@@ -6119,7 +6128,7 @@ namespace Hecton8.Core
                                     if (gen0After != gen0Before)
                                     {
                                         _lastPostFixedGcOwner = postFixedTickable;
-                                        _lastPostFixedGcFrame = Time.frameCount;
+                                        _lastPostFixedGcFrame = CurrentFrameIndex;
                                         _lastPostFixedGcDelta = gen0After - gen0Before;
                                         _lastPostFixedGcLaneIndex = laneIndex;
                                         _lastPostFixedGcItemIndex = itemIndex;
@@ -6469,21 +6478,21 @@ namespace Hecton8.Core
             }
         }
 
-        private static void EnsureDispatcherRaycastBuffers()
+        private static void EnsureDispatcherSurfaceProbeBuffers()
         {
             if (!TryResolveCachedDataVault(out IDataVault dataVault))
                 return;
 
             TryEnsureDispatcherVaultBuffer(
                 dataVault,
-                ref _scheduledDispatcherRaycastHitsHandle,
+                ref _scheduledDispatcherSurfaceProbeHitsHandle,
                 BufferID.DispatcherRaycastHits,
-                MaxQueuedDispatcherRaycasts,
+                MaxQueuedDispatcherSurfaceProbes,
                 NativeArrayOptions.ClearMemory,
-                out NativeArray<RaycastHit> _);
+                out NativeArray<KinematicSurfaceHit> _);
         }
 
-        private static bool TryResolveDispatcherRaycastHits(out NativeArray<RaycastHit> scheduledHits)
+        private static bool TryResolveDispatcherSurfaceProbeHits(out NativeArray<KinematicSurfaceHit> scheduledHits)
         {
             scheduledHits = default;
             if (!TryResolveCachedDataVault(out IDataVault dataVault))
@@ -6491,139 +6500,139 @@ namespace Hecton8.Core
 
             return TryResolveDispatcherVaultBuffer(
                 dataVault,
-                in _scheduledDispatcherRaycastHitsHandle,
-                MaxQueuedDispatcherRaycasts,
+                in _scheduledDispatcherSurfaceProbeHitsHandle,
+                MaxQueuedDispatcherSurfaceProbes,
                 out scheduledHits);
         }
 
-        private static bool TryLockDispatcherRaycastScheduledVaultBuffers()
+        private static bool TryLockDispatcherSurfaceProbeScheduledVaultBuffers()
         {
-            if (_scheduledDispatcherRaycastHitsVaultLocked)
+            if (_scheduledDispatcherSurfaceProbeHitsVaultLocked)
                 return true;
 
-            EnsureDispatcherRaycastBuffers();
-            if (!IsVaultGenerationHandleCreated(in _scheduledDispatcherRaycastHitsHandle))
+            EnsureDispatcherSurfaceProbeBuffers();
+            if (!IsVaultGenerationHandleCreated(in _scheduledDispatcherSurfaceProbeHitsHandle))
                 return false;
 
             if (!TryResolveCachedDataVault(out IDataVault dataVault))
                 return false;
 
-            if (!_scheduledDispatcherRaycastHitsVaultLocked &&
+            if (!_scheduledDispatcherSurfaceProbeHitsVaultLocked &&
                 !dataVault.TryLockBuffer(BufferID.DispatcherRaycastHits, SystemID.SystemDispatcher))
                 return false;
 
-            _scheduledDispatcherRaycastHitsVaultLocked = true;
+            _scheduledDispatcherSurfaceProbeHitsVaultLocked = true;
             return true;
         }
 
-        private static void UnlockDispatcherRaycastScheduledVaultBuffers()
+        private static void UnlockDispatcherSurfaceProbeScheduledVaultBuffers()
         {
             TryResolveCachedDataVault(out IDataVault dataVault);
-            UnlockDispatcherRaycastScheduledVaultBuffers(dataVault);
+            UnlockDispatcherSurfaceProbeScheduledVaultBuffers(dataVault);
         }
 
-        private static void UnlockDispatcherRaycastScheduledVaultBuffers(IDataVault dataVault)
+        private static void UnlockDispatcherSurfaceProbeScheduledVaultBuffers(IDataVault dataVault)
         {
-            if (!_scheduledDispatcherRaycastHitsVaultLocked)
+            if (!_scheduledDispatcherSurfaceProbeHitsVaultLocked)
                 return;
 
             if (dataVault != null)
             {
-                if (_scheduledDispatcherRaycastHitsVaultLocked)
+                if (_scheduledDispatcherSurfaceProbeHitsVaultLocked)
                     dataVault.TryUnlockBuffer(BufferID.DispatcherRaycastHits, SystemID.SystemDispatcher);
             }
 
-            _scheduledDispatcherRaycastHitsVaultLocked = false;
+            _scheduledDispatcherSurfaceProbeHitsVaultLocked = false;
         }
 
-        private static void ScheduleDispatcherRaycasts()
+        private static void ScheduleDispatcherSurfaceProbes()
         {
-            if (_pendingDispatcherRaycastCount <= 0)
+            if (_pendingDispatcherSurfaceProbeCount <= 0)
                 return;
 
-            using (_dispatcherRaycastScheduleProfilerMarker.Auto())
+            using (_dispatcherSurfaceProbeScheduleProfilerMarker.Auto())
             {
-                int pendingCount = _pendingDispatcherRaycastCount;
+                int pendingCount = _pendingDispatcherSurfaceProbeCount;
                 for (int clearIndex = 0; clearIndex < pendingCount; clearIndex++)
                 {
-                    _pendingDispatcherRaycastReceivers[clearIndex] = null;
-                    _pendingDispatcherRaycastRequestIds[clearIndex] = 0;
+                    _pendingDispatcherSurfaceProbeReceivers[clearIndex] = null;
+                    _pendingDispatcherSurfaceProbeRequestIds[clearIndex] = 0;
                 }
 
-                _pendingDispatcherRaycastCount = 0;
-                _scheduledDispatcherRaycastCount = 0;
-                _dispatcherRaycastsScheduled = false;
+                _pendingDispatcherSurfaceProbeCount = 0;
+                _scheduledDispatcherSurfaceProbeCount = 0;
+                _dispatcherSurfaceProbesScheduled = false;
             }
         }
 
-        private static void CompleteDispatcherRaycasts()
+        private static void CompleteDispatcherSurfaceProbes()
         {
-            if (!_dispatcherRaycastsScheduled)
+            if (!_dispatcherSurfaceProbesScheduled)
                 return;
 
-            using (_dispatcherRaycastCompleteProfilerMarker.Auto())
+            using (_dispatcherSurfaceProbeCompleteProfilerMarker.Auto())
             {
-                if (!DispatcherJobFence.TryComplete(ref _scheduledDispatcherRaycastHandle, forceComplete: false))
+                if (!DispatcherJobFence.TryComplete(ref _scheduledDispatcherSurfaceProbeHandle, forceComplete: false))
                     return;
 
-                _dispatcherRaycastsScheduled = false;
-                if (!TryResolveDispatcherRaycastHits(out NativeArray<RaycastHit> scheduledHits))
+                _dispatcherSurfaceProbesScheduled = false;
+                if (!TryResolveDispatcherSurfaceProbeHits(out NativeArray<KinematicSurfaceHit> scheduledHits))
                 {
-                    for (int i = 0; i < _scheduledDispatcherRaycastCount; i++)
+                    for (int i = 0; i < _scheduledDispatcherSurfaceProbeCount; i++)
                     {
-                        _scheduledDispatcherRaycastReceivers[i] = null;
-                        _scheduledDispatcherRaycastRequestIds[i] = 0;
+                        _scheduledDispatcherSurfaceProbeReceivers[i] = null;
+                        _scheduledDispatcherSurfaceProbeRequestIds[i] = 0;
                     }
 
-                    _scheduledDispatcherRaycastCount = 0;
-                    UnlockDispatcherRaycastScheduledVaultBuffers();
+                    _scheduledDispatcherSurfaceProbeCount = 0;
+                    UnlockDispatcherSurfaceProbeScheduledVaultBuffers();
                     return;
                 }
 
-                for (int i = 0; i < _scheduledDispatcherRaycastCount; i++)
+                for (int i = 0; i < _scheduledDispatcherSurfaceProbeCount; i++)
                 {
-                    IDispatcherRaycastReceiver receiver = GetScheduledDispatcherRaycastReceiverAt(i);
+                    IDispatcherSurfaceProbeReceiver receiver = GetScheduledDispatcherSurfaceProbeReceiverAt(i);
                     if (receiver == null)
                         continue;
 
-                    receiver.ConsumeDispatcherRaycastHit(_scheduledDispatcherRaycastRequestIds[i], scheduledHits[i]);
-                    _scheduledDispatcherRaycastReceivers[i] = null;
-                    _scheduledDispatcherRaycastRequestIds[i] = 0;
+                    receiver.ConsumeDispatcherSurfaceHit(_scheduledDispatcherSurfaceProbeRequestIds[i], scheduledHits[i]);
+                    _scheduledDispatcherSurfaceProbeReceivers[i] = null;
+                    _scheduledDispatcherSurfaceProbeRequestIds[i] = 0;
                 }
 
-                _scheduledDispatcherRaycastCount = 0;
-                UnlockDispatcherRaycastScheduledVaultBuffers();
+                _scheduledDispatcherSurfaceProbeCount = 0;
+                UnlockDispatcherSurfaceProbeScheduledVaultBuffers();
             }
         }
 
-        private static void DisposeDispatcherRaycastBuffers()
+        private static void DisposeDispatcherSurfaceProbeBuffers()
         {
             TryResolveCachedDataVault(out IDataVault dataVault);
-            DisposeDispatcherRaycastBuffers(dataVault);
+            DisposeDispatcherSurfaceProbeBuffers(dataVault);
         }
 
-        private static void DisposeDispatcherRaycastBuffers(IDataVault dataVault)
+        private static void DisposeDispatcherSurfaceProbeBuffers(IDataVault dataVault)
         {
-            if (_dispatcherRaycastsScheduled)
+            if (_dispatcherSurfaceProbesScheduled)
             {
-                DispatcherJobFence.TryComplete(ref _scheduledDispatcherRaycastHandle, forceComplete: true);
-                _dispatcherRaycastsScheduled = false;
-                UnlockDispatcherRaycastScheduledVaultBuffers(dataVault);
+                DispatcherJobFence.TryComplete(ref _scheduledDispatcherSurfaceProbeHandle, forceComplete: true);
+                _dispatcherSurfaceProbesScheduled = false;
+                UnlockDispatcherSurfaceProbeScheduledVaultBuffers(dataVault);
             }
             else
             {
-                _scheduledDispatcherRaycastHandle = default;
-                UnlockDispatcherRaycastScheduledVaultBuffers(dataVault);
+                _scheduledDispatcherSurfaceProbeHandle = default;
+                UnlockDispatcherSurfaceProbeScheduledVaultBuffers(dataVault);
             }
 
-            ReleaseDispatcherVaultHandle(dataVault, ref _scheduledDispatcherRaycastHitsHandle);
+            ReleaseDispatcherVaultHandle(dataVault, ref _scheduledDispatcherSurfaceProbeHitsHandle);
 
-            _pendingDispatcherRaycastCount = 0;
-            _scheduledDispatcherRaycastCount = 0;
-            System.Array.Clear(_pendingDispatcherRaycastReceivers, 0, _pendingDispatcherRaycastReceivers.Length);
-            System.Array.Clear(_pendingDispatcherRaycastRequestIds, 0, _pendingDispatcherRaycastRequestIds.Length);
-            System.Array.Clear(_scheduledDispatcherRaycastReceivers, 0, _scheduledDispatcherRaycastReceivers.Length);
-            System.Array.Clear(_scheduledDispatcherRaycastRequestIds, 0, _scheduledDispatcherRaycastRequestIds.Length);
+            _pendingDispatcherSurfaceProbeCount = 0;
+            _scheduledDispatcherSurfaceProbeCount = 0;
+            System.Array.Clear(_pendingDispatcherSurfaceProbeReceivers, 0, _pendingDispatcherSurfaceProbeReceivers.Length);
+            System.Array.Clear(_pendingDispatcherSurfaceProbeRequestIds, 0, _pendingDispatcherSurfaceProbeRequestIds.Length);
+            System.Array.Clear(_scheduledDispatcherSurfaceProbeReceivers, 0, _scheduledDispatcherSurfaceProbeReceivers.Length);
+            System.Array.Clear(_scheduledDispatcherSurfaceProbeRequestIds, 0, _scheduledDispatcherSurfaceProbeRequestIds.Length);
         }
 
         private static bool ShouldSkipLaneDuringBootstrap(int laneIndex, bool blockGameplayLanes)
@@ -7062,17 +7071,22 @@ namespace Hecton8.Core
                 return;
 
             NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
-            unsafe
+            try
             {
-                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
-                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                long copyBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
-                long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
-                if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
-                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SystemDispatcher));
+                unsafe
+                {
+                    void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                    void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                    long copyBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+                    long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
+                    if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
+                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SystemDispatcher));
+                }
             }
-
-            destination.UnlockBufferAfterWrite<T>(safeCount);
+            finally
+            {
+                destination.UnlockBufferAfterWrite<T>(safeCount);
+            }
         }
 
         /// <summary>
@@ -7085,16 +7099,21 @@ namespace Hecton8.Core
                 return;
 
             NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
-            fixed (T* sourcePtr = source)
+            try
             {
-                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-                long copyBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
-                long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
-                if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
-                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SystemDispatcher));
+                fixed (T* sourcePtr = source)
+                {
+                    void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                    long copyBytes = (long)UnsafeUtility.SizeOf<T>() * safeCount;
+                    long destinationBytes = (long)UnsafeUtility.SizeOf<T>() * mapped.Length;
+                    if (!UnsafeMemoryCopyGuard.TryMemCpy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
+                        UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SystemDispatcher));
+                }
             }
-
-            destination.UnlockBufferAfterWrite<T>(safeCount);
+            finally
+            {
+                destination.UnlockBufferAfterWrite<T>(safeCount);
+            }
         }
 
         private static int ResolveSafeWriteCount<T>(GraphicsBuffer destination, int sourceLength, int requestedCount) where T : struct

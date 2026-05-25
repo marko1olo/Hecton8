@@ -97,7 +97,7 @@ namespace Hecton8.Gameplay
 
         public void LateFrameTick()
         {
-            RenderSplashVisualSync(Time.deltaTime);
+            RenderSplashVisualSync(SystemDispatcher.CurrentFrameDeltaTime);
         }
 
         private void RenderSplashVisualSync(float deltaTime)

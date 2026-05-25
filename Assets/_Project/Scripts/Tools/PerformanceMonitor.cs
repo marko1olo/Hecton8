@@ -165,10 +165,11 @@ namespace Hecton8.Tools
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             // Periodic logging
-            if (_autoLogToConsole && Time.unscaledTime - _lastLogTime >= _logInterval)
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (_autoLogToConsole && now - _lastLogTime >= _logInterval)
             {
                 LogCurrentPerformance(currentFrameTimeMs);
-                _lastLogTime = Time.unscaledTime;
+                _lastLogTime = now;
             }
 #endif
         }
@@ -181,8 +182,9 @@ namespace Hecton8.Tools
             if (_isCapturing) return;
 
             _isCapturing = true;
-            _captureStartTime = Time.unscaledTime;
-            _lastLogTime = Time.unscaledTime;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            _captureStartTime = now;
+            _lastLogTime = now;
             EnsureFrameBufferCapacity();
             _frameTimeCount = 0;
 
@@ -214,7 +216,7 @@ namespace Hecton8.Tools
         public string DescribeStatus()
         {
             int sampleCount = ResolveSampleCount();
-            float elapsed = _isCapturing ? Time.unscaledTime - _captureStartTime : 0f;
+            float elapsed = _isCapturing ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds - _captureStartTime : 0f;
             float mean = 0f;
             float worst = 0f;
             float best = 0f;
@@ -361,7 +363,7 @@ namespace Hecton8.Tools
         {
             if (sampleCount <= 0)
             {
-                Debug.LogWarning("[PerformanceMonitor] Capture completed with no samples recorded");
+                Hecton8.Core.H8Debug.LogWarning("[PerformanceMonitor] Capture completed with no samples recorded");
                 return;
             }
 

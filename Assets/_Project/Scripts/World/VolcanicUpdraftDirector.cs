@@ -8,13 +8,16 @@ using Hecton8.Core.Contracts.AI.Cognition;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
-using Hecton8.Physics.Vehicles;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using SubmarineDynamicsConstants = Hecton8.Physics.Vehicles.SubmarineDynamicsConstants;
+using SubmarineForceAccumulator = Hecton8.Physics.Vehicles.SubmarineForceAccumulator;
+using SubmarineKinematicConfig = Hecton8.Physics.Vehicles.SubmarineKinematicConfig;
+using SubmarineKinematicState = Hecton8.Physics.Vehicles.SubmarineKinematicState;
 using VfxDynamicWakeDTO = Hecton8.VFX.DynamicWakeDTO;
 using VfxMockFlowField = Hecton8.VFX.MockFlowField;
 

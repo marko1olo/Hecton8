@@ -55,7 +55,6 @@ using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Celestial;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Hecton8.VFX;
 using Hecton8.World;
 using NASAPunk.Visor;
@@ -78,8 +77,6 @@ namespace Hecton8.Environment
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4000)]
     public sealed class HectonUnderwaterVisuals : MonoBehaviour,
-        Hecton8.Core.ITickable,
-        Hecton8.Core.IUpdatable,
         Hecton8.Core.ISlowTickable,
         Hecton8.Core.ILateFrameTickable,
         Hecton8.Core.IRenderable,
@@ -818,7 +815,6 @@ namespace Hecton8.Environment
         private IPlayerRuntimeContext _playerRuntimeContext;
         private HectonPlayerMovement _playerMovement;
         private HectonPlayerMovement _subscribedPlayerMovement;
-        private Rigidbody _playerRigidbody;
         private PlayerTransportCoordinator _playerTransportCoordinator;
         private HectonBiomeProfile _matrixRuntimeVisualProfile;
         private HectonBiomeMatrixProfile _activeMatrixFogProfile;
@@ -895,7 +891,6 @@ namespace Hecton8.Environment
         private bool _giRelaySurfaceEmissionActive;
 
         private bool _registeredRenderable;
-        private bool _registeredTick;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
         private bool _registeredHotSwapListener;
@@ -1344,7 +1339,7 @@ namespace Hecton8.Environment
             EnsureRuntimeVisualOwners();
             EnsureGameplayCameraStackEnabled();
 
-            if (!_registeredTick || !_registeredSlowTick)
+            if (!_registeredSlowTick || !_registeredLateFrameTick)
                 TryRegisterTickManagers();
 
             if (!_physicsEngineLookupAttempted)
@@ -1381,11 +1376,6 @@ namespace Hecton8.Environment
                 BiomeMatrixEvents.Unregister(this);
                 SoundscapeEvents.Unregister(this);
 
-                if (_registeredTick)
-                {
-                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                    _registeredTick = false;
-                }
                 if (_registeredSlowTick)
                 {
                     GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
@@ -1523,10 +1513,10 @@ namespace Hecton8.Environment
                 ResumeEditorWaterRendering();
             }
 
-            float dt = Time.unscaledDeltaTime;
+            float dt = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             if (dt <= 0f) dt = 0.016f;
 
-            Tick(dt);
+            QueueUnderwaterVisualTick(dt);
 
             _editorSlowTickAccum += dt;
             if (_editorSlowTickAccum >= slowTickInterval)
@@ -1596,10 +1586,10 @@ namespace Hecton8.Environment
                 return;
             }
 
-            if (Time.realtimeSinceStartup < _nextEditorCameraResolveTime)
+            if (ResolvePresentationClockSeconds() < _nextEditorCameraResolveTime)
                 return;
 
-            _nextEditorCameraResolveTime = Time.realtimeSinceStartup + EditorCameraResolveRetryInterval;
+            _nextEditorCameraResolveTime = ResolvePresentationClockSeconds() + EditorCameraResolveRetryInterval;
 
             if (mainCamera != null)
             {
@@ -1705,7 +1695,7 @@ namespace Hecton8.Environment
 #endif
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
-        //  ITickable.Tick Ã¢â‚¬â€ PER-FRAME
+        //  VISUAL_SYNC queue - per-frame
         //
         //  v5.1: By the time this runs, AtmosphereManager has already
         //  computed fresh ProfileSunIntensity and ComputedHorizonFade.
@@ -1713,7 +1703,7 @@ namespace Hecton8.Environment
         //  CelestialEngine will run AFTER us and multiply by eclipse.
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
 
-        public void Tick(float deltaTime)
+        private void QueueUnderwaterVisualTick(float deltaTime)
         {
             _pendingVisualTickDeltaTime += math.max(0f, deltaTime);
             _pendingVisualTickDirty = true;
@@ -1861,6 +1851,9 @@ namespace Hecton8.Environment
 
         public void LateFrameTick()
         {
+            if (!_pendingVisualTickDirty)
+                QueueUnderwaterVisualTick(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (_pendingVisualTickDirty)
             {
                 float deltaTime = _pendingVisualTickDeltaTime;
@@ -2061,7 +2054,7 @@ namespace Hecton8.Environment
             if (!Application.isPlaying)
                 return;
 
-            _audioRuntime = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioRuntime = GlobalRegistry.Audio;
             _dynamicResolutionRuntime = GlobalRegistry.DynamicResolution;
             _weatherRuntime = GlobalRegistry.Weather;
             _surfaceWeatherRuntime = GlobalRegistry.SurfaceWeatherReadModel;
@@ -2142,7 +2135,6 @@ namespace Hecton8.Environment
                     _playerRuntimeContext = currentService as IPlayerRuntimeContext;
                     UnsubscribePlayerMovement(_subscribedPlayerMovement);
                     _playerMovement = null;
-                    _playerRigidbody = null;
                     _playerTransportCoordinator = null;
                     _nextRuntimePlayerCameraResolveTime = float.NegativeInfinity;
                     ResolvePlayerCamera();
@@ -4522,10 +4514,10 @@ namespace Hecton8.Environment
 
                 if (playerCamera != null) return;
 
-                if (Time.unscaledTime < _nextRuntimePlayerCameraResolveTime)
+                if (ResolvePresentationClockSeconds() < _nextRuntimePlayerCameraResolveTime)
                     return;
 
-                _nextRuntimePlayerCameraResolveTime = Time.unscaledTime + RuntimeCameraResolveRetryInterval;
+                _nextRuntimePlayerCameraResolveTime = ResolvePresentationClockSeconds() + RuntimeCameraResolveRetryInterval;
                 if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
                 {
                     CachePlayerMovement(playerTransform);
@@ -4573,10 +4565,10 @@ namespace Hecton8.Environment
                     }
                 }
 
-                if (Time.unscaledTime < _nextRuntimeMainCameraResolveTime)
+                if (ResolvePresentationClockSeconds() < _nextRuntimeMainCameraResolveTime)
                     return;
 
-                _nextRuntimeMainCameraResolveTime = Time.unscaledTime + RuntimeCameraResolveRetryInterval;
+                _nextRuntimeMainCameraResolveTime = ResolvePresentationClockSeconds() + RuntimeCameraResolveRetryInterval;
                 if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
                 {
                     Camera playerOwnedCamera = ResolveRuntimeMainCamera(playerTransform);
@@ -5160,7 +5152,7 @@ namespace Hecton8.Environment
             if (previousZone == null || currentZone == null)
                 return;
 
-            if (Time.unscaledTime < _nextThermoclineAllowedTime)
+            if (ResolvePresentationClockSeconds() < _nextThermoclineAllowedTime)
                 return;
 
             float intensity = ResolveThermoclineTransitionIntensity(previousZone, currentZone);
@@ -5184,7 +5176,7 @@ namespace Hecton8.Environment
             if (thermoclineTransitionClip != null && audioRuntime != null)
                 audioRuntime.PlayStatic2D(thermoclineTransitionClip, thermoclineAudioVolume * intensity);
 
-            _nextThermoclineAllowedTime = Time.unscaledTime + thermoclineMinRepeatInterval;
+            _nextThermoclineAllowedTime = ResolvePresentationClockSeconds() + thermoclineMinRepeatInterval;
         }
 
         private float ResolveThermoclineTransitionIntensity(DepthZoneProfile previousZone, DepthZoneProfile currentZone)
@@ -5549,7 +5541,7 @@ namespace Hecton8.Environment
             if (!_hudFogLuminanceReady || _hudFogLuminanceTexture == null || _hudFogReadbackPending)
                 return;
 
-            float now = Time.unscaledTime;
+            float now = ResolvePresentationClockSeconds();
             if (now < _nextHudFogLuminanceReadbackTime)
                 return;
 
@@ -5679,7 +5671,7 @@ namespace Hecton8.Environment
                 return;
             }
 
-            float now = Time.unscaledTime;
+            float now = ResolvePresentationClockSeconds();
             Vector4 lightPosition = Shader.GetGlobalVector(_HectonFlashlightPositionWSId);
             Vector4 lightDirection = Shader.GetGlobalVector(_HectonFlashlightDirectionWSId);
             Vector4 lightColor = Shader.GetGlobalVector(_HectonFlashlightColorId);
@@ -5897,7 +5889,7 @@ namespace Hecton8.Environment
             abyssFloor.a = 1f;
             float waterLevel = ResolveWaterLevel();
             float verticalFogSpan = math.max(8f, noirVerticalFogSpan);
-            int frameIndex = Application.isPlaying ? Time.frameCount : 0;
+            int frameIndex = Application.isPlaying ? SystemDispatcher.CurrentFrameIndex : 0;
             float velocityMultiplier = math.lerp(
                 CalmFlowVelocityMultiplier,
                 StormFlowVelocityMultiplier,
@@ -6154,7 +6146,7 @@ namespace Hecton8.Environment
             if (ResolveTransportHelmetExposureScale() <= 0.001f)
                 return;
 
-            if (Time.unscaledTime < _nextExhaleBubbleAllowedTime)
+            if (ResolvePresentationClockSeconds() < _nextExhaleBubbleAllowedTime)
                 return;
 
             if (underwaterMarineSnow == null)
@@ -6164,7 +6156,7 @@ namespace Hecton8.Environment
             if (burstCount <= 0)
                 return;
 
-            _nextExhaleBubbleAllowedTime = Time.unscaledTime + exhaleBubbleMinInterval;
+            _nextExhaleBubbleAllowedTime = ResolvePresentationClockSeconds() + exhaleBubbleMinInterval;
 
             if (underwaterMarineSnow != null && underwaterMarineSnow.IsOperational)
             {
@@ -6217,7 +6209,7 @@ namespace Hecton8.Environment
 
         private float ResolvePlayerSpeedSquaredMetersPerSecond()
         {
-            if (PhysicsDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityUnderwaterVisualMaxAgeFrames, out float3 velocity))
+            if (CoreDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityUnderwaterVisualMaxAgeFrames, out float3 velocity))
                 return math.lengthsq(velocity);
 
             return 0f;
@@ -6259,14 +6251,7 @@ namespace Hecton8.Environment
 
             RefreshBottomSiltProbe(playerCamera.position);
 
-            if (_playerRigidbody == null &&
-                PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null)
-            {
-                _playerRigidbody = runtimeContext.PlayerRigidbody;
-            }
-
-            float playerSpeedSq = PhysicsDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityUnderwaterVisualMaxAgeFrames, out float3 kccVelocity)
+            float playerSpeedSq = CoreDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityUnderwaterVisualMaxAgeFrames, out float3 kccVelocity)
                 ? math.lengthsq(kccVelocity)
                 : 0f;
             float distanceFactor = 1f - math.saturate(
@@ -6286,10 +6271,10 @@ namespace Hecton8.Environment
 
         private void RefreshBottomSiltProbe(Vector3 probePosition)
         {
-            if (Time.unscaledTime < _nextBottomSiltProbeTime)
+            if (ResolvePresentationClockSeconds() < _nextBottomSiltProbeTime)
                 return;
 
-            _nextBottomSiltProbeTime = Time.unscaledTime + math.max(0.05f, bottomSiltProbeInterval * _adaptiveBottomSiltProbeIntervalScale);
+            _nextBottomSiltProbeTime = ResolvePresentationClockSeconds() + math.max(0.05f, bottomSiltProbeInterval * _adaptiveBottomSiltProbeIntervalScale);
             _cachedBottomDistance = ResolveBottomSiltDistance(probePosition);
         }
 
@@ -6541,13 +6526,13 @@ namespace Hecton8.Environment
             }
 
             if (biomePalette == null)
-                Debug.LogWarning("[HectonUnderwaterVisuals] biomePalette not assigned.", this);
+                Hecton8.Core.H8Debug.LogWarning("[HectonUnderwaterVisuals] biomePalette not assigned.", this);
             if (oceanUnderwaterMaterial == null)
-                Debug.LogWarning("[HectonUnderwaterVisuals] oceanUnderwaterMaterial not assigned.", this);
+                Hecton8.Core.H8Debug.LogWarning("[HectonUnderwaterVisuals] oceanUnderwaterMaterial not assigned.", this);
             if (skyMaterial == null)
-                Debug.LogWarning("[HectonUnderwaterVisuals] skyMaterial not assigned.", this);
+                Hecton8.Core.H8Debug.LogWarning("[HectonUnderwaterVisuals] skyMaterial not assigned.", this);
             if (globalLightCurve == null || globalLightCurve.length == 0)
-                Debug.LogError("[HectonUnderwaterVisuals] globalLightCurve is empty!", this);
+                Hecton8.Core.H8Debug.LogError("[HectonUnderwaterVisuals] globalLightCurve is empty!", this);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
@@ -6557,10 +6542,10 @@ namespace Hecton8.Environment
             if (!Application.isPlaying)
                 return;
 
-            if (Time.unscaledTime < _nextRuntimeReferenceWarningTime)
+            if (ResolvePresentationClockSeconds() < _nextRuntimeReferenceWarningTime)
                 return;
 
-            _nextRuntimeReferenceWarningTime = Time.unscaledTime + 5f;
+            _nextRuntimeReferenceWarningTime = ResolvePresentationClockSeconds() + 5f;
 
             WarnIfRuntimeReferenceMissing(
                 playerCamera == null,
@@ -6593,7 +6578,7 @@ namespace Hecton8.Environment
                 return;
 
             _runtimeReferenceWarningMask |= warningMask;
-            Debug.LogWarning(message, this);
+            Hecton8.Core.H8Debug.LogWarning(message, this);
 #endif
         }
 
@@ -6897,7 +6882,6 @@ namespace Hecton8.Environment
         private void CachePlayerMovement(Transform playerTransform)
         {
             HectonPlayerMovement nextPlayerMovement = null;
-            Rigidbody nextPlayerRigidbody = null;
             PlayerTransportCoordinator nextPlayerTransportCoordinator = null;
 
             if (playerTransform != null &&
@@ -6906,7 +6890,6 @@ namespace Hecton8.Environment
                 ReferenceEquals(runtimeContext.PlayerTransform, playerTransform))
             {
                 nextPlayerMovement = runtimeContext.PlayerMovement;
-                nextPlayerRigidbody = runtimeContext.PlayerRigidbody;
                 nextPlayerTransportCoordinator = runtimeContext.PlayerTransportCoordinator;
             }
             else if (playerTransform != null)
@@ -6915,7 +6898,6 @@ namespace Hecton8.Environment
                 if (playerContext != null && ReferenceEquals(playerContext.PlayerTransform, playerTransform))
                 {
                     nextPlayerMovement = playerContext.PlayerMovement;
-                    nextPlayerRigidbody = playerContext.PlayerRigidbody;
                     nextPlayerTransportCoordinator = playerContext.PlayerTransportCoordinator;
                 }
             }
@@ -6927,7 +6909,6 @@ namespace Hecton8.Environment
             }
 
             _playerMovement = nextPlayerMovement;
-            _playerRigidbody = nextPlayerRigidbody;
             _playerTransportCoordinator = nextPlayerTransportCoordinator;
             _debugPlayerMovementFound = _playerMovement != null;
             if (_playerMovement == null)
@@ -7217,10 +7198,6 @@ namespace Hecton8.Environment
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_registeredTick)
-            {
-                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
-            }
             if (!_registeredSlowTick)
             {
                 _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
@@ -7257,6 +7234,11 @@ namespace Hecton8.Environment
             return math.abs(a.r - b.r) +
                    math.abs(a.g - b.g) +
                    math.abs(a.b - b.b);
+        }
+
+        private static float ResolvePresentationClockSeconds()
+        {
+            return (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
         }
 
         private static float ResolveDecayBlend(float speed, float deltaTime)

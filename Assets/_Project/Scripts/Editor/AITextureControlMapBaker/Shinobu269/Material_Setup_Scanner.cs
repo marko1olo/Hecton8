@@ -81,7 +81,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             string report = builder.ToString();
             File.WriteAllText(AITextureControlMapConstants.MaterialSetupReportPath, report, new UTF8Encoding(false));
             MergeIntoSharedRenderingReport(report);
-            Debug.Log("[Material_Setup_Scanner] Materials=" + scanned.ToString(CultureInfo.InvariantCulture) +
+            Hecton8.Core.H8Debug.Log("[Material_Setup_Scanner] Materials=" + scanned.ToString(CultureInfo.InvariantCulture) +
                       " ErrorsPrevented=" + errorsPrevented.ToString(CultureInfo.InvariantCulture) + ".");
         }
 

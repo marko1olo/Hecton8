@@ -167,7 +167,7 @@ namespace Hecton8.World
                 HectonRockManager manager = GlobalRegistry.RockManager;
                 if (manager == null)
                 {
-                    Debug.LogError("[HectonRockOutput] GlobalRegistry.RockManager is null. " +
+                    Hecton8.Core.H8Debug.LogError("[HectonRockOutput] GlobalRegistry.RockManager is null. " +
                                    "Cannot register rock chunk.");
                     return;
                 }

@@ -3251,7 +3251,7 @@ namespace Hecton8.SaveSystem
         {
             CrashTelemetryBuffer.ReportSaveSystemCriticalFault();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError(
+            Hecton8.Core.H8Debug.LogError(
                 $"[SaveBinaryStorage] Indexed sector directory capacity exceeded. " +
                 $"capacity={IndexedSectorDirectorySlotCount}, attempted={attemptedSectorCount}, sector=0x{sectorHash:X16}. " +
                 "Chunk save dropped to protect the fixed-size v8 directory.");
@@ -4790,7 +4790,7 @@ namespace Hecton8.SaveSystem
                 1f);
             CrashTelemetryBuffer.ReportSaveSystemCriticalFault();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning($"[SaveBinaryStorage] QUARANTINED indexed sector 0x{sectorHash:X16}. Primary: {primaryError} Backup: {backupError}");
+            Hecton8.Core.H8Debug.LogWarning($"[SaveBinaryStorage] QUARANTINED indexed sector 0x{sectorHash:X16}. Primary: {primaryError} Backup: {backupError}");
 #endif
         }
 

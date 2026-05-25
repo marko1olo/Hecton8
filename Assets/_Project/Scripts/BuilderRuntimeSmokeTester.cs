@@ -117,7 +117,7 @@ namespace Hecton8.Dev
             LogVerbose($"RUN begin refs={DescribeResolvedRefs()}");
             if (playerBuilder == null || _constructionLogistics == null || playerInventory == null)
             {
-                Debug.LogWarning("[BuilderSmoke] Missing PlayerBuilder, logistics service or PlayerInventory.");
+                Hecton8.Core.H8Debug.LogWarning("[BuilderSmoke] Missing PlayerBuilder, logistics service or PlayerInventory.");
                 return;
             }
 
@@ -142,7 +142,7 @@ namespace Hecton8.Dev
                 BuildableData buildable = playerBuilder.ActiveBuildable;
                 if (buildable == null || buildable.finalPrefab == null)
                 {
-                    Debug.LogWarning("[BuilderSmoke] No active buildable or final prefab.");
+                    Hecton8.Core.H8Debug.LogWarning("[BuilderSmoke] No active buildable or final prefab.");
                     return;
                 }
 
@@ -150,7 +150,7 @@ namespace Hecton8.Dev
                 Quaternion placeRot;
                 if (!TryResolvePlacementPose(out placePos, out placeRot))
                 {
-                    Debug.LogWarning("[BuilderSmoke] Could not resolve a safe placement pose.");
+                    Hecton8.Core.H8Debug.LogWarning("[BuilderSmoke] Could not resolve a safe placement pose.");
                     return;
                 }
 
@@ -170,7 +170,7 @@ namespace Hecton8.Dev
 
                 if (!deployed)
                 {
-                    Debug.LogWarning("[BuilderSmoke] FAIL deploy.");
+                    Hecton8.Core.H8Debug.LogWarning("[BuilderSmoke] FAIL deploy.");
                     return;
                 }
 
@@ -178,7 +178,7 @@ namespace Hecton8.Dev
                 LogVerbose($"REGISTRY afterDeploy={moduleCountAfterDeploy}");
                 if (moduleCountAfterDeploy <= moduleCountBefore)
                 {
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         $"[BuilderSmoke] FAIL registry did not grow. before={moduleCountBefore} after={moduleCountAfterDeploy}");
                     return;
                 }
@@ -186,7 +186,7 @@ namespace Hecton8.Dev
                 BaseModule spawnedModule = ResolveLastSpawnedModule();
                 if (spawnedModule == null)
                 {
-                    Debug.LogWarning("[BuilderSmoke] FAIL no spawned BaseModule found after deploy.");
+                    Hecton8.Core.H8Debug.LogWarning("[BuilderSmoke] FAIL no spawned BaseModule found after deploy.");
                     return;
                 }
 
@@ -208,7 +208,7 @@ namespace Hecton8.Dev
                 bool recovered = playerBuilder.DebugRecoverModule(spawnedModule);
                 if (!recovered)
                 {
-                    Debug.LogWarning("[BuilderSmoke] FAIL recover.");
+                    Hecton8.Core.H8Debug.LogWarning("[BuilderSmoke] FAIL recover.");
                     return;
                 }
 
@@ -216,7 +216,7 @@ namespace Hecton8.Dev
                 LogVerbose($"REGISTRY afterRecover={moduleCountAfterRecover}");
                 if (moduleCountAfterRecover >= moduleCountAfterDeploy)
                 {
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         $"[BuilderSmoke] FAIL registry did not shrink on recover. deploy={moduleCountAfterDeploy} recover={moduleCountAfterRecover}");
                     return;
                 }
@@ -401,7 +401,7 @@ namespace Hecton8.Dev
 
             if (counts == null || buildable.buildCost.Count > counts.Length)
             {
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     $"[BuilderSmoke] Build cost count {buildable.buildCost.Count} exceeds snapshot capacity {BuildCostSnapshotCapacity}.");
                 return -1;
             }
@@ -431,7 +431,7 @@ namespace Hecton8.Dev
                 int expectedUpperBound = before - Mathf.Max(cost.amount, 0);
                 if (after > before)
                 {
-                    Debug.LogWarning($"[BuilderSmoke] Unexpected cost increase for {cost.item.itemName}: {before}->{after}");
+                    Hecton8.Core.H8Debug.LogWarning($"[BuilderSmoke] Unexpected cost increase for {cost.item.itemName}: {before}->{after}");
                     continue;
                 }
 

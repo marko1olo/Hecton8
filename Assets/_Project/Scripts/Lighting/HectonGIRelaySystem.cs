@@ -424,7 +424,7 @@ namespace Hecton8.Lighting
 
         private void RefreshColdRuntimeDependencies()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedBiomeMatrix = GlobalRegistry.BiomeMatrix;
             _cachedGlobalQualityWeight01 = ResolveGlobalQualityWeight();
             if (_vault != null &&
@@ -862,7 +862,7 @@ namespace Hecton8.Lighting
             int index = _telemetryCursor;
             telemetryRing[index] = new GIRelayTelemetryEntry
             {
-                FrameIndex = Time.frameCount,
+                FrameIndex = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                 Sequence = snapshot.Sequence,
                 Flags = snapshot.Flags | (uint)eventFlags,
                 StateHash = HashTelemetrySnapshot(in snapshot, _shadowCascadeLevel, eventFlags),
@@ -921,7 +921,7 @@ namespace Hecton8.Lighting
             catch (Exception exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogException(exception, this);
+                Hecton8.Core.H8Debug.LogException(exception, this);
 #endif
             }
         }

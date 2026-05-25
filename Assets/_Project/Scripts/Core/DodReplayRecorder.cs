@@ -800,7 +800,7 @@ namespace Hecton8.Core
             if (_initialized == 0)
                 return;
 
-            int frameIndex = Time.frameCount;
+            int frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             bool forced = Volatile.Read(ref _forceDump) != 0;
             if (!forced && frameIndex % SnapshotIntervalFrames != 0)
                 return;
@@ -1018,7 +1018,7 @@ namespace Hecton8.Core
 
             if (attemptImmediate && _initialized != 0)
             {
-                if (CaptureSnapshot(Time.frameCount, true))
+                if (CaptureSnapshot(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, true))
                     Volatile.Write(ref _forceDump, 0);
             }
         }
@@ -1121,7 +1121,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            int frameIndex = Time.frameCount;
+            int frameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             int slot = FindOrCreateAupStateSlot(subjectHash);
             if (slot < 0)
                 return;

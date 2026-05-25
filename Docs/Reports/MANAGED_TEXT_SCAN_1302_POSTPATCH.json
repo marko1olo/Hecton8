@@ -1,0 +1,264 @@
+{
+    "schema":  "hecton8.managed_text_scan_postpatch_1302.v2",
+    "generatedAt":  "2026-05-25",
+    "scopedRuntimeFileCount":  46,
+    "hitCount":  36,
+    "hotPathRiskCount":  0,
+    "unclassifiedRiskCount":  0,
+    "coldManagedDebtCount":  35,
+    "editorOnlyCount":  1,
+    "hits":  [
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\FluidFeedbackListener.cs",
+                     "line":  48,
+                     "pattern":  "managed_array_new",
+                     "classification":  "cold_fixed_scratch_storage",
+                     "text":  "private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                     "line":  172,
+                     "pattern":  "managed_array_new",
+                     "classification":  "cold_fixed_scratch_storage",
+                     "text":  "private readonly Plane[] _physicsFrustumPlaneScratch = new Plane[6]; // COLD ALLOC: Plane[6] - Unity frustum API scratch for GeometryUtility.CalculateFrustumPlanes(Camera, Plane[]) - owner: GlobalPhysicsStateManager"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                     "line":  438,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_csv_profile_or_binary_loader",
+                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, PhysicsCullingLegacyRadiiHeaderBytes, FileOptions.SequentialScan))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                     "line":  1465,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_csv_profile_or_binary_loader",
+                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\HabitatFluidIncursionDirector.cs",
+                     "line":  1452,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_blackbox_dump_io",
+                     "text":  "using (FileStream stream = new FileStream(DumpPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\AnalyticalGerstnerWaveRuntime.cs",
+                     "line":  827,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_csv_profile_or_binary_loader",
+                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\AnalyticalGerstnerWaveRuntime.cs",
+                     "line":  875,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_blackbox_dump_io",
+                     "text":  "using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\BuoyancyDisplacementRuntime.cs",
+                     "line":  1819,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_csv_profile_or_binary_loader",
+                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\BuoyancyDisplacementRuntime.cs",
+                     "line":  1871,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_blackbox_dump_io",
+                     "text":  "using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\BuoyancyDisplacementRuntime.cs",
+                     "line":  1899,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_blackbox_dump_io",
+                     "text":  "using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\BuoyancyDisplacementRuntime.cs",
+                     "line":  1937,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_blackbox_dump_io",
+                     "text":  "using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\BuoyancyDisplacementRuntime.cs",
+                     "line":  1959,
+                     "pattern":  "managed_array_new",
+                     "classification":  "cold_fixed_scratch_storage",
+                     "text":  "private readonly char[] _simdGizmoLabelBuffer = new char[160];"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\AsyncReadback\\AsyncBuoyancyReadbackRuntime.cs",
+                     "line":  1184,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_csv_profile_or_binary_loader",
+                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\AsyncReadback\\AsyncBuoyancyReadbackRuntime.cs",
+                     "line":  1441,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_blackbox_dump_io",
+                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Cavitation\\AbyssalCavitationRuntime.cs",
+                     "line":  1061,
+                     "pattern":  "string_concat_literal",
+                     "classification":  "cold_blackbox_path_construction",
+                     "text":  "string tempPath = path + \".tmp\";"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Exosuit\\ExosuitKinematicsRuntime.cs",
+                     "line":  1674,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_blackbox_dump_io",
+                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\KCC\\HydrodynamicKccRuntime.cs",
+                     "line":  4233,
+                     "pattern":  "string_concat_literal",
+                     "classification":  "cold_blackbox_path_construction",
+                     "text":  "string tempPath = path + \".tmp\";"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\KCC\\HydrodynamicKccRuntime.cs",
+                     "line":  4236,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_blackbox_dump_io",
+                     "text":  "using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\KCC\\HydrodynamicKccRuntime.cs",
+                     "line":  4273,
+                     "pattern":  "string_concat_literal",
+                     "classification":  "cold_blackbox_path_construction",
+                     "text":  "string backupPath = path + \".bak\";"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Seaglide\\SeaglideHydrodynamicsRuntime.cs",
+                     "line":  1148,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_blackbox_dump_io",
+                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Seaglide\\SeaglideHydrodynamicsRuntime.cs",
+                     "line":  1222,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_csv_profile_or_binary_loader",
+                     "text":  "using (FileStream stream = new FileStream(csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Vehicles\\SubmarineDynamicsRuntime.cs",
+                     "line":  1093,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_csv_profile_or_binary_loader",
+                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128, FileOptions.SequentialScan))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Vehicles\\SubmarineDynamicsRuntime.cs",
+                     "line":  1124,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_csv_profile_or_binary_loader",
+                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128, FileOptions.SequentialScan))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Vehicles\\SubmarineDynamicsRuntime.cs",
+                     "line":  1304,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_csv_profile_or_binary_loader",
+                     "text":  "using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128, FileOptions.SequentialScan))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Vehicles\\SubmarineDynamicsRuntime.cs",
+                     "line":  1353,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_csv_profile_or_binary_loader",
+                     "text":  "info = new FileInfo(_hullProfilesCsvPath);"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Vehicles\\SubmarineDynamicsRuntime.cs",
+                     "line":  1385,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_csv_profile_or_binary_loader",
+                     "text":  "using (FileStream stream = new FileStream(_hullProfilesCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128, FileOptions.SequentialScan))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Vehicles\\SubmarineDynamicsRuntime.cs",
+                     "line":  1948,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_blackbox_dump_io",
+                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Vehicles\\SubmarineDynamicsRuntime_Gyroscopes.cs",
+                     "line":  419,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_blackbox_dump_io",
+                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Vehicles\\SubmarineDynamicsRuntime_Gyroscopes.cs",
+                     "line":  613,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_csv_profile_or_binary_loader",
+                     "text":  "info = new FileInfo(_gyroProfilesCsvPath);"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Vehicles\\SubmarineDynamicsRuntime_Gyroscopes.cs",
+                     "line":  652,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_csv_profile_or_binary_loader",
+                     "text":  "using (FileStream stream = new FileStream(_gyroProfilesCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128, FileOptions.SequentialScan))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Vehicles\\VehicleComponentDamageContracts.cs",
+                     "line":  266,
+                     "pattern":  "string_concat_literal",
+                     "classification":  "UNITY_EDITOR_layout_validator",
+                     "text":  "error = fieldName + \" offset expected \" + expected + \" observed \" + observed + \".\";"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Vehicles\\VehicleComponentDamageRuntime.cs",
+                     "line":  801,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_csv_profile_or_binary_loader",
+                     "text":  "FileInfo info = new FileInfo(_csvPath);"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Vehicles\\VehicleComponentDamageRuntime.cs",
+                     "line":  831,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_csv_profile_or_binary_loader",
+                     "text":  "using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.Read))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Vehicles\\VehicleComponentDamageRuntime.cs",
+                     "line":  925,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_blackbox_dump_io",
+                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Vehicles\\Automation\\SubmarineAutopilotSdfNavigator.cs",
+                     "line":  2360,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_blackbox_dump_io",
+                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.SequentialScan))"
+                 },
+                 {
+                     "path":  "Assets\\_Project\\Scripts\\Physics\\Vehicles\\Automation\\SubmarineAutopilotSdfNavigator.cs",
+                     "line":  2437,
+                     "pattern":  "known_managed_object_new",
+                     "classification":  "cold_csv_profile_or_binary_loader",
+                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 256, FileOptions.SequentialScan))"
+                 }
+             ]
+}

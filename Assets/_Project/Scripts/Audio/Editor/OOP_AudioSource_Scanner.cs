@@ -35,7 +35,7 @@ namespace Hecton8.Audio.Editor
             ScanResult result = ScanProject();
             WriteReports(result);
             AssetDatabase.Refresh();
-            Debug.Log("SHINOBU_351 OOP_AudioSource_Scanner found " + result.ActiveViolationCount + " active violations.");
+            Hecton8.Core.H8Debug.Log("SHINOBU_351 OOP_AudioSource_Scanner found " + result.ActiveViolationCount + " active violations.");
         }
 
         public static ScanResult ScanProject()

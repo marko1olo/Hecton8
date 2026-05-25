@@ -253,7 +253,7 @@ namespace Hecton8.Construction.Editor
             WriteTextAtomic(markdownFullPath, markdown);
             UpsertAggregateReport(aggregateFullPath, BuildAggregateJson(generatedUtc, verdict, scannedFiles, suspiciousDoorStateMachines, syntaxNodesVisited, parserFallbackFiles));
             AssetDatabase.Refresh();
-            Debug.Log("SHINOBU_343 OOP Door Scanner verdict: " + verdict);
+            Hecton8.Core.H8Debug.Log("SHINOBU_343 OOP Door Scanner verdict: " + verdict);
         }
 
         private static void ScanDirectory(

@@ -65,7 +65,7 @@ namespace Hecton8.UI
             TryRegisterHotSwapListener();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_settings == null)
-                Debug.LogWarning("[SettingsComparisonView] Settings runtime is not registered. Comparison panel disabled.");
+                Hecton8.Core.H8Debug.LogWarning("[SettingsComparisonView] Settings runtime is not registered. Comparison panel disabled.");
 #endif
             TryRegister();
             RefreshComparison();
@@ -217,7 +217,7 @@ namespace Hecton8.UI
         private static int WriteFpsText(int fps, char[] buffer)
         {
             int cursor = 0;
-            if (!fps.TryFormat(new Span<char>(buffer, cursor, buffer.Length - cursor), out int written))
+            if (!fps.TryFormat(buffer.AsSpan(cursor, buffer.Length - cursor), out int written))
                 return 0;
 
             cursor += written;
@@ -233,7 +233,7 @@ namespace Hecton8.UI
             if (delta > 0)
                 buffer[cursor++] = '+';
 
-            if (!delta.TryFormat(new Span<char>(buffer, cursor, buffer.Length - cursor), out int written))
+            if (!delta.TryFormat(buffer.AsSpan(cursor, buffer.Length - cursor), out int written))
                 return 0;
 
             cursor += written;

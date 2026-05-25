@@ -124,7 +124,7 @@ namespace Hecton8.Construction.Editor
         {
             string report = OOP_Module_Deconstruction_Scanner_SHINOBU336.RunAndWriteReport();
             _csv.text = "Scanner wrote " + report;
-            Debug.Log("SHINOBU_336 scanner wrote " + report);
+            Hecton8.Core.H8Debug.Log("SHINOBU_336 scanner wrote " + report);
         }
 
         private void DrawSceneGizmo(SceneView sceneView)
@@ -315,7 +315,7 @@ namespace Hecton8.Construction.Editor
         [MenuItem("HECTON-8/Construction/Run SHINOBU 336 Scanner")]
         private static void RunMenu()
         {
-            Debug.Log("SHINOBU_336 scanner wrote " + RunAndWriteReport());
+            Hecton8.Core.H8Debug.Log("SHINOBU_336 scanner wrote " + RunAndWriteReport());
         }
 
         public static string RunAndWriteReport()

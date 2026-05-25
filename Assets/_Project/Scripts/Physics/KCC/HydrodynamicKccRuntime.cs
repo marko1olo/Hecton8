@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -2266,7 +2265,7 @@ namespace Hecton8.Physics.KCC
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // Invariant: WakePackets is read-only, WakeWriter only enqueues, and downstream wake consumers drain the
         // SignalBus queue after the returned JobHandle completes.
-        [NoAlias] public NativeQueue<WakeGeneratedSignal>.ParallelWriter WakeWriter;
+        [NoAlias] public global::Hecton8.Core.MpscSignalRingBuffer<WakeGeneratedSignal>.ParallelWriter WakeWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> WakeWriterBudget;
         public void Execute(int index)
         {
@@ -2712,11 +2711,8 @@ namespace Hecton8.Physics.KCC
         private const int EnvironmentGridCellCount = EnvironmentGridAxisX * EnvironmentGridAxisY * EnvironmentGridAxisZ;
         private const uint MetabolismFatigueFlag = 1u << 9;
         private const ulong MetabolismStateMutationGuardMask = 1UL << 48;
-        private const string DumpFileName = "Dump_SHINOBU_113.bin";
-        private const string AssignmentDumpFileName = "Dump_SHINOBU_250.bin";
-        private const string LegacyAssignmentDumpFileName = "Dump_KINEMATICS_SURGEON.bin";
-        private const string AgentDumpFileName = "Dump_X_005.bin";
-        private const string PromptDumpFileName = "Dump_SHINOBU_322_KCC.bin";
+        private const uint KccFaultEventHash = 0x4B464654u; // KFFT
+        private const uint KccFaultDumpHash = 0x4B464450u; // KFDP
 
         [SerializeField] private int _entityCapacity = DefaultCapacity;
         [SerializeField] private float _waterSurfaceY;
@@ -2771,6 +2767,7 @@ namespace Hecton8.Physics.KCC
         private bool _postScheduled;
         private bool _externalInputArmed;
         private bool _metabolismStateReadGuardHeld;
+        private bool _coreBlackboxWarmed;
         private int _dumpedFaultMask;
         private int _rollbackVisualBypassFrames;
         private int _respawnCollisionBypassFrames;
@@ -2912,6 +2909,7 @@ namespace Hecton8.Physics.KCC
 #endif
             SignalBus<WakeGeneratedSignal>.EnsureInitialized();
             EnsureVaultBuffers();
+            WarmCoreBlackboxRoute();
             TryRegisterFixedTick();
             TryRegisterPostFixedTick();
             TryRegisterLateFrameTick();
@@ -2931,6 +2929,7 @@ namespace Hecton8.Physics.KCC
             TryUnregisterLateFrameTick();
             TryUnregisterPostFixedTick();
             TryUnregisterFixedTick();
+            _coreBlackboxWarmed = false;
         }
 
         public void FixedTick(float fixedDeltaTime)
@@ -3401,7 +3400,7 @@ namespace Hecton8.Physics.KCC
             int faultMask = ResolveFaultMask(faults);
             if (faultMask != 0 && faultMask != _dumpedFaultMask)
             {
-                DumpTelemetry(telemetry, environmentTelemetry);
+                DumpTelemetry(faultMask, telemetry, environmentTelemetry);
                 _dumpedFaultMask = faultMask;
             }
             else if (faultMask == 0)
@@ -3456,15 +3455,26 @@ namespace Hecton8.Physics.KCC
                 return;
 
             AbsoluteUniversePosition bodyAup = HydrodynamicKccMath.ToAup48(state.AUP_Position);
-            byte flags = _globalQualityWeight <= 0.25f ? KccVelocitySignal.FlagLowTier : (byte)0;
-            bool accepted = PhysicsDeterminismSignals.TryPublishKccVelocity(
-                in bodyAup,
-                HydrodynamicKccMath.Sanitize(state.Velocity, float3.zero),
-                _simulationFrame,
-                HydrodynamicKccMath.SourceHash,
-                flags);
+            byte flags = ResolveLowQualitySignalFlag(_globalQualityWeight);
+            KccVelocitySignal signal = default;
+            signal.BodyAup = bodyAup;
+            signal.Velocity = HydrodynamicKccMath.Sanitize(state.Velocity, float3.zero);
+            float planarVelocityX = signal.Velocity.x;
+            float planarVelocityZ = signal.Velocity.z;
+            signal.PlanarSpeedSq = (planarVelocityX * planarVelocityX) + (planarVelocityZ * planarVelocityZ);
+            signal.Frame = _simulationFrame;
+            signal.SourceId = HydrodynamicKccMath.SourceHash;
+            signal.Flags = flags;
+            bool accepted = CoreDeterminismSignals.TryPublishKccVelocity(in signal);
             if (!accepted)
                 IncrementDroppedSignalCount();
+        }
+
+        private static byte ResolveLowQualitySignalFlag(float qualityWeight01)
+        {
+            float quality = math.saturate(math.select(1f, qualityWeight01, math.isfinite(qualityWeight01)));
+            float survivalPressure01 = math.saturate((0.35f - quality) * math.rcp(0.35f));
+            return survivalPressure01 > 0.5f ? KccVelocitySignal.FlagLowTier : (byte)0;
         }
 
         private void IncrementDroppedSignalCount()
@@ -4174,132 +4184,43 @@ namespace Hecton8.Physics.KCC
             return math.saturate(math.isfinite(value) ? value : 1f);
         }
 
-        private void DumpTelemetry(NativeArray<KinematicTelemetryEntry> telemetry, NativeArray<KccEnvironmentTelemetryEntry> environmentTelemetry)
+        private void DumpTelemetry(int faultMask, NativeArray<KinematicTelemetryEntry> telemetry, NativeArray<KccEnvironmentTelemetryEntry> environmentTelemetry)
         {
             if ((!telemetry.IsCreated || telemetry.Length == 0) &&
                 (!environmentTelemetry.IsCreated || environmentTelemetry.Length == 0))
                 return;
 
-            string root = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string directory = Path.Combine(root, "Docs", "AgentLogs");
-            if (!TryEnsureTelemetryDumpDirectory(directory))
+            if (!_coreBlackboxWarmed || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
                 return;
 
-            unsafe
+            uint stateHash = unchecked((uint)faultMask);
+            float scalar = faultMask;
+            if (telemetry.IsCreated && telemetry.Length > 0)
             {
-                if (telemetry.IsCreated && telemetry.Length > 0)
-                {
-                    int bytes = telemetry.Length * UnsafeUtility.SizeOf<KinematicTelemetryEntry>();
-                    void* source = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(telemetry);
-                    WriteTelemetryDump(Path.Combine(directory, DumpFileName), source, bytes);
-                    WriteTelemetryDump(Path.Combine(directory, LegacyAssignmentDumpFileName), source, bytes);
-                    WriteTelemetryDump(Path.Combine(directory, AgentDumpFileName), source, bytes);
-                    WriteTelemetryDump(Path.Combine(directory, PromptDumpFileName), source, bytes);
-                }
-
-                if (environmentTelemetry.IsCreated && environmentTelemetry.Length > 0)
-                {
-                    int environmentBytes = environmentTelemetry.Length * UnsafeUtility.SizeOf<KccEnvironmentTelemetryEntry>();
-                    void* environmentSource = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(environmentTelemetry);
-                    WriteTelemetryDump(Path.Combine(directory, AssignmentDumpFileName), environmentSource, environmentBytes);
-                }
+                int index = (int)(_simulationFrame % (uint)telemetry.Length);
+                KinematicTelemetryEntry sample = telemetry[index];
+                scalar = math.isfinite(sample.Speed) ? sample.Speed : scalar;
+                stateHash = sample.StateHash != 0u ? sample.StateHash : stateHash;
             }
+            else if (environmentTelemetry.IsCreated && environmentTelemetry.Length > 0)
+            {
+                int index = (int)(_simulationFrame % (uint)environmentTelemetry.Length);
+                KccEnvironmentTelemetryEntry sample = environmentTelemetry[index];
+                scalar = math.isfinite(sample.ComputeMicroseconds) ? sample.ComputeMicroseconds : scalar;
+                stateHash = sample.StateHash != 0u ? sample.StateHash : stateHash;
+            }
+
+            GlobalTelemetryBus.PushEvent(KccFaultEventHash, scalar, stateHash);
+            _ = GlobalTelemetryBus.TryDumpBlackboxNow(KccFaultDumpHash);
         }
 
-        private static bool TryEnsureTelemetryDumpDirectory(string directory)
+        private void WarmCoreBlackboxRoute()
         {
-            try
-            {
-                Directory.CreateDirectory(directory);
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        private static unsafe void WriteTelemetryDump(string path, void* source, int bytes)
-        {
-            string tempPath = path + ".tmp";
-            try
-            {
-                using (FileStream stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
-                {
-                    stream.Write(new ReadOnlySpan<byte>(source, bytes));
-                }
-
-                ReplaceTelemetryDump(tempPath, path);
-            }
-            catch (Exception)
-            {
-                TryDeleteTelemetryDumpTemp(tempPath);
-            }
-        }
-
-        private static void ReplaceTelemetryDump(string tempPath, string path)
-        {
-            if (!File.Exists(path))
-            {
-                File.Move(tempPath, path);
+            if (_coreBlackboxWarmed || !Application.isPlaying)
                 return;
-            }
 
-            try
-            {
-                File.Replace(tempPath, path, null, true);
-            }
-            catch (PlatformNotSupportedException)
-            {
-                ReplaceTelemetryDumpByBackupMove(tempPath, path);
-            }
-            catch (IOException)
-            {
-                ReplaceTelemetryDumpByBackupMove(tempPath, path);
-            }
-        }
-
-        private static void ReplaceTelemetryDumpByBackupMove(string tempPath, string path)
-        {
-            string backupPath = path + ".bak";
-            if (File.Exists(backupPath))
-                File.Delete(backupPath);
-
-            File.Move(path, backupPath);
-            try
-            {
-                File.Move(tempPath, path);
-                TryDeleteTelemetryDumpTemp(backupPath);
-            }
-            catch (Exception)
-            {
-                TryRestoreTelemetryDumpBackup(backupPath, path);
-                throw;
-            }
-        }
-
-        private static void TryRestoreTelemetryDumpBackup(string backupPath, string path)
-        {
-            try
-            {
-                if (!File.Exists(path) && File.Exists(backupPath))
-                    File.Move(backupPath, path);
-            }
-            catch (Exception)
-            {
-            }
-        }
-
-        private static void TryDeleteTelemetryDumpTemp(string tempPath)
-        {
-            try
-            {
-                if (File.Exists(tempPath))
-                    File.Delete(tempPath);
-            }
-            catch (Exception)
-            {
-            }
+            GlobalTelemetryBus.Initialize();
+            _coreBlackboxWarmed = GlobalTelemetryBus.BlackboxActiveFrameCount > 0;
         }
 
         private void TryRegisterFixedTick()

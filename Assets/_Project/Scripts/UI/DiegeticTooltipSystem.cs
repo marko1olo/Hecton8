@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.UI.Diegetic.Contracts;
@@ -271,7 +272,11 @@ namespace Hecton8.UI
             }
 
             Color resolvedColor = _diagnosticActive ? _diagnosticColor : glyphColor;
-            Vector4 tint = new Vector4(resolvedColor.r, resolvedColor.g, resolvedColor.b, resolvedColor.a * _visibleAlpha);
+            Vector4 tint = default;
+            tint.x = resolvedColor.r;
+            tint.y = resolvedColor.g;
+            tint.z = resolvedColor.b;
+            tint.w = resolvedColor.a * _visibleAlpha;
             float qualityWeight = math.saturate(_qualityWeight01);
             float ditherEnabled = ResolveDitherWeight(qualityWeight);
             int renderLayer = gameObject.layer;
@@ -433,7 +438,7 @@ namespace Hecton8.UI
             _diagnosticColor = tint;
             _diagnosticActive = true;
             StagePrompt(text);
-            BuildGlyphLayout(new ReadOnlySpan<char>(_promptBuffer, 0, _promptLength), includeBindingIcon: false);
+            BuildGlyphLayout(_promptBuffer.AsSpan(0, _promptLength), includeBindingIcon: false);
         }
 
         public void ClearDiagnostic()
@@ -469,7 +474,10 @@ namespace Hecton8.UI
 
                 _hasSignalTarget = true;
                 _activeTargetAup = signal.TargetAup;
-                _activeRuntimeAnchor = new Vector3(signal.RuntimeAnchor.x, signal.RuntimeAnchor.y, signal.RuntimeAnchor.z);
+                _activeRuntimeAnchor = default;
+                _activeRuntimeAnchor.x = signal.RuntimeAnchor.x;
+                _activeRuntimeAnchor.y = signal.RuntimeAnchor.y;
+                _activeRuntimeAnchor.z = signal.RuntimeAnchor.z;
                 _activeTargetHash = signal.TargetHash;
                 if (signal.PromptHash != _activePromptHash || _promptLength == 0)
                 {
@@ -491,7 +499,10 @@ namespace Hecton8.UI
                     continue;
 
                 _lastAupShiftFrame = signal.ShiftFrameId;
-                Vector3 shift = new Vector3(signal.ShiftMeters.x, signal.ShiftMeters.y, signal.ShiftMeters.z);
+                Vector3 shift = default;
+                shift.x = signal.ShiftMeters.x;
+                shift.y = signal.ShiftMeters.y;
+                shift.z = signal.ShiftMeters.z;
                 if (_hasSignalTarget)
                     _activeRuntimeAnchor += shift;
                 if (_diagnosticActive)
@@ -602,7 +613,7 @@ namespace Hecton8.UI
                 RefreshActiveSchemeHash();
 
             EnsureResources();
-            BuildGlyphLayout(new ReadOnlySpan<char>(_promptBuffer, 0, _promptLength), includeBindingIcon: true);
+            BuildGlyphLayout(_promptBuffer.AsSpan(0, _promptLength), includeBindingIcon: true);
         }
 
         private void ClearTooltipState()
@@ -658,8 +669,14 @@ namespace Hecton8.UI
             float originX = -totalAdvance * 0.5f;
             if (_iconCount > 0)
             {
-                _iconLocalCenters[0] = new Vector2(originX + iconWidth * 0.5f, IconVerticalBias);
-                _iconLocalScales[0] = new Vector2(iconWidth, iconHeight);
+                Vector2 iconCenter = default;
+                iconCenter.x = originX + iconWidth * 0.5f;
+                iconCenter.y = IconVerticalBias;
+                _iconLocalCenters[0] = iconCenter;
+                Vector2 iconScale = default;
+                iconScale.x = iconWidth;
+                iconScale.y = iconHeight;
+                _iconLocalScales[0] = iconScale;
             }
 
             OffsetTextGlyphCenters(originX + iconAdvance);
@@ -700,17 +717,21 @@ namespace Hecton8.UI
                 float bearingX = metrics.horizontalBearingX * glyphScale;
                 float bearingY = metrics.horizontalBearingY * glyphScale;
 
-                _textGlyphLocalCenters[_textGlyphCount] = new Vector2(
-                    penX + bearingX + width * 0.5f,
-                    bearingY - height * 0.5f - baselineOffset);
-                _textGlyphLocalScales[_textGlyphCount] = new Vector2(width, height);
+                Vector2 localCenter = default;
+                localCenter.x = penX + bearingX + width * 0.5f;
+                localCenter.y = bearingY - height * 0.5f - baselineOffset;
+                _textGlyphLocalCenters[_textGlyphCount] = localCenter;
+                Vector2 localScale = default;
+                localScale.x = width;
+                localScale.y = height;
+                _textGlyphLocalScales[_textGlyphCount] = localScale;
                 int glyphIndex = c < UvTableCapacity ? c : '?';
                 _textGlyphIndices[_textGlyphCount] = glyphIndex;
-                Vector4 uvRect = new Vector4(
-                    rect.x * invAtlasWidth,
-                    rect.y * invAtlasHeight,
-                    (rect.x + rect.width) * invAtlasWidth,
-                    (rect.y + rect.height) * invAtlasHeight);
+                Vector4 uvRect = default;
+                uvRect.x = rect.x * invAtlasWidth;
+                uvRect.y = rect.y * invAtlasHeight;
+                uvRect.z = (rect.x + rect.width) * invAtlasWidth;
+                uvRect.w = (rect.y + rect.height) * invAtlasHeight;
                 if (WriteUvRectIfChanged(_fontUvTable, glyphIndex, uvRect))
                     _fontUvTableDirty = true;
 
@@ -780,11 +801,11 @@ namespace Hecton8.UI
             float iconScale = glyphScale * IconScaleMultiplier;
             width = math.max(MinimumGlyphScale, metrics.width * iconScale);
             height = math.max(MinimumGlyphScale, metrics.height * iconScale);
-            Vector4 uvRect = new Vector4(
-                rect.x * invAtlasWidth,
-                rect.y * invAtlasHeight,
-                (rect.x + rect.width) * invAtlasWidth,
-                (rect.y + rect.height) * invAtlasHeight);
+            Vector4 uvRect = default;
+            uvRect.x = rect.x * invAtlasWidth;
+            uvRect.y = rect.y * invAtlasHeight;
+            uvRect.z = (rect.x + rect.width) * invAtlasWidth;
+            uvRect.w = (rect.y + rect.height) * invAtlasHeight;
             if (WriteUvRectIfChanged(_spriteUvTable, spriteIndex, uvRect))
                 _spriteUvTableDirty = true;
             iconGlyphIndex = spriteIndex;
@@ -1035,12 +1056,13 @@ namespace Hecton8.UI
                 Vector2 localCenter = localCenters[i];
                 Vector2 localScale = localScales[i];
                 Vector3 worldPosition = anchorPosition + cameraRight * localCenter.x + cameraUp * localCenter.y;
-                _instancePayloads[i] = new TooltipGlyphInstance
-                {
-                    LocalToWorld = BuildBillboardMatrix(worldPosition, cameraRight, cameraUp, cameraForward, localScale),
-                    Tint = tint,
-                    GlyphIndex = new Vector4(glyphIndices[i], 0f, 0f, 0f)
-                };
+                TooltipGlyphInstance instance = default;
+                instance.LocalToWorld = BuildBillboardMatrix(worldPosition, cameraRight, cameraUp, cameraForward, localScale);
+                instance.Tint = tint;
+                Vector4 glyphIndex = default;
+                glyphIndex.x = glyphIndices[i];
+                instance.GlyphIndex = glyphIndex;
+                _instancePayloads[i] = instance;
             }
 
             GraphicsBufferUploadUtility.UploadArray(instanceBuffer, _instancePayloads, count);
@@ -1157,7 +1179,11 @@ namespace Hecton8.UI
 
         private Vector3 ResolveSignalAnchorRuntime()
         {
-            Vector3 aupRuntime = (Vector3)_activeTargetAup.ToRuntimeFloat3();
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            Vector3 aupRuntime = (Vector3)AupPrecisionMath.LocalDeltaFloat3(
+                _activeTargetAup.ToAbsoluteDouble3(),
+                originAup.ToAbsoluteDouble3(),
+                default);
             return IsFinite(aupRuntime) ? aupRuntime : _activeRuntimeAnchor;
         }
 
@@ -1364,7 +1390,7 @@ namespace Hecton8.UI
             return _dataVault;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
         {
             return handle.BufferID != 0u && handle.Generation != 0u;
         }

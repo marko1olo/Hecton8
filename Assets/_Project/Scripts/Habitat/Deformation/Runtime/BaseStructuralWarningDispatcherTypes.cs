@@ -498,7 +498,7 @@ namespace Hecton8.Habitat.Deformation
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // The scheduler creates this writer after SignalBus initialization, chains the route job into the dispatcher
         // handle, and consumers flush/read only after that handle is fenced by the central phase dispatcher.
-        [WriteOnly] [NoAlias] [NativeDisableContainerSafetyRestriction] public NativeQueue<BaseStructuralWarningSignal>.ParallelWriter WarningSignals;
+        [WriteOnly] [NoAlias] [NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<BaseStructuralWarningSignal>.ParallelWriter WarningSignals;
         [NativeDisableParallelForRestriction] public NativeArray<int> WarningSignalsBudget;
         public uint Frame;
         public float CurrentTimeSeconds;

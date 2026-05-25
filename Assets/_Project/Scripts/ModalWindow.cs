@@ -319,7 +319,7 @@ namespace Hecton.UI.MainMenu
                 return true;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[ModalWindow] No ModalWindow instance found in scene. Add ModalWindow component to your Canvas.");
+            Hecton8.Core.H8Debug.LogError("[ModalWindow] No ModalWindow instance found in scene. Add ModalWindow component to your Canvas.");
 #endif
             return false;
         }
@@ -330,7 +330,7 @@ namespace Hecton.UI.MainMenu
             if (existing != null && !ReferenceEquals(existing, this))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[ModalWindow] Duplicate detected. Destroying extra instance.");
+                Hecton8.Core.H8Debug.LogWarning("[ModalWindow] Duplicate detected. Destroying extra instance.");
 #endif
                 Destroy(gameObject);
                 return false;

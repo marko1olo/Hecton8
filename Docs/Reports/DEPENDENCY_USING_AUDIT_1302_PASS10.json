@@ -1,0 +1,1770 @@
+﻿{
+    "schema":  "DEPENDENCY_USING_AUDIT_1302_PASS10_V2",
+    "generatedUtc":  "2026-05-25T18:46:50.1399458Z",
+    "scannedCsFiles":  30,
+    "usingCount":  273,
+    "systemLinqUsingCount":  0,
+    "addedInScopeUsingCount":  9,
+    "addedInScopeForbiddenUsingCount":  0,
+    "addedInScopeForbiddenUsings":  [
+
+                                    ],
+    "existingWorldAupDirectDependencyCount":  8,
+    "existingWorldAupDirectDependencies":  [
+                                               {
+                                                   "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                                                   "line":  9,
+                                                   "namespace":  "Hecton8.World",
+                                                   "text":  "using Hecton8.World;"
+                                               },
+                                               {
+                                                   "file":  "Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs",
+                                                   "line":  5,
+                                                   "namespace":  "Hecton8.World",
+                                                   "text":  "using Hecton8.World;"
+                                               },
+                                               {
+                                                   "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+                                                   "line":  8,
+                                                   "namespace":  "Hecton8.World",
+                                                   "text":  "using Hecton8.World;"
+                                               },
+                                               {
+                                                   "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                                                   "line":  5,
+                                                   "namespace":  "Hecton8.World",
+                                                   "text":  "using Hecton8.World;"
+                                               },
+                                               {
+                                                   "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                                                   "line":  17,
+                                                   "namespace":  "AbsoluteUniversePosition = Hecton8.World.AbsoluteUniversePosition",
+                                                   "text":  "using AbsoluteUniversePosition = Hecton8.World.AbsoluteUniversePosition;"
+                                               },
+                                               {
+                                                   "file":  "Assets/_Project/Scripts/Physics/PhysicsDeterminismSignals.cs",
+                                                   "line":  3,
+                                                   "namespace":  "Hecton8.World",
+                                                   "text":  "using Hecton8.World;"
+                                               },
+                                               {
+                                                   "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                                                   "line":  9,
+                                                   "namespace":  "Hecton8.World",
+                                                   "text":  "using Hecton8.World;"
+                                               },
+                                               {
+                                                   "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                                                   "line":  8,
+                                                   "namespace":  "Hecton8.World",
+                                                   "text":  "using Hecton8.World;"
+                                               }
+                                           ],
+    "asmdefCount":  6,
+    "asmdefs":  [
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\AsyncReadback\\Hecton8.Physics.Buoyancy.Runtime.asmdef",
+                        "name":  "Hecton8.Physics.Buoyancy.Runtime",
+                        "references":  [
+                                           "Hecton8.Core",
+                                           "Hecton8.Core.Contracts",
+                                           "Hecton8.Core.Memory",
+                                           "Unity.Mathematics",
+                                           "Unity.Burst",
+                                           "Unity.Collections",
+                                           "Unity.Jobs"
+                                       ]
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics\\Buoyancy\\Editor\\Hecton8.Physics.Buoyancy.Editor.asmdef",
+                        "name":  "Hecton8.Physics.Buoyancy.Editor",
+                        "references":  [
+                                           "Hecton8.Physics.Buoyancy.Runtime",
+                                           "Hecton8.Core",
+                                           "Hecton8.Core.Contracts",
+                                           "Hecton8.Core.Memory",
+                                           "Unity.Mathematics",
+                                           "Unity.Collections"
+                                       ]
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics\\CCD\\Hecton8.Physics.CCD.asmdef",
+                        "name":  "Hecton8.Physics.CCD",
+                        "references":  [
+                                           "Hecton8.Core.Contracts",
+                                           "Unity.Mathematics",
+                                           "Unity.Burst"
+                                       ]
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics\\Determinism\\Hecton8.Physics.Determinism.asmdef",
+                        "name":  "Hecton8.Physics.Determinism",
+                        "references":  [
+                                           "Hecton8.Core.Contracts"
+                                       ]
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics\\KCC\\Editor\\Hecton8.Physics.KCC.Editor.asmdef",
+                        "name":  "Hecton8.Physics.KCC.Editor",
+                        "references":  [
+                                           "Hecton8.Core",
+                                           "Hecton8.Core.Contracts",
+                                           "Hecton8.Core.Memory",
+                                           "Unity.Mathematics",
+                                           "Unity.Collections",
+                                           "Unity.Jobs"
+                                       ]
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics\\Vehicles\\Editor\\Hecton8.Physics.Vehicles.Editor.asmdef",
+                        "name":  "Hecton8.Physics.Vehicles.Editor",
+                        "references":  [
+                                           "Hecton8.Core",
+                                           "Hecton8.Core.Contracts",
+                                           "Hecton8.Core.Memory",
+                                           "Unity.Mathematics",
+                                           "Unity.Collections"
+                                       ]
+                    }
+                ],
+    "allUsings":  [
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveContracts.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveContracts.cs",
+                          "line":  2,
+                          "namespace":  "System.Runtime.CompilerServices",
+                          "text":  "using System.Runtime.CompilerServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveContracts.cs",
+                          "line":  3,
+                          "namespace":  "System.Runtime.InteropServices",
+                          "text":  "using System.Runtime.InteropServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveContracts.cs",
+                          "line":  4,
+                          "namespace":  "Hecton8.Core.Memory",
+                          "text":  "using Hecton8.Core.Memory;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveContracts.cs",
+                          "line":  5,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveContracts.cs",
+                          "line":  6,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveContracts.cs",
+                          "line":  7,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                          "line":  3,
+                          "namespace":  "System.IO",
+                          "text":  "using System.IO;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                          "line":  5,
+                          "namespace":  "Hecton8.Core",
+                          "text":  "using Hecton8.Core;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                          "line":  6,
+                          "namespace":  "Hecton8.Core.Memory",
+                          "text":  "using Hecton8.Core.Memory;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                          "line":  7,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                          "line":  8,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                          "line":  9,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                          "line":  10,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                          "line":  11,
+                          "namespace":  "UnityEngine",
+                          "text":  "using UnityEngine;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                          "line":  12,
+                          "namespace":  "Stopwatch = System.Diagnostics.Stopwatch",
+                          "text":  "using Stopwatch = System.Diagnostics.Stopwatch;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackContracts.cs",
+                          "line":  1,
+                          "namespace":  "System.Runtime.InteropServices",
+                          "text":  "using System.Runtime.InteropServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackContracts.cs",
+                          "line":  2,
+                          "namespace":  "Hecton8.Core.Memory",
+                          "text":  "using Hecton8.Core.Memory;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackContracts.cs",
+                          "line":  3,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackContracts.cs",
+                          "line":  4,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                          "line":  1,
+                          "namespace":  "System.Runtime.CompilerServices",
+                          "text":  "using System.Runtime.CompilerServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                          "line":  2,
+                          "namespace":  "Unity.Burst",
+                          "text":  "using Unity.Burst;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                          "line":  3,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                          "line":  4,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                          "line":  5,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs",
+                          "line":  6,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                          "line":  3,
+                          "namespace":  "System.IO",
+                          "text":  "using System.IO;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                          "line":  5,
+                          "namespace":  "Hecton8.Core",
+                          "text":  "using Hecton8.Core;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                          "line":  6,
+                          "namespace":  "Hecton8.Core.Memory",
+                          "text":  "using Hecton8.Core.Memory;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                          "line":  7,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                          "line":  8,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                          "line":  9,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                          "line":  10,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                          "line":  11,
+                          "namespace":  "UnityEngine",
+                          "text":  "using UnityEngine;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                          "line":  12,
+                          "namespace":  "UnityEngine.Rendering",
+                          "text":  "using UnityEngine.Rendering;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementContracts.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementContracts.cs",
+                          "line":  2,
+                          "namespace":  "System.Runtime.CompilerServices",
+                          "text":  "using System.Runtime.CompilerServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementContracts.cs",
+                          "line":  3,
+                          "namespace":  "System.Runtime.InteropServices",
+                          "text":  "using System.Runtime.InteropServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementContracts.cs",
+                          "line":  4,
+                          "namespace":  "Hecton8.Core.Memory",
+                          "text":  "using Hecton8.Core.Memory;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementContracts.cs",
+                          "line":  5,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementContracts.cs",
+                          "line":  6,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementContracts.cs",
+                          "line":  7,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                          "line":  3,
+                          "namespace":  "System.IO",
+                          "text":  "using System.IO;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                          "line":  5,
+                          "namespace":  "Hecton8.Core",
+                          "text":  "using Hecton8.Core;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                          "line":  6,
+                          "namespace":  "Hecton8.Core.Contracts.Signals",
+                          "text":  "using Hecton8.Core.Contracts.Signals;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                          "line":  7,
+                          "namespace":  "Hecton8.Core.Memory",
+                          "text":  "using Hecton8.Core.Memory;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                          "line":  8,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                          "line":  9,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                          "line":  10,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                          "line":  11,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                          "line":  12,
+                          "namespace":  "UnityEngine",
+                          "text":  "using UnityEngine;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                          "line":  13,
+                          "namespace":  "Stopwatch = System.Diagnostics.Stopwatch",
+                          "text":  "using Stopwatch = System.Diagnostics.Stopwatch;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                          "line":  2,
+                          "namespace":  "System.Runtime.CompilerServices",
+                          "text":  "using System.Runtime.CompilerServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                          "line":  3,
+                          "namespace":  "System.Runtime.InteropServices",
+                          "text":  "using System.Runtime.InteropServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                          "line":  4,
+                          "namespace":  "Unity.Burst",
+                          "text":  "using Unity.Burst;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                          "line":  5,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                          "line":  6,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                          "line":  7,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                          "line":  8,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationContracts.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationContracts.cs",
+                          "line":  3,
+                          "namespace":  "System.Reflection",
+                          "text":  "using System.Reflection;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationContracts.cs",
+                          "line":  5,
+                          "namespace":  "System.Runtime.CompilerServices",
+                          "text":  "using System.Runtime.CompilerServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationContracts.cs",
+                          "line":  6,
+                          "namespace":  "System.Runtime.InteropServices",
+                          "text":  "using System.Runtime.InteropServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationContracts.cs",
+                          "line":  7,
+                          "namespace":  "Hecton8.Core.Memory",
+                          "text":  "using Hecton8.Core.Memory;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationContracts.cs",
+                          "line":  8,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationContracts.cs",
+                          "line":  9,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationContracts.cs",
+                          "line":  10,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                          "line":  3,
+                          "namespace":  "System.IO",
+                          "text":  "using System.IO;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                          "line":  5,
+                          "namespace":  "Hecton8.Core",
+                          "text":  "using Hecton8.Core;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                          "line":  6,
+                          "namespace":  "Hecton8.Core.Contracts",
+                          "text":  "using Hecton8.Core.Contracts;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                          "line":  7,
+                          "namespace":  "Hecton8.Core.Contracts.Signals",
+                          "text":  "using Hecton8.Core.Contracts.Signals;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                          "line":  8,
+                          "namespace":  "Hecton8.Core.Memory",
+                          "text":  "using Hecton8.Core.Memory;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                          "line":  9,
+                          "namespace":  "Hecton8.World",
+                          "text":  "using Hecton8.World;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                          "line":  10,
+                          "namespace":  "Unity.Burst",
+                          "text":  "using Unity.Burst;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                          "line":  11,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                          "line":  12,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                          "line":  13,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                          "line":  14,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                          "line":  15,
+                          "namespace":  "UnityEngine",
+                          "text":  "using UnityEngine;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                          "line":  16,
+                          "namespace":  "UnityEngine.Rendering",
+                          "text":  "using UnityEngine.Rendering;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                          "line":  3,
+                          "namespace":  "System.IO",
+                          "text":  "using System.IO;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                          "line":  5,
+                          "namespace":  "Stopwatch = System.Diagnostics.Stopwatch",
+                          "text":  "using Stopwatch = System.Diagnostics.Stopwatch;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                          "line":  6,
+                          "namespace":  "Hecton8.Core",
+                          "text":  "using Hecton8.Core;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                          "line":  7,
+                          "namespace":  "Hecton8.Core.Contracts",
+                          "text":  "using Hecton8.Core.Contracts;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                          "line":  8,
+                          "namespace":  "Hecton8.Core.Contracts.Signals",
+                          "text":  "using Hecton8.Core.Contracts.Signals;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                          "line":  9,
+                          "namespace":  "Hecton8.Core.Memory",
+                          "text":  "using Hecton8.Core.Memory;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                          "line":  10,
+                          "namespace":  "Hecton8.Core.Scheduling",
+                          "text":  "using Hecton8.Core.Scheduling;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                          "line":  11,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                          "line":  12,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                          "line":  13,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                          "line":  14,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                          "line":  15,
+                          "namespace":  "UnityEngine",
+                          "text":  "using UnityEngine;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs",
+                          "line":  2,
+                          "namespace":  "Hecton8.Core",
+                          "text":  "using Hecton8.Core;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs",
+                          "line":  3,
+                          "namespace":  "Hecton8.Core.Contracts",
+                          "text":  "using Hecton8.Core.Contracts;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs",
+                          "line":  4,
+                          "namespace":  "Hecton8.Core.Contracts.Signals",
+                          "text":  "using Hecton8.Core.Contracts.Signals;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs",
+                          "line":  5,
+                          "namespace":  "Hecton8.World",
+                          "text":  "using Hecton8.World;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs",
+                          "line":  6,
+                          "namespace":  "Hecton.Localization",
+                          "text":  "using Hecton.Localization;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs",
+                          "line":  7,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs",
+                          "line":  8,
+                          "namespace":  "UnityEngine",
+                          "text":  "using UnityEngine;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/FluidImpulseJob.cs",
+                          "line":  1,
+                          "namespace":  "Unity.Burst",
+                          "text":  "using Unity.Burst;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/FluidImpulseJob.cs",
+                          "line":  2,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/FluidImpulseJob.cs",
+                          "line":  3,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/FluidImpulseJob.cs",
+                          "line":  4,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionCsv.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionCsv.cs",
+                          "line":  2,
+                          "namespace":  "Hecton8.Core.Contracts.Physics",
+                          "text":  "using Hecton8.Core.Contracts.Physics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionCsv.cs",
+                          "line":  3,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionCsv.cs",
+                          "line":  4,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionCsv.cs",
+                          "line":  5,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+                          "line":  2,
+                          "namespace":  "System.Diagnostics",
+                          "text":  "using System.Diagnostics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+                          "line":  3,
+                          "namespace":  "Hecton8.Core",
+                          "text":  "using Hecton8.Core;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+                          "line":  4,
+                          "namespace":  "Hecton8.Core.Contracts",
+                          "text":  "using Hecton8.Core.Contracts;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+                          "line":  5,
+                          "namespace":  "Hecton8.Core.Contracts.Physics",
+                          "text":  "using Hecton8.Core.Contracts.Physics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+                          "line":  6,
+                          "namespace":  "Hecton8.Core.Contracts.Signals",
+                          "text":  "using Hecton8.Core.Contracts.Signals;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+                          "line":  7,
+                          "namespace":  "Hecton8.Core.Memory",
+                          "text":  "using Hecton8.Core.Memory;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+                          "line":  8,
+                          "namespace":  "Hecton8.World",
+                          "text":  "using Hecton8.World;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+                          "line":  9,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+                          "line":  10,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+                          "line":  11,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+                          "line":  12,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+                          "line":  13,
+                          "namespace":  "UnityEngine",
+                          "text":  "using UnityEngine;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                          "line":  1,
+                          "namespace":  "System.Runtime.CompilerServices",
+                          "text":  "using System.Runtime.CompilerServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                          "line":  2,
+                          "namespace":  "Hecton8.Core.Contracts",
+                          "text":  "using Hecton8.Core.Contracts;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                          "line":  3,
+                          "namespace":  "Hecton8.Core.Contracts.Physics",
+                          "text":  "using Hecton8.Core.Contracts.Physics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                          "line":  4,
+                          "namespace":  "Hecton8.Core.Contracts.Signals",
+                          "text":  "using Hecton8.Core.Contracts.Signals;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                          "line":  5,
+                          "namespace":  "Hecton8.World",
+                          "text":  "using Hecton8.World;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                          "line":  6,
+                          "namespace":  "Unity.Burst",
+                          "text":  "using Unity.Burst;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                          "line":  7,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                          "line":  8,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                          "line":  9,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                          "line":  10,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                          "line":  2,
+                          "namespace":  "System.Runtime.CompilerServices",
+                          "text":  "using System.Runtime.CompilerServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                          "line":  3,
+                          "namespace":  "System.Runtime.InteropServices",
+                          "text":  "using System.Runtime.InteropServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                          "line":  4,
+                          "namespace":  "System.Threading",
+                          "text":  "using System.Threading;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                          "line":  5,
+                          "namespace":  "Hecton8.Core",
+                          "text":  "using Hecton8.Core;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                          "line":  6,
+                          "namespace":  "Hecton8.Core.Contracts.Physics",
+                          "text":  "using Hecton8.Core.Contracts.Physics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                          "line":  7,
+                          "namespace":  "Hecton8.Core.Contracts.Physiology",
+                          "text":  "using Hecton8.Core.Contracts.Physiology;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                          "line":  8,
+                          "namespace":  "Hecton8.Core.Contracts.Signals",
+                          "text":  "using Hecton8.Core.Contracts.Signals;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                          "line":  9,
+                          "namespace":  "Hecton8.Core.Memory",
+                          "text":  "using Hecton8.Core.Memory;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                          "line":  10,
+                          "namespace":  "Unity.Burst",
+                          "text":  "using Unity.Burst;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                          "line":  11,
+                          "namespace":  "Unity.Burst.CompilerServices",
+                          "text":  "using Unity.Burst.CompilerServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                          "line":  12,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                          "line":  13,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                          "line":  14,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                          "line":  15,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                          "line":  16,
+                          "namespace":  "UnityEngine",
+                          "text":  "using UnityEngine;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                          "line":  17,
+                          "namespace":  "AbsoluteUniversePosition = Hecton8.World.AbsoluteUniversePosition",
+                          "text":  "using AbsoluteUniversePosition = Hecton8.World.AbsoluteUniversePosition;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/PhysicsDeterminismSignals.cs",
+                          "line":  1,
+                          "namespace":  "Hecton8.Core",
+                          "text":  "using Hecton8.Core;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/PhysicsDeterminismSignals.cs",
+                          "line":  2,
+                          "namespace":  "Hecton8.Core.Contracts.Signals",
+                          "text":  "using Hecton8.Core.Contracts.Signals;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/PhysicsDeterminismSignals.cs",
+                          "line":  3,
+                          "namespace":  "Hecton8.World",
+                          "text":  "using Hecton8.World;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/PhysicsDeterminismSignals.cs",
+                          "line":  4,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/PhysicsDeterminismSignals.cs",
+                          "line":  5,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/PhysicsDeterminismSignals.cs",
+                          "line":  6,
+                          "namespace":  "UnityEngine",
+                          "text":  "using UnityEngine;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/PhysicsApplySystem.SeaglideQueue.cs",
+                          "line":  1,
+                          "namespace":  "Hecton8.Core",
+                          "text":  "using Hecton8.Core;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/PhysicsApplySystem.SeaglideQueue.cs",
+                          "line":  2,
+                          "namespace":  "Hecton8.Core.Contracts.Physics",
+                          "text":  "using Hecton8.Core.Contracts.Physics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/PhysicsApplySystem.SeaglideQueue.cs",
+                          "line":  3,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/PhysicsApplySystem.SeaglideQueue.cs",
+                          "line":  4,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/PhysicsApplySystem.SeaglideQueue.cs",
+                          "line":  5,
+                          "namespace":  "UnityEngine",
+                          "text":  "using UnityEngine;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsContracts.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsContracts.cs",
+                          "line":  2,
+                          "namespace":  "System.Runtime.InteropServices",
+                          "text":  "using System.Runtime.InteropServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsContracts.cs",
+                          "line":  3,
+                          "namespace":  "Hecton8.Core.Contracts.Physics",
+                          "text":  "using Hecton8.Core.Contracts.Physics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsContracts.cs",
+                          "line":  4,
+                          "namespace":  "Hecton8.Core.Memory",
+                          "text":  "using Hecton8.Core.Memory;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsContracts.cs",
+                          "line":  5,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsContracts.cs",
+                          "line":  6,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                          "line":  1,
+                          "namespace":  "System.Runtime.CompilerServices",
+                          "text":  "using System.Runtime.CompilerServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                          "line":  2,
+                          "namespace":  "Hecton8.Core.Contracts",
+                          "text":  "using Hecton8.Core.Contracts;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                          "line":  3,
+                          "namespace":  "Hecton8.Core.Contracts.Physics",
+                          "text":  "using Hecton8.Core.Contracts.Physics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                          "line":  4,
+                          "namespace":  "Unity.Burst",
+                          "text":  "using Unity.Burst;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                          "line":  5,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                          "line":  6,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                          "line":  7,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                          "line":  8,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                          "line":  3,
+                          "namespace":  "System.IO",
+                          "text":  "using System.IO;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                          "line":  5,
+                          "namespace":  "Hecton8.Core",
+                          "text":  "using Hecton8.Core;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                          "line":  6,
+                          "namespace":  "Hecton8.Core.Contracts.Physics",
+                          "text":  "using Hecton8.Core.Contracts.Physics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                          "line":  7,
+                          "namespace":  "Hecton8.Core.Contracts.Signals",
+                          "text":  "using Hecton8.Core.Contracts.Signals;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                          "line":  8,
+                          "namespace":  "Hecton8.Core.Memory",
+                          "text":  "using Hecton8.Core.Memory;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                          "line":  9,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                          "line":  10,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                          "line":  11,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                          "line":  12,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                          "line":  13,
+                          "namespace":  "UnityEngine",
+                          "text":  "using UnityEngine;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                          "line":  14,
+                          "namespace":  "Stopwatch = System.Diagnostics.Stopwatch",
+                          "text":  "using Stopwatch = System.Diagnostics.Stopwatch;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideVehicleProfileCsv.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideVehicleProfileCsv.cs",
+                          "line":  2,
+                          "namespace":  "Hecton8.Core.Contracts.Physics",
+                          "text":  "using Hecton8.Core.Contracts.Physics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideVehicleProfileCsv.cs",
+                          "line":  3,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                          "line":  3,
+                          "namespace":  "System.IO",
+                          "text":  "using System.IO;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                          "line":  5,
+                          "namespace":  "System.Runtime.CompilerServices",
+                          "text":  "using System.Runtime.CompilerServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                          "line":  6,
+                          "namespace":  "System.Runtime.InteropServices",
+                          "text":  "using System.Runtime.InteropServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                          "line":  7,
+                          "namespace":  "Hecton8.Core",
+                          "text":  "using Hecton8.Core;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                          "line":  8,
+                          "namespace":  "Hecton8.Core.Memory",
+                          "text":  "using Hecton8.Core.Memory;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                          "line":  9,
+                          "namespace":  "Hecton8.Physics.Vehicles",
+                          "text":  "using Hecton8.Physics.Vehicles;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                          "line":  10,
+                          "namespace":  "Unity.Burst",
+                          "text":  "using Unity.Burst;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                          "line":  11,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                          "line":  12,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                          "line":  13,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                          "line":  14,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                          "line":  15,
+                          "namespace":  "UnityEngine",
+                          "text":  "using UnityEngine;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                          "line":  2,
+                          "namespace":  "System.Runtime.CompilerServices",
+                          "text":  "using System.Runtime.CompilerServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                          "line":  3,
+                          "namespace":  "System.Runtime.InteropServices",
+                          "text":  "using System.Runtime.InteropServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                          "line":  5,
+                          "namespace":  "System.Reflection",
+                          "text":  "using System.Reflection;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                          "line":  7,
+                          "namespace":  "Hecton8.Core.Contracts.Signals",
+                          "text":  "using Hecton8.Core.Contracts.Signals;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                          "line":  8,
+                          "namespace":  "Hecton8.Core.Memory",
+                          "text":  "using Hecton8.Core.Memory;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                          "line":  9,
+                          "namespace":  "Hecton8.World",
+                          "text":  "using Hecton8.World;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                          "line":  10,
+                          "namespace":  "Unity.Burst",
+                          "text":  "using Unity.Burst;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                          "line":  11,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                          "line":  12,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                          "line":  13,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                          "line":  14,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                          "line":  2,
+                          "namespace":  "System.Runtime.CompilerServices",
+                          "text":  "using System.Runtime.CompilerServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                          "line":  3,
+                          "namespace":  "System.Runtime.InteropServices",
+                          "text":  "using System.Runtime.InteropServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                          "line":  4,
+                          "namespace":  "Hecton8.Core.Contracts.Signals",
+                          "text":  "using Hecton8.Core.Contracts.Signals;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                          "line":  5,
+                          "namespace":  "Hecton8.Core.Memory",
+                          "text":  "using Hecton8.Core.Memory;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                          "line":  6,
+                          "namespace":  "Unity.Burst",
+                          "text":  "using Unity.Burst;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                          "line":  7,
+                          "namespace":  "Unity.Burst.CompilerServices",
+                          "text":  "using Unity.Burst.CompilerServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                          "line":  8,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                          "line":  9,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                          "line":  10,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                          "line":  11,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                          "line":  3,
+                          "namespace":  "System.IO",
+                          "text":  "using System.IO;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                          "line":  5,
+                          "namespace":  "Hecton8.Core",
+                          "text":  "using Hecton8.Core;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                          "line":  6,
+                          "namespace":  "Hecton8.Core.Contracts.Signals",
+                          "text":  "using Hecton8.Core.Contracts.Signals;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                          "line":  7,
+                          "namespace":  "Hecton8.Core.Memory",
+                          "text":  "using Hecton8.Core.Memory;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                          "line":  8,
+                          "namespace":  "Hecton8.World",
+                          "text":  "using Hecton8.World;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                          "line":  9,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                          "line":  10,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                          "line":  11,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                          "line":  12,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                          "line":  13,
+                          "namespace":  "UnityEngine",
+                          "text":  "using UnityEngine;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                          "line":  14,
+                          "namespace":  "Stopwatch = System.Diagnostics.Stopwatch",
+                          "text":  "using Stopwatch = System.Diagnostics.Stopwatch;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                          "line":  3,
+                          "namespace":  "System.IO",
+                          "text":  "using System.IO;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                          "line":  5,
+                          "namespace":  "Hecton8.Core.Contracts.Signals",
+                          "text":  "using Hecton8.Core.Contracts.Signals;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                          "line":  6,
+                          "namespace":  "Hecton8.Core.Memory",
+                          "text":  "using Hecton8.Core.Memory;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                          "line":  7,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                          "line":  8,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                          "line":  9,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                          "line":  10,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                          "line":  11,
+                          "namespace":  "UnityEngine",
+                          "text":  "using UnityEngine;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                          "line":  12,
+                          "namespace":  "Stopwatch = System.Diagnostics.Stopwatch",
+                          "text":  "using Stopwatch = System.Diagnostics.Stopwatch;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                          "line":  1,
+                          "namespace":  "System.Runtime.CompilerServices",
+                          "text":  "using System.Runtime.CompilerServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                          "line":  2,
+                          "namespace":  "Hecton8.Core.Contracts",
+                          "text":  "using Hecton8.Core.Contracts;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                          "line":  3,
+                          "namespace":  "Hecton8.Core.Contracts.Signals",
+                          "text":  "using Hecton8.Core.Contracts.Signals;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                          "line":  4,
+                          "namespace":  "Unity.Burst",
+                          "text":  "using Unity.Burst;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                          "line":  5,
+                          "namespace":  "Unity.Burst.CompilerServices",
+                          "text":  "using Unity.Burst.CompilerServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                          "line":  6,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                          "line":  7,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                          "line":  8,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                          "line":  9,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                          "line":  1,
+                          "namespace":  "System",
+                          "text":  "using System;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                          "line":  3,
+                          "namespace":  "System.IO",
+                          "text":  "using System.IO;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                          "line":  5,
+                          "namespace":  "System.Runtime.CompilerServices",
+                          "text":  "using System.Runtime.CompilerServices;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                          "line":  6,
+                          "namespace":  "Hecton8.Core",
+                          "text":  "using Hecton8.Core;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                          "line":  7,
+                          "namespace":  "Hecton8.Core.Contracts.Signals",
+                          "text":  "using Hecton8.Core.Contracts.Signals;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                          "line":  8,
+                          "namespace":  "Hecton8.Core.Memory",
+                          "text":  "using Hecton8.Core.Memory;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                          "line":  9,
+                          "namespace":  "Unity.Collections",
+                          "text":  "using Unity.Collections;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                          "line":  10,
+                          "namespace":  "Unity.Collections.LowLevel.Unsafe",
+                          "text":  "using Unity.Collections.LowLevel.Unsafe;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                          "line":  11,
+                          "namespace":  "Unity.Jobs",
+                          "text":  "using Unity.Jobs;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                          "line":  12,
+                          "namespace":  "Unity.Mathematics",
+                          "text":  "using Unity.Mathematics;"
+                      },
+                      {
+                          "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                          "line":  13,
+                          "namespace":  "UnityEngine",
+                          "text":  "using UnityEngine;"
+                      }
+                  ]
+}

@@ -114,8 +114,8 @@ namespace Hecton8.Visor
             }
 
             public bool HasHistory =>
-                (_historyValid && Time.timeSinceLevelLoad <= _screenHistoryRetainUntilTime) ||
-                (_worldHistoryValid && Time.timeSinceLevelLoad <= _worldHistoryRetainUntilTime);
+                (_historyValid && (float)SystemDispatcher.CurrentUnscaledTimeSeconds <= _screenHistoryRetainUntilTime) ||
+                (_worldHistoryValid && (float)SystemDispatcher.CurrentUnscaledTimeSeconds <= _worldHistoryRetainUntilTime);
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
@@ -159,7 +159,7 @@ namespace Hecton8.Visor
                 compositeDesc.msaaSamples = MSAASamples.None;
                 TextureHandle compositeTexture = renderGraph.CreateTexture(compositeDesc);
 
-                float currentTime = Time.timeSinceLevelLoad;
+                float currentTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
                 bool hasActiveSonarReveal = Shader.GetGlobalFloat(ShaderConstants.SonarRevealExpireTimeId) > currentTime;
                 bool screenHistoryAlive = _historyValid && currentTime <= _screenHistoryRetainUntilTime;
                 bool worldHistoryAlive = _worldHistoryValid && currentTime <= _worldHistoryRetainUntilTime;

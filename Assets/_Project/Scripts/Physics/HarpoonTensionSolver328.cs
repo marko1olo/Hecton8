@@ -1,9 +1,13 @@
 using System;
+#if UNITY_EDITOR
 using System.IO;
 using System.Reflection;
+#endif
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+#if UNITY_EDITOR
 using System.Text;
+#endif
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
@@ -179,6 +183,7 @@ namespace Hecton8.Physics
 
         private static int s_x001DirectSignalPushDropCount_HarpoonTensionSolver328;
 
+#if UNITY_EDITOR
         public static bool ValidateLayout()
         {
             return TryValidateLayout(out _);
@@ -278,6 +283,7 @@ namespace Hecton8.Physics
             error = string.Empty;
             return true;
         }
+#endif
 
         public static int ResolveIterationCount(float globalQualityWeight, int requestedMaxIterations)
         {
@@ -691,6 +697,7 @@ namespace Hecton8.Physics
 
         public static bool TryDumpTelemetryIfFault(IDataVault vault, string projectRoot, byte completionVerifiedByOwner)
         {
+#if UNITY_EDITOR
             if (vault == null ||
                 completionVerifiedByOwner == 0 ||
                 !TryOpenExistingVaultView(vault, HarpoonTensionSolver328BufferIds.FaultFlags, out NativeArray<uint> faultFlags) ||
@@ -706,6 +713,9 @@ namespace Hecton8.Physics
             string path = Path.Combine(root, "Docs", "AgentLogs", "Dump_SHINOBU_328.bin");
             WriteTelemetryDump(path, ring, faultFlags[0] & HarpoonTensionFaultFlags328.DumpTriggerMask);
             return true;
+#else
+            return false;
+#endif
         }
 
         public static int TryPublishCompletedSignalsFromVault(
@@ -893,6 +903,7 @@ namespace Hecton8.Physics
             };
         }
 
+#if UNITY_EDITOR
         public static string BuildSelfAuditXml()
         {
             StringBuilder builder = new StringBuilder(8192);
@@ -935,6 +946,7 @@ namespace Hecton8.Physics
             builder.AppendLine("</SELF_AUDIT>");
             return builder.ToString();
         }
+#endif
 
         public static void EnsureSignalLanes()
         {
@@ -1090,6 +1102,7 @@ namespace Hecton8.Physics
                    buffer.IsCreated;
         }
 
+#if UNITY_EDITOR
         private static void WriteTelemetryDump(string path, NativeArray<TetherTelemetryEntry> ring, uint reasonFlags)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path) ?? ".");
@@ -1110,6 +1123,7 @@ namespace Hecton8.Physics
                 }
             }
         }
+#endif
 
         private static bool TryParseProfileRow(ReadOnlySpan<byte> row, out TetherMaterialProfileDTO profile)
         {
@@ -1278,6 +1292,7 @@ namespace Hecton8.Physics
             return math.saturate(16f * xPi / denominator);
         }
 
+#if UNITY_EDITOR
         private static int OffsetOf<T>(string fieldName) where T : struct
         {
             FieldInfo field = typeof(T).GetField(
@@ -1285,7 +1300,9 @@ namespace Hecton8.Physics
                 BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             return field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
         }
+#endif
 
+#if UNITY_EDITOR
         private static void WriteUInt(Span<byte> data, int offset, uint value)
         {
             data[offset] = (byte)value;
@@ -1293,6 +1310,7 @@ namespace Hecton8.Physics
             data[offset + 2] = (byte)(value >> 16);
             data[offset + 3] = (byte)(value >> 24);
         }
+#endif
 
         [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
         private struct InitializeHarpoonTensionBuffersJob : IJob

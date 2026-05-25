@@ -281,7 +281,7 @@ namespace Hecton8.Editor
             }
             catch (Exception exception)
             {
-                Debug.LogError("[CompileWall] Failed to parse asmdef " + absolutePath + ": " + exception.Message);
+                Hecton8.Core.H8Debug.LogError("[CompileWall] Failed to parse asmdef " + absolutePath + ": " + exception.Message);
                 return null;
             }
         }
@@ -882,7 +882,7 @@ namespace Hecton8.Editor
             }
             catch (Exception exception)
             {
-                Debug.LogWarning("[CompileWall] Failed to read legacy asmdef graph header " + absolutePath + ": " + exception.Message);
+                Hecton8.Core.H8Debug.LogWarning("[CompileWall] Failed to read legacy asmdef graph header " + absolutePath + ": " + exception.Message);
                 return false;
             }
         }
@@ -1207,7 +1207,7 @@ namespace Hecton8.Editor
             }
             catch (Exception exception)
             {
-                Debug.LogWarning("[CompileWall] Failed to scan struct layout directives: " + absolutePath + " " + exception.Message);
+                Hecton8.Core.H8Debug.LogWarning("[CompileWall] Failed to scan struct layout directives: " + absolutePath + " " + exception.Message);
             }
         }
 
@@ -1366,7 +1366,7 @@ namespace Hecton8.Editor
             }
             catch (Exception exception)
             {
-                Debug.LogWarning("[CompileWall] Failed to read asmdef meta guid: " + metaPath + " " + exception.Message);
+                Hecton8.Core.H8Debug.LogWarning("[CompileWall] Failed to read asmdef meta guid: " + metaPath + " " + exception.Message);
             }
 
             return string.Empty;
@@ -1449,41 +1449,41 @@ namespace Hecton8.Editor
             int limit = scan.IllegalRuntimeEdges.Count < 80 ? scan.IllegalRuntimeEdges.Count : 80;
             if (scan.IllegalRuntimeEdges.Count > 0)
             {
-                Debug.LogError("[CompileWall] Build blocked: Runtime assembly references another Runtime assembly directly.");
+                Hecton8.Core.H8Debug.LogError("[CompileWall] Build blocked: Runtime assembly references another Runtime assembly directly.");
                 for (int i = 0; i < limit; i++)
                 {
                     CompileWallAsmdefEdge edge = scan.IllegalRuntimeEdges[i];
-                    Debug.LogError("[CompileWall] Runtime -> Runtime edge source assembly:");
-                    Debug.LogError(edge.From.Name);
-                    Debug.LogError("[CompileWall] Runtime -> Runtime edge target assembly:");
-                    Debug.LogError(edge.To.Name);
-                    Debug.LogError("[CompileWall] Runtime -> Runtime edge source path:");
-                    Debug.LogError(edge.From.Path);
+                    Hecton8.Core.H8Debug.LogError("[CompileWall] Runtime -> Runtime edge source assembly:");
+                    Hecton8.Core.H8Debug.LogError(edge.From.Name);
+                    Hecton8.Core.H8Debug.LogError("[CompileWall] Runtime -> Runtime edge target assembly:");
+                    Hecton8.Core.H8Debug.LogError(edge.To.Name);
+                    Hecton8.Core.H8Debug.LogError("[CompileWall] Runtime -> Runtime edge source path:");
+                    Hecton8.Core.H8Debug.LogError(edge.From.Path);
                 }
 
                 if (scan.IllegalRuntimeEdges.Count > limit)
-                    Debug.LogError("[CompileWall] Illegal edge list truncated. Open Compile Wall X-Ray for the complete graph.");
+                    Hecton8.Core.H8Debug.LogError("[CompileWall] Illegal edge list truncated. Open Compile Wall X-Ray for the complete graph.");
             }
 
             int cycleLimit = scan.CycleAssemblies.Count < 80 ? scan.CycleAssemblies.Count : 80;
             if (scan.CycleAssemblies.Count > 0)
             {
-                Debug.LogError("[CompileWall] Build blocked: asmdef dependency cycle detected.");
+                Hecton8.Core.H8Debug.LogError("[CompileWall] Build blocked: asmdef dependency cycle detected.");
                 for (int i = 0; i < cycleLimit; i++)
                 {
                     string assemblyName = scan.CycleAssemblies[i];
                     CompileWallAsmdefNode node = scan.FindNodeByName(assemblyName);
-                    Debug.LogError("[CompileWall] Cycle assembly:");
-                    Debug.LogError(assemblyName);
+                    Hecton8.Core.H8Debug.LogError("[CompileWall] Cycle assembly:");
+                    Hecton8.Core.H8Debug.LogError(assemblyName);
                     if (node != null)
                     {
-                        Debug.LogError("[CompileWall] Cycle assembly path:");
-                        Debug.LogError(node.Path);
+                        Hecton8.Core.H8Debug.LogError("[CompileWall] Cycle assembly path:");
+                        Hecton8.Core.H8Debug.LogError(node.Path);
                     }
                 }
 
                 if (scan.CycleAssemblies.Count > cycleLimit)
-                    Debug.LogError("[CompileWall] Cycle assembly list truncated. Open Compile Wall X-Ray for the stored rows.");
+                    Hecton8.Core.H8Debug.LogError("[CompileWall] Cycle assembly list truncated. Open Compile Wall X-Ray for the stored rows.");
             }
 
             CompileWallBlackBox.Dump("AsmdefCompileWallBreach", scan);
@@ -1570,8 +1570,8 @@ namespace Hecton8.Editor
 
             if (elapsed > WarningThresholdSeconds)
             {
-                Debug.LogWarning("[CompileWall] Slow assembly compile threshold exceeded.");
-                Debug.LogWarning(sample.AssemblyLabel);
+                Hecton8.Core.H8Debug.LogWarning("[CompileWall] Slow assembly compile threshold exceeded.");
+                Hecton8.Core.H8Debug.LogWarning(sample.AssemblyLabel);
             }
         }
 
@@ -1887,7 +1887,7 @@ namespace Hecton8.Editor
             }
             catch (Exception exception)
             {
-                Debug.LogWarning("[CompileWall] Failed to parse link preservation source: " + absolutePath + " " + exception.Message);
+                Hecton8.Core.H8Debug.LogWarning("[CompileWall] Failed to parse link preservation source: " + absolutePath + " " + exception.Message);
             }
         }
 
@@ -2442,21 +2442,21 @@ namespace Hecton8.Editor
             RefreshScan();
             if (_scan.IllegalRuntimeEdges.Count == 0 && _scan.CycleAssemblies.Count == 0)
             {
-                Debug.Log("[CompileWall] Asmdef graph passed Runtime -> Runtime and cycle guards.");
+                Hecton8.Core.H8Debug.Log("[CompileWall] Asmdef graph passed Runtime -> Runtime and cycle guards.");
                 return;
             }
 
             if (_scan.IllegalRuntimeEdges.Count > 0)
-                Debug.LogError("[CompileWall] Runtime -> Runtime illegal edges detected. Open Compile Wall X-Ray for count and paths.");
+                Hecton8.Core.H8Debug.LogError("[CompileWall] Runtime -> Runtime illegal edges detected. Open Compile Wall X-Ray for count and paths.");
             if (_scan.CycleAssemblies.Count > 0)
-                Debug.LogError("[CompileWall] Asmdef dependency cycles detected. Open Compile Wall X-Ray for count and paths.");
+                Hecton8.Core.H8Debug.LogError("[CompileWall] Asmdef dependency cycles detected. Open Compile Wall X-Ray for count and paths.");
         }
 
         private static void NukeDomainReload()
         {
             EditorSettings.enterPlayModeOptionsEnabled = true;
             EditorSettings.enterPlayModeOptions = EnterPlayModeOptions.DisableDomainReload | EnterPlayModeOptions.DisableSceneReload;
-            Debug.LogWarning("[CompileWall] Enter Play Mode now skips Domain Reload and Scene Reload. Static reset nodes must clear their own state.");
+            Hecton8.Core.H8Debug.LogWarning("[CompileWall] Enter Play Mode now skips Domain Reload and Scene Reload. Static reset nodes must clear their own state.");
         }
 
         private void DrawGraph(Rect rect)

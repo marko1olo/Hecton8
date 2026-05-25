@@ -194,7 +194,7 @@ namespace Hecton8.Core
         {
             if (prefab == null)
             {
-                Debug.LogError("[PrefabRegistry] GetOrRegisterPrefab: prefab is null!");
+                Hecton8.Core.H8Debug.LogError("[PrefabRegistry] GetOrRegisterPrefab: prefab is null!");
                 return 0;
             }
 

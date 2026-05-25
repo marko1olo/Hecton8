@@ -63,7 +63,7 @@ namespace Hecton8.Narrative
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-139)]
-    public sealed class LoreDatabaseManager : MonoBehaviour, ISaveable, IGlobalRegistryHotSwapListener, IAudioLogEventListener, ILoreUnlockReadModel, ILoreUnlockSink
+    public sealed class LoreDatabaseManager : MonoBehaviour, ISaveable, IGlobalRegistryHotSwapListener, IAudioLogEventListener, ILoreUnlockReadModel, ILoreDatabaseReadModel, ILoreUnlockSink
     {
         private const SystemID VaultOwnerSystemId = SystemID.LoreDatabase;
         private const BufferID UnlockWordsBufferId = BufferID.LoreDatabaseUnlockedWords;
@@ -98,7 +98,7 @@ namespace Hecton8.Narrative
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (computedHash != specHash)
                 {
-                    Debug.LogError("[LoreDatabaseManager] Spec hash mismatch.");
+                    Hecton8.Core.H8Debug.LogError("[LoreDatabaseManager] Spec hash mismatch.");
                 }
 #endif
 
@@ -346,7 +346,7 @@ namespace Hecton8.Narrative
 
         private void CacheRegistryServicesCold()
         {
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             if (_dataVault == null)
                 _dataVault = GlobalRegistry.DataVault;
         }
@@ -878,7 +878,7 @@ namespace Hecton8.Narrative
                 return;
 
             _recordLookupCollisionLogged = true;
-            Debug.LogError("[LoreDatabaseManager] Duplicate lore hash.");
+            Hecton8.Core.H8Debug.LogError("[LoreDatabaseManager] Duplicate lore hash.");
         }
 
         private void EnsureUnlockStorage()
@@ -972,7 +972,7 @@ namespace Hecton8.Narrative
             List<string> sourcePaths = ResolveSourceFilePaths();
             if (sourcePaths.Count == 0)
             {
-                Debug.LogError("[LoreDatabaseManager] Rebake failed. No authored lore seed source files were found.");
+                Hecton8.Core.H8Debug.LogError("[LoreDatabaseManager] Rebake failed. No authored lore seed source files were found.");
                 return;
             }
 

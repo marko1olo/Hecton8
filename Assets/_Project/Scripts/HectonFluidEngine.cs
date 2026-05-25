@@ -187,7 +187,7 @@ namespace Hecton8.Physics
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5000)]
-    public sealed class HectonFluidEngine : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener, IAbyssalFlowGpuReadModel, IAnalyticalFlowReadModel, IAmbientCurrentReadModel, IFluidSurfaceCurrentReadModel, IFluidBubbleBurstSink, IFluidCurrentWriteSink, IBuoyancyObjectRegistry
+    public sealed class HectonFluidEngine : MonoBehaviour, IFixedTickable, IPostFixedTickable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener, IAbyssalFlowGpuReadModel, IFluidAdvectionRenderGraphReadModel, IAnalyticalFlowReadModel, IAmbientCurrentReadModel, IFluidSurfaceCurrentReadModel, IFluidBubbleBurstSink, IFluidCurrentWriteSink, IBuoyancyObjectRegistry
     {
         private static int s_x001HectonFluidEngineSignalPushDropCount;
 #if UNITY_EDITOR
@@ -690,46 +690,6 @@ namespace Hecton8.Physics
             public float3 VelocityWS;
             [FieldOffset(28)]
             public uint Flags;
-        }
-
-        public struct FluidAdvectionRenderGraphPayload
-        {
-            public ComputeShader Compute;
-            public int Kernel;
-            public int DispatchGroups;
-            public GraphicsBuffer SiltRead;
-            public GraphicsBuffer SiltWrite;
-            public GraphicsBuffer BubbleRead;
-            public GraphicsBuffer BubbleWrite;
-            public GraphicsBuffer DebrisRead;
-            public GraphicsBuffer DebrisWrite;
-            public GraphicsBuffer EmptySiltBuffer;
-            public GraphicsBuffer EmptyBubbleBuffer;
-            public GraphicsBuffer EmptyDebrisBuffer;
-            public GraphicsBuffer AbyssalFlowBuffer;
-            public GraphicsBuffer EmptyAbyssalFlowBuffer;
-            public Texture AbyssalFlowTexture;
-            public Texture VoxelSdfTexture;
-            public Texture EmptyVoxelSdfTexture;
-            public RTHandle AbyssalFlowTextureHandle;
-            public RTHandle VoxelSdfTextureHandle;
-            public RTHandle EmptyVoxelSdfTextureHandle;
-            public Vector4 Counts;
-            public Vector4 Params;
-            public Vector4 Buoyancy;
-            public Vector4 AupShiftDelta;
-            public GraphicsBuffer DynamicWakeBuffer;
-            public GraphicsBuffer DynamicWakeVectorBuffer;
-            public Vector4 DynamicWakeParams;
-            public Vector4 AbyssalGridResolution;
-            public Vector4 AbyssalFlowCenter;
-            public Vector4 AbyssalFlowSpacing;
-            public Vector4 AbyssalFlowTextureParams;
-            public float AbyssalFlowTextureActive;
-            public float AbyssalFlowInterpolationAlpha;
-            public Matrix4x4 VoxelSdfWorldToLocal;
-            public Vector4 VoxelSdfInvDoubleHalfExtents;
-            public Vector4 SdfParams;
         }
 
         /// <summary>Y-koordinata poverhnosti vody.</summary>
@@ -1289,6 +1249,12 @@ namespace Hecton8.Physics
 
         /// <summary>Vyzyvaetsya pri izmenenii nastroek techeniy (dlya vizualizatorov).</summary>
         public event System.Action OnCurrentSettingsChangedEvent;
+
+        event System.Action IFluidSurfaceCurrentReadModel.CurrentSettingsChanged
+        {
+            add => OnCurrentSettingsChangedEvent += value;
+            remove => OnCurrentSettingsChangedEvent -= value;
+        }
 
         /// <summary>Uvedomlyaet podpischikov ob izmenenii nastroek techeniy.</summary>
         private void OnCurrentSettingsChanged()
@@ -2024,6 +1990,14 @@ namespace Hecton8.Physics
                    math.isfinite(currentVector.z);
         }
 
+        public bool TrySampleAuthoredCurrent(Vector3 samplePosition, out Vector3 currentVector)
+        {
+            currentVector = CurrentVolume.SampleAt(samplePosition);
+            return math.isfinite(currentVector.x) &&
+                   math.isfinite(currentVector.y) &&
+                   math.isfinite(currentVector.z);
+        }
+
         /// <summary>
         /// Resolves the legacy structured-buffer flow payload for consumers that cannot sample the 3D texture.
         /// </summary>
@@ -2631,12 +2605,12 @@ namespace Hecton8.Physics
         {
             if (!_oceanSurfaceTelemetry.IsCreated ||
                 _oceanSurfaceTelemetry.Length == 0 ||
-                _lastOceanSurfaceDumpFrame == Time.frameCount)
+                _lastOceanSurfaceDumpFrame == Hecton8.Core.SystemDispatcher.CurrentFrameIndex)
             {
                 return;
             }
 
-            _lastOceanSurfaceDumpFrame = Time.frameCount;
+            _lastOceanSurfaceDumpFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             string absolutePath = Path.Combine(Application.dataPath, "..", OceanSurfaceDumpPath);
             string directory = Path.GetDirectoryName(absolutePath);
             if (!string.IsNullOrEmpty(directory))
@@ -3149,16 +3123,33 @@ namespace Hecton8.Physics
             cmd.SetComputeTextureParam(compute, kernel, _VoxelSdfTexture3DId, emptyTexture);
         }
 
+        void IFluidAdvectionRenderGraphReadModel.BindFluidAdvectionCompute(
+            IComputeCommandBuffer cmd,
+            in FluidAdvectionRenderGraphPayload payload,
+            TextureHandle abyssalFlowTexture,
+            TextureHandle voxelSdfTexture)
+        {
+            BindFluidAdvectionCompute(cmd, in payload, abyssalFlowTexture, voxelSdfTexture);
+        }
+
+        void IFluidAdvectionRenderGraphReadModel.UnbindFluidAdvectionCompute(
+            IComputeCommandBuffer cmd,
+            in FluidAdvectionRenderGraphPayload payload,
+            TextureHandle emptyTexture)
+        {
+            UnbindFluidAdvectionCompute(cmd, in payload, emptyTexture);
+        }
+
         private void DrainSplashdownFluidSignals(float cinematicWaterLevel)
         {
             if (_splashdownImpactConsumed)
                 return;
 
-            int frame = Time.frameCount;
-            if (_lastProcessedSplashdownFrame == (uint)frame)
+            uint frame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
+            if (_lastProcessedSplashdownFrame == frame)
                 return;
 
-            _lastProcessedSplashdownFrame = (uint)frame;
+            _lastProcessedSplashdownFrame = frame;
             System.ReadOnlySpan<PrologueCompleteSignal> signals = SignalBus<PrologueCompleteSignal>.GetFrameSnapshot();
             for (int i = 0; i < signals.Length; i++)
             {
@@ -3345,7 +3336,7 @@ namespace Hecton8.Physics
             _splashdownImpulseJobHandle = job.Schedule();
             _splashdownImpulseJobActive = true;
             _splashdownImpulseUploaded = false;
-            _splashdownImpulseScheduleFrame = Time.frameCount;
+            _splashdownImpulseScheduleFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             return true;
         }
 
@@ -3354,7 +3345,7 @@ namespace Hecton8.Physics
             if (!_splashdownImpulseJobActive)
                 return;
 
-            if (!_splashdownImpulseJobHandle.IsCompleted || _splashdownImpulseScheduleFrame == Time.frameCount)
+            if (!_splashdownImpulseJobHandle.IsCompleted || _splashdownImpulseScheduleFrame == Hecton8.Core.SystemDispatcher.CurrentFrameIndex)
                 return;
 
             if (!DispatcherJobFence.TryFinalizeCompleted(ref _splashdownImpulseJobHandle))
@@ -4073,7 +4064,7 @@ namespace Hecton8.Physics
             if (!_fluidAdvectionTelemetry.IsCreated || _fluidAdvectionTelemetry.Length == 0)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastFluidAdvectionTelemetryFrame == frame)
                 return;
 
@@ -4086,7 +4077,7 @@ namespace Hecton8.Physics
             flags |= activeWakeCount > 0 ? 4u : 0u;
             _fluidAdvectionTelemetry[index] = new FluidAdvectionTelemetryEntry
             {
-                FrameIndex = (uint)frame,
+                FrameIndex = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 OriginShiftSequence = _lastOriginShiftSequence,
                 ActiveAdvectedParticles = activeCount,
                 SiltCount = _activeAdvectedSiltCount,
@@ -4136,10 +4127,10 @@ namespace Hecton8.Physics
                 string dumpPath = Path.Combine(projectRoot, FluidAdvectionDumpRelativePath);
                 WriteFluidAdvectionTelemetryDump(dumpPath, reasonFlags);
             }
-            catch (System.Exception exception)
+            catch (System.Exception)
             {
 #if UNITY_EDITOR
-                Debug.LogWarning("[HectonFluidEngine] Fluid advection telemetry dump failed: " + exception.Message, this);
+                Hecton8.Core.H8Debug.LogWarning("[HectonFluidEngine] Fluid advection telemetry dump failed.", this);
 #endif
             }
         }
@@ -5703,7 +5694,7 @@ namespace Hecton8.Physics
                 : 0f;
             _maelstromTelemetry[index] = new MaelstromTelemetryEntry
             {
-                Frame = Time.frameCount,
+                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                 FixedTime = Time.fixedTime,
                 PrimaryCenterWS = primary.CenterWS,
                 PrimaryRadius = radius,
@@ -6016,7 +6007,13 @@ namespace Hecton8.Physics
             if (nodeCount <= 0)
                 return;
 
-            if (_gpuAbyssalFlowResultBuffer == null || _gpuAbyssalFlowResultBuffer.count != nodeCount)
+            if (_gpuAbyssalFlowResultBuffer == null ||
+                !_gpuAbyssalFlowResultBuffer.IsValid() ||
+                _gpuAbyssalFlowResultBuffer.count != nodeCount ||
+                _gpuAbyssalHeatSourceBufferA == null ||
+                !_gpuAbyssalHeatSourceBufferA.IsValid() ||
+                _gpuAbyssalHeatSourceBufferB == null ||
+                !_gpuAbyssalHeatSourceBufferB.IsValid())
             {
                 ReleaseGpuAbyssalFlowBuffers();
                 _gpuAbyssalFlowResultBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(nodeCount); // COLD ALLOC: GraphicsBuffer[nodeCount] — GPU abyssal flow-vector field storage — owner: HectonFluidEngine
@@ -6423,7 +6420,7 @@ namespace Hecton8.Physics
                 return;
             }
 
-            int frameCount = Time.frameCount;
+            int frameCount = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             updateBucketMask = AbyssalFlowUpdateBucketMask;
             updateBucket = frameCount & updateBucketMask;
             _gpuAbyssalFlowInterpolationAlpha = (updateBucket + 1) * AbyssalFlowUpdateBucketInvCount;
@@ -6437,7 +6434,7 @@ namespace Hecton8.Physics
 
         private static void RefreshSystemKillSwitchBitsSnapshot()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_systemKillSwitchSnapshotFrame == frame)
                 return;
 
@@ -6806,7 +6803,7 @@ namespace Hecton8.Physics
             float3 wakeVelocity3 = new float3(wakeVelocity.x, wakeVelocity.y, wakeVelocity.z);
             _abyssalFlowTelemetry[index] = new AbyssalFlowTelemetryEntry
             {
-                Frame = Time.frameCount,
+                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                 FixedTime = Time.fixedTime,
                 CenterWS = center,
                 WakePositionWS = wakePosition,
@@ -7266,7 +7263,7 @@ namespace Hecton8.Physics
         private void RefreshRuntimeActorContextsIfMissing()
         {
             if (_playerRuntime == null || IsUnityObjectInvalid(_playerRuntime))
-                _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerRuntime = GlobalRegistry.Player;
 
             if (_submarineRuntime == null || IsUnityObjectInvalid(_submarineRuntime))
                 _submarineRuntime = GlobalRegistry.Submarine;

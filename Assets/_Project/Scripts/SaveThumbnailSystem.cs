@@ -288,7 +288,7 @@ namespace Hecton8.SaveSystem
             if (ticket.IsTerminal != 0)
                 return new CaptureCompletion(ticket.SequenceId, ticket.OperationId, ticket.SlotHash, ticket.ByteLength, ticket.ByteHash, ticket.InitialStatus);
 
-            int startFrame = Time.frameCount;
+            int startFrame = SystemDispatcher.CurrentFrameIndex;
             while (!TryGetCompletion(ticket.SequenceId, out completion))
             {
                 if (cancellationToken.IsCancellationRequested)
@@ -303,7 +303,7 @@ namespace Hecton8.SaveSystem
                     (_hasPendingRequest && _pendingRequest.SequenceId == ticket.SequenceId) ||
                     (_hasInflightRequest && _inflightRequest.SequenceId == ticket.SequenceId);
 
-                if (Time.frameCount - startFrame > MaxCaptureWaitFrames)
+                if (SystemDispatcher.CurrentFrameIndex - startFrame > MaxCaptureWaitFrames)
                 {
                     CaptureCompletion timedOut = new CaptureCompletion(ticket.SequenceId, ticket.OperationId, ticket.SlotHash, 0, 0u, CaptureStatus.TimedOut);
                     if (waitingForGpuSubmit)
@@ -513,7 +513,7 @@ namespace Hecton8.SaveSystem
             catch (Exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SaveThumbnailSystem] Low-tier thumbnail purge failed.");
+                Hecton8.Core.H8Debug.LogWarning("[SaveThumbnailSystem] Low-tier thumbnail purge failed.");
 #endif
             }
         }
@@ -559,8 +559,8 @@ namespace Hecton8.SaveSystem
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
-                _cachedCaptureCamera = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext != null && Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera != null
-                    ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext.PlayerCamera
+                _cachedCaptureCamera = GlobalRegistry.Player != null && GlobalRegistry.Player.PlayerCamera != null
+                    ? GlobalRegistry.Player.PlayerCamera
                     : ResolveCaptureCamera(playerTransform);
             }
 
@@ -608,7 +608,7 @@ namespace Hecton8.SaveSystem
             if (request.hasError)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[SaveThumbnailSystem] AsyncGPUReadback failed.");
+                Hecton8.Core.H8Debug.LogError("[SaveThumbnailSystem] AsyncGPUReadback failed.");
 #endif
                 CompleteRequest(new CaptureCompletion(inflightRequest.SequenceId, inflightRequest.OperationId, inflightRequest.SlotHash, 0, 0u, CaptureStatus.Failed));
                 return;
@@ -619,7 +619,7 @@ namespace Hecton8.SaveSystem
             if (!readbackData.IsCreated || readbackData.Length < expectedLength)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[SaveThumbnailSystem] AsyncGPUReadback returned invalid thumbnail data.");
+                Hecton8.Core.H8Debug.LogError("[SaveThumbnailSystem] AsyncGPUReadback returned invalid thumbnail data.");
 #endif
                 CompleteRequest(new CaptureCompletion(inflightRequest.SequenceId, inflightRequest.OperationId, inflightRequest.SlotHash, 0, 0u, CaptureStatus.Failed));
                 return;
@@ -726,7 +726,7 @@ namespace Hecton8.SaveSystem
 
                 await Awaitable.MainThreadAsync();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[SaveThumbnailSystem] Failed to persist thumbnail.");
+                Hecton8.Core.H8Debug.LogError("[SaveThumbnailSystem] Failed to persist thumbnail.");
 #endif
             }
             finally

@@ -67,17 +67,29 @@ namespace Hecton8.World.ProceduralWreckage
             if (writeCount > 0)
             {
                 NativeArray<float4x4> mappedMatrices = matrixTarget.LockBufferForWrite<float4x4>(0, writeCount);
-                void* dst = NativeArrayUnsafeUtility.GetUnsafePtr(mappedMatrices);
-                void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(matrices);
-                UnsafeUtility.MemCpy(dst, src, writeCount * UnsafeUtility.SizeOf<float4x4>());
-                matrixTarget.UnlockBufferAfterWrite<float4x4>(writeCount);
+                try
+                {
+                    void* dst = NativeArrayUnsafeUtility.GetUnsafePtr(mappedMatrices);
+                    void* src = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(matrices);
+                    UnsafeUtility.MemCpy(dst, src, writeCount * UnsafeUtility.SizeOf<float4x4>());
+                }
+                finally
+                {
+                    matrixTarget.UnlockBufferAfterWrite<float4x4>(writeCount);
+                }
             }
 
             WreckageIndirectArgsDTO args = indirectArgs[0];
             args.InstanceCount = (uint)writeCount;
             NativeArray<WreckageIndirectArgsDTO> mappedArgs = argsTarget.LockBufferForWrite<WreckageIndirectArgsDTO>(0, 1);
-            mappedArgs[0] = args;
-            argsTarget.UnlockBufferAfterWrite<WreckageIndirectArgsDTO>(1);
+            try
+            {
+                mappedArgs[0] = args;
+            }
+            finally
+            {
+                argsTarget.UnlockBufferAfterWrite<WreckageIndirectArgsDTO>(1);
+            }
 
             _activeIndex = _writeIndex;
             _writeIndex ^= 1;

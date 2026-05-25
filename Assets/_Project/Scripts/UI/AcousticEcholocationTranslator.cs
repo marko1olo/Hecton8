@@ -2,11 +2,11 @@ using System;
 using Hecton.Localization;
 using Hecton8.Atmosphere;
 using Hecton8.Audio;
-using Hecton8.AI;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Hecton8.Visor;
 using Hecton8.World;
 using TMPro;
@@ -136,7 +136,7 @@ namespace Hecton8.UI
             for (int i = 0; i < childCount; i++)
                 s_childSnapshotBuffer[i] = parent.GetChild(i);
 
-            return new ReadOnlySpan<Transform>(s_childSnapshotBuffer, 0, childCount);
+            return s_childSnapshotBuffer.AsSpan(0, childCount);
         }
     }
 
@@ -145,7 +145,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Acoustic Echolocation Translator")]
-    public sealed class AcousticEcholocationTranslator : MonoBehaviour, ILateFrameTickable, ISonarPulseEventListener, ISonarPingEventListener, ISonarSnapshotEventListener, ILocalizationLanguageChangedListener, IAcousticEcholocationBarkListener, IPhysicsAcousticImpulseEventListener, IGlobalRegistryHotSwapListener
+    public sealed class AcousticEcholocationTranslator : MonoBehaviour, ILateFrameTickable, ISonarPulseEventListener, ISonarPingEventListener, ISonarSnapshotEventListener, ILocalizationLanguageChangedListener, IAcousticEcholocationBarkListener, IGlobalRegistryHotSwapListener
     {
         private enum ContactClassification : byte
         {
@@ -177,6 +177,8 @@ namespace Hecton8.UI
         private const float HeavyFogAttenuationDistanceMeters = 18f;
         private const float HeavyFogDensityThreshold = 0.035f;
         private const float MinimumVisualSoundWaveVolume01 = 0.12f;
+        private const ushort PhysicsEventTypeAcousticImpulse = 4;
+        private const uint AcousticImpulseFlagLeviathan = 1u << 1;
         private static readonly int ContactHeaderKeyHash = LocHash.Compute(LocalizationKeys.SONAR_CONTACT_HEADER);
         private static readonly int ClassificationPrefixKeyHash = LocHash.Compute(LocalizationKeys.SONAR_CLASSIFICATION_PREFIX);
         private static readonly int LeviathanClassKeyHash = LocHash.Compute(LocalizationKeys.SONAR_CLASS_LEVIATHAN);
@@ -225,6 +227,7 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
         private ContactClassification _lastRenderedClassification = ContactClassification.None;
         private int _lastRenderedDistanceMeters = int.MinValue;
+        private int _lastPhysicsEventSnapshotGeneration;
 
         private void OnEnable()
         {
@@ -241,7 +244,6 @@ namespace Hecton8.UI
             SpectrumEvents.RegisterSonarPingListener(this);
             SpectrumEvents.RegisterSonarSnapshotListener(this);
             AcousticEcholocationBarkEvents.Register(this);
-            PhysicsEventBus.Register(this);
         }
 
         private void OnDisable()
@@ -251,9 +253,9 @@ namespace Hecton8.UI
             SpectrumEvents.UnregisterSonarPingListener(this);
             SpectrumEvents.UnregisterSonarSnapshotListener(this);
             AcousticEcholocationBarkEvents.Unregister(this);
-            PhysicsEventBus.Unregister(this);
             TryUnregisterHotSwapListener();
             _pendingSnapshotPulseCount = 0;
+            _lastPhysicsEventSnapshotGeneration = 0;
             _cachedPlayerContext = null;
             _cachedLocalization = null;
             _cachedAtmosphere = null;
@@ -268,16 +270,18 @@ namespace Hecton8.UI
             SpectrumEvents.UnregisterSonarPingListener(this);
             SpectrumEvents.UnregisterSonarSnapshotListener(this);
             AcousticEcholocationBarkEvents.Unregister(this);
-            PhysicsEventBus.Unregister(this);
             TryUnregisterHotSwapListener();
             _pendingSnapshotPulseCount = 0;
+            _lastPhysicsEventSnapshotGeneration = 0;
             UnregisterFromTickManager();
         }
 
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            float dt = Time.unscaledDeltaTime;
+            DrainPhysicsEventPayloads();
+
+            float dt = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             if (_group == null)
             {
                 return;
@@ -358,11 +362,6 @@ namespace Hecton8.UI
         void ISonarSnapshotEventListener.OnSonarSnapshotUpdated(in SpatialSonarSnapshot snapshot)
         {
             HandleSonarSnapshotUpdated(snapshot);
-        }
-
-        void IPhysicsAcousticImpulseEventListener.OnAcousticImpulse(in AcousticImpulseEvent impulseEvent)
-        {
-            HandleAcousticImpulse(in impulseEvent);
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -463,10 +462,28 @@ namespace Hecton8.UI
             RegisterToTickManager();
         }
 
-        private void HandleAcousticImpulse(in AcousticImpulseEvent impulseEvent)
+        private void DrainPhysicsEventPayloads()
         {
-            if ((impulseEvent.Flags & AcousticImpulseFlags.Leviathan) == 0 ||
-                impulseEvent.Volume01 < MinimumVisualSoundWaveVolume01 ||
+            int snapshotGeneration = SignalBus<PhysicsEventPayload>.SnapshotGeneration;
+            if (snapshotGeneration == _lastPhysicsEventSnapshotGeneration)
+                return;
+
+            _lastPhysicsEventSnapshotGeneration = snapshotGeneration;
+            ReadOnlySpan<PhysicsEventPayload> signals = SignalBus<PhysicsEventPayload>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PhysicsEventPayload payload = signals[i];
+                if (payload.EventType != PhysicsEventTypeAcousticImpulse)
+                    continue;
+
+                HandleAcousticImpulsePayload(in payload);
+            }
+        }
+
+        private void HandleAcousticImpulsePayload(in PhysicsEventPayload impulseEvent)
+        {
+            if ((impulseEvent.StatusBits & AcousticImpulseFlagLeviathan) == 0u ||
+                impulseEvent.Scalar1 < MinimumVisualSoundWaveVolume01 ||
                 !ShouldRenderVisualSoundWave())
             {
                 return;
@@ -480,13 +497,13 @@ namespace Hecton8.UI
             int headerLength = CopySpanToBuffer(DefaultSoundWaveHeader.AsSpan(), _headerTextBuffer);
             _headerLabel.SetCharArray(_headerTextBuffer, 0, headerLength);
             int distanceMeters = ResolveRuntimeDistanceMeters(impulseEvent.RuntimePosition);
-            int waveTextLength = WriteVisualSoundWaveText(distanceMeters, impulseEvent.Volume01, _classificationTextBuffer);
+            int waveTextLength = WriteVisualSoundWaveText(distanceMeters, impulseEvent.Scalar1, _classificationTextBuffer);
             _classificationLabel.SetCharArray(_classificationTextBuffer, 0, waveTextLength);
 
             _storageCapacityBarkActive = false;
             _visibleTimer = VisibleDuration;
             _fadeTimer = FadeDuration;
-            _pulse01 = math.max(_pulse01, math.saturate(impulseEvent.Volume01));
+            _pulse01 = math.max(_pulse01, math.saturate(impulseEvent.Scalar1));
             _headerDirty = true;
             _plainClassificationDirty = true;
             _lastRenderedClassification = ContactClassification.None;
@@ -536,12 +553,11 @@ namespace Hecton8.UI
             for (int i = 0; i < contactCount; i++)
             {
                 SpatialQueryHit contact = _bioformContacts[i];
-                FaunaBrain brain = contact.Owner as FaunaBrain;
-                if (brain == null || brain.IsDead)
+                IFaunaSpatialContact faunaContact = contact.Owner as IFaunaSpatialContact;
+                if (faunaContact == null || faunaContact.IsDead)
                     continue;
 
-                FaunaSpeciesProfile speciesProfile = brain.SpeciesProfile;
-                if (speciesProfile == null || !speciesProfile.isLeviathan)
+                if (!faunaContact.IsLeviathanContact)
                     continue;
 
                 float candidateDistanceSqr = contact.DistanceSqr;
@@ -646,15 +662,16 @@ namespace Hecton8.UI
 
         private bool TryResolveClassificationOriginAup(out AbsoluteUniversePosition originAup)
         {
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
-                runtimeContext != null &&
-                (runtimeContext.MovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
             {
-                originAup = runtimeContext.MovementState.PredictedAup;
+                originAup = movementState.PredictedAup;
                 return true;
             }
 
-            HectonPlayerMovement movement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
+            HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
             if (movement != null)
             {
                 originAup = movement.CurrentAup;
@@ -736,7 +753,7 @@ namespace Hecton8.UI
 
             int sourceLength = WriteClassificationText(classText, distanceMeters, _classificationTextBuffer);
             if (localization.TryApplyHullStressCorruptionIfNeeded(
-                    new ReadOnlySpan<char>(_classificationTextBuffer, 0, sourceLength),
+                    _classificationTextBuffer.AsSpan(0, sourceLength),
                     _classificationStressTextBuffer,
                     out int classificationLength))
             {
@@ -787,7 +804,7 @@ namespace Hecton8.UI
             cursor = AppendCharToBuffer('/', buffer, cursor);
             cursor = AppendCharToBuffer(' ', buffer, cursor);
             if (cursor < buffer.Length &&
-                distanceMeters.TryFormat(new Span<char>(buffer, cursor, buffer.Length - cursor), out int distanceWritten))
+                distanceMeters.TryFormat(buffer.AsSpan(cursor, buffer.Length - cursor), out int distanceWritten))
             {
                 cursor += distanceWritten;
             }
@@ -799,7 +816,7 @@ namespace Hecton8.UI
             cursor = AppendCharToBuffer(' ', buffer, cursor);
             int intensityPercent = (int)math.round(math.saturate(volume01) * 100f);
             if (cursor < buffer.Length &&
-                intensityPercent.TryFormat(new Span<char>(buffer, cursor, buffer.Length - cursor), out int intensityWritten))
+                intensityPercent.TryFormat(buffer.AsSpan(cursor, buffer.Length - cursor), out int intensityWritten))
             {
                 cursor += intensityWritten;
             }
@@ -819,7 +836,7 @@ namespace Hecton8.UI
             cursor = AppendCharToBuffer(' ', buffer, cursor);
 
             if (cursor < buffer.Length &&
-                distanceMeters.TryFormat(new Span<char>(buffer, cursor, buffer.Length - cursor), out int written))
+                distanceMeters.TryFormat(buffer.AsSpan(cursor, buffer.Length - cursor), out int written))
             {
                 cursor += written;
             }
@@ -971,7 +988,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedLocalization = GlobalRegistry.LocalizationStressPresentation;
             _cachedAtmosphere = GlobalRegistry.AtmosphereReadModel;
         }
@@ -1179,7 +1196,7 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            float dt = Time.unscaledDeltaTime;
+            float dt = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             if (_consoleLabel == null || _overlayGroup == null || _state == SequenceState.Hidden)
                 return;
 
@@ -1308,7 +1325,7 @@ namespace Hecton8.UI
             if (buffer == null || cursor >= buffer.Length)
                 return cursor;
 
-            return value.TryFormat(new Span<char>(buffer, cursor, buffer.Length - cursor), out int written)
+            return value.TryFormat(buffer.AsSpan(cursor, buffer.Length - cursor), out int written)
                 ? cursor + written
                 : cursor;
         }
@@ -1318,7 +1335,7 @@ namespace Hecton8.UI
             if (buffer == null || cursor >= buffer.Length)
                 return cursor;
 
-            Span<char> destination = new Span<char>(buffer, cursor, buffer.Length - cursor);
+            Span<char> destination = buffer.AsSpan(cursor, buffer.Length - cursor);
             return value.TryFormat(destination, out int written, "X8")
                 ? cursor + written
                 : cursor;
@@ -1621,7 +1638,7 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
-            float dt = Time.unscaledDeltaTime;
+            float dt = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             if (!_uiBuilt)
             {
                 return;
@@ -1922,7 +1939,10 @@ namespace Hecton8.UI
             float3 delta;
             if (viewFrame.HasOriginAup != 0 && slot.HasWorldAup)
             {
-                delta = AbsoluteUniversePosition.ToCameraRelativeFloat3(in slot.WorldAup, in viewFrame.OriginAup);
+                delta = AupPrecisionMath.LocalDeltaFloat3(
+                    slot.WorldAup.ToAbsoluteDouble3(),
+                    viewFrame.OriginAup.ToAbsoluteDouble3(),
+                    float3.zero);
             }
             else
             {
@@ -1960,19 +1980,18 @@ namespace Hecton8.UI
 
         private AbsoluteUniversePosition ResolveCaptionOriginAup(Vector3 viewPosition, out bool hasOriginAup)
         {
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
             {
-                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
-                {
-                    hasOriginAup = true;
-                    return OffsetAupLocal(
-                        in movementState.PredictedAup,
-                        (Vector3)((float3)viewPosition - movementState.PredictedWorldPosition));
-                }
+                hasOriginAup = true;
+                return OffsetAupLocal(
+                    in movementState.PredictedAup,
+                    (Vector3)((float3)viewPosition - movementState.PredictedWorldPosition));
             }
 
-            HectonPlayerMovement movement = _cachedPlayerContext != null ? _cachedPlayerContext.PlayerMovement : null;
+            HectonPlayerMovement movement = playerContext != null ? playerContext.PlayerMovement : null;
             if (movement != null)
             {
                 hasOriginAup = true;
@@ -2128,7 +2147,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private void RegisterToTickManager()

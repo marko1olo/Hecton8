@@ -167,7 +167,7 @@ namespace Hecton8.Gameplay
                 if (!_poolMissingLogged)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning("[OxygenPlant] ObjectPoolManager unavailable. Bubble release skipped to avoid runtime Instantiate.", this);
+                    Hecton8.Core.H8Debug.LogWarning("[OxygenPlant] ObjectPoolManager unavailable. Bubble release skipped to avoid runtime Instantiate.", this);
 #endif
                     _poolMissingLogged = true;
                 }
@@ -302,7 +302,7 @@ namespace Hecton8.Gameplay
         private void RefreshColdRegistryReferences()
         {
             _objectPool = GlobalRegistry.ObjectPoolService;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
         }
 
         private void TryRegisterHotSwapListener()

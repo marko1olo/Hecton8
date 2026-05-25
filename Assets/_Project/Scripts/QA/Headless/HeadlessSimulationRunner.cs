@@ -767,7 +767,7 @@ namespace Hecton8.QA.Headless
             {
                 SystemHash = RunnerHash,
                 ReasonHash = reasonHash,
-                Frame = unchecked((uint)Time.frameCount),
+                Frame = SystemDispatcher.CurrentFrameId,
                 ExitCode = exitCode,
                 NativeAllocationCount = GlobalRegistry.NativeAllocationCount,
                 NativeTrackedBytesMb = GlobalRegistry.NativeTrackedBytes * NativeBytesToMegabytes,
@@ -788,7 +788,7 @@ namespace Hecton8.QA.Headless
                 int index = _blackboxCursor % blackbox.Length;
                 blackbox[index] = new HeadlessTelemetryEntry
                 {
-                    Frame = unchecked((uint)Time.frameCount),
+                    Frame = SystemDispatcher.CurrentFrameId,
                     Day = _completedDays,
                     StateHash = MixStateHash(in state),
                     GridX = state.Aup.GridX,

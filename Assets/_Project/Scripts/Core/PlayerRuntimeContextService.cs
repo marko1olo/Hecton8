@@ -3,7 +3,6 @@ using Hecton8.Building;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
-using Hecton8.Physics;
 using Hecton8.UI;
 using Hecton8.World;
 using NASAPunk.Visor;
@@ -667,7 +666,7 @@ namespace Hecton8.Core
             if (!_runtimeContext.IsBound || _playerTransform == null)
                 return;
 
-            float3 velocity = PhysicsDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityRuntimeContextMaxAgeFrames, out float3 kccVelocity)
+            float3 velocity = CoreDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityRuntimeContextMaxAgeFrames, out float3 kccVelocity)
                 ? SafeFiniteVector(kccVelocity)
                 : float3.zero;
             float3 forward = SafeDirection((float3)_playerTransform.forward, new float3(0f, 0f, 1f));

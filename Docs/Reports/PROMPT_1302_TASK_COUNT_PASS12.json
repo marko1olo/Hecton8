@@ -1,0 +1,8 @@
+﻿{
+    "promptPath":  "Docs/Tasks/CURRENT_BATCH.md",
+    "promptFound":  true,
+    "taskCount":  20,
+    "extractedPath":  "Docs/Reports/PROMPT_1302_REEXTRACTED_PASS12.txt",
+    "extractedChars":  22203,
+    "countingPattern":  "(?m)^\\s*Task\\s+\\d{2}:"
+}

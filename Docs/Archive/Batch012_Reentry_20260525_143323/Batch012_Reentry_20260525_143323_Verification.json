@@ -1,0 +1,38 @@
+﻿{
+    "batch":  "Batch012_Reentry_20260525_143323",
+    "generatedAtUtc":  "2026-05-25T10:33:25.9583269Z",
+    "sourceTasksMoved":  35,
+    "sourceAgentLogItemsMoved":  169,
+    "summaries":  [
+                      {
+                          "name":  "TASKS_SUMMARY.md",
+                          "bytes":  348895
+                      },
+                      {
+                          "name":  "LOGS_SUMMARY.md",
+                          "bytes":  290930
+                      },
+                      {
+                          "name":  "RATIONALE_SUMMARY.md",
+                          "bytes":  203121
+                      }
+                  ],
+    "tasksRemaining":  [
+                           {
+                               "Name":  "CURRENT_BATCH.md",
+                               "Length":  164117,
+                               "LastWriteTimeUtc":  "\/Date(1779563513901)\/"
+                           }
+                       ],
+    "agentLogsRemaining":  [
+
+                           ],
+    "currentBatchPreserved":  true,
+    "existingBatch012Preserved":  true,
+    "buildLaunched":  false,
+    "evidenceClass":  "STATIC_FILESYSTEM",
+    "processCleanup":  "No Hecton8 dotnet/csc/MSBuild/Unity build processes found; no process killed. dental-crm node/esbuild ignored.",
+    "summaryPolicyV2":  "No article stripping; line cap 1200 chars, prompt/task cap 1600 chars; more selected lines per file; line-cut marker only when raw line exceeds cap; raw files archived intact.",
+    "summaryRevision":  "v3_untruncated_selected_lines_2026-05-25",
+    "summaryPolicyV3":  "Selected important lines are not truncated; markdown/checklist decoration removed; no article stripping; raw files archived intact."
+}

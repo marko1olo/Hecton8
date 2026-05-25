@@ -10,13 +10,13 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using CameraJuiceImpactSignal = Hecton8.Core.Contracts.Signals.CameraJuiceImpactSignal;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Optimization;
-using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Hecton8.World;
@@ -35,7 +35,7 @@ namespace Hecton8.VFX
     /// Integrates with HectonSurvivalSystem, PlayerMovement, InteractionEvents, GameTickManager, SaveManager.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed partial class CameraJuiceSystem : MonoBehaviour, ICameraJuiceSystem, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IInteractionEventListener, IPhysicsImpactEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
+    public sealed partial class CameraJuiceSystem : MonoBehaviour, ICameraJuiceSystem, ISlowTickable, ILateFrameTickable, ISaveable, IInteractionEventListener, IPhysicsImpactEventListener, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         // ═══ CACHED REFERENCES ═══
         [StructLayout(LayoutKind.Explicit, Size = CameraJuiceTelemetryEntrySizeBytes)]
@@ -61,9 +61,9 @@ namespace Hecton8.VFX
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerMovement _playerMovement;
         private IPlayerRuntimeContext _playerRuntimeContext;
-        private Rigidbody _playerRigidbody;
         private ISubmarineRuntimeContext _submarineRuntimeContext;
         private Rigidbody _submarineHullRigidbody;
+        private IPhysicsStateEventService _physicsStateEvents;
         private DynamicResolutionScaler _dynamicResolutionScaler;
         private IVramBudgetReadModel _vramMonitor;
         private ITickDispatcher _dispatcher;
@@ -77,6 +77,7 @@ namespace Hecton8.VFX
         private float _cachedSpeedLineVelocityZ = float.MinValue;
         private float _cachedSpeedLineStretch = -1f;
         private bool _speedLineVisualDirty;
+        private bool _physicsImpactRegistered;
         private bool _projectionFovDirty;
         private float _queuedProjectionFov;
         private bool _biomeBlendDirty;
@@ -440,7 +441,7 @@ namespace Hecton8.VFX
             EnsureCameraSpeedLineParticles();
 
             InteractionEvents.Register(this);
-            PhysicsEvents.Register(this);
+            TryRegisterPhysicsImpactListener();
         }
 
         private void OnDisable()
@@ -453,7 +454,7 @@ namespace Hecton8.VFX
             UnhookDependencyEvents();
 
             InteractionEvents.Unregister(this);
-            PhysicsEvents.Unregister(this);
+            TryUnregisterPhysicsImpactListener();
 
             _fovBlendActive = false;
             _inputReclaimFovActive = false;
@@ -469,9 +470,9 @@ namespace Hecton8.VFX
             _proceduralShakeTranslation = float3.zero;
             _proceduralShakeRotationDegrees = float3.zero;
             _playerRuntimeContext = null;
-            _playerRigidbody = null;
             _submarineRuntimeContext = null;
             _submarineHullRigidbody = null;
+            _physicsStateEvents = null;
             _dynamicResolutionScaler = null;
             _vramMonitor = null;
             _dispatcher = null;
@@ -499,7 +500,6 @@ namespace Hecton8.VFX
             if (_registered)
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
                 _registered = false;
             }
         }
@@ -509,9 +509,8 @@ namespace Hecton8.VFX
             if (_registered || !Application.isPlaying || _dispatcher == null)
                 return;
 
-            bool updateRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
             bool slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
-            _registered = updateRegistered || slowTickRegistered;
+            _registered = slowTickRegistered;
         }
 
         private void TryRegisterToGlobalRegistry()
@@ -593,11 +592,12 @@ namespace Hecton8.VFX
         private void RefreshCachedRegistryServices()
         {
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Dispatcher, GlobalRegistry.TickDispatcher);
-            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Player, Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Player, GlobalRegistry.Player);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Submarine, GlobalRegistry.Submarine);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DynamicResolutionRuntime, GlobalRegistry.DynamicResolution);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.VRAMMonitorRuntime, GlobalRegistry.VRAMBudgetReadModel);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DataVault, GlobalRegistry.DataVault);
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.PhysicsStateManager, GlobalRegistry.PhysicsStateEvents);
         }
 
         private void ApplyRegistryServiceRebind(GlobalRegistryServiceSlot serviceSlot, object currentService)
@@ -633,7 +633,49 @@ namespace Hecton8.VFX
                 case GlobalRegistryServiceSlot.DataVault:
                     BindDataVault(currentService as IDataVault);
                     break;
+                case GlobalRegistryServiceSlot.PhysicsStateManager:
+                    RebindPhysicsStateEventService(currentService as IPhysicsStateEventService);
+                    break;
             }
+        }
+
+        private void TryRegisterPhysicsImpactListener()
+        {
+            if (_physicsImpactRegistered)
+                return;
+
+            RebindPhysicsStateEventService(GlobalRegistry.PhysicsStateEvents);
+        }
+
+        private void TryUnregisterPhysicsImpactListener()
+        {
+            if (!_physicsImpactRegistered)
+            {
+                _physicsStateEvents = null;
+                return;
+            }
+
+            _physicsStateEvents?.UnregisterImpactListener(this);
+            _physicsStateEvents = null;
+            _physicsImpactRegistered = false;
+        }
+
+        private void RebindPhysicsStateEventService(IPhysicsStateEventService physicsStateEvents)
+        {
+            if (ReferenceEquals(_physicsStateEvents, physicsStateEvents) && _physicsImpactRegistered)
+                return;
+
+            if (_physicsImpactRegistered)
+                _physicsStateEvents?.UnregisterImpactListener(this);
+
+            _physicsStateEvents = physicsStateEvents;
+            _physicsImpactRegistered = false;
+
+            if (_physicsStateEvents == null || !isActiveAndEnabled)
+                return;
+
+            _physicsStateEvents.RegisterImpactListener(this);
+            _physicsImpactRegistered = true;
         }
 
         private void BindPlayerRuntime(IPlayerRuntimeContext playerRuntimeContext)
@@ -643,7 +685,6 @@ namespace Hecton8.VFX
 
             UnhookDependencyEvents();
             _playerRuntimeContext = playerRuntimeContext;
-            _playerRigidbody = playerRuntimeContext != null ? playerRuntimeContext.PlayerRigidbody : null;
             if (_survivalSystemReference == null)
                 _survivalSystem = playerRuntimeContext != null ? playerRuntimeContext.SurvivalSystem : null;
             if (_playerMovementReference == null)
@@ -680,7 +721,7 @@ namespace Hecton8.VFX
             TryUnregisterFromGlobalRegistry();
             TryUnregisterHotSwapListener();
             InteractionEvents.Unregister(this);
-            PhysicsEvents.Unregister(this);
+            TryUnregisterPhysicsImpactListener();
 
             ReleaseProceduralCameraJuiceBuffers();
             ReleaseCameraJuiceTelemetry();
@@ -692,7 +733,7 @@ namespace Hecton8.VFX
         /// <summary>
         /// Per-frame update for camera shake, FOV, and depth-of-field focus distance.
         /// </summary>
-        public void Tick(float dt)
+        private void AdvanceCameraJuicePresentation(float dt)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             long startTicks = Stopwatch.GetTimestamp();
@@ -758,6 +799,8 @@ namespace Hecton8.VFX
 
         public void LateFrameTick()
         {
+            AdvanceCameraJuicePresentation(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (_speedLineVisualDirty)
             {
                 _speedLineVisualDirty = false;
@@ -814,7 +857,7 @@ namespace Hecton8.VFX
         private static void LogDuplicateInstanceDetected()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[CameraJuiceSystem] Duplicate instance detected. Destroying duplicate.");
+            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] Duplicate instance detected. Destroying duplicate.");
 #endif
         }
 
@@ -822,7 +865,7 @@ namespace Hecton8.VFX
         private static void LogMainCameraMissing()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[CameraJuiceSystem] MainCamera not found. System disabled.");
+            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] MainCamera not found. System disabled.");
 #endif
         }
 
@@ -830,7 +873,7 @@ namespace Hecton8.VFX
         private static void LogVolumeMissing()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[CameraJuiceSystem] URPVolume not found. Post-processing disabled.");
+            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] URPVolume not found. Post-processing disabled.");
 #endif
         }
 
@@ -838,7 +881,7 @@ namespace Hecton8.VFX
         private static void LogVignetteMissing()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[CameraJuiceSystem] Vignette override not found in Volume profile.");
+            Hecton8.Core.H8Debug.LogWarning("[CameraJuiceSystem] Vignette override not found in Volume profile.");
 #endif
         }
 
@@ -846,7 +889,7 @@ namespace Hecton8.VFX
         private static void LogDepthOfFieldMissing()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[CameraJuiceSystem] DepthOfField override not found in Volume profile.");
+            Hecton8.Core.H8Debug.LogWarning("[CameraJuiceSystem] DepthOfField override not found in Volume profile.");
 #endif
         }
 
@@ -854,7 +897,7 @@ namespace Hecton8.VFX
         private static void LogShakeCalculationFailed()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[CameraJuiceSystem] Shake calculation failed.");
+            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] Shake calculation failed.");
 #endif
         }
 
@@ -862,7 +905,7 @@ namespace Hecton8.VFX
         private static void LogNullShakeProfile()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[CameraJuiceSystem] TriggerShake called with null profile.");
+            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] TriggerShake called with null profile.");
 #endif
         }
 
@@ -870,7 +913,7 @@ namespace Hecton8.VFX
         private static void LogShakeMaxDisplacementClamped(float maxDisplacement)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[CameraJuiceSystem] ShakeProfile MaxDisplacement out of range [0, 1]. Clamping.");
+            Hecton8.Core.H8Debug.LogWarning("[CameraJuiceSystem] ShakeProfile MaxDisplacement out of range [0, 1]. Clamping.");
 #endif
         }
 
@@ -878,7 +921,7 @@ namespace Hecton8.VFX
         private static void LogShakeDurationDefaulted(float duration)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[CameraJuiceSystem] ShakeProfile Duration invalid. Using default 0.5s.");
+            Hecton8.Core.H8Debug.LogWarning("[CameraJuiceSystem] ShakeProfile Duration invalid. Using default 0.5s.");
 #endif
         }
 
@@ -886,7 +929,7 @@ namespace Hecton8.VFX
         private static void LogNullBiomeProfile()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[CameraJuiceSystem] TransitionToBiome called with null biome. Using default fallback.");
+            Hecton8.Core.H8Debug.LogWarning("[CameraJuiceSystem] TransitionToBiome called with null biome. Using default fallback.");
 #endif
         }
 
@@ -894,7 +937,7 @@ namespace Hecton8.VFX
         private static void LogFovCalculationFailed()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[CameraJuiceSystem] FOV calculation failed.");
+            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] FOV calculation failed.");
 #endif
         }
 
@@ -902,7 +945,7 @@ namespace Hecton8.VFX
         private static void LogBiomeBlendFailed()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[CameraJuiceSystem] Biome blend failed.");
+            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] Biome blend failed.");
 #endif
         }
 
@@ -910,7 +953,7 @@ namespace Hecton8.VFX
         private static void LogInteractionFocusFailed()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[CameraJuiceSystem] Interaction focus calculation failed.");
+            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] Interaction focus calculation failed.");
 #endif
         }
 
@@ -918,7 +961,7 @@ namespace Hecton8.VFX
         private static void LogFrameBudgetExceeded()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[CameraJuiceSystem] Frame time exceeded budget.");
+            Hecton8.Core.H8Debug.LogWarning("[CameraJuiceSystem] Frame time exceeded budget.");
 #endif
         }
 
@@ -926,7 +969,7 @@ namespace Hecton8.VFX
         private static void LogHealthPostProcessingFailed()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[CameraJuiceSystem] Health post-processing failed.");
+            Hecton8.Core.H8Debug.LogError("[CameraJuiceSystem] Health post-processing failed.");
 #endif
         }
 
@@ -1673,7 +1716,7 @@ namespace Hecton8.VFX
         private float ResolveCurrentCameraSpeed()
         {
             float speed = 0f;
-            if (PhysicsDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityCameraJuiceMaxAgeFrames, out Vector3 kccVelocity))
+            if (CoreDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityCameraJuiceMaxAgeFrames, out Vector3 kccVelocity))
                 speed = math.max(speed, ApproximateVectorMagnitude(kccVelocity));
 
             Rigidbody submarineBody = _submarineHullRigidbody;
@@ -2172,7 +2215,6 @@ namespace Hecton8.VFX
 
         private void TryResolveGameplayDependencies()
         {
-            _playerRigidbody = _playerRuntimeContext != null ? _playerRuntimeContext.PlayerRigidbody : null;
             _submarineHullRigidbody = _submarineRuntimeContext != null ? _submarineRuntimeContext.HullRigidbody : null;
             Transform playerRoot = null;
             if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform currentPlayerTransform) &&

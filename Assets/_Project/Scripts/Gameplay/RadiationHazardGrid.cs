@@ -76,17 +76,17 @@ namespace Hecton8.Gameplay
         private static readonly int _HectonHandRadiationTintId = Shader.PropertyToID("_HectonHandRadiationTint");
         internal static RadiationHazardGrid ActiveRuntimeInstance { get; private set; }
 
-        private struct VaultNativeArray<T> where T : struct
+        private struct VaultBufferView<T> where T : struct
         {
             private IDataVault _vault;
             private VaultGenerationHandle<T> _handle;
 
-            public static VaultNativeArray<T> Create(IDataVault vault, VaultGenerationHandle<T> handle)
+            public static VaultBufferView<T> Create(IDataVault vault, VaultGenerationHandle<T> handle)
             {
                 if (vault == null || handle.BufferID == 0u)
                     handle = default;
 
-                return new VaultNativeArray<T>
+                return new VaultBufferView<T>
                 {
                     _vault = vault,
                     _handle = handle
@@ -131,7 +131,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            public static implicit operator NativeArray<T>(VaultNativeArray<T> view)
+            public static implicit operator NativeArray<T>(VaultBufferView<T> view)
             {
                 return view.Resolve();
             }
@@ -145,18 +145,18 @@ namespace Hecton8.Gameplay
         [SerializeField, Min(0f)] private float emergencyMockIntensity = 80f;
         [SerializeField] private Vector3 emergencyMockOffsetMeters = new Vector3(8f, 0f, 0f);
 
-        private VaultNativeArray<float> _gridRead;
-        private VaultNativeArray<float> _gridWrite;
-        private VaultNativeArray<float> _gridSource;
-        private VaultNativeArray<RadiationStateDTO> _radiationStates;
-        private VaultNativeArray<RadiationSource> _sources;
-        private VaultNativeArray<RadiationTelemetryEntry> _telemetryRing;
-        private VaultNativeArray<int> _sourceCountLane;
-        private VaultNativeArray<uint> _telemetryCursorLane;
-        private VaultNativeArray<RadiationProfileDTO> _profiles;
-        private VaultNativeArray<byte> _csvScratch;
-        private VaultNativeArray<RadiationTuningDTO> _tuningLane;
-        private VaultNativeArray<RadiationStatusSignal> _statusSignalLane;
+        private VaultBufferView<float> _gridRead;
+        private VaultBufferView<float> _gridWrite;
+        private VaultBufferView<float> _gridSource;
+        private VaultBufferView<RadiationStateDTO> _radiationStates;
+        private VaultBufferView<RadiationSource> _sources;
+        private VaultBufferView<RadiationTelemetryEntry> _telemetryRing;
+        private VaultBufferView<int> _sourceCountLane;
+        private VaultBufferView<uint> _telemetryCursorLane;
+        private VaultBufferView<RadiationProfileDTO> _profiles;
+        private VaultBufferView<byte> _csvScratch;
+        private VaultBufferView<RadiationTuningDTO> _tuningLane;
+        private VaultBufferView<RadiationStatusSignal> _statusSignalLane;
         private JobHandle _diffusionJobHandle;
         private JobHandle _radiationSimulationJobHandle;
         private VaultGenerationHandle<float> _gridReadHandle;
@@ -810,18 +810,18 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            _gridRead = VaultNativeArray<float>.Create(vault, _gridBuffersSwapped ? _gridWriteHandle : _gridReadHandle);
-            _gridWrite = VaultNativeArray<float>.Create(vault, _gridBuffersSwapped ? _gridReadHandle : _gridWriteHandle);
-            _gridSource = VaultNativeArray<float>.Create(vault, _gridSourceHandle);
-            _radiationStates = VaultNativeArray<RadiationStateDTO>.Create(vault, _stateHandle);
-            _sources = VaultNativeArray<RadiationSource>.Create(vault, _sourcesHandle);
-            _sourceCountLane = VaultNativeArray<int>.Create(vault, _sourceCountHandle);
-            _telemetryRing = VaultNativeArray<RadiationTelemetryEntry>.Create(vault, _telemetryHandle);
-            _telemetryCursorLane = VaultNativeArray<uint>.Create(vault, _telemetryCursorHandle);
-            _profiles = VaultNativeArray<RadiationProfileDTO>.Create(vault, _profilesHandle);
-            _csvScratch = VaultNativeArray<byte>.Create(vault, _csvScratchHandle);
-            _tuningLane = VaultNativeArray<RadiationTuningDTO>.Create(vault, _tuningHandle);
-            _statusSignalLane = VaultNativeArray<RadiationStatusSignal>.Create(vault, _statusSignalHandle);
+            _gridRead = VaultBufferView<float>.Create(vault, _gridBuffersSwapped ? _gridWriteHandle : _gridReadHandle);
+            _gridWrite = VaultBufferView<float>.Create(vault, _gridBuffersSwapped ? _gridReadHandle : _gridWriteHandle);
+            _gridSource = VaultBufferView<float>.Create(vault, _gridSourceHandle);
+            _radiationStates = VaultBufferView<RadiationStateDTO>.Create(vault, _stateHandle);
+            _sources = VaultBufferView<RadiationSource>.Create(vault, _sourcesHandle);
+            _sourceCountLane = VaultBufferView<int>.Create(vault, _sourceCountHandle);
+            _telemetryRing = VaultBufferView<RadiationTelemetryEntry>.Create(vault, _telemetryHandle);
+            _telemetryCursorLane = VaultBufferView<uint>.Create(vault, _telemetryCursorHandle);
+            _profiles = VaultBufferView<RadiationProfileDTO>.Create(vault, _profilesHandle);
+            _csvScratch = VaultBufferView<byte>.Create(vault, _csvScratchHandle);
+            _tuningLane = VaultBufferView<RadiationTuningDTO>.Create(vault, _tuningHandle);
+            _statusSignalLane = VaultBufferView<RadiationStatusSignal>.Create(vault, _statusSignalHandle);
 
             if (_sourceCountLane.IsCreated && _sourceCountLane.Length > 0)
                 _sourceCountLane[0] = _activeSourceCount;
@@ -1373,7 +1373,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshColdRegistryReferences()
         {
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             _dataVault = GlobalRegistry.DataVault;
             _voxelSdfReadModel = GlobalRegistry.VoxelSonarSdf;
         }
@@ -1523,7 +1523,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _diffusionJobActive = false;
-            VaultNativeArray<float> previousRead = _gridRead;
+            VaultBufferView<float> previousRead = _gridRead;
             _gridRead = _gridWrite;
             _gridWrite = previousRead;
             _gridBuffersSwapped = !_gridBuffersSwapped;
@@ -1537,7 +1537,7 @@ namespace Hecton8.Gameplay
 
             DispatcherJobFence.TryComplete(ref _diffusionJobHandle, forceComplete: true);
             _diffusionJobActive = false;
-            VaultNativeArray<float> previousRead = _gridRead;
+            VaultBufferView<float> previousRead = _gridRead;
             _gridRead = _gridWrite;
             _gridWrite = previousRead;
             _gridBuffersSwapped = !_gridBuffersSwapped;

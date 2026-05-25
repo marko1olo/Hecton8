@@ -259,7 +259,7 @@ namespace Hecton8.World.Biomes
             CacheDataVaultCold();
 
             if (_playerContext == null)
-                _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerContext = GlobalRegistry.Player;
 
             if (_playerContext != null && _playerContext.PlayerTransform != null)
                 playerTransform = _playerContext.PlayerTransform;
@@ -689,7 +689,7 @@ namespace Hecton8.World.Biomes
                 int index = _telemetryCursor;
                 telemetryRing[index] = new BiomeBoundaryTelemetryEntry
                 {
-                    FrameIndex = Time.frameCount,
+                    FrameIndex = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                     Sequence = _sequence,
                     OriginShiftSequence = _lastOriginShiftSequence,
                     StateHash = HashState(in playerAup, in result, flags),
@@ -763,7 +763,7 @@ namespace Hecton8.World.Biomes
             catch (Exception exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[BiomeBoundarySdfRuntime] Black-box dump failed: " + exception.Message, this);
+                Hecton8.Core.H8Debug.LogError("[BiomeBoundarySdfRuntime] Black-box dump failed: " + exception.Message, this);
 #endif
             }
         }
@@ -783,16 +783,13 @@ namespace Hecton8.World.Biomes
         private static unsafe bool TryResolveBiomeRecord(uint biomeHash, out H8BiomeRecord record)
         {
             record = default;
-            H8BiomeRecord* records = (H8BiomeRecord*)H8StaticDataArena.GetSectionDataPointer(
-                H8DataSectionId.Biomes,
-                H8DataLayoutConstants.BiomeRecordSize,
-                out int count);
+            ReadOnlySpan<H8BiomeRecord> records = H8StaticDataArena.GetSectionSpan<H8BiomeRecord>(H8DataSectionId.Biomes);
 
-            if (records == null || count <= 0)
+            if (records.Length <= 0)
                 return false;
 
             int low = 0;
-            int high = count - 1;
+            int high = records.Length - 1;
             while (low <= high)
             {
                 int mid = (low + high) >> 1;

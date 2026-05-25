@@ -1,0 +1,190 @@
+{
+    "schema":  "hecton8.strict_touched_source_managed_scan_1302.v1",
+    "generatedAt":  "2026-05-25",
+    "files":  [
+                  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackJobs.cs"
+              ],
+    "totalHits":  25,
+    "coldManagedIoOrPathDebt":  18,
+    "runtimeUnclassifiedReview":  0,
+    "editorGuarded":  7,
+    "falsePositiveMathSelect":  0,
+    "hits":  [
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  24,
+                     "pattern":  "string_local_or_param",
+                     "classification":  "cold_managed_io_or_path_debt",
+                     "text":  "private const string DumpRelativePath = \"Docs/AgentLogs/Dump_VEHICLE_SURGEON.bin\";"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  87,
+                     "pattern":  "string_field",
+                     "classification":  "cold_managed_io_or_path_debt",
+                     "text":  "private string _projectRoot;"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  87,
+                     "pattern":  "string_local_or_param",
+                     "classification":  "cold_managed_io_or_path_debt",
+                     "text":  "private string _projectRoot;"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  88,
+                     "pattern":  "string_field",
+                     "classification":  "cold_managed_io_or_path_debt",
+                     "text":  "private string _csvPath;"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  88,
+                     "pattern":  "string_local_or_param",
+                     "classification":  "cold_managed_io_or_path_debt",
+                     "text":  "private string _csvPath;"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  89,
+                     "pattern":  "string_field",
+                     "classification":  "cold_managed_io_or_path_debt",
+                     "text":  "private string _dumpPath;"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  89,
+                     "pattern":  "string_local_or_param",
+                     "classification":  "cold_managed_io_or_path_debt",
+                     "text":  "private string _dumpPath;"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  94,
+                     "pattern":  "string_local_or_param",
+                     "classification":  "editor_guarded",
+                     "text":  "if (!VehicleDamageLayoutValidator.ValidateVehicleGridCellLayout(out string layoutError))"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  99,
+                     "pattern":  "path_api",
+                     "classification":  "cold_managed_io_or_path_debt",
+                     "text":  "_csvPath = Path.Combine(_projectRoot, \"vehicle_component_layouts.csv\");"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  100,
+                     "pattern":  "path_api",
+                     "classification":  "cold_managed_io_or_path_debt",
+                     "text":  "_dumpPath = Path.Combine(_projectRoot, DumpRelativePath);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  792,
+                     "pattern":  "file_api",
+                     "classification":  "editor_guarded",
+                     "text":  "if (!_buffersReady || _dataVault == null || !File.Exists(_csvPath))"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  801,
+                     "pattern":  "managed_file_object_new",
+                     "classification":  "editor_guarded",
+                     "text":  "FileInfo info = new FileInfo(_csvPath);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  831,
+                     "pattern":  "managed_file_object_new",
+                     "classification":  "editor_guarded",
+                     "text":  "using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.Read))"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  852,
+                     "pattern":  "managed_exception_catch",
+                     "classification":  "editor_guarded",
+                     "text":  "catch (IOException)"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  856,
+                     "pattern":  "managed_exception_catch",
+                     "classification":  "editor_guarded",
+                     "text":  "catch (UnauthorizedAccessException)"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  917,
+                     "pattern":  "string_local_or_param",
+                     "classification":  "cold_managed_io_or_path_debt",
+                     "text":  "private static bool TryWriteBlackBoxDump(string path, NativeArray\u003cVehicleDamageTelemetryEntry\u003e telemetry)"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  921,
+                     "pattern":  "string_local_or_param",
+                     "classification":  "cold_managed_io_or_path_debt",
+                     "text":  "string directory = Path.GetDirectoryName(path);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  921,
+                     "pattern":  "path_api",
+                     "classification":  "cold_managed_io_or_path_debt",
+                     "text":  "string directory = Path.GetDirectoryName(path);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  923,
+                     "pattern":  "directory_api",
+                     "classification":  "cold_managed_io_or_path_debt",
+                     "text":  "Directory.CreateDirectory(directory);"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  925,
+                     "pattern":  "managed_file_object_new",
+                     "classification":  "cold_managed_io_or_path_debt",
+                     "text":  "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  935,
+                     "pattern":  "managed_exception_catch",
+                     "classification":  "cold_managed_io_or_path_debt",
+                     "text":  "catch (IOException)"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  939,
+                     "pattern":  "managed_exception_catch",
+                     "classification":  "cold_managed_io_or_path_debt",
+                     "text":  "catch (UnauthorizedAccessException)"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  1054,
+                     "pattern":  "string_local_or_param",
+                     "classification":  "cold_managed_io_or_path_debt",
+                     "text":  "private static string ResolveProjectRoot()"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  1056,
+                     "pattern":  "string_local_or_param",
+                     "classification":  "cold_managed_io_or_path_debt",
+                     "text":  "string dataPath = Application.dataPath;"
+                 },
+                 {
+                     "path":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  1095,
+                     "pattern":  "string_local_or_param",
+                     "classification":  "editor_guarded",
+                     "text":  "public bool TryWriteEditorTuning(string propertyName, float value)"
+                 }
+             ]
+}

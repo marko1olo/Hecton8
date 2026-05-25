@@ -202,7 +202,7 @@ namespace Hecton8.Editor.AITextureControlMaps
                 AssetDatabase.CreateAsset(mesh, assetPath);
                 AssetDatabase.SaveAssets();
                 File.WriteAllText(AITextureControlMapConstants.MockBenchmarkReportPath, BuildReport(assetPath, vertexCount, quadCount, stopwatch.Elapsed.TotalMilliseconds));
-                Debug.Log("[AITextureMockMeshBenchmark] Generated mock mesh " + assetPath + " vertices=" + vertexCount.ToString(CultureInfo.InvariantCulture) + ".");
+                Hecton8.Core.H8Debug.Log("[AITextureMockMeshBenchmark] Generated mock mesh " + assetPath + " vertices=" + vertexCount.ToString(CultureInfo.InvariantCulture) + ".");
             }
             finally
             {

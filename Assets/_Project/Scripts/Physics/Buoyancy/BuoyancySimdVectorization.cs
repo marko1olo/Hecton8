@@ -87,7 +87,6 @@ namespace Hecton8.Physics
         public const uint FlagNonFinite = 1u << 31;
         public const uint SinPolynomialFormulaHash = 0x7D809260u;
         public const uint HydrodynamicTurbulenceFormulaHash = 0x47C3A66Au;
-        public const string SimdAgentDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_201.bin";
     }
 
     public static class SimdVectorizationLayout

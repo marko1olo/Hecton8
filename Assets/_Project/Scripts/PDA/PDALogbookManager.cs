@@ -129,7 +129,7 @@ namespace Hecton8.PDA
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/PDA/PDA Logbook Manager")]
-    public sealed class PDALogbookManager : MonoBehaviour, ISaveable, IPDALogbookService, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class PDALogbookManager : MonoBehaviour, ISaveable, IPDALogbookService, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int FirstDeathOriginHash = unchecked((int)0xED21B4CC);
         private const int FirstLaserCutterOriginHash = unchecked((int)0x0710CD7A);
@@ -202,7 +202,7 @@ namespace Hecton8.PDA
             if (!enabled)
                 return;
 
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             TryRegisterHotSwapListener();
             TryRegisterWithSaveManager();
             RebindOwnerSubscriptions();
@@ -472,7 +472,7 @@ namespace Hecton8.PDA
             if (registered != null && !ReferenceEquals(registered, this))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[PDALogbookManager] Duplicate logbook service detected. Disabling duplicate.");
+                Hecton8.Core.H8Debug.LogError("[PDALogbookManager] Duplicate logbook service detected. Disabling duplicate.");
 #endif
                 enabled = false;
                 return;
@@ -499,7 +499,7 @@ namespace Hecton8.PDA
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -507,7 +507,7 @@ namespace Hecton8.PDA
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = false;
         }
 
@@ -546,7 +546,7 @@ namespace Hecton8.PDA
             _lastSurvivalDeathSignalSequence = 0;
         }
 
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
             ProcessSessionLifecycleSignals();
             ProcessLogbookSignals();
@@ -782,7 +782,7 @@ namespace Hecton8.PDA
                 return;
 
             if (_saveService == null)
-                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _saveService = GlobalRegistry.Save;
 
             if (_saveService == null)
                 return;

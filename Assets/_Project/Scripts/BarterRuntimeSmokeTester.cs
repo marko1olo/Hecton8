@@ -191,7 +191,7 @@ namespace Hecton8.Dev
             {
                 Fail(exception.Message);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogException(exception);
+                Hecton8.Core.H8Debug.LogException(exception);
 #endif
             }
             finally
@@ -307,7 +307,7 @@ namespace Hecton8.Dev
             _debugLastIssue = issue;
             _debugLastPhase = "Failed";
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning($"[BarterSmoke] FAIL {issue}");
+            Hecton8.Core.H8Debug.LogWarning($"[BarterSmoke] FAIL {issue}");
 #endif
         }
 

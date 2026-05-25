@@ -214,7 +214,7 @@ namespace Hecton8.Dev
             StringBuilder builder = new StringBuilder(192);
             builder.Append(DateTime.Now.ToString("HH:mm:ss.fff"));
             builder.Append(" | frame=");
-            builder.Append(Time.frameCount);
+            builder.Append(SystemDispatcher.CurrentFrameIndex);
             builder.Append(" | t=");
             builder.Append(Time.realtimeSinceStartup.ToString("0.000"));
             builder.Append(" | ");

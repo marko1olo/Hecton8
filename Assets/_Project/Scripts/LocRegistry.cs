@@ -14,6 +14,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Hecton.Localization
 {
@@ -1152,7 +1153,7 @@ namespace Hecton.Localization
             BabelFormatArgs formatArgs,
             bool stripRichText)
         {
-            float decodeStart = Time.realtimeSinceStartup;
+            long decodeStartTicks = Stopwatch.GetTimestamp();
             length = 0;
             if (destination.Length <= 0)
             {
@@ -1257,7 +1258,7 @@ namespace Hecton.Localization
             if (injectedVariable)
                 flags = (ushort)(flags | BabelTelemetryFlags.VariableInjected);
 
-            float spanConversionTimeMs = math.max(0f, (Time.realtimeSinceStartup - decodeStart) * 1000f);
+            float spanConversionTimeMs = math.max(0f, (float)((Stopwatch.GetTimestamp() - decodeStartTicks) * 1000.0 / Stopwatch.Frequency));
             RecordTelemetry(keyHash, found ? 0 : -1, length, flags, spanConversionTimeMs);
             if (spanConversionTimeMs > SlowDecodeDumpThresholdMs)
                 DumpTelemetryForSlowDecode(keyHash, length, spanConversionTimeMs);

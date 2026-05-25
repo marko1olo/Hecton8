@@ -111,14 +111,14 @@ namespace Hecton8.Bootstrap
 
             if (_narrativeDiscoveryCount <= 0)
             {
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     "[LoreSystemsRoot] No NarrativeDiscovery components found in the loaded scene scope. " +
                     "Lore framework exists, but player-facing POIs are not placed.");
             }
 
             if (_audioLogPickupCount <= 0)
             {
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     "[LoreSystemsRoot] No AudioLogPickup components found in the loaded scene scope. " +
                     "AudioLog framework exists, but no world pickup surfaces are placed.");
             }
@@ -198,7 +198,7 @@ namespace Hecton8.Bootstrap
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (logMissingSystems && CountFoundSystems() < ExpectedSystemCount)
             {
-                Debug.LogWarning($"[LoreSystemsRoot] Missing systems: {BuildMissingSystemsSummary()}");
+                Hecton8.Core.H8Debug.LogWarning($"[LoreSystemsRoot] Missing systems: {BuildMissingSystemsSummary()}");
             }
 #endif
         }
@@ -282,7 +282,7 @@ namespace Hecton8.Bootstrap
             if (Application.isPlaying)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     $"[LoreSystemsRoot] Skipping runtime auto-create for '{goName}'. This system requires authored inspector data before play.",
                     this);
 #endif

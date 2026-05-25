@@ -1,0 +1,12 @@
+﻿Assets/_Project/Scripts/Physics\Vehicles\SubmarineDynamicsRuntime_Gyroscopes.cs:757:            Vector3 origin = new Vector3((float)packet.CurrentAup.x, (float)packet.CurrentAup.y, (float)packet.CurrentAup.z);
+Assets/_Project/Scripts/Physics\Exosuit\ExosuitKinematicsJobs.cs:1279:                (float)(state.AUP_Position.x - cameraAup.x),
+Assets/_Project/Scripts/Physics\Exosuit\ExosuitKinematicsJobs.cs:1280:                (float)(state.AUP_Position.y - cameraAup.y),
+Assets/_Project/Scripts/Physics\Exosuit\ExosuitKinematicsJobs.cs:1281:                (float)(state.AUP_Position.z - cameraAup.z)), float3.zero);
+Assets/_Project/Scripts/Physics\Buoyancy\BuoyancyDisplacementJobs.cs:294:                float3 localDelta = SanitizeFinite(new float3((float)deltaAup.x, (float)deltaAup.y, (float)deltaAup.z), float3.zero);
+Assets/_Project/Scripts/Physics\Buoyancy\BuoyancyDisplacementJobs.cs:828:            float3 local = SanitizeFinite(new float3((float)localAup.x, (float)localAup.y, (float)localAup.z), float3.zero);
+Assets/_Project/Scripts/Physics\Buoyancy\AsyncReadback\AsyncBuoyancyReadbackRuntime.cs:1952:                Vector3 local = new Vector3(state.LastLocalX, (float)(state.LastHeightAupY - origin.y), state.LastLocalZ);
+Assets/_Project/Scripts/Physics\Seaglide\Editor\SeaglideHydrodynamicsEditorTools.cs:507:                (float)(packet.CurrentAUP.x - offset.x),
+Assets/_Project/Scripts/Physics\Seaglide\Editor\SeaglideHydrodynamicsEditorTools.cs:508:                (float)(packet.CurrentAUP.y - offset.y),
+Assets/_Project/Scripts/Physics\Seaglide\Editor\SeaglideHydrodynamicsEditorTools.cs:509:                (float)(packet.CurrentAUP.z - offset.z));
+Assets/_Project/Scripts/Physics\KCC\KinematicSleepStateJobs.cs:264:            float3 rawLocal = new float3((float)localAup.x, (float)localAup.y, (float)localAup.z);
+Assets/_Project/Scripts/Physics\KCC\HectonKccRuntime_SmokeTest.cs:487:                        driftSum = (float)math.abs(States[i].AUP_Position.x - math.round(States[i].AUP_Position.x * 1000.0d) * 0.001d) * 1000f;

@@ -263,7 +263,7 @@ namespace Hecton8.Modding
             compoundHash = 0u;
             if (string.IsNullOrWhiteSpace(modId) || string.IsNullOrWhiteSpace(settingName))
             {
-                Debug.LogWarning("[ModSettingsRegistry] Refused to register a setting with an empty modId or settingName.");
+                Hecton8.Core.H8Debug.LogWarning("[ModSettingsRegistry] Refused to register a setting with an empty modId or settingName.");
                 return false;
             }
 
@@ -318,7 +318,7 @@ namespace Hecton8.Modding
             }
             catch (Exception exception)
             {
-                Debug.LogWarning($"[ModSettingsRegistry] Toggle callback failed for mod '{modId}': {exception}");
+                Hecton8.Core.H8Debug.LogWarning($"[ModSettingsRegistry] Toggle callback failed for mod '{modId}': {exception}");
             }
         }
 
@@ -336,7 +336,7 @@ namespace Hecton8.Modding
             }
             catch (Exception exception)
             {
-                Debug.LogWarning($"[ModSettingsRegistry] Slider callback failed for mod '{modId}': {exception}");
+                Hecton8.Core.H8Debug.LogWarning($"[ModSettingsRegistry] Slider callback failed for mod '{modId}': {exception}");
             }
         }
 

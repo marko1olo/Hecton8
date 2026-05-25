@@ -422,7 +422,7 @@ namespace Hecton8.UI
             if (messageHash == 0u)
                 return;
 
-            float now = Time.unscaledTime;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
 
             if (messageHash == _currentMessageHash && severity == _currentSeverity && _timer > 0f)
             {

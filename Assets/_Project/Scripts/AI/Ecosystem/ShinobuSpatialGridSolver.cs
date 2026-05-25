@@ -3,7 +3,9 @@ using System.Buffers.Binary;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -29,11 +31,13 @@ namespace Hecton8.AI.Ecosystem
         public const uint TelemetryFlagTimingUnavailable = 2u;
         public const uint TelemetryFlagQueryCountPatched = 4u;
         public const uint TelemetryFlagInvalidInput = 8u;
+        public const uint TelemetryFlagQueryResolveFailed = 16u;
         public const uint InvalidEntityRowIndex = 0xFFFFFFFFu;
         public const uint DefaultHashMultiplierX = 73856093u;
         public const uint DefaultHashMultiplierY = 19349663u;
         public const uint DefaultHashMultiplierZ = 83492791u;
         public const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_301.bin";
+        public const string Agent1301DumpRelativePath = "Docs/AgentLogs/Dump_1301_AIEcology.bin";
         public const string ProfileCsvRelativePath = "spatial_grid_profiles.csv";
         public const string ProfileCsvPrecomputedRelativePath = "Data/Precomputed/spatial_grid_profiles.csv";
     }
@@ -315,47 +319,90 @@ namespace Hecton8.AI.Ecosystem
         }
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 144)]
     public struct SpatialHashQuery
     {
-        [ReadOnly] public NativeArray<SpatialGridEntryDTO> Entries;
-        [ReadOnly] public NativeArray<SpatialGridBucketRangeDTO> BucketRanges;
-        [ReadOnly] public NativeArray<AmbientEntityAupDTO> AupSnapshot;
-        public int EntryCount;
-        public int BucketMask;
-        public uint Frame;
-        public float CellSizeMeters;
-        public uint HashMultiplierX;
-        public uint HashMultiplierY;
-        public uint HashMultiplierZ;
-        public double3 CenterAbsolute;
-        public int MaxResults;
-        public int MaxProbeCount;
+        [FieldOffset(0)] public double3 CenterAbsolute;
+        [FieldOffset(24)] public VaultGenerationHandle<SpatialGridEntryDTO> EntriesHandle;
+        [FieldOffset(40)] public VaultGenerationHandle<SpatialGridBucketRangeDTO> BucketRangesHandle;
+        [FieldOffset(56)] public VaultGenerationHandle<AmbientEntityAupDTO> AupSnapshotHandle;
+        [FieldOffset(72)] public VaultGenerationHandle<SpatialGridTelemetryEntry> TelemetryHandle;
+        [FieldOffset(88)] public VaultGenerationHandle<int> TelemetryCursorHandle;
+        [FieldOffset(104)] public int EntryCount;
+        [FieldOffset(108)] public int BucketMask;
+        [FieldOffset(112)] public uint Frame;
+        [FieldOffset(116)] public float CellSizeMeters;
+        [FieldOffset(120)] public uint HashMultiplierX;
+        [FieldOffset(124)] public uint HashMultiplierY;
+        [FieldOffset(128)] public uint HashMultiplierZ;
+        [FieldOffset(132)] public int MaxResults;
+        [FieldOffset(136)] public int MaxProbeCount;
+        [FieldOffset(140)] private uint _pad0;
 
-        public int CollectEntitiesInRadius(double3 centerAup, float radiusMeters, NativeArray<uint> results)
+        public int CollectEntitiesInRadius(IDataVault vault, double3 centerAup, float radiusMeters, NativeArray<uint> results)
         {
-            if (!Entries.IsCreated || !BucketRanges.IsCreated || !AupSnapshot.IsCreated || !results.IsCreated || results.Length <= 0)
+            int resultLength = results.IsCreated ? results.Length : 0;
+            if (resultLength <= 0 ||
+                !math.all(math.isfinite(centerAup)) ||
+                !math.isfinite(radiusMeters) ||
+                !math.isfinite(CellSizeMeters))
+            {
+                uint invalidInputHash = 2166136261u;
+                invalidInputHash = ShinobuSpatialGridMath.MixStateHash(invalidInputHash, 5u);
+                invalidInputHash = ShinobuSpatialGridMath.MixStateHash(invalidInputHash, (uint)math.max(0, resultLength));
+                invalidInputHash = ShinobuSpatialGridMath.MixStateHash(invalidInputHash, math.all(math.isfinite(centerAup)) ? 1u : 0u);
+                invalidInputHash = ShinobuSpatialGridMath.MixStateHash(invalidInputHash, math.isfinite(radiusMeters) ? 1u : 0u);
+                invalidInputHash = ShinobuSpatialGridMath.MixStateHash(invalidInputHash, math.isfinite(CellSizeMeters) ? 1u : 0u);
+                RecordQueryFailure(vault, invalidInputHash);
                 return 0;
+            }
 
-            int safeCount = math.min(math.max(0, EntryCount), math.min(Entries.Length, AupSnapshot.Length));
+            if (!TryResolveViews(
+                    vault,
+                    out NativeArray<SpatialGridEntryDTO>.ReadOnly entries,
+                    out NativeArray<SpatialGridBucketRangeDTO>.ReadOnly bucketRanges,
+                    out NativeArray<AmbientEntityAupDTO>.ReadOnly aupSnapshot,
+                    out uint failureHash))
+            {
+                RecordQueryFailure(vault, failureHash);
+                return 0;
+            }
+
+            int safeCount = math.min(math.max(0, EntryCount), math.min(entries.Length, aupSnapshot.Length));
             if (safeCount <= 0)
                 return 0;
 
             float safeRadius = math.max(0.001f, radiusMeters);
+            float safeCellSize = math.max(0.25f, CellSizeMeters);
             float radiusSq = safeRadius * safeRadius;
-            SpatialGridCell64 baseCell = ShinobuSpatialGridMath.QuantizeCell(centerAup, math.max(0.25f, CellSizeMeters));
+            SpatialGridCell64 baseCell = ShinobuSpatialGridMath.QuantizeCell(centerAup, safeCellSize);
             int cellProbeBudget = math.clamp(MaxProbeCount <= 0 ? 27 : MaxProbeCount, 1, 343);
-            int cellRadius = ShinobuSpatialGridMath.ResolvePublicQueryCellRadius(safeRadius, CellSizeMeters, cellProbeBudget);
+            int cellRadius = ShinobuSpatialGridMath.ResolvePublicQueryCellRadius(safeRadius, safeCellSize, cellProbeBudget);
             int written = 0;
-            int maxResults = math.min(results.Length, math.max(1, MaxResults));
+            int maxResults = math.min(resultLength, math.max(1, MaxResults));
             int evaluated = 0;
-            int maxEvaluated = math.min(safeCount, math.max(maxResults, maxResults * 4));
+            int evaluationBudget = maxResults > int.MaxValue / 4 ? int.MaxValue : maxResults * 4;
+            int maxEvaluated = math.min(safeCount, math.max(maxResults, evaluationBudget));
             uint2 centerFingerprint = ShinobuSpatialGridMath.FingerprintCell(
                 in baseCell,
                 HashMultiplierX,
                 HashMultiplierY,
                 HashMultiplierZ);
             uint centerHash = ShinobuSpatialGridMath.HashCellFromFingerprint(centerFingerprint);
-            CollectRange(centerHash, centerFingerprint, centerAup, radiusSq, safeCount, maxResults, maxEvaluated, results, ref written, ref evaluated);
+            CollectRange(
+                entries,
+                bucketRanges,
+                aupSnapshot,
+                centerHash,
+                centerFingerprint,
+                centerAup,
+                radiusSq,
+                safeCount,
+                maxResults,
+                maxEvaluated,
+                results,
+                ref written,
+                ref evaluated);
             int visitedCells = 1;
             int maxDistanceSq = cellRadius * cellRadius * 3;
             for (int distanceSq = 1; distanceSq <= maxDistanceSq && written < maxResults && visitedCells < cellProbeBudget && evaluated < maxEvaluated; distanceSq++)
@@ -372,12 +419,10 @@ namespace Hecton8.AI.Ecosystem
                                 continue;
 
                             visitedCells++;
-                            SpatialGridCell64 queryCell = new SpatialGridCell64
-                            {
-                                X = baseCell.X + x,
-                                Y = baseCell.Y + y,
-                                Z = baseCell.Z + z
-                            };
+                            SpatialGridCell64 queryCell = default;
+                            queryCell.X = baseCell.X + x;
+                            queryCell.Y = baseCell.Y + y;
+                            queryCell.Z = baseCell.Z + z;
                             uint2 fingerprint = ShinobuSpatialGridMath.FingerprintCell(
                                 in queryCell,
                                 HashMultiplierX,
@@ -385,7 +430,20 @@ namespace Hecton8.AI.Ecosystem
                                 HashMultiplierZ);
                             uint hash = ShinobuSpatialGridMath.HashCellFromFingerprint(fingerprint);
 
-                            CollectRange(hash, fingerprint, centerAup, radiusSq, safeCount, maxResults, maxEvaluated, results, ref written, ref evaluated);
+                            CollectRange(
+                                entries,
+                                bucketRanges,
+                                aupSnapshot,
+                                hash,
+                                fingerprint,
+                                centerAup,
+                                radiusSq,
+                                safeCount,
+                                maxResults,
+                                maxEvaluated,
+                                results,
+                                ref written,
+                                ref evaluated);
                         }
                     }
                 }
@@ -396,6 +454,9 @@ namespace Hecton8.AI.Ecosystem
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void CollectRange(
+            NativeArray<SpatialGridEntryDTO>.ReadOnly entries,
+            NativeArray<SpatialGridBucketRangeDTO>.ReadOnly bucketRanges,
+            NativeArray<AmbientEntityAupDTO>.ReadOnly aupSnapshot,
             uint cellHash,
             uint2 cellFingerprint,
             double3 centerAup,
@@ -407,22 +468,25 @@ namespace Hecton8.AI.Ecosystem
             ref int written,
             ref int evaluated)
         {
-            if (!TryFindRange(cellHash, cellFingerprint, out SpatialGridBucketRangeDTO range))
+            if (!TryFindRange(bucketRanges, cellHash, cellFingerprint, out SpatialGridBucketRangeDTO range))
                 return;
 
-            int end = math.min(safeCount, range.StartIndex + math.max(0, range.Count));
-            for (int i = math.max(0, range.StartIndex); i < end && written < maxResults && evaluated < maxEvaluated; i++)
+            int start = math.clamp(range.StartIndex, 0, safeCount);
+            int available = safeCount - start;
+            int count = math.min(math.max(0, range.Count), available);
+            int end = start + count;
+            for (int i = start; i < end && written < maxResults && evaluated < maxEvaluated; i++)
             {
-                SpatialGridEntryDTO entry = Entries[i];
+                SpatialGridEntryDTO entry = entries[i];
                 if (!ShinobuSpatialGridMath.CellFingerprintEquals(entry.CellFingerprint, cellFingerprint))
                     continue;
 
                 evaluated++;
                 int entityIndex = (int)entry.EntityRowIndex;
-                if ((uint)entityIndex >= (uint)AupSnapshot.Length)
+                if ((uint)entityIndex >= (uint)aupSnapshot.Length)
                     continue;
 
-                AmbientEntityAupDTO meta = AupSnapshot[entityIndex];
+                AmbientEntityAupDTO meta = aupSnapshot[entityIndex];
                 if (!ShinobuEcosystemBalancer.IsFiniteAup(in meta.PositionAup))
                     continue;
 
@@ -437,21 +501,34 @@ namespace Hecton8.AI.Ecosystem
             }
         }
 
-        public bool TryFindRange(uint cellHash, uint2 cellFingerprint, out SpatialGridBucketRangeDTO range)
+        public bool TryFindRange(IDataVault vault, uint cellHash, uint2 cellFingerprint, out SpatialGridBucketRangeDTO range)
+        {
+            if (TryResolveBucketRanges(vault, out NativeArray<SpatialGridBucketRangeDTO>.ReadOnly bucketRanges, out _))
+                return TryFindRange(bucketRanges, cellHash, cellFingerprint, out range);
+
+            range = default;
+            return false;
+        }
+
+        private bool TryFindRange(
+            NativeArray<SpatialGridBucketRangeDTO>.ReadOnly bucketRanges,
+            uint cellHash,
+            uint2 cellFingerprint,
+            out SpatialGridBucketRangeDTO range)
         {
             range = default;
-            if (cellHash == 0u || !BucketRanges.IsCreated || BucketRanges.Length <= 0)
+            if (cellHash == 0u || !bucketRanges.IsCreated || bucketRanges.Length <= 0)
                 return false;
 
-            int mask = BucketMask > 0 ? BucketMask : BucketRanges.Length - 1;
-            int maxProbe = ShinobuSpatialGridMath.ResolveStructuralProbeCount(BucketRanges.Length);
+            int mask = BucketMask > 0 ? BucketMask : bucketRanges.Length - 1;
+            int maxProbe = ShinobuSpatialGridMath.ResolveStructuralProbeCount(bucketRanges.Length);
             for (int probe = 0; probe < maxProbe; probe++)
             {
                 int slot = (int)((cellHash + (uint)probe) & (uint)mask);
-                if ((uint)slot >= (uint)BucketRanges.Length)
+                if ((uint)slot >= (uint)bucketRanges.Length)
                     return false;
 
-                SpatialGridBucketRangeDTO candidate = BucketRanges[slot];
+                SpatialGridBucketRangeDTO candidate = bucketRanges[slot];
                 if (candidate.Flags != Frame)
                     return false;
                 if (candidate.CellHash == cellHash &&
@@ -463,6 +540,163 @@ namespace Hecton8.AI.Ecosystem
             }
 
             return false;
+        }
+
+        private bool TryResolveViews(
+            IDataVault vault,
+            out NativeArray<SpatialGridEntryDTO>.ReadOnly entries,
+            out NativeArray<SpatialGridBucketRangeDTO>.ReadOnly bucketRanges,
+            out NativeArray<AmbientEntityAupDTO>.ReadOnly aupSnapshot,
+            out uint failureHash)
+        {
+            entries = default;
+            bucketRanges = default;
+            aupSnapshot = default;
+            failureHash = 2166136261u;
+
+            if (vault == null)
+            {
+                failureHash = ShinobuSpatialGridMath.MixStateHash(failureHash, 1u);
+                return false;
+            }
+
+            if (!ValidateVaultHandle(in EntriesHandle, BufferID.ShinobuSpatialGridEntries) ||
+                !ValidateVaultHandle(in BucketRangesHandle, BufferID.ShinobuSpatialGridBucketRanges) ||
+                !ValidateVaultHandle(in AupSnapshotHandle, BufferID.ShinobuAmbientAupSnapshot))
+            {
+                failureHash = ShinobuSpatialGridMath.MixStateHash(failureHash, 2u);
+                return false;
+            }
+
+            if (!vault.TryReadOnlyHandle(in EntriesHandle, out entries) ||
+                !vault.TryReadOnlyHandle(in BucketRangesHandle, out bucketRanges) ||
+                !vault.TryReadOnlyHandle(in AupSnapshotHandle, out aupSnapshot) ||
+                !entries.IsCreated ||
+                !bucketRanges.IsCreated ||
+                !aupSnapshot.IsCreated)
+            {
+                failureHash = ShinobuSpatialGridMath.MixStateHash(failureHash, 3u);
+                return false;
+            }
+
+            int requiredCount = math.max(0, EntryCount);
+            if (entries.Length < requiredCount ||
+                aupSnapshot.Length < requiredCount ||
+                bucketRanges.Length <= 0 ||
+                (BucketMask > 0 && BucketMask >= bucketRanges.Length))
+            {
+                int resolvedEntryLength = entries.IsCreated ? entries.Length : 0;
+                int resolvedAupLength = aupSnapshot.IsCreated ? aupSnapshot.Length : 0;
+                int resolvedBucketLength = bucketRanges.IsCreated ? bucketRanges.Length : 0;
+                failureHash = ShinobuSpatialGridMath.MixStateHash(failureHash, 4u);
+                failureHash = ShinobuSpatialGridMath.MixStateHash(failureHash, (uint)requiredCount);
+                failureHash = ShinobuSpatialGridMath.MixStateHash(failureHash, (uint)resolvedEntryLength);
+                failureHash = ShinobuSpatialGridMath.MixStateHash(failureHash, (uint)resolvedAupLength);
+                failureHash = ShinobuSpatialGridMath.MixStateHash(failureHash, (uint)resolvedBucketLength);
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool TryResolveBucketRanges(
+            IDataVault vault,
+            out NativeArray<SpatialGridBucketRangeDTO>.ReadOnly bucketRanges,
+            out uint failureHash)
+        {
+            bucketRanges = default;
+            failureHash = 2166136261u;
+            if (vault == null)
+            {
+                failureHash = ShinobuSpatialGridMath.MixStateHash(failureHash, 1u);
+                return false;
+            }
+
+            if (!ValidateVaultHandle(in BucketRangesHandle, BufferID.ShinobuSpatialGridBucketRanges))
+            {
+                failureHash = ShinobuSpatialGridMath.MixStateHash(failureHash, 2u);
+                return false;
+            }
+
+            if (!vault.TryReadOnlyHandle(in BucketRangesHandle, out bucketRanges) ||
+                !bucketRanges.IsCreated ||
+                bucketRanges.Length <= 0 ||
+                (BucketMask > 0 && BucketMask >= bucketRanges.Length))
+            {
+                int resolvedBucketLength = bucketRanges.IsCreated ? bucketRanges.Length : 0;
+                failureHash = ShinobuSpatialGridMath.MixStateHash(failureHash, 3u);
+                failureHash = ShinobuSpatialGridMath.MixStateHash(failureHash, (uint)resolvedBucketLength);
+                return false;
+            }
+
+            return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool ValidateVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId) where T : struct
+        {
+            return handle.BufferID == (uint)bufferId &&
+                   handle.SystemID == (uint)SystemID.AIEcology &&
+                   handle.Generation != 0u;
+        }
+
+        private void RecordQueryFailure(IDataVault vault, uint failureHash)
+        {
+            if (vault == null ||
+                !ValidateVaultHandle(in TelemetryHandle, BufferID.ShinobuSpatialGridTelemetryRing) ||
+                !ValidateVaultHandle(in TelemetryCursorHandle, BufferID.ShinobuSpatialGridTelemetryCursor))
+                return;
+
+            NativeArray<SpatialGridTelemetryEntry> telemetry = default;
+            NativeArray<int> telemetryCursor = default;
+            bool telemetryLocked = false;
+            bool cursorLocked = false;
+
+            try
+            {
+                telemetryLocked = vault.TryAcquireWriteLock(in TelemetryHandle, SystemID.AIEcology, out telemetry);
+                if (!telemetryLocked || !telemetry.IsCreated || telemetry.Length <= 0)
+                    return;
+
+                cursorLocked = vault.TryAcquireWriteLock(in TelemetryCursorHandle, SystemID.AIEcology, out telemetryCursor);
+                if (!cursorLocked || !telemetryCursor.IsCreated || telemetryCursor.Length <= 0)
+                    return;
+
+                int cursor = telemetryCursor[0];
+                if (cursor < 0 || cursor >= int.MaxValue - telemetry.Length)
+                    cursor = 0;
+
+                int slot = cursor % telemetry.Length;
+                telemetryCursor[0] = cursor + 1;
+
+                SpatialGridTelemetryEntry entry = default;
+                entry.Frame = Frame;
+                entry.EntityCount = math.max(0, EntryCount);
+                entry.MaxBucketOccupancy = 0;
+                entry.QueryCount = 0;
+                entry.QuantizeMicroseconds = ShinobuSpatialGridConstants.TelemetryTimingUnavailableMicroseconds;
+                entry.SortMicroseconds = ShinobuSpatialGridConstants.TelemetryTimingUnavailableMicroseconds;
+                entry.GlobalQualityWeight = 0f;
+                entry.CellSizeMeters = math.isfinite(CellSizeMeters) ? math.max(0.25f, CellSizeMeters) : 0.25f;
+                entry.OverflowCount = 0u;
+                entry.Flags = ShinobuSpatialGridConstants.TelemetryFlagInvalidInput |
+                              ShinobuSpatialGridConstants.TelemetryFlagQueryResolveFailed |
+                              ShinobuSpatialGridConstants.TelemetryFlagTimingUnavailable;
+                entry.StateHash = ShinobuSpatialGridMath.MixStateHash(failureHash, (uint)EntryCount);
+                entry.MaxProbeCount = MaxProbeCount;
+                entry.MaxQueryResults = MaxResults;
+                entry.BucketRangeCount = 0;
+                entry.InvalidInputCount = 1;
+                entry.Pad1 = 0u;
+                telemetry[slot] = entry;
+            }
+            finally
+            {
+                if (cursorLocked)
+                    vault.ReleaseWriteLock(in TelemetryCursorHandle, SystemID.AIEcology);
+                if (telemetryLocked)
+                    vault.ReleaseWriteLock(in TelemetryHandle, SystemID.AIEcology);
+            }
         }
     }
 
@@ -1104,44 +1338,477 @@ namespace Hecton8.AI.Ecosystem
             return any && math.isfinite(value);
         }
     }
+#endif
 
     public static unsafe class ShinobuSpatialGridForensics
     {
         private const ulong DumpMagic = 0x3130335F47505348UL;
         private const int DumpVersion = 1;
+        private const int DumpHeaderBytes = 24;
+        private const int DumpStateIdle = 0;
+        private const int DumpStateSnapshotting = 1;
+        private const int DumpStatePending = 2;
+        private const int DumpStateWriting = 3;
+        private const int DumpWorkerJoinMilliseconds = 500;
+        private const int DumpWorkerPollMilliseconds = 100;
+        private const int DumpFailureOwnerPath = 1;
+        private const int DumpFailureAgentPath = 2;
+        private const int DumpFailureQueue = 4;
+        public const int DumpSnapshotBytes =
+            DumpHeaderBytes + (ShinobuSpatialGridConstants.TelemetryCapacity * 64);
+
+        private static IDataVault s_dumpVault;
+        private static VaultGenerationHandle<byte> s_dumpSnapshotHandle;
+        private static Thread s_dumpWorker;
+        private static AutoResetEvent s_dumpSignal;
+        private static string s_ownerDumpPath;
+        private static string s_agentDumpPath;
+        private static int s_dumpState;
+        private static int s_stopRequested;
+        private static int s_pendingByteCount;
+        private static int s_lastDumpFailureFlags;
+        private static int s_totalDumpWriteFailures;
+
+        public static int LastDumpFailureFlags => Volatile.Read(ref s_lastDumpFailureFlags);
+
+        public static int TotalDumpWriteFailures => Volatile.Read(ref s_totalDumpWriteFailures);
+
+        public static void RecordQueueFailure()
+        {
+            AddDumpFailureFlags(DumpFailureQueue);
+            Interlocked.Increment(ref s_totalDumpWriteFailures);
+        }
+
+        private static void AddDumpFailureFlags(int flags)
+        {
+            if (flags == 0)
+                return;
+
+            int observed;
+            int updated;
+            do
+            {
+                observed = Volatile.Read(ref s_lastDumpFailureFlags);
+                updated = observed | flags;
+                if (updated == observed)
+                    return;
+            }
+            while (Interlocked.CompareExchange(ref s_lastDumpFailureFlags, updated, observed) != observed);
+        }
 
         public static void WriteTelemetryDump(string projectRoot, NativeArray<SpatialGridTelemetryEntry> telemetry, int cursor)
         {
-            if (!telemetry.IsCreated || telemetry.Length <= 0 || string.IsNullOrEmpty(projectRoot))
-                return;
+            if (!TryQueueTelemetryDump(s_dumpVault, in s_dumpSnapshotHandle, telemetry, cursor))
+                RecordQueueFailure();
+        }
 
-            string path = Path.Combine(projectRoot, ShinobuSpatialGridConstants.DumpRelativePath);
-            string directory = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
+        public static bool TryWriteTelemetryDump(string projectRoot, NativeArray<SpatialGridTelemetryEntry> telemetry, int cursor)
+        {
+            return TryQueueTelemetryDump(s_dumpVault, in s_dumpSnapshotHandle, telemetry, cursor);
+        }
 
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
+        public static bool TryQueueTelemetryDump(
+            IDataVault vault,
+            in VaultGenerationHandle<byte> snapshotHandle,
+            NativeArray<SpatialGridTelemetryEntry> telemetry,
+            int cursor)
+        {
+            if (!IsDumpWorkerPrepared(vault, in snapshotHandle))
+                return false;
+
+            return TryQueueTelemetryDumpPrepared(vault, in snapshotHandle, telemetry, cursor);
+        }
+
+        public static bool EnsureDumpWorker(
+            string projectRoot,
+            IDataVault vault,
+            in VaultGenerationHandle<byte> snapshotHandle)
+        {
+            if (string.IsNullOrEmpty(projectRoot) ||
+                vault == null ||
+                !ValidateSnapshotHandle(in snapshotHandle))
+                return false;
+
+            if (s_dumpSignal != null &&
+                s_dumpWorker != null &&
+                s_dumpWorker.IsAlive &&
+                Volatile.Read(ref s_stopRequested) == 0 &&
+                s_dumpVault == vault &&
+                SameSnapshotHandle(in snapshotHandle))
             {
-                Span<byte> header = stackalloc byte[24];
-                BinaryPrimitives.WriteUInt64LittleEndian(header.Slice(0, 8), DumpMagic);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(8, 4), DumpVersion);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(12, 4), telemetry.Length);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(16, 4), cursor);
-                BinaryPrimitives.WriteInt32LittleEndian(header.Slice(20, 4), UnsafeUtility.SizeOf<SpatialGridTelemetryEntry>());
-                stream.Write(header);
+                return true;
+            }
 
-                int start = cursor - telemetry.Length;
-                if (start < 0)
-                    start = 0;
-                for (int i = 0; i < telemetry.Length; i++)
+            try
+            {
+                if (s_dumpWorker != null &&
+                    s_dumpWorker.IsAlive &&
+                    (Volatile.Read(ref s_stopRequested) != 0 ||
+                     s_dumpVault != vault ||
+                     !SameSnapshotHandle(in snapshotHandle)))
                 {
-                    int slot = (start + i) % telemetry.Length;
-                    SpatialGridTelemetryEntry entry = telemetry[slot];
-                    ReadOnlySpan<SpatialGridTelemetryEntry> entrySpan = MemoryMarshal.CreateReadOnlySpan(ref entry, 1);
-                    stream.Write(MemoryMarshal.AsBytes(entrySpan));
+                    return false;
                 }
+
+                s_dumpVault = vault;
+                s_dumpSnapshotHandle = snapshotHandle;
+                s_ownerDumpPath = Path.Combine(projectRoot, ShinobuSpatialGridConstants.DumpRelativePath);
+                s_agentDumpPath = Path.Combine(projectRoot, ShinobuSpatialGridConstants.Agent1301DumpRelativePath);
+                string ownerDirectory = Path.GetDirectoryName(s_ownerDumpPath);
+                if (!string.IsNullOrEmpty(ownerDirectory))
+                    Directory.CreateDirectory(ownerDirectory);
+                string agentDirectory = Path.GetDirectoryName(s_agentDumpPath);
+                if (!string.IsNullOrEmpty(agentDirectory))
+                    Directory.CreateDirectory(agentDirectory);
+
+                Volatile.Write(ref s_stopRequested, 0);
+                if (s_dumpSignal == null)
+                    s_dumpSignal = new AutoResetEvent(false);
+
+                if (s_dumpWorker == null || !s_dumpWorker.IsAlive)
+                {
+                    s_dumpWorker = new Thread(DumpWorkerLoop)
+                    {
+                        IsBackground = true,
+                        Name = "H8.AI.SpatialGridDump"
+                    };
+                    s_dumpWorker.Start();
+                }
+
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            catch (ThreadStateException)
+            {
+                return false;
+            }
+            catch (OutOfMemoryException)
+            {
+                return false;
             }
         }
+
+        public static void ShutdownDumpWorker()
+        {
+            Volatile.Write(ref s_stopRequested, 1);
+            AutoResetEvent signal = s_dumpSignal;
+            if (signal != null)
+            {
+                try
+                {
+                    signal.Set();
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+            }
+
+            Thread worker = s_dumpWorker;
+            bool workerStopped = worker == null || !worker.IsAlive;
+            if (worker != null && worker.IsAlive)
+                workerStopped = worker.Join(DumpWorkerJoinMilliseconds);
+
+            if (!workerStopped)
+                return;
+
+            DrainPendingDump();
+            s_dumpWorker = null;
+            if (signal != null)
+                signal.Dispose();
+            s_dumpSignal = null;
+            s_dumpVault = null;
+            s_dumpSnapshotHandle = default;
+            Volatile.Write(ref s_pendingByteCount, 0);
+            Volatile.Write(ref s_dumpState, DumpStateIdle);
+            Volatile.Write(ref s_stopRequested, 0);
+        }
+
+        private static bool TryQueueTelemetryDumpPrepared(
+            IDataVault vault,
+            in VaultGenerationHandle<byte> snapshotHandle,
+            NativeArray<SpatialGridTelemetryEntry> telemetry,
+            int cursor)
+        {
+            if (vault == null ||
+                !ValidateSnapshotHandle(in snapshotHandle) ||
+                !telemetry.IsCreated ||
+                telemetry.Length <= 0)
+                return false;
+
+            if (Volatile.Read(ref s_stopRequested) != 0)
+                return false;
+
+            if (Interlocked.CompareExchange(ref s_dumpState, DumpStateSnapshotting, DumpStateIdle) != DumpStateIdle)
+                return false;
+
+            NativeArray<byte> snapshot = default;
+            bool snapshotLocked = false;
+            try
+            {
+                snapshotLocked = vault.TryAcquireWriteLock(in snapshotHandle, SystemID.AIEcology, out snapshot);
+                if (!snapshotLocked || !snapshot.IsCreated || snapshot.Length < DumpSnapshotBytes)
+                {
+                    Volatile.Write(ref s_dumpState, DumpStateIdle);
+                    return false;
+                }
+
+                int capacity = telemetry.Length;
+                int count = math.min(capacity, ShinobuSpatialGridConstants.TelemetryCapacity);
+                int safeCursor = cursor;
+                if (safeCursor < 0 || safeCursor >= int.MaxValue - capacity)
+                    safeCursor = 0;
+
+                long start = (long)safeCursor - count;
+                if (start < 0L)
+                    start = 0L;
+
+                int entrySize = UnsafeUtility.SizeOf<SpatialGridTelemetryEntry>();
+                int byteCount = DumpHeaderBytes + (count * entrySize);
+                if (entrySize != 64 ||
+                    byteCount <= DumpHeaderBytes ||
+                    byteCount > DumpSnapshotBytes)
+                {
+                    Volatile.Write(ref s_dumpState, DumpStateIdle);
+                    return false;
+                }
+
+                Span<byte> bytes = AsSpan(snapshot, DumpSnapshotBytes);
+                BinaryPrimitives.WriteUInt64LittleEndian(bytes.Slice(0, 8), DumpMagic);
+                BinaryPrimitives.WriteInt32LittleEndian(bytes.Slice(8, 4), DumpVersion);
+                BinaryPrimitives.WriteInt32LittleEndian(bytes.Slice(12, 4), count);
+                BinaryPrimitives.WriteInt32LittleEndian(bytes.Slice(16, 4), safeCursor);
+                BinaryPrimitives.WriteInt32LittleEndian(bytes.Slice(20, 4), entrySize);
+
+                int offset = DumpHeaderBytes;
+                for (int i = 0; i < count; i++)
+                {
+                    int slot = (int)((start + i) % capacity);
+                    SpatialGridTelemetryEntry entry = telemetry[slot];
+                    ReadOnlySpan<SpatialGridTelemetryEntry> entrySpan =
+                        MemoryMarshal.CreateReadOnlySpan(ref entry, 1);
+                    MemoryMarshal.AsBytes(entrySpan).CopyTo(bytes.Slice(offset, entrySize));
+                    offset += entrySize;
+                }
+
+                if (byteCount < DumpSnapshotBytes)
+                    bytes.Slice(byteCount).Clear();
+
+                Volatile.Write(ref s_pendingByteCount, byteCount);
+            }
+            finally
+            {
+                if (snapshotLocked)
+                    vault.ReleaseWriteLock(in snapshotHandle, SystemID.AIEcology);
+            }
+
+            Thread.MemoryBarrier();
+            Volatile.Write(ref s_dumpState, DumpStatePending);
+
+            AutoResetEvent signal = s_dumpSignal;
+            if (signal == null)
+            {
+                Volatile.Write(ref s_pendingByteCount, 0);
+                Volatile.Write(ref s_dumpState, DumpStateIdle);
+                return false;
+            }
+
+            try
+            {
+                signal.Set();
+                return true;
+            }
+            catch (ObjectDisposedException)
+            {
+                Volatile.Write(ref s_pendingByteCount, 0);
+                Volatile.Write(ref s_dumpState, DumpStateIdle);
+                return false;
+            }
+        }
+
+        private static void DumpWorkerLoop()
+        {
+            while (Volatile.Read(ref s_stopRequested) == 0)
+            {
+                AutoResetEvent signal = s_dumpSignal;
+                if (signal == null)
+                    return;
+
+                try
+                {
+                    signal.WaitOne(DumpWorkerPollMilliseconds);
+                }
+                catch (ObjectDisposedException)
+                {
+                    return;
+                }
+
+                DrainPendingDump();
+            }
+
+            DrainPendingDump();
+        }
+
+        private static void DrainPendingDump()
+        {
+            if (Interlocked.CompareExchange(ref s_dumpState, DumpStateWriting, DumpStatePending) != DumpStatePending)
+                return;
+
+            int baselineFailureFlags = Volatile.Read(ref s_lastDumpFailureFlags);
+            bool wroteOwner = TryWriteQueuedDumpFile(s_ownerDumpPath);
+            bool wroteAgent = TryWriteQueuedDumpFile(s_agentDumpPath);
+            int failureFlags = 0;
+            if (!wroteOwner)
+                failureFlags |= DumpFailureOwnerPath;
+            if (!wroteAgent)
+                failureFlags |= DumpFailureAgentPath;
+            if (failureFlags != 0)
+            {
+                AddDumpFailureFlags(failureFlags);
+                Interlocked.Increment(ref s_totalDumpWriteFailures);
+            }
+            else
+            {
+                Interlocked.CompareExchange(ref s_lastDumpFailureFlags, 0, baselineFailureFlags);
+            }
+
+            Volatile.Write(ref s_pendingByteCount, 0);
+            Volatile.Write(ref s_dumpState, DumpStateIdle);
+        }
+
+        private static bool TryWriteQueuedDumpFile(string path)
+        {
+            int byteCount = Volatile.Read(ref s_pendingByteCount);
+            NativeArray<byte> snapshot = default;
+            bool snapshotLocked = false;
+            if (string.IsNullOrEmpty(path) ||
+                byteCount <= DumpHeaderBytes ||
+                byteCount > DumpSnapshotBytes)
+            {
+                return false;
+            }
+
+            try
+            {
+                snapshotLocked = TryLockSnapshotForRead(out snapshot);
+                if (!snapshotLocked || !snapshot.IsCreated || snapshot.Length < byteCount)
+                    return false;
+
+                using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, 4096, FileOptions.WriteThrough))
+                {
+                    stream.Write(AsReadOnlySpan(snapshot, byteCount));
+                }
+
+                return true;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
+            finally
+            {
+                if (snapshotLocked)
+                    UnlockSnapshotRead();
+            }
+        }
+
+        private static bool TryLockSnapshotForRead(out NativeArray<byte> snapshot)
+        {
+            snapshot = default;
+            IDataVault vault = s_dumpVault;
+            if (vault == null ||
+                !ValidateSnapshotHandle(in s_dumpSnapshotHandle) ||
+                !vault.TryLockBuffer(BufferID.ShinobuSpatialGridDumpSnapshot, SystemID.AIEcology))
+            {
+                return false;
+            }
+
+            if (!vault.TryResolveHandle(in s_dumpSnapshotHandle, out NativeArray<byte> resolved) ||
+                !resolved.IsCreated ||
+                resolved.Length < DumpSnapshotBytes)
+            {
+                vault.TryUnlockBuffer(BufferID.ShinobuSpatialGridDumpSnapshot, SystemID.AIEcology);
+                return false;
+            }
+
+            snapshot = resolved;
+            return true;
+        }
+
+        private static bool IsDumpWorkerPrepared(
+            IDataVault vault,
+            in VaultGenerationHandle<byte> snapshotHandle)
+        {
+            AutoResetEvent signal = s_dumpSignal;
+            Thread worker = s_dumpWorker;
+            return signal != null &&
+                   worker != null &&
+                   worker.IsAlive &&
+                   Volatile.Read(ref s_stopRequested) == 0 &&
+                   s_dumpVault == vault &&
+                   SameSnapshotHandle(in snapshotHandle);
+        }
+
+        private static void UnlockSnapshotRead()
+        {
+            IDataVault vault = s_dumpVault;
+            if (vault != null)
+                vault.TryUnlockBuffer(BufferID.ShinobuSpatialGridDumpSnapshot, SystemID.AIEcology);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool ValidateSnapshotHandle(in VaultGenerationHandle<byte> handle)
+        {
+            return handle.BufferID == (uint)BufferID.ShinobuSpatialGridDumpSnapshot &&
+                   handle.SystemID == (uint)SystemID.AIEcology &&
+                   handle.Generation != 0u;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool SameSnapshotHandle(in VaultGenerationHandle<byte> handle)
+        {
+            return s_dumpSnapshotHandle.BufferID == handle.BufferID &&
+                   s_dumpSnapshotHandle.SystemID == handle.SystemID &&
+                   s_dumpSnapshotHandle.Generation == handle.Generation &&
+                   s_dumpSnapshotHandle.Flags == handle.Flags;
+        }
+
+        private static Span<byte> AsSpan(NativeArray<byte> buffer, int byteCount)
+        {
+            int safeCount = math.clamp(byteCount, 0, buffer.Length);
+            return new Span<byte>(NativeArrayUnsafeUtility.GetUnsafePtr(buffer), safeCount);
+        }
+
+        private static ReadOnlySpan<byte> AsReadOnlySpan(NativeArray<byte> buffer, int byteCount)
+        {
+            int safeCount = math.clamp(byteCount, 0, buffer.Length);
+            return new ReadOnlySpan<byte>(NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(buffer), safeCount);
+        }
     }
-#endif
 }

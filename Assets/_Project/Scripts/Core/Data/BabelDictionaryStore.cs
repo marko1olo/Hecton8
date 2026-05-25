@@ -85,7 +85,14 @@ namespace Hecton8.Core.Data
 
         public BabelDictionaryStore(IDataVault dataVault = null)
         {
+            PrewarmSignalLanes();
             _dataVault = dataVault;
+        }
+
+        private static void PrewarmSignalLanes()
+        {
+            SignalBus<PlayVoiceOverSignal>.Configure(expectedCapacity: 32, maxFrameSignals: 32, lowTierFrameSignals: 8);
+            SignalBus<PlayVoiceOverSignal>.EnsureInitialized();
         }
 
         public void BindDataVault(IDataVault dataVault)

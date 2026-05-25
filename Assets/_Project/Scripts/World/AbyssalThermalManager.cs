@@ -7,7 +7,6 @@ using Hecton8.Core;
 using Hecton8.Caves;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.SaveSystem;
 using Unity.Burst;
@@ -189,6 +188,7 @@ namespace Hecton8.World
         private const int ThermalGridFullVramMb = 3072;
         private const float SubmarineColdSpeedMultiplier = 0.7f;
         private const float BoilingDamageThresholdCelsius = 80f;
+        private const float PlayerEquivalentMassKg = 80f;
         private const float FaunaThermalAvoidanceThresholdCelsius = 50f;
         private const uint ThermalTelemetryFlagHeatSource = 1u << 0;
         private const uint ThermalTelemetryFlagPlayerAmbientTemp = 1u << 1;
@@ -641,11 +641,11 @@ namespace Hecton8.World
         private float _cableCutStampCooldown;
         private float _cableFluidDecalCooldown;
         private Transform _activeCutterTransform;
-        private Rigidbody _playerRigidbody;
         private PlayerTransportCoordinator _playerTransportCoordinator;
         private HectonPlayerMovement _playerMovement;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private ISubmarineRuntimeContext _submarineRuntimeContext;
+        private IPhysicsService _physicsService;
         private AbyssalFluidDecalManager _fluidDecalManager;
         private bool[] _cableReleasedStates;
         private float[] _cableReleaseProgress;
@@ -709,9 +709,11 @@ namespace Hecton8.World
         private float _thermalRoarCooldown;
         private float _thermalEruptionGpuRefreshTimer;
         private float _pendingSmokeVisualDeltaTime;
+        private float _pendingCableVisualDeltaTime;
         private int _pendingThermalBubbleCommandCount;
         private bool _localThermalPresentationDirty;
         private bool _smokeVisualSyncRequested;
+        private bool _cableVisualSyncRequested;
         private bool _thermalBubbleCommandsDirty;
         private bool _thermalMapMetadataDirty;
         private bool _pendingThermalMapActive;
@@ -919,7 +921,7 @@ namespace Hecton8.World
             if (registeredThermodynamics != null && registeredThermodynamics != this)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[AbyssalThermalManager] Duplicate instance detected. Destroying the newer component.", this);
+                Hecton8.Core.H8Debug.LogError("[AbyssalThermalManager] Duplicate instance detected. Destroying the newer component.", this);
 #endif
                 Destroy(this);
                 return;
@@ -1104,7 +1106,7 @@ namespace Hecton8.World
         public void Tick(float dt)
         {
             ResolveDependencies();
-            float deltaTime = Mathf.Max(0f, dt);
+            float deltaTime = math.max(0f, dt);
             AdvanceThermalMapColdTick(deltaTime);
             _simulationTime += deltaTime;
             UpdateSeismicEruption(deltaTime);
@@ -1120,10 +1122,11 @@ namespace Hecton8.World
             }
             UpdateEmpChainReaction(deltaTime);
             UpdateCableCutting(deltaTime);
-            UpdateCableVisuals(deltaTime);
+            _pendingCableVisualDeltaTime = deltaTime;
+            _cableVisualSyncRequested = true;
             UpdateEmpNests(deltaTime);
 
-            if (!_hasSmokeData || blackSmokeCompute == null || blackSmokeMaterial == null || _activeVentCount <= 0)
+            if (!_hasSmokeData || _activeVentCount <= 0)
                 return;
 
             _pendingSmokeVisualDeltaTime = deltaTime;
@@ -1203,6 +1206,12 @@ namespace Hecton8.World
             FlushLocalThermalPresentation();
             FlushThermalBubbleCommands();
 
+            if (_cableVisualSyncRequested)
+            {
+                UpdateCableVisuals(_pendingCableVisualDeltaTime);
+                _cableVisualSyncRequested = false;
+            }
+
             if (_smokeVisualSyncRequested)
             {
                 FlushSmokeVisualSync(_pendingSmokeVisualDeltaTime);
@@ -1221,12 +1230,12 @@ namespace Hecton8.World
 
             ResolveDependencies();
             IPlayerRuntimeContext playerContext = _playerRuntimeContext;
-            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : _playerRigidbody;
+            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : _playerMovement;
             GameObject playerObject = playerContext != null ? playerContext.PlayerObject : playerTransform != null ? playerTransform.gameObject : null;
             Vector3 playerPosition = ResolvePlayerRuntimePosition(playerContext, playerTransform);
             float playerTemperature = ResolveAmbientTemperatureCelsius(playerPosition);
 
-            if (ProcessThermalGameplayTarget(playerBody, playerObject, playerPosition, fdt, publishPresentation: true, out playerTemperature))
+            if (ProcessThermalGameplayTarget(null, playerObject, playerPosition, fdt, playerMovement, publishPresentation: true, out playerTemperature))
             {
                 _previousPlayerTemperatureCelsius = playerTemperature;
             }
@@ -1242,7 +1251,7 @@ namespace Hecton8.World
             {
                 Vector3 submarinePosition = submarineBody.worldCenterOfMass;
                 float submarineTemperature = ResolveAmbientTemperatureCelsius(submarinePosition);
-                ProcessThermalGameplayTarget(submarineBody, submarineBody.gameObject, submarinePosition, fdt, publishPresentation: false, out submarineTemperature);
+                ProcessThermalGameplayTarget(submarineBody, submarineBody.gameObject, submarinePosition, fdt, null, publishPresentation: false, out submarineTemperature);
                 if (_previousSubmarineTemperatureCelsius >= ThermalShockHotThresholdCelsius &&
                     submarineTemperature <= ThermalShockColdThresholdCelsius)
                 {
@@ -1516,6 +1525,7 @@ namespace Hecton8.World
             GameObject targetObject,
             Vector3 positionWS,
             float fixedDeltaTime,
+            HectonPlayerMovement playerMovement,
             bool publishPresentation,
             out float temperatureCelsius)
         {
@@ -1554,12 +1564,19 @@ namespace Hecton8.World
             if (temperatureCelsius <= BoilingDamageThresholdCelsius)
                 return true;
 
-            if (body != null && heat01 > 0f)
+            if (heat01 > 0f)
             {
-                float invMass = math.rcp(math.max(1f, body.mass));
+                float effectiveMass = body != null ? body.mass : PlayerEquivalentMassKg;
+                float invMass = math.rcp(math.max(1f, effectiveMass));
                 float velocityChange = thermalConvectionVelocityPerSecond * heat01 * invMass * fixedDeltaTime;
                 if (math.isfinite(velocityChange) && velocityChange > 0f)
-                    PhysicsForceRouter.QueueForce(body, Vector3.up * velocityChange, ForceMode.VelocityChange);
+                {
+                    Vector3 thermalImpulse = Vector3.up * velocityChange;
+                    if (playerMovement != null)
+                        playerMovement.QueueSubsystemExternalVelocityChange(thermalImpulse);
+                    else if (body != null)
+                        _physicsService?.QueueForce(body, thermalImpulse, ForceMode.VelocityChange);
+                }
             }
 
             if (targetObject != null && boilingDamagePerSecond > 0f)
@@ -1991,7 +2008,7 @@ namespace Hecton8.World
                 TemperatureCelsius = temperatureCelsius,
                 Heat01 = heat01,
                 Flags = flags,
-                Frame = Time.frameCount,
+                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                 ActiveVentCount = _activeVentCount
             };
             _thermalTelemetryIndex = (_thermalTelemetryIndex + 1) % ThermalTelemetryCapacity;
@@ -2848,12 +2865,6 @@ namespace Hecton8.World
                     playerTransform = bootstrapPlayer;
             }
 
-            if (_playerRigidbody == null && _playerRuntimeContext != null)
-                _playerRigidbody = _playerRuntimeContext.PlayerRigidbody;
-
-            if (_playerRigidbody == null && playerTransform != null)
-                playerTransform.TryGetComponent(out _playerRigidbody);
-
             if (_playerTransportCoordinator == null && playerTransform != null)
                 playerTransform.TryGetComponent(out _playerTransportCoordinator);
 
@@ -2888,6 +2899,7 @@ namespace Hecton8.World
         {
             _playerRuntimeContext = GlobalRegistry.Player;
             _submarineRuntimeContext = GlobalRegistry.Submarine;
+            _physicsService = GlobalRegistry.Physics;
             if (cutManager == null)
                 cutManager = GlobalRegistry.SargassumCut;
             if (_simulationBucketer == null)
@@ -2925,9 +2937,6 @@ namespace Hecton8.World
                         playerTransform = _playerRuntimeContext.PlayerTransform != null
                             ? _playerRuntimeContext.PlayerTransform
                             : playerTransform;
-                        _playerRigidbody = _playerRuntimeContext.PlayerRigidbody != null
-                            ? _playerRuntimeContext.PlayerRigidbody
-                            : _playerRigidbody;
                         viewCamera = _playerRuntimeContext.PlayerCamera != null
                             ? _playerRuntimeContext.PlayerCamera
                             : viewCamera;
@@ -2935,6 +2944,9 @@ namespace Hecton8.World
                     break;
                 case GlobalRegistryServiceSlot.Submarine:
                     _submarineRuntimeContext = currentService as ISubmarineRuntimeContext;
+                    break;
+                case GlobalRegistryServiceSlot.Physics:
+                    _physicsService = currentService as IPhysicsService;
                     break;
                 case GlobalRegistryServiceSlot.SargassumCutRuntime:
                     cutManager = currentService as SargassumCutManager;
@@ -4312,7 +4324,7 @@ namespace Hecton8.World
             if (!TryResolveAupFromRuntimeOrigin(playerPosition, out AbsoluteUniversePosition playerAup))
                 return;
 
-            Vector3 playerVelocity = PhysicsDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityThermalMaxAgeFrames, out Vector3 kccVelocity)
+            Vector3 playerVelocity = CoreDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityThermalMaxAgeFrames, out Vector3 kccVelocity)
                 ? kccVelocity
                 : Vector3.zero;
 

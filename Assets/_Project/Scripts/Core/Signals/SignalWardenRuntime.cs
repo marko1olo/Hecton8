@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
@@ -125,7 +126,7 @@ namespace Hecton8.Core.Contracts.Signals
             if (string.IsNullOrEmpty(dataPath))
                 return false;
 
-            string projectRoot = Directory.GetParent(dataPath)?.FullName;
+            string projectRoot = Path.GetDirectoryName(dataPath);
             if (string.IsNullOrEmpty(projectRoot))
                 return false;
 
@@ -736,19 +737,19 @@ namespace Hecton8.Core.Contracts.Signals
     [StructLayout(LayoutKind.Explicit, Size = 64)]
     public struct SignalTelemetryFrame
     {
-        [FieldOffset(0)] public uint Frame;
-        [FieldOffset(4)] public uint TotalPushedSignals;
-        [FieldOffset(8)] public uint PeakSignalsPerFrame;
-        [FieldOffset(12)] public uint CoalescedSignals;
-        [FieldOffset(16)] public uint DroppedSignals;
-        [FieldOffset(20)] public uint CorruptedSignals;
-        [FieldOffset(24)] public uint ActiveLaneCount;
-        [FieldOffset(28)] public uint Flags;
-        [FieldOffset(32)] public uint GlobalQualityMilli;
-        [FieldOffset(36)] public uint SystemStressMilli;
-        [FieldOffset(40)] public ulong Reserved0;
-        [FieldOffset(48)] public ulong Reserved1;
-        [FieldOffset(56)] public ulong Reserved2;
+        [FieldOffset(0)] public ulong Reserved0;
+        [FieldOffset(8)] public ulong Reserved1;
+        [FieldOffset(16)] public ulong Reserved2;
+        [FieldOffset(24)] public uint Frame;
+        [FieldOffset(28)] public uint TotalPushedSignals;
+        [FieldOffset(32)] public uint PeakSignalsPerFrame;
+        [FieldOffset(36)] public uint CoalescedSignals;
+        [FieldOffset(40)] public uint DroppedSignals;
+        [FieldOffset(44)] public uint CorruptedSignals;
+        [FieldOffset(48)] public uint ActiveLaneCount;
+        [FieldOffset(52)] public uint Flags;
+        [FieldOffset(56)] public uint GlobalQualityMilli;
+        [FieldOffset(60)] public uint SystemStressMilli;
     }
 
     /// <summary>
@@ -761,7 +762,7 @@ namespace Hecton8.Core.Contracts.Signals
         private const int HeaderSizeBytes = 16;
         private const uint DumpMagic0 = 0x48454354u; // HECT
         private const uint DumpMagic1 = 0x4F4E3800u; // ON8\0
-        private const string DumpPath = "Docs/AgentLogs/Dump_SIGNAL_CORRIDOR.bin";
+        private const string DumpPath = "Docs/AgentLogs/Dump_1311_SignalCorridor.bin";
         private const BufferID SignalTelemetryRingBufferId = (BufferID)73038;
         private const BufferID SignalTelemetryCursorBufferId = (BufferID)73039;
         private const SystemID OwnerSystemId = SystemID.CoreDiagnostics;
@@ -770,6 +771,11 @@ namespace Hecton8.Core.Contracts.Signals
         private static VaultGenerationHandle<SignalTelemetryFrame> _ringHandle;
         private static VaultGenerationHandle<int> _cursorHandle;
         private static int _initialized;
+        private static AutoResetEvent _dumpSignal;
+        private static Thread _dumpThread;
+        private static string _dumpPath;
+        private static int _dumpThreadStarted;
+        private static int _dumpRequested;
 
         /// <summary>Initializes the vault-backed black-box ring.</summary>
         public static void Initialize()
@@ -851,19 +857,44 @@ namespace Hecton8.Core.Contracts.Signals
             cursor[0] = index + 1 >= Capacity ? 0 : index + 1;
         }
 
-        /// <summary>Dumps the full signal black-box ring to Docs/AgentLogs/Dump_SIGNAL_CORRIDOR.bin.</summary>
+        /// <summary>Dumps the full signal black-box ring to Docs/AgentLogs/Dump_1311_SignalCorridor.bin.</summary>
         public static bool DumpToDisk()
+        {
+            return TryResolveDumpPath(out string path) && DumpToDiskAtPath(path);
+        }
+
+        /// <summary>Requests a fault-path dump on a persistent background worker.</summary>
+        public static bool RequestDumpToDiskAsync()
+        {
+            if (!TryResolveDumpPath(out string path))
+                return false;
+
+            if (!TryStartDumpThread(out AutoResetEvent signal))
+                return DumpToDiskAtPath(path);
+
+            Volatile.Write(ref _dumpPath, path);
+            Volatile.Write(ref _dumpRequested, 1);
+            return signal.Set();
+        }
+
+        private static bool TryResolveDumpPath(out string path)
+        {
+            path = null;
+            string root = Path.GetDirectoryName(Application.dataPath);
+            if (string.IsNullOrEmpty(root))
+                return false;
+
+            path = Path.Combine(root, DumpPath);
+            return !string.IsNullOrEmpty(path);
+        }
+
+        private static bool DumpToDiskAtPath(string path)
         {
             if (!TryOpenRingForCrashDump(out NativeArray<SignalTelemetryFrame> ring, out _))
                 return false;
 
             try
             {
-                string root = Directory.GetParent(Application.dataPath)?.FullName;
-                if (string.IsNullOrEmpty(root))
-                    return false;
-
-                string path = Path.Combine(root, DumpPath);
                 string directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
@@ -893,6 +924,60 @@ namespace Hecton8.Core.Contracts.Signals
             catch (UnauthorizedAccessException)
             {
                 return false;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        private static bool TryStartDumpThread(out AutoResetEvent signal)
+        {
+            signal = Volatile.Read(ref _dumpSignal);
+            if (Volatile.Read(ref _dumpThreadStarted) != 0 && signal != null)
+                return true;
+
+            if (Interlocked.CompareExchange(ref _dumpThreadStarted, 1, 0) != 0)
+            {
+                signal = Volatile.Read(ref _dumpSignal);
+                return signal != null;
+            }
+
+            try
+            {
+                signal = new AutoResetEvent(false);
+                Volatile.Write(ref _dumpSignal, signal);
+
+                Thread thread = new Thread(DumpWorker);
+                thread.IsBackground = true;
+                _dumpThread = thread;
+                thread.Start();
+                return true;
+            }
+            catch (Exception)
+            {
+                _dumpThread = null;
+                signal = null;
+                Volatile.Write(ref _dumpThreadStarted, 0);
+                return false;
+            }
+        }
+
+        private static void DumpWorker()
+        {
+            AutoResetEvent signal = Volatile.Read(ref _dumpSignal);
+            if (signal == null)
+                return;
+
+            while (true)
+            {
+                signal.WaitOne();
+                if (Interlocked.Exchange(ref _dumpRequested, 0) == 0)
+                    continue;
+
+                string path = Volatile.Read(ref _dumpPath);
+                if (!string.IsNullOrEmpty(path))
+                    DumpToDiskAtPath(path);
             }
         }
 
@@ -1465,7 +1550,7 @@ namespace Hecton8.Core.Contracts.Signals
 
             if (!valid)
             {
-                Debug.LogError("[SignalThreadContentionLayoutGuard] layout violation");
+                Hecton8.Core.H8Debug.LogError("[SignalThreadContentionLayoutGuard] layout violation");
 #if UNITY_EDITOR
                 throw new InvalidOperationException("Signal thread contention DTO layout violation.");
 #endif
@@ -1513,7 +1598,7 @@ namespace Hecton8.Core.Contracts.Signals
         // [NativeSetThreadIndex] producer owns a disjoint byte interval, so the parallel-for restriction is a false
         // positive for this fixed-stride worker partition.
         // SAFETY_JUSTIFICATION_PARAGRAPH_2:
-        // A single NativeQueue<T>.ParallelWriter was rejected because it serializes producers through CAS. Per-worker
+        // A single shared queue writer was rejected because it serializes producers through one CAS lane. Per-worker
         // NativeArray<T> fields were rejected because the Vault route needs one contiguous byte surface for generation
         // handle resolution, ping-pong swap, and crash dumping.
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
@@ -1674,7 +1759,7 @@ namespace Hecton8.Core.Contracts.Signals
         // Bytes is partitioned by [NativeSetThreadIndex]. The safety system sees a shared byte array, but the write
         // address is constrained to threadIndex * ThreadStrideBytes plus that thread's private cursor.
         // SAFETY_JUSTIFICATION_PARAGRAPH_2:
-        // NativeQueue<T>.ParallelWriter was rejected because this mock job exists to prove the non-CAS route. A
+        // A shared queue writer was rejected because this mock job exists to prove the non-CAS route. A
         // NativeArray<NativeList<T>> design was rejected because nested native containers cannot be scheduled safely
         // and would fragment Vault ownership.
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
@@ -1695,7 +1780,7 @@ namespace Hecton8.Core.Contracts.Signals
         // OverflowSignals is touched only when a private slice is full. The shared ring slot is first reserved through
         // the 64-byte overflow header, so Unity's array-wide alias assumption is stricter than the actual slot claim.
         // SAFETY_JUSTIFICATION_PARAGRAPH_2:
-        // A Unity NativeQueue fallback was rejected because it would restore opaque queue ownership outside the Vault.
+        // A Unity-owned opaque queue fallback was rejected because it would restore ownership outside the Vault.
         // Dropping all saturated rows was rejected because Task 11 requires a low-frequency interrupt fallback path.
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // A producer writes only the slot returned by TryReserveOverflowSlot and publishes OverflowSequence after the
@@ -2894,7 +2979,7 @@ namespace Hecton8.Core.Contracts.Signals
 
             try
             {
-                string root = Directory.GetParent(Application.dataPath)?.FullName;
+                string root = Path.GetDirectoryName(Application.dataPath);
                 if (string.IsNullOrEmpty(root))
                     return false;
 

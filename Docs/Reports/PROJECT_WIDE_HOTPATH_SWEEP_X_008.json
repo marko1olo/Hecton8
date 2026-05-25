@@ -1,7 +1,7 @@
 {
   "metadata": {
     "agent": "X_008",
-    "generatedUtc": "2026-05-25T02:15:53.437476+00:00",
+    "generatedUtc": "2026-05-25T02:40:16.046935+00:00",
     "root": "C:\\hades\\Hecton8",
     "evidenceClass": "STATIC_PROJECT_WIDE_TOKEN_SWEEP",
     "domainBoundary": "X_008 may prove and edit Echelon 5 combat routes. Non-combat hits are owner handoff items unless they directly bypass CombatDamageRuntime."
@@ -302,14 +302,14 @@
     "combatArmorVerdict": "PASS"
   },
   "damageBypassInventory": {
-    "projectDirectMutationTokenCount": 714,
+    "projectDirectMutationTokenCount": 709,
     "projectDirectMutationUniqueFiles": 136,
     "projectDirectMutationByDomain": {
       "GlobalPhysicsStateManager.cs": 127,
       "Gameplay": 106,
       "PhysicsApplySystem.cs": 69,
       "Physics": 56,
-      "World": 56,
+      "World": 51,
       "Core": 45,
       "Fauna": 24,
       "Interaction": 21,
@@ -398,32 +398,32 @@
     "damageBypassCandidateFirstHits": [
       {
         "file": "Assets/_Project/Scripts/BaseModule.cs",
-        "line": 1233,
+        "line": 1239,
         "text": "ApplyDamage(degradation);"
       },
       {
         "file": "Assets/_Project/Scripts/BaseModule.cs",
-        "line": 1514,
+        "line": 1520,
         "text": "public void ApplyDamage(float amount)"
       },
       {
         "file": "Assets/_Project/Scripts/BaseModule.cs",
-        "line": 1525,
+        "line": 1531,
         "text": "ModuleDamageOutcome outcome = _integrityComponent.ApplyDamage(amount);"
       },
       {
         "file": "Assets/_Project/Scripts/BaseModule.cs",
-        "line": 2082,
+        "line": 2088,
         "text": "ApplyDamage(damageAmount);"
       },
       {
         "file": "Assets/_Project/Scripts/BaseModule.cs",
-        "line": 2144,
+        "line": 2150,
         "text": "ApplyDamage(ruptureDamage);"
       },
       {
         "file": "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-        "line": 3501,
+        "line": 3502,
         "text": "target.ApplyDamage(damage);"
       },
       {
@@ -697,14 +697,14 @@
         "text": "Health = health,"
       }
     ],
-    "projectRigidbodyDirectTokenCount": 687,
+    "projectRigidbodyDirectTokenCount": 682,
     "projectRigidbodyDirectUniqueFiles": 127,
     "projectRigidbodyDirectByDomain": {
       "GlobalPhysicsStateManager.cs": 127,
       "Gameplay": 90,
       "PhysicsApplySystem.cs": 72,
       "Physics": 56,
-      "World": 54,
+      "World": 49,
       "Core": 46,
       "Interaction": 21,
       "Fauna": 20,

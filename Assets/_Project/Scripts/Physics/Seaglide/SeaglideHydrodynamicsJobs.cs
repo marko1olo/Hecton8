@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Physics;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;

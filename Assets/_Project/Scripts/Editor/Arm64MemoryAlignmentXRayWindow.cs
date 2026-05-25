@@ -52,7 +52,7 @@ namespace Hecton8.Editor
             if (issueCount > 0)
                 throw new BuildFailedException(report);
 
-            Debug.Log(report);
+            Hecton8.Core.H8Debug.Log(report);
         }
 
         [MenuItem("Hecton8/Diagnostics/Generate Mock Layout Stress Test")]

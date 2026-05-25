@@ -1,0 +1,356 @@
+{
+  "agent": "1314",
+  "role": "AUDIO_MASTER_BUS_ALIGNMENT_REPAIRER",
+  "report": "AUDIO_BRIDGE_OPTIMIZATION_REPORT_1314",
+  "generatedBy": "codex_static_source_validation",
+  "status": "PASS_STATIC_APEX_RUNTIME_THREAD_BARRIER_FREE_RAW_TELEMETRY_NATIVE_DUMP_ASYNC_QUEUE_TASK08_DATAVAULT_HOT_RING_LIMITATION_COMPILE_NOT_RUN",
+  "staticPass": true,
+  "strictPromptTask08HotRingInsideGlobalDataVault": false,
+  "strictPromptTask08Limitation": "Authoritative hot telemetry ring is stable H8Memory raw memory; GlobalDataVault owns only the cold BufferID.AudioFrameRingTelemetry mirror because its current public mutation routes are write-lock or relocation-pin based.",
+  "compileProof": "BLOCKED_BY_EXTERNAL_BUILD_GATE_PENDING_CPU_AND_COMPILER_RECHECK",
+  "liveFuzzerProof": "NOT_RUN_OUTSIDE_UNITY_EDITOR_DATAVAULT_CONTEXT",
+  "writeIndexByteOffset": 8,
+  "requiredAlignmentBytes": 8,
+  "filesScanned": 6,
+  "failedChecks": 0,
+  "runtimeZeroGcScan": {
+    "scope": "NativeAudioFrameRingBuffer.cs full 982-line file plus HectonSensoryKernelNativeBridge.cs full 373-line file",
+    "patterns": [
+      "new",
+      "new byte[",
+      "new Thread",
+      "Thread.MemoryBarrier",
+      "FileStream",
+      "Path.",
+      "Directory.",
+      "File.",
+      "string.Format",
+      ".ToString(",
+      "System.Linq",
+      ".Select(",
+      ".Where(",
+      ".Any(",
+      ".ToList(",
+      "throw new",
+      "lock (",
+      "Monitor.",
+      "StringBuilder",
+      "string concatenation tokens",
+      "boxing tokens"
+    ],
+    "runtimeHits": 0,
+    "editorOnlyHits": [
+      "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs:527 new Thread consumer",
+      "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs:549 new Thread producer",
+      "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs:498 editor NativeArray allocation"
+    ]
+  },
+  "managedExceptionBoundaryScan": {
+    "hotWriterExceptionTokens": 0,
+    "hotWriterLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:232-340",
+    "tryFinallyReleaseGuards": [
+      "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:767-785 cold telemetry DataVault mirror write-lock release"
+    ],
+    "coldPInvokeCatchBoundaries": [
+      "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:175-182 GetStatus native-load failure",
+      "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:202-212 TryRegister native-load failure",
+      "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:229-240 TryClear native-load failure",
+      "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:252-259 TryDumpAudioBridgeTelemetry native-load failure"
+    ],
+    "classification": "Cold plugin bind failure is fail-closed through HectonNativeBridge.MarkUnavailableFromException. It is not in the DSP writer and not claimed as exception-token-free."
+  },
+  "nativeDumpRoute": {
+    "runtimePath": "fixed H8Memory raw byte snapshot",
+    "allocationLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:523-528",
+    "freeLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:551-555",
+    "bytes": 19216,
+    "formula": "16 header bytes + 300 entries * 64 bytes",
+    "writerLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:729-754 and 804-877",
+    "nativeQueueLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:146-183",
+    "nativeThreadEntryLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:126-144",
+    "nativeExportLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:525-528",
+    "managedRuntimeIo": false,
+    "nativeExportInlineFwrite": false,
+    "nativeDumpGlobalDeclarationOrder": "DUMP_GLOBAL_DECL_ORDER_OK",
+    "limitation": "Native export now returns queue acceptance. Post-queue disk-open/write failure is not observable by C# in this patch and still requires native rebuild/runtime proof."
+  },
+  "rawBridgePoolLifetime": {
+    "previousDefect": "Long-lived DataVault TryLockBuffer pins were used to protect native-exported bridge pointers, but those pins can block arena relocation/growth while the audio bridge is active.",
+    "allocationLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:485-536",
+    "clearBeforeFreeLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:445-465",
+    "freeLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:539-575",
+    "shutdownSafeFreeGateLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:452-455, 539-549, 587-595 and Assets/_Project/Scripts/Core/Memory/H8Memory.cs:2261",
+    "viewLines": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:587-615",
+    "rawBuffers": [
+      "framesPtr",
+      "sharedStatePtr",
+      "telemetryPtr",
+      "telemetryDumpBytesPtr"
+    ],
+    "dataVaultBuffers": [
+      "AudioFrameRingTelemetry"
+    ],
+    "persistentDataVaultLocks": false,
+    "failureMode": "If any raw bridge allocation fails, Initialize disposes and descriptor registration stays fail-closed. C# bridge validation re-reads SharedState capacity/mask/guards/source-channel metadata before P/Invoke and returns SharedStateInvalid if it no longer matches the descriptor/native contract. SourceChannels is copied into the immutable descriptor at NativeAudioFrameRingBuffer.cs:431, and native callback reads ringBuffer.sourceChannels at Plugin_HectonSensoryKernel.cpp:440 instead of trusting mutable SharedState for frame stride. TryClear rejects native Active or Busy status. If native clear fails for any status except PluginUnavailable while H8Memory is initialized, raw buffers are retained and reinitialize is blocked before any second allocation. If H8Memory is already shut down, raw pointers are nulled instead of retained because their backing memory has already been reaped, and TryResolveRingViews refuses to create NativeArray views over those stale addresses. If managed shared-state cursors are corrupt, TryReadSharedFrameIndex rejects raw indices outside [0, capacityFrames) instead of masking them through capacityMask; producer/DSP bookkeeping records TelemetryStatusSharedStateInvalid and triggers the dump route. Hot telemetry writes go to a stable H8Memory raw 300-entry ring and do not acquire a DataVault writer fence or call Thread.MemoryBarrier. The writer marks a slot Sequence=0 before field writes, publishes final non-zero Sequence last with Volatile.Write, and dump/mirror readers validate sequence plus StateHash through TryReadTelemetryEntryStable before copying a DTO. Fault/shutdown paths best-effort mirror the raw ring into BufferID.AudioFrameRingTelemetry with TryAcquireWriteLock; if the mirror lock is unavailable, the raw binary dump still proceeds and the writer does not block. Native dump export queues the fixed snapshot into a static native scratch buffer and returns without inline fwrite/fopen; if the queue is busy, bad, or thread creation fails, native returns 0 and C# resets the dump gate so the next fault can retry. Final disk write success after queueing remains runtime validation debt."
+  },
+  "nativePluginAbi": {
+    "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp",
+    "previousDefect": "C# WriteIndexSlot was repaired to 2, but native validation still expected kWriteIndexSlot = 1. That would reject the descriptor at native registration.",
+    "writeIndexSlot": 2,
+    "writeIndexByteOffset": 8,
+    "sourceChannelsSlot": 12,
+    "sharedStateSlotCount": 14,
+    "requiredAlignmentBytes": 8,
+    "slotMapLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:24-34",
+    "alignmentGateLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:37 and 287-290",
+    "nativeDumpLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:38-39, 101-183, 525-528",
+    "descriptorStaticAssertLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:199-210",
+    "portableAtomicLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:44-99, 219-226, 406-478, 485-528",
+    "boundedDrainLines": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:42, 257-265, 485-486, 512-513",
+    "nativeHeapProof": "No new EffectData/delete/malloc/free route remains; DebugProcessBlock uses fixed static g_debugProcessScratch with atomic busy gate, and telemetry dump queuing uses fixed static g_telemetryDumpBuffer with atomic busy gate.",
+    "descriptorOffsets": {
+      "frames": 0,
+      "sharedState": 8,
+      "readIndex": 16,
+      "writeIndex": 24,
+      "descriptorMagic": 32,
+      "capacityFrames": 36,
+      "capacityMask": 40,
+      "sharedStateLengthInts": 44,
+      "sourceChannels": 48,
+      "reserved0": 52,
+      "sizeBytes": 56
+    }
+  },
+  "fuzzer": {
+    "sourceImplemented": true,
+    "class": "AudioBridgeConcurrencyFuzzer1314",
+    "editorGuardLine": "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs:1",
+    "editorAssembly": "Hecton8.Editor",
+    "defaultIterations": 32,
+    "defaultCapacityFrames": 131072,
+    "defaultBlockFrames": 65536,
+    "defaultChannels": 2,
+    "totalDefaultFrames": 2097152,
+    "totalDefaultSamples": 4194304,
+    "liveResult": "pending Unity Editor DataVault execution"
+  },
+  "checks": [
+    {
+      "id": "write_index_slot_even",
+      "file": "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:35",
+      "passed": true,
+      "detail": "WriteIndexSlot is 2, producing sharedStatePtr + 2, byte offset 8."
+    },
+    {
+      "id": "shared_state_padded",
+      "file": "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:41",
+      "passed": true,
+      "detail": "SharedStateSlotCount is 14; exported cursor and metadata slots use even int indices, including source channel metadata."
+    },
+    {
+      "id": "source_channels_even_slot",
+      "file": "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:40",
+      "passed": true,
+      "detail": "SourceChannelsSlot is 12; SharedState metadata must match immutable descriptor SourceChannels before registration."
+    },
+    {
+      "id": "bridge_layout_guard",
+      "file": "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:308",
+      "passed": true,
+      "detail": "HasValidSharedStatePointerLayout verifies ReadIndex and WriteIndex offsets against SharedState."
+    },
+    {
+      "id": "bridge_shared_metadata_guard",
+      "file": "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:347-365",
+      "passed": true,
+      "detail": "HasValidSharedStateMetadata verifies capacity, mask, guard values, and source-channel metadata equals descriptor SourceChannels before native registration."
+    },
+    {
+      "id": "bridge_shared_metadata_volatile_reads",
+      "file": "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:356-360",
+      "passed": true,
+      "detail": "Shared-state metadata validation reads unmanaged metadata with Volatile.Read before deciding local descriptor validity."
+    },
+    {
+      "id": "bridge_retry_gate",
+      "file": "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:123",
+      "passed": true,
+      "detail": "TryRegisterWithRetryGate validates, retries, and calls TryClear on failure."
+    },
+    {
+      "id": "old_write_index_slot_removed",
+      "file": "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs",
+      "passed": true,
+      "detail": "No runtime bridge constant leaves WriteIndexSlot at 1."
+    },
+    {
+      "id": "dense_pointer_math_removed",
+      "file": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:418-429",
+      "passed": true,
+      "detail": "Descriptor pointer uses sharedStatePtr + NativeAudioKernelRingBufferDescriptor.WriteIndexSlot, and descriptor.SourceChannels freezes the callback frame stride."
+    },
+    {
+      "id": "writer_native_pointer_route",
+      "file": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:232-340",
+      "passed": true,
+      "detail": "TryWriteInterleaved uses NativeArrayUnsafeUtility read/write pointers before Volatile.Write index publication."
+    },
+    {
+      "id": "telemetry_300_frame_blackbox",
+      "file": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:19-59 and 652-729",
+      "passed": true,
+      "detail": "AudioBridgeTelemetryEntry is explicit 64 bytes, TelemetryCapacity is 300, and hot RecordTelemetry writes to the stable raw telemetry view."
+    },
+    {
+      "id": "telemetry_tear_resistant_snapshot",
+      "file": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:713-726 and 831-868",
+      "passed": true,
+      "detail": "Raw telemetry slot writes use Sequence=0 in-progress marking and final non-zero sequence publish without Thread.MemoryBarrier; cold stable readers copy between Volatile sequence reads and reject sequence/hash mismatches before dump or mirror copy."
+    },
+    {
+      "id": "writer_no_datavault_telemetry_lock",
+      "file": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:234-342",
+      "passed": true,
+      "detail": "TryWriteInterleaved contains no TryAcquireTelemetryWriteView or TryAcquireWriteLock token; telemetry recording in the writer reaches WriteTelemetryEntry(views.Telemetry) only."
+    },
+    {
+      "id": "telemetry_cold_datavault_mirror",
+      "file": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:756-800",
+      "passed": true,
+      "detail": "Fault/shutdown paths copy the raw telemetry ring into BufferID.AudioFrameRingTelemetry through the compaction-aware DataVault write lock; this lock is not in the SPSC writer path."
+    },
+    {
+      "id": "dump_route_native_bytes",
+      "file": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:729-754 and 804-877",
+      "passed": true,
+      "detail": "Fault dump writes header and telemetry entries into fixed H8Memory raw bytes, then forwards the pointer to the native disk writer; no runtime byte[], Thread, FileStream, Path, or Directory APIs."
+    },
+    {
+      "id": "managed_shared_index_fail_closed",
+      "file": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:258-263, 354-359, 628-640",
+      "passed": true,
+      "detail": "Raw ReadIndex/WriteIndex values outside [0, capacityFrames) are rejected, recorded as TelemetryStatusSharedStateInvalid, and routed to the fixed dump path; old rawIndex & capacityMask corruption masking is absent."
+    },
+    {
+      "id": "telemetry_status_namespace_no_native_overlap",
+      "file": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:24-28",
+      "passed": true,
+      "detail": "Telemetry-local status bits are 16-20, so StatusBits can also carry NativeAudioKernelBridgeStatus low bits without colliding with local shared-state-invalid semantics."
+    },
+    {
+      "id": "mock_audio_job",
+      "file": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:965",
+      "passed": true,
+      "detail": "GenerateMockAudioSamplesJob is Burst-compatible and fills NativeArray<float> stress samples."
+    },
+    {
+      "id": "concurrency_fuzzer_source",
+      "file": "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs:463-600",
+      "passed": true,
+      "detail": "AudioBridgeConcurrencyFuzzer1314 is editor-only, outside runtime ring source, and validates aligned descriptor pointers."
+    },
+    {
+      "id": "native_descriptor_raw_bridge_pool",
+      "file": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:445-615",
+      "passed": true,
+      "detail": "Frames, SharedState, and DumpBytes use stable owner-tagged H8Memory raw allocations with transient NativeArray views; TryClear rejects Active/Busy, failed native clear retains raw memory except PluginUnavailable only while H8Memory is initialized, late dispose is gated by H8Memory.IsInitialized, TryResolveRingViews refuses stale views after shutdown, and no long-lived DataVault relocation pin is held."
+    },
+    {
+      "id": "native_bridge_no_view_after_h8_shutdown",
+      "file": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:587-595",
+      "passed": true,
+      "detail": "TryResolveRingViews returns false before creating NativeArray views when H8Memory has already shut down."
+    },
+    {
+      "id": "native_bridge_failed_clear_retention_requires_live_h8memory",
+      "file": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:452-455",
+      "passed": true,
+      "detail": "Failed native clear retains raw pointers only while H8Memory still owns their backing memory."
+    },
+    {
+      "id": "bridge_clear_rejects_busy",
+      "file": "Assets/_Project/Scripts/Audio/HectonSensoryKernelNativeBridge.cs:221-234",
+      "passed": true,
+      "detail": "TryClear returns success only when native status has neither Active nor Busy."
+    },
+    {
+      "id": "renderer_rebind_gate",
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:6460",
+      "passed": true,
+      "detail": "DataVault/audio configuration refresh paths call RefreshNativeOutputBridge."
+    },
+    {
+      "id": "renderer_failure_blackbox",
+      "file": "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs:7268",
+      "passed": true,
+      "detail": "Native registration failure calls RecordBridgeFailure."
+    },
+    {
+      "id": "datavault_telemetry_lane_mirror",
+      "file": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs:511",
+      "passed": true,
+      "detail": "BufferID.AudioFrameRingTelemetry remains the cold DataVault mirror/identity lane; obsolete AudioFrameRingTelemetryDumpBytes is absent."
+    },
+    {
+      "id": "telemetry_datavault_mirror_write_lock",
+      "file": "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs:758-804",
+      "passed": true,
+      "detail": "Cold DataVault mirror uses TryAcquireWriteLock/ReleaseWriteLock with finally protection; the SPSC sample writer itself uses raw telemetry and Volatile.Write-published indices."
+    },
+    {
+      "id": "native_write_index_slot_even",
+      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:24-34",
+      "passed": true,
+      "detail": "Native plugin now expects kWriteIndexSlot = 2 and kSharedStateSlotCount = 14, matching C# descriptor export."
+    },
+    {
+      "id": "native_stereo_frame_stride",
+      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:440-468",
+      "passed": true,
+      "detail": "Native callback reads immutable descriptor sourceChannels and uses sourceFrameIndex << 1 for interleaved stereo frames."
+    },
+    {
+      "id": "native_required_alignment_8",
+      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:37 and 287-290",
+      "passed": true,
+      "detail": "Native plugin now validates frames/sharedState/readIndex/writeIndex against 8-byte alignment, not 4-byte SInt32 alignment."
+    },
+    {
+      "id": "native_descriptor_static_asserts",
+      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:199-210",
+      "passed": true,
+      "detail": "Native plugin now compile-time asserts 64-bit ABI, descriptor size 56, and field offsets 0/8/16/24/32/36/40/44/48/52 with pointer fields first."
+    },
+    {
+      "id": "native_portable_atomic_helpers",
+      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:44-99, 219-226, 406-478, 485-528",
+      "passed": true,
+      "detail": "Native callback/global shared-state paths use HectonAtomicInt32 helpers; non-Windows paths no longer depend on undefined LONG or direct Windows Interlocked calls."
+    },
+    {
+      "id": "native_bounded_callback_drain",
+      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:42, 257-265, 485-486, 512-513",
+      "passed": true,
+      "detail": "Native register/clear drains active callbacks with kDrainSpinLimit and keeps Busy status instead of infinite spinning if the callback depth is stuck."
+    },
+    {
+      "id": "native_no_heap_debug_scratch",
+      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:212-216 and 344-360 and 529-544",
+      "passed": true,
+      "detail": "Native plugin create/release callbacks do not allocate effectdata, and debug processing uses fixed static scratch guarded by an atomic Busy gate; no new EffectData/delete/malloc/free tokens remain."
+    },
+    {
+      "id": "native_dump_export",
+      "file": "NativeAudio/HectonSensoryKernel/Plugin_HectonSensoryKernel.cpp:38-39, 101-183, 525-528",
+      "passed": true,
+      "detail": "Native plugin exports HectonSensoryKernel_DumpAudioBridgeTelemetry; the export queues fixed native scratch to an unmanaged background thread and contains no inline fopen/fwrite."
+    },
+    {
+      "id": "scanner_source",
+      "file": "Assets/_Project/Scripts/Editor/Audio/OOP_AudioBridge_Scanner.cs:63-185",
+      "passed": true,
+      "detail": "OOP_AudioBridge_Scanner now rejects managed runtime dump regression, bridge local shared-state metadata validation regression, native plugin slot/alignment regressions, missing native stereo stride, missing native descriptor static asserts, non-Windows atomic regressions, long-lived DataVault pins for native-exported buffers, obsolete DataVault dump byte lanes, hot writer DataVault telemetry fences, missing cold DataVault mirror/finally protection, missing H8Memory shutdown-safe free gate, stale NativeArray view creation after H8Memory shutdown, failed-clear retention without live H8Memory ownership, TryClear success on Busy, failed-clear raw free, native heap allocation tokens, and missing bounded native callback drain."
+    }
+  ]
+}

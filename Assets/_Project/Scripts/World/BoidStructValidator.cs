@@ -55,7 +55,7 @@ namespace Hecton8.World
 
             if (failureMessage != null)
             {
-                Debug.LogError(failureMessage);
+                Hecton8.Core.H8Debug.LogError(failureMessage);
                 if (throwOnFailure)
                     throw new InvalidOperationException(failureMessage);
 

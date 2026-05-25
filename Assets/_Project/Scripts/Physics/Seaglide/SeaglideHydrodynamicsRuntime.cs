@@ -1,6 +1,9 @@
 using System;
+#if UNITY_EDITOR
 using System.IO;
+#endif
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Physics;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Unity.Collections;
@@ -30,6 +33,8 @@ namespace Hecton8.Physics
         private const int LockCavitationSignals = 1 << 10;
         private const float MinimumSignalIntensity = 0.01f;
         private const byte ToolAcousticStateSeaglidePropeller = 4;
+        private const uint SeaglideFaultEventHash = 0x53474654u; // SGFT
+        private const uint SeaglideFaultDumpHash = 0x53474450u; // SGDP
         private static SeaglideHydrodynamicsRuntime s_activeRuntimeInstance;
 
         private IDataVault _dataVault;
@@ -47,7 +52,9 @@ namespace Hecton8.Physics
         private VaultGenerationHandle<SeaglideVisualStateDTO> _visualStatesHandle;
         private VaultGenerationHandle<SeaglideAudioSignalDTO> _audioSignalsHandle;
         private VaultGenerationHandle<SeaglideCavitationVfxSignalDTO> _cavitationSignalsHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
         private JobHandle _pendingHandle;
         private long _scheduleTimestamp;
         private uint _simulationFrame;
@@ -62,6 +69,7 @@ namespace Hecton8.Physics
         private bool _registeredHotSwap;
         private bool _coldBootCompleted;
         private bool _dumpedFault;
+        private bool _coreBlackboxWarmed;
         private bool _forcePacketsReadyToDrain;
         private bool _mockRequestsActive;
 
@@ -192,6 +200,7 @@ namespace Hecton8.Physics
             CompletePendingSolverForTeardown();
             RefreshColdDependencies();
             EnsureColdBooted();
+            WarmCoreBlackboxRoute();
             TryRegister();
         }
 
@@ -205,6 +214,7 @@ namespace Hecton8.Physics
             _forcePacketsReadyToDrain = false;
             _activeRequestCount = 0;
             _mockRequestsActive = false;
+            _coreBlackboxWarmed = false;
         }
 
         private void OnDestroy()
@@ -215,6 +225,7 @@ namespace Hecton8.Physics
             TryUnregister();
             CompletePendingSolverForTeardown();
             ReleaseVaultHandles(_dataVault);
+            _coreBlackboxWarmed = false;
         }
 
         public void FixedTick(float fixedDeltaTime)
@@ -722,8 +733,11 @@ namespace Hecton8.Physics
                    EnsureVaultDescriptor(vault, ref _bodyBindingsHandle, SeaglideHydrodynamicsBufferIds.BodyBindings, SeaglideHydrodynamicsConstants.StateCapacity, NativeArrayOptions.UninitializedMemory) &&
                    EnsureVaultDescriptor(vault, ref _visualStatesHandle, SeaglideHydrodynamicsBufferIds.VisualStates, SeaglideHydrodynamicsConstants.StateCapacity, NativeArrayOptions.UninitializedMemory) &&
                    EnsureVaultDescriptor(vault, ref _audioSignalsHandle, SeaglideHydrodynamicsBufferIds.AudioSignals, SeaglideHydrodynamicsConstants.StateCapacity, NativeArrayOptions.UninitializedMemory) &&
-                   EnsureVaultDescriptor(vault, ref _cavitationSignalsHandle, SeaglideHydrodynamicsBufferIds.CavitationSignals, SeaglideHydrodynamicsConstants.StateCapacity, NativeArrayOptions.UninitializedMemory) &&
-                   EnsureVaultDescriptor(vault, ref _csvScratchHandle, SeaglideHydrodynamicsBufferIds.CsvScratch, SeaglideHydrodynamicsConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory);
+                   EnsureVaultDescriptor(vault, ref _cavitationSignalsHandle, SeaglideHydrodynamicsBufferIds.CavitationSignals, SeaglideHydrodynamicsConstants.StateCapacity, NativeArrayOptions.UninitializedMemory)
+#if UNITY_EDITOR
+                   && EnsureVaultDescriptor(vault, ref _csvScratchHandle, SeaglideHydrodynamicsBufferIds.CsvScratch, SeaglideHydrodynamicsConstants.CsvScratchBytes, NativeArrayOptions.UninitializedMemory)
+#endif
+                   ;
         }
 
         private static bool EnsureVaultDescriptor<T>(
@@ -1138,39 +1152,23 @@ namespace Hecton8.Physics
             if (!telemetry.IsCreated || telemetry.Length <= 0)
                 return;
 
-            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
-            if (string.IsNullOrEmpty(projectRoot))
+            if (!_coreBlackboxWarmed || GlobalTelemetryBus.BlackboxActiveFrameCount <= 0)
                 return;
 
-            string path = Path.Combine(projectRoot, SeaglideHydrodynamicsConstants.DumpRelativePath);
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
-            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))
-            using (BinaryWriter writer = new BinaryWriter(stream))
-            {
-                writer.Write(SeaglideHydrodynamicsConstants.SourceHash);
-                writer.Write(_simulationFrame);
-                writer.Write(telemetry.Length);
-                for (int i = 0; i < telemetry.Length; i++)
-                {
-                    SeaglideTelemetryEntry entry = telemetry[i];
-                    writer.Write(entry.FrameIndex);
-                    writer.Write(entry.EvaluatedRequests);
-                    writer.Write(entry.ForcePackets);
-                    writer.Write(entry.NonFiniteCount);
-                    writer.Write(entry.TotalThrustForce);
-                    writer.Write(entry.TotalDragForce);
-                    writer.Write(entry.TotalFlowForce);
-                    writer.Write(entry.MaxForceMagnitude);
-                    writer.Write(entry.ComputeMicros);
-                    writer.Write(entry.GlobalQualityWeight);
-                    writer.Write(entry.Flags);
-                    writer.Write(entry.LastTargetEntityHash);
-                    writer.Write(entry.LastFlowForce.x);
-                    writer.Write(entry.LastFlowForce.y);
-                    writer.Write(entry.LastFlowForce.z);
-                    writer.Write(entry.LastBatteryLevel);
-                }
-            }
+            int index = (int)(_simulationFrame % (uint)telemetry.Length);
+            SeaglideTelemetryEntry entry = telemetry[index];
+            float scalar = math.isfinite(entry.MaxForceMagnitude) ? entry.MaxForceMagnitude : 0f;
+            GlobalTelemetryBus.PushEvent(SeaglideFaultEventHash, scalar, entry.LastTargetEntityHash);
+            _ = GlobalTelemetryBus.TryDumpBlackboxNow(SeaglideFaultDumpHash);
+        }
+
+        private void WarmCoreBlackboxRoute()
+        {
+            if (_coreBlackboxWarmed || !Application.isPlaying)
+                return;
+
+            GlobalTelemetryBus.Initialize();
+            _coreBlackboxWarmed = GlobalTelemetryBus.BlackboxActiveFrameCount > 0;
         }
 
         private void SeedDefaultTuningIfNeeded()
@@ -1417,7 +1415,9 @@ namespace Hecton8.Physics
             ReleaseVaultHandle(vault, ref _visualStatesHandle);
             ReleaseVaultHandle(vault, ref _audioSignalsHandle);
             ReleaseVaultHandle(vault, ref _cavitationSignalsHandle);
+#if UNITY_EDITOR
             ReleaseVaultHandle(vault, ref _csvScratchHandle);
+#endif
         }
 
         private static void ReleaseVaultHandle<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct

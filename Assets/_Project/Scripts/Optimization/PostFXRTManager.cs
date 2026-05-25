@@ -131,9 +131,10 @@ namespace Hecton8.Optimization
                 return;
             
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (Time.time >= _nextLogTime)
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (now >= _nextLogTime)
             {
-                _nextLogTime = Time.time + LogThrottleInterval;
+                _nextLogTime = now + LogThrottleInterval;
                 LogBudgetViolation();
             }
 #endif
@@ -216,7 +217,7 @@ namespace Hecton8.Optimization
             _reportBuilder.Append((PostFXRTMemoryBytes / (1024f * 1024f)).ToString("0.00", CultureInfo.InvariantCulture)).Append(" MB / ");
             _reportBuilder.Append((PostFXBudgetBytes / (1024f * 1024f)).ToString("0.00", CultureInfo.InvariantCulture)).Append(" MB");
             
-            Debug.LogWarning(_reportBuilder.ToString(), this);
+            Hecton8.Core.H8Debug.LogWarning(_reportBuilder.ToString(), this);
         }
 #endif
     }

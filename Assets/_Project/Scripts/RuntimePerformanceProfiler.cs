@@ -376,9 +376,10 @@ namespace Hecton8.Dev
             bool hasBootstrapInstance = GlobalRegistry.BootstrapperRuntime != null;
             bool hasProfilerInstance = ActiveRuntime != null;
             bool hasExistingProfiler = ActiveRuntime != null;
+            int frame = SystemDispatcher.CurrentFrameIndex;
 
             string message =
-                $"[RuntimeProfilerBootstrap] action={action} scene={sceneName} frame={Time.frameCount} " +
+                $"[RuntimeProfilerBootstrap] action={action} scene={sceneName} frame={frame} " +
                 $"bootstrapInstance={hasBootstrapInstance} profilerInstance={hasProfilerInstance} " +
                 $"existingProfiler={hasExistingProfiler} ensureCompleted={_developmentProfilerEnsureCompleted}";
 
@@ -386,7 +387,7 @@ namespace Hecton8.Dev
             {
                 RuntimeDiagnosticsTrace.WriteEvent(
                     "runtime.bootstrap",
-                    $"action={action} scene={sceneName} frame={Time.frameCount} " +
+                    $"action={action} scene={sceneName} frame={frame} " +
                     $"bootstrapInstance={hasBootstrapInstance} profilerInstance={hasProfilerInstance} " +
                     $"existingProfiler={hasExistingProfiler} ensureCompleted={_developmentProfilerEnsureCompleted}");
             }
@@ -470,7 +471,7 @@ namespace Hecton8.Dev
             RegisterWithTickManager();
 
             if ((!_registeredTick || !_registeredSlowTick) && _debugProfilingActive)
-                Debug.LogError("[RuntimeProfiler] GameTickManager registration failed.", this);
+                Hecton8.Core.H8Debug.LogError("[RuntimeProfiler] GameTickManager registration failed.", this);
         }
 
         private void OnDisable()
@@ -596,7 +597,7 @@ namespace Hecton8.Dev
             if (!_debugProfilingActive)
             {
                 _debugLastReport = "No profiler stats resolved.";
-                Debug.LogWarning("[RuntimeProfiler] No profiler stats were resolved. Use context menu to inspect available counters.", this);
+                Hecton8.Core.H8Debug.LogWarning("[RuntimeProfiler] No profiler stats were resolved. Use context menu to inspect available counters.", this);
                 RuntimeDiagnosticsTrace.WriteEvent("runtime", _debugLastReport);
             }
         }
@@ -943,7 +944,8 @@ namespace Hecton8.Dev
             float effectiveDeltaTime = Mathf.Max(deltaTime, realtimeDeltaTime);
 
             _lastDriveRealtimeSinceStartup = realtimeNow;
-            _lastDrivenFrame = Time.frameCount;
+            int currentFrame = SystemDispatcher.CurrentFrameIndex;
+            _lastDrivenFrame = currentFrame;
             _debugTickCount++;
             _debugLastDeltaTime = effectiveDeltaTime;
             _debugUsingFallbackUpdate = usingFallbackUpdate;
@@ -963,7 +965,7 @@ namespace Hecton8.Dev
                 _loggedFirstDrive = true;
                 RuntimeDiagnosticsTrace.WriteEvent(
                     "runtime.driver",
-                    $"source={_debugLastDriveSource} frame={Time.frameCount} dt={effectiveDeltaTime:0.0000} active={_debugProfilingActive}");
+                    $"source={_debugLastDriveSource} frame={currentFrame} dt={effectiveDeltaTime:0.0000} active={_debugProfilingActive}");
             }
 
             if (RuntimeDiagnosticsTrace.IsActive && realtimeNow >= _nextDriveHeartbeatTime)
@@ -971,7 +973,7 @@ namespace Hecton8.Dev
                 _nextDriveHeartbeatTime = realtimeNow + 2f;
                 RuntimeDiagnosticsTrace.WriteEvent(
                     "runtime.heartbeat",
-                    $"scene={SceneManager.GetActiveScene().name} frame={Time.frameCount} source={_debugLastDriveSource} dt={effectiveDeltaTime:0.0000} elapsed={_sampleElapsed:0.0000} active={_debugProfilingActive}");
+                    $"scene={SceneManager.GetActiveScene().name} frame={currentFrame} source={_debugLastDriveSource} dt={effectiveDeltaTime:0.0000} elapsed={_sampleElapsed:0.0000} active={_debugProfilingActive}");
             }
 
             UpdatePendingSceneSnapshot(effectiveDeltaTime);
@@ -1000,7 +1002,7 @@ namespace Hecton8.Dev
                 _peakSystemMemoryMb > systemMemoryBudgetMb ||
                 _peakSetPassCalls > setPassBudget ||
                 _peakBatches > batchesBudget;
-            _debugLastWindowFrameDelta = Mathf.Max(0, Time.frameCount - _sampleWindowStartFrame);
+            _debugLastWindowFrameDelta = Mathf.Max(0, SystemDispatcher.CurrentFrameIndex - _sampleWindowStartFrame);
             _debugLastWindowUsedTickDrive = _sampleWindowUsedTickDrive;
             _debugLastWindowUsedFallbackDrive = _sampleWindowUsedFallbackDrive;
             _debugLastWindowCadence = DescribeWindowCadence(
@@ -1124,7 +1126,7 @@ namespace Hecton8.Dev
             if (shouldLogWindow)
             {
                 if (_debugLastWindowExceededBudget)
-                    Debug.LogWarning(_debugLastReport, this);
+                    Hecton8.Core.H8Debug.LogWarning(_debugLastReport, this);
                 else
                     Hecton8.Core.H8Debug.Log(_debugLastReport, this);
             }
@@ -1142,7 +1144,7 @@ namespace Hecton8.Dev
         private void ResetSampleWindow()
         {
             _sampleElapsed = 0f;
-            _sampleWindowStartFrame = Time.frameCount;
+            _sampleWindowStartFrame = SystemDispatcher.CurrentFrameIndex;
             _sampleWindowUsedTickDrive = false;
             _sampleWindowUsedFallbackDrive = false;
             _debugTickCount = 0;
@@ -1343,7 +1345,7 @@ namespace Hecton8.Dev
                 if (logBudgetViolations)
                 {
                     if (TryConsumeBudgetWarningCooldown(ref _nextVramWarningLogTime))
-                        Debug.LogWarning($"[RuntimeProfiler] {_debugLastVRAMWarning} | Texture: {_debugLastTextureMB:0.0} MB | RT: {_debugLastRenderTextureMB:0.0} MB | Total: {_debugLastTotalVRAMMB:0.0} MB");
+                        Hecton8.Core.H8Debug.LogWarning($"[RuntimeProfiler] {_debugLastVRAMWarning} | Texture: {_debugLastTextureMB:0.0} MB | RT: {_debugLastRenderTextureMB:0.0} MB | Total: {_debugLastTotalVRAMMB:0.0} MB");
                 }
 #endif
             }
@@ -1761,7 +1763,7 @@ namespace Hecton8.Dev
 
             if (_dirtyPlayRetryCount >= MaxDirtyPlayRetryAttempts)
             {
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     $"[RuntimeProfilerDirtyPlayGate] Dirty play entry persisted after {_dirtyPlayRetryCount} retries. " +
                     $"scene={SceneManager.GetActiveScene().name} reason={reason} compiling={EditorApplication.isCompiling} updating={EditorApplication.isUpdating}");
                 return;
@@ -1774,7 +1776,7 @@ namespace Hecton8.Dev
             SessionState.SetInt(DirtyPlayRetryCountKey, _dirtyPlayRetryCount);
             SessionState.SetString(DirtyPlayRetryReasonKey, _dirtyPlayLastReason);
 
-            Debug.LogWarning(
+            Hecton8.Core.H8Debug.LogWarning(
                 $"[RuntimeProfilerDirtyPlayGate] Aborting dirty play entry. " +
                 $"scene={SceneManager.GetActiveScene().name} reason={reason} retry={_dirtyPlayRetryCount} " +
                 $"compiling={EditorApplication.isCompiling} updating={EditorApplication.isUpdating}");
@@ -1805,7 +1807,7 @@ namespace Hecton8.Dev
             if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.isPlaying)
                 return;
 
-            Debug.LogWarning(
+            Hecton8.Core.H8Debug.LogWarning(
                 $"[RuntimeProfilerDirtyPlayGate] Clearing blocked Play Mode retry. Automatic Play Mode restart is disabled. " +
                 $"lastReason={_dirtyPlayLastReason} retry={_dirtyPlayRetryCount}");
             ClearDirtyPlayRetryState();
@@ -1819,7 +1821,7 @@ namespace Hecton8.Dev
             if (!TryCollectDirtyLoadedSceneNames(out string dirtySceneNames))
                 return;
 
-            Debug.LogWarning(
+            Hecton8.Core.H8Debug.LogWarning(
                 $"[RuntimeProfilerDirtySceneGate] Aborting play entry because loaded verification scenes are dirty. " +
                 $"scenes={dirtySceneNames}");
 
@@ -1909,7 +1911,7 @@ namespace Hecton8.Dev
                 _nextEditorFallbackTraceTime = realtimeNow + 2f;
                 RuntimeDiagnosticsTrace.WriteEvent(
                     "editor.fallback",
-                    $"scene={SceneManager.GetActiveScene().name} frame={Time.frameCount} silence={silenceDuration:0.000} dt={editorDeltaTime:0.0000} compiling={EditorApplication.isCompiling} paused={EditorApplication.isPaused}");
+                    $"scene={SceneManager.GetActiveScene().name} frame={SystemDispatcher.CurrentFrameIndex} silence={silenceDuration:0.000} dt={editorDeltaTime:0.0000} compiling={EditorApplication.isCompiling} paused={EditorApplication.isPaused}");
             }
 
             DriveSampling(editorDeltaTime, true);

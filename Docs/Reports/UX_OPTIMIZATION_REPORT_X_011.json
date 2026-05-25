@@ -1,187 +1,3848 @@
-﻿{
-    "agent":  "X_011",
-    "role":  "VOCAL_WARNING_AND_SUBTITLE_STREAMLINER",
-    "report":  "UX_OPTIMIZATION_REPORT_X_011",
-    "status":  "PATCHED_STATIC_PASS_COMPILE_PASS_PDA_AUDIOLOG_ARCHIVE_SPAN_SWEEP",
-    "phase0Scope":  "Assets/_Project/Scripts full-tree static archaeology",
-    "filesScanned":  2379,
-    "vwsReferenceFileCount":  25,
-    "subtitleReferenceFileCount":  84,
-    "heapKeywordFileCount":  8,
-    "stringRiskKeywordFileCount":  536,
-    "ownedHotRouteViolationCount":  0,
-    "runtimeAudioUiNarrativeTimingViolationCount":  0,
-    "runtimeAudioUiNarrativeCoroutineTimingViolationCount":  0,
-    "runtimeAudioUiNarrativePlusExceptionMessageCount":  0,
-    "priorityWordImplemented":  true,
-    "subtitleSignal64Bytes":  true,
-    "stringQueueRemoved":  true,
-    "blackBoxDumpRoutePresent":  true,
-    "ownedHotRouteFiles":  [
-                               "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
-                               "Assets/_Project/Scripts/UI/SubtitleManager.cs",
-                               "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
-                               "Assets/_Project/Scripts/UI/CharBufferPool.cs",
-                               "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs",
-                               "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-                               "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
-                               "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
-                               "Assets/_Project/Scripts/Core/SystemDispatcher.cs",
-                               "Assets/_Project/Scripts/LocalizationManager.cs",
-                               "Assets/_Project/Scripts/LocRegistry.cs"
-                           ],
-    "phase0StaticTargets":  [
-                                "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
-                                "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
-                                "Assets/_Project/Scripts/UI/SubtitleManager.cs",
-                                "Assets/_Project/Scripts/UI/CharBufferPool.cs",
-                                "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs",
-                                "Assets/_Project/Scripts/Core/GlobalSignals.cs",
-                                "Assets/_Project/Scripts/Core/GlobalRegistry.cs",
-                                "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs",
-                                "Assets/_Project/Scripts/Audio/Editor/OOP_Voice_Scanner_X_011.cs",
-                                "Assets/_Project/Scripts/Audio/Editor/VocalWarningStormTorture_X_011.cs"
-                            ],
-    "audioThreadRouteMap":  [
-                                {
-                                    "step":  1,
-                                    "owner":  "VocalWarningSystem",
-                                    "route":  "SignalBus\u003cVocalWarningSignal\u003e/VitalWarningSignal/CrushWarningSignal/BrownoutSignal/etc.",
-                                    "sourceEvidence":  [
-                                                           "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs:836",
-                                                           "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs:847"
-                                                       ]
-                                },
-                                {
-                                    "step":  2,
-                                    "owner":  "VocalWarningPriorityWordOps",
-                                    "route":  "Resolved warning DTOs coalesce into VocalWarningPriorityState.VwsPriorityWord bits 63..59.",
-                                    "sourceEvidence":  [
-                                                           "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs:36",
-                                                           "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs:2061",
-                                                           "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs:2212"
-                                                       ]
-                                },
-                                {
-                                    "step":  3,
-                                    "owner":  "VocalWarningSystem",
-                                    "route":  "Resolved candidate publishes unmanaged audio and subtitle signals.",
-                                    "sourceEvidence":  [
-                                                           "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs:919",
-                                                           "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs:931"
-                                                       ]
-                                },
-                                {
-                                    "step":  4,
-                                    "owner":  "BabelSubtitleSyncRuntime",
-                                    "route":  "SignalBus\u003cSubtitleCueSignal\u003e consumers use token/audio-frame payloads and validate 64-byte signal layout.",
-                                    "sourceEvidence":  [
-                                                           "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:563",
-                                                           "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:578",
-                                                           "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs:508"
-                                                       ]
-                                },
-                                {
-                                    "step":  5,
-                                    "owner":  "SubtitleManager",
-                                    "route":  "Subtitle text is copied through CharBufferPool/BufferedSubtitleCue and rendered via TMP.SetCharArray.",
-                                    "sourceEvidence":  [
-                                                           "Assets/_Project/Scripts/UI/SubtitleManager.cs:434",
-                                                           "Assets/_Project/Scripts/UI/SubtitleManager.cs:897",
-                                                           "Assets/_Project/Scripts/UI/SubtitleManager.cs:1585"
-                                                       ]
-                                }
-                            ],
-    "externalHeapFindings":  [
-                                 {
-                                     "path":  "Assets/_Project/Scripts/AI/Pathfinding/VoxelAStarJobs.cs",
-                                     "domainNote":  "AI pathfinding. Outside X_011 VWS/subtitle domain."
-                                 },
-                                 {
-                                     "path":  "Assets/_Project/Scripts/AI/Pathfinding/VoxelAStarContracts.cs",
-                                     "domainNote":  "AI pathfinding contracts. Outside X_011 VWS/subtitle domain."
-                                 },
-                                 {
-                                     "path":  "Assets/_Project/Scripts/Construction/DroneFleetNavigationKernel.cs",
-                                     "domainNote":  "Construction/drone navigation. Outside X_011 VWS/subtitle domain."
-                                 },
-                                 {
-                                     "path":  "Assets/_Project/Scripts/Construction/DroneFleetManager.cs",
-                                     "domainNote":  "Construction/drone fleet. Outside X_011 VWS/subtitle domain."
-                                 },
-                                 {
-                                     "path":  "Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs",
-                                     "domainNote":  "Editor harness. Outside X_011 runtime hot route."
-                                 },
-                                 {
-                                     "path":  "Assets/_Project/Scripts/Economy/TradeMarauderRuntime.cs",
-                                     "domainNote":  "Economy runtime. Outside X_011 VWS/subtitle domain."
-                                 },
-                                 {
-                                     "path":  "Assets/_Project/Scripts/World/HectonAnomalyEngine.cs",
-                                     "domainNote":  "World/anomaly runtime. Outside X_011 VWS/subtitle domain."
-                                 },
-                                 {
-                                     "path":  "Assets/_Project/Scripts/Audio/Editor/OOP_Voice_Scanner_X_011.cs",
-                                     "domainNote":  "Editor-only scanner pattern strings. Not a runtime heap implementation."
-                                 }
-                             ],
-    "forbiddenHotRouteFindings":  [
-
-                                  ],
-    "hotRouteForbiddenPatterns":  [
-                                      "NativeMinHeap",
-                                      "VocalWarningHeapOps",
-                                      "EditorTryGetHeapEntry",
-                                      "HeapCount",
-                                      "struct SubtitleRequest",
-                                      "_stringQueue",
-                                      "ShowImmediate(string)",
-                                      "CopyStringToRenderBuffer",
-                                      "ResolveDisplayMessage",
-                                      ".text =",
-                                      "new string",
-                                      "string.Create",
-                                      "string.Format"
-                                  ],
-    "tarsReaudit":  {
-                        "promptExtraction":  "Docs/Tasks/CURRENT_BATCH.md AGENT_PROMPT id X_011 found, length 11417, task labels 01..10.",
-                        "dispatcherFramePatch":  "110 earlier runtime Audio/UI/Narrative Time.frameCount tokens replaced with Hecton8.Core.SystemDispatcher.CurrentFrameIndex; a follow-up quest/PDA pass replaced 9 more direct quest narrative/event/marker frame reads.",
-                        "ownedRouteForbiddenScan":  "0 hits in VWS/Babel/SubtitleManager consumer route for Time.frameCount, UnityEngine.Time.frameCount, WaitForSeconds, StartCoroutine, yield return, ToString, string.Format, StringBuilder, .text assignment, SetText, string.Concat, string interpolation, new string, string.Create, + ex.Message, NativeMinHeap, VocalWarningHeapOps, SubtitleRequest, _stringQueue, ShowImmediate(string), CopyStringToRenderBuffer, ResolveDisplayMessage. SystemDispatcher is excluded from this consumer scan because it is the core frame owner and still reads Time.frameCount internally to publish CurrentFrameIndex.",
-                        "broadResidualStringRisk":  {
-                                                        "ToStringHits":  0,
-                                                        "StringBuilderHits":  0,
-                                                        "DirectTextAssignmentHits":  0,
-                                                        "TMPSetTextHits":  0,
-                                                        "StringConcatHits":  0,
-                                                        "InterpolationHits":  0,
-                                                        "NewStringHits":  0,
-                                                        "StringCreateHits":  2,
-                                                        "RegexReplaceHits":  0,
-                                                        "ExceptionMessageHits":  0,
-                                                        "RawMessageTokenFalsePositiveHits":  0,
-                                                        "StringPlusRawHits":  0,
-                                                        "StringPlusRealConcatHits":  0
-                                                    },
-                        "secondSweepPatch":  "Removed debug interpolation/exception-message materialization from SettingsManager, SettingsPanelProfiler, SubnauticaSystemsDebugUI, PDAIntrusionManager, PauseMenuController, PauseControlsPanel, TopographicalSonarSynthesizer, MetaCampaignService, CorporateOrderSystem, and LoreDatabaseManager. Removed BaseIntegrityHUD per-warning percent string materialization and several PDADataLogTab cold string.Concat sites. Third closure removed ModalWindow conflict-message new string allocation, SettingsPanel numeric string.Create caches, UISliderValueDisplay string.Concat template construction, and selected runtime diagnostic interpolation/ToString in AudioLogSystem, HectonNarrativeDirector, UIRuntimeSmokeTester, and ContentLoreBinaryProvider. Fourth residual sweep replaced HudNumericStringCache string cache with char[][] spans and removed safe residual debug/notification/hierarchy/template string construction in runtime audio/UI/text.",
-                        "questPdaSweepPatch":  "QuestGraphEvaluator, QuestEvents, and MissionMarkerSystem direct Time.frameCount telemetry throttles now read SystemDispatcher.CurrentFrameIndex. QuestStateManager audit append warning no longer materializes exception.Message. PDALogbookEntry legacy debug string properties no longer call ReadOnlySpan.ToString/int.ToString; callers must use span/buffer APIs.",
-                        "mainMenuSweepPatch":  "MainMenuController loading percent now formats into char[32] and writes via SetCharArray. Save event error materialization no longer calls FixedString128Bytes.ToString. Explicit MainMenuController string.Concat and interpolation fallback display/dev-log strings were removed. DiegeticHudTextNode span-only SetText method was renamed SetSpan.",
-                        "wristHudLegacyIoPatch":  "WristHologramHudRuntime legacy font discovery, first-file traversal, binary file reads, and CSV parsing are now editor-only. Player runtime keeps the generated font atlas path and does not scan Docs/Archive from EnsureNativeBuffers.",
-                        "bootDeathBuilderPatch":  "HectonOSBootManager and PDADeathMemoryDump no longer use managed StringBuilder assembly. Both write directly into fixed char buffers, format numbers manually, use GetRawSpanOrFallback for localized labels/final line, and render through TMP SetCharArray.",
-                        "questCorporateAudioLogPatch":  "QuestDagCsvOverrideIngestor no longer materializes a full CSV string before span parsing; CorporateOrderSystem.SlowTick no longer copies dictionary keys into growable List\u003cstring\u003e buffers; unused AudioLogSystem.GetDiscoveredHashEnumerator was removed.",
-                        "charBufferRegistryProbePatch":  "CharBufferPool no longer retries GlobalRegistry.DataVault lookup on every Babel span fallback. Prewarm is the explicit cold retry path; hot subtitle span access stays on cached native arena state or preallocated TMP bridge buffers.",
-                        "latestTargetRouteScan":  "Target scans over Bootstrap/Fabricator/Terminal, Interaction/Fabricator prompt-provider files, and patched LocalizationManager/LocalizedInlineIconResolver/UI.InteractionUI/QuestStateManager files report 0 hits for Time.frameCount, WaitForSeconds, coroutine tokens, direct .text assignment, SetText, StringBuilder, ToString, exception.Message, ex.Message, string.Concat, new string, string.Create, string.Format, Regex, MatchEvaluator, Regex.Replace, raw string-plus concat, NativeMinHeap, VocalWarningHeapOps, and legacy subtitle queue tokens.",
-                        "broadResidualNote":  "Runtime scan excludes Editor directories where possible. Timing/coroutine/direct-text/settext/real exception-message/interpolation/new-string/StringBuilder/StringConcat/ToString/RegexReplace tokens are zero in the scanned VWS/subtitle, patched prompt route, and patched localization token-expander route. All found runtime IInteractable owners now implement IInteractableTextProvider, and UI/look-target routes consume spans without needing legacy GetInteractText string fallback for migrated owners. TMP still requires a pooled managed char[] bridge for SetCharArray; direct native span rendering into TMP is not available in the current route. Residual managed-string tokens outside Betty/subtitle/prompt hot rendering include DeployableBeacon cold save/registry ID generation and PDAMarkerRegistry marker save ID generation via string.Create. Expanded full-project residuals remain outside Betty/subtitle in save identity, editor authoring, diagnostics, animation, gameplay, world, VFX, and other non-X_011 owners.",
-                        "bootstrapFabricatorPatch":  "GameBootstrapper no longer uses Awaitable.WaitForSecondsAsync in readiness waits, hardware error text no longer writes UnityEngine.UI.Text.text, and patched bootstrap/fabricator/terminal presentation frame ids now use SystemDispatcher.CurrentFrameIndex.",
-                        "interactionTextProviderPatch":  "IInteractableTextProvider adds a Span\u003cchar\u003e prompt route. Fabricator implements it from a fixed char[96] buffer; both interaction UI paths and PlayerInteraction look-target prompt cache consume spans before falling back to legacy cached strings.",
-                        "interactionProviderExpansionPatch":  "Expanded IInteractableTextProvider across all found runtime IInteractable owners. NarrativeDiscovery prompt assembly now writes into fixed char[128]; item quantity prompts write numeric suffixes manually; UI.InteractionUI, InteractionUI, and PlayerInteraction no longer need the legacy string fallback for migrated prompt display/look-target routes. HarvestableOutcrop, InteractionEvents, and PhysicalSnapSwitch now use SystemDispatcher.CurrentFrameIndex instead of Time.frameCount.",
-                        "localizationTokenExpansionPatch":  "LocalizationManager no longer uses Regex, MatchEvaluator, or Regex.Replace for runtime token expansion. TryExpandText/TryExpandNarrativeText expand button/item/status/key/tech tokens into caller char buffers. UI.InteractionUI consumes that buffer route before TMP SetCharArray. LocalizedInlineIconResolver token matching is span-based and QuestStateManager diagnostic labels are stable constants.",
-                        "mantaConsumableTextPatch":  "MantaScooter localized warning/summary/directive text now stages in FixedCharBuffer and expands battery percent into caller buffers. ConsumableItem no longer caches managed description strings or uses StringBuilder; effect summaries write into Span<char>. Targeted Manta/Consumable scan reports 0 managed string materialization tokens.",
-                        "presentationFrameRecheckPatch":  "EndingSystem, FirstHourDirector, PlayerSwimPresentationController, HectonPlayerCameraRig, HectonScanRenderRegistry, and DataArchaeologyRuntime selected presentation/narrative frame reads now use SystemDispatcher.CurrentFrameIndex.",
-                        "audioLogSubtitleSpanPatch":  "LocalizedTextReference now exposes span/buffer resolve APIs. AudioLogData visible subtitle preview resolves localized text as ReadOnlySpan<char>, expands into the caller buffer, and strips timecode markers through a span overload.",
-                        "pdaAudioLogArchiveSpanPatch":  "AudioLogData title/author/summary/date now have TryWrite* char-buffer APIs. PDADataLogTab consumes them for row/detail/summary display, stores decrypt summary base text in a char buffer, builds decrypt hex overlays from ReadOnlySpan<char>, and removed catalog author/summary string caches. LocalizationManager token chip expansion now consumes span-return item/status chip APIs."
-                    },
-    "profilerStatus":  "PENDING",
-    "runtimeCompileStatus":  "PASS_AFTER_PDA_AUDIOLOG_ARCHIVE_SPAN_SWEEP: guarded dotnet build Assembly-CSharp.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false passed with 0 warnings and 0 errors in 00:03:34.55 after guard attempt 16.",
-    "microsecondsSavedClaimed":  0
+{
+  "agent": "X_011",
+  "role": "VOCAL_WARNING_AND_SUBTITLE_STREAMLINER",
+  "generatedUtc": "2026-05-25T03:23:56.444643+00:00",
+  "scanner": "Tools/OOP_Voice_Scanner_X_011.py",
+  "sourceRoot": "Assets/_Project/Scripts",
+  "filesScanned": 2406,
+  "summary": {
+    "ownedHotRuntimeFindingCount": 0,
+    "ownedHotFatalCount": 0,
+    "focusedTextRuntimeFindingCount": 0,
+    "focusedTextFatalCount": 0,
+    "focusedTextManagedMaterializerCount": 0,
+    "findingCountsById": {
+      "string_interpolation": 2489,
+      "managed_materializer": 3246,
+      "managed_coroutine": 106,
+      "exception_message_concat": 69,
+      "time_frame_count": 322,
+      "legacy_localization_string": 8,
+      "culture_case": 78,
+      "tmp_string_sink": 670,
+      "priority_heap": 10,
+      "legacy_subtitle_queue": 4
+    },
+    "findingCountsByContext": {
+      "diagnostic": 157,
+      "editor_only": 6054,
+      "runtime_source": 646,
+      "comment": 24,
+      "save_identity_or_persistence": 121
+    },
+    "status": "PASS_STATIC_HOT_ROUTE"
+  },
+  "priorityWordProof": {
+    "status": "PASS_STATIC_PRIORITY_PROOF",
+    "checks": {
+      "vwsPriorityWordPresent": true,
+      "vocalCueSignal64Bytes": true,
+      "heapAbsentInVws": true,
+      "bitMaskSetPresent": true,
+      "bitMaskClearPresent": true,
+      "lzcntPresent": true,
+      "selectPresent": true,
+      "emptyWordSelectPresent": true,
+      "playbackPreemptFlagHonored": true,
+      "subtitleAudioFramePresent": true,
+      "subtitleManagerCharArrayPresent": true
+    },
+    "sourceEvidence": [
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 845,
+        "needle": "math.select",
+        "evidence": "float dt = math.max(0f, math.select(0f, deltaTime, math.isfinite(deltaTime)));"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 1224,
+        "needle": "math.select",
+        "evidence": "float t = math.saturate(math.select(1f, qualityWeight01, math.isfinite(qualityWeight01)));"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 1232,
+        "needle": "math.select",
+        "evidence": "return math.saturate(math.select(1f, value, math.isfinite(value)));"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 1237,
+        "needle": "math.select",
+        "evidence": "float t = math.saturate(math.select(1f, quality, math.isfinite(quality)));"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 1290,
+        "needle": "math.select",
+        "evidence": "float safeSeconds = math.max(0.001f, math.select(0.001f, durationSeconds, math.isfinite(durationSeconds)));"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 1425,
+        "needle": "math.select",
+        "evidence": "float severity = math.saturate(math.select(0f, severity01, math.isfinite(severity01)));"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 1434,
+        "needle": "math.select",
+        "evidence": "float severity = math.saturate(math.select(0.5f, severity01, math.isfinite(severity01)));"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 1904,
+        "needle": "math.select",
+        "evidence": "cooldown = math.max(0f, math.select(FallbackCooldownSeconds, cooldownSeconds, cooldownSeconds > 0f && math.isfinite(cooldownSeconds)));"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 2060,
+        "needle": "math.select",
+        "evidence": "VolumeScalar = math.saturate(math.select(DefaultGain, VoiceGain, math.isfinite(VoiceGain))),"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 2134,
+        "needle": "VwsPriorityWord |=",
+        "evidence": "state.VwsPriorityWord |= bitMask;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 2137,
+        "needle": "ResolveHighestPriorityBitIndex",
+        "evidence": "state.HighestPriorityBitIndex = (uint)ResolveHighestPriorityBitIndex(state.VwsPriorityWord);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 2155,
+        "needle": "ResolveHighestPriorityBitIndex",
+        "evidence": "bitIndex = ResolveHighestPriorityBitIndex(state.VwsPriorityWord);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 2176,
+        "needle": "ResolveHighestPriorityBitIndex",
+        "evidence": "bitIndex = ResolveHighestPriorityBitIndex(state.VwsPriorityWord);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 2183,
+        "needle": "VwsPriorityWord &= ~",
+        "evidence": "state.VwsPriorityWord &= ~bitMask;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 2185,
+        "needle": "ResolveHighestPriorityBitIndex",
+        "evidence": "state.HighestPriorityBitIndex = ResolveHighestPriorityBitIndexOrMax(state.VwsPriorityWord);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 2205,
+        "needle": "ResolveHighestPriorityBitIndex",
+        "evidence": "int bitIndex = ResolveHighestPriorityBitIndex(scanWord);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 2223,
+        "needle": "ResolveHighestPriorityBitIndex",
+        "evidence": "state.HighestPriorityBitIndex = ResolveHighestPriorityBitIndexOrMax(activeWord);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 2247,
+        "needle": "ResolveHighestPriorityBitIndex",
+        "evidence": "int bitIndex = ResolveHighestPriorityBitIndex(scanWord);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 2273,
+        "needle": "ResolveHighestPriorityBitIndex",
+        "evidence": "private static int ResolveHighestPriorityBitIndex(ulong priorityWord)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 2278,
+        "needle": "math.select",
+        "evidence": "uint selected = math.select(low | 1u, high, useHigh);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 2279,
+        "needle": "math.select",
+        "evidence": "int baseIndex = math.select(0, 32, useHigh);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 2280,
+        "needle": "math.lzcnt",
+        "evidence": "int candidateIndex = baseIndex + (31 - math.lzcnt(selected));"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 2281,
+        "needle": "math.select",
+        "evidence": "return math.select(NoPriorityBitIndex, candidateIndex, priorityWord != 0UL);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 2285,
+        "needle": "ResolveHighestPriorityBitIndex",
+        "evidence": "private static uint ResolveHighestPriorityBitIndexOrMax(ulong priorityWord)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 2287,
+        "needle": "ResolveHighestPriorityBitIndex",
+        "evidence": "int bitIndex = ResolveHighestPriorityBitIndex(priorityWord);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/VocalWarningSystem.cs",
+        "line": 2288,
+        "needle": "math.select",
+        "evidence": "return (uint)math.select(-1, bitIndex, priorityWord != 0UL);"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs",
+        "line": 51,
+        "needle": "VwsPreemptedFlag",
+        "evidence": "private const uint VwsPreemptedFlag = 1u << 5;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs",
+        "line": 399,
+        "needle": "VwsPreemptedFlag",
+        "evidence": "bool vwsPreempted = (signal.Flags & VwsPreemptedFlag) != 0u;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Audio/Synthesis/VocalBankPlaybackRuntime.cs",
+        "line": 400,
+        "needle": "vwsPreempted",
+        "evidence": "if (isPlaying && signal.Priority < currentCodec.Priority && !vwsPreempted)"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 22,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(62)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 49,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(61)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 63,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(27)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 74,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(28)] public uint Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 84,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(28)] public uint Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 94,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(56)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 106,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(60)] public uint SourceFlags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 119,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(76)] public uint Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 145,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(76)] public uint Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 163,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(61)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 179,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(13)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 199,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(33)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 224,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(61)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 260,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(75)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 287,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(72)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 309,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(13)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 326,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(20)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 341,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(61)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 365,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(19)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 380,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(21)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 401,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(61)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 425,
+        "needle": "Flags",
+        "evidence": "public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 443,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(60)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 464,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(58)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 477,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(16)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 491,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(28)] public uint Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 504,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(27)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 517,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(17)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 543,
+        "needle": "Flags",
+        "evidence": "public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 577,
+        "needle": "Flags",
+        "evidence": "public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 599,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(17)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 616,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(25)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 630,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(59)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 646,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(125)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 677,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(59)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 691,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(21)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 707,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(25)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 721,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(17)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 736,
+        "needle": "Flags",
+        "evidence": "[FieldOffset(17)] public byte Flags;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/Core/Signals/GlobalSignalPayloads.DomainRemainder.cs",
+        "line": 744,
+        "needle": "public struct VocalCueSignal",
+        "evidence": "public struct VocalCueSignal : ISignal"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+        "line": 25,
+        "needle": "StartAudioFrame",
+        "evidence": "[FieldOffset(8)] public uint StartAudioFrame;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+        "line": 49,
+        "needle": "StartAudioFrame",
+        "evidence": "[FieldOffset(8)] public uint StartAudioFrame;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+        "line": 140,
+        "needle": "CurrentAudioFrame",
+        "evidence": "public static uint CurrentAudioFrame => s_audioFrameClock;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+        "line": 306,
+        "needle": "StartAudioFrame",
+        "evidence": "signal.StartAudioFrame = startAudioFrame;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+        "line": 509,
+        "needle": "StartAudioFrame",
+        "evidence": "OffsetOf<SubtitleCueDTO>(nameof(SubtitleCueDTO.StartAudioFrame)) == 8 &&"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+        "line": 533,
+        "needle": "StartAudioFrame",
+        "evidence": "cue.StartAudioFrame = startAudioFrame;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+        "line": 584,
+        "needle": "StartAudioFrame",
+        "evidence": "uint startAudioFrame = signal.StartAudioFrame != 0u ? signal.StartAudioFrame : s_audioFrameClock;"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/BabelSubtitleSyncRuntime.cs",
+        "line": 833,
+        "needle": "StartAudioFrame",
+        "evidence": "int elapsedFrames = unchecked((int)(AudioFrameClock - cue.StartAudioFrame));"
+      },
+      {
+        "path": "Assets/_Project/Scripts/UI/SubtitleManager.cs",
+        "line": 1659,
+        "needle": "SetCharArray",
+        "evidence": "_subtitleText.SetCharArray(_pendingSubtitleSwapBuffer, 0, safeLength);"
+      }
+    ],
+    "stormSimulation": {
+      "triggerCount": 50,
+      "priorityWordHex": "0xF800000000000000",
+      "activeCount": 5,
+      "highestBit": 63,
+      "priorityOrderHighToLow": [
+        63,
+        62,
+        61,
+        60,
+        59
+      ],
+      "accepted": 5,
+      "replaced": 8,
+      "rejected": 37,
+      "pass": true
+    }
+  },
+  "ownedHotRuntimeFindings": [],
+  "focusedTextRuntimeFindings": [],
+  "allFindingCount": 7002,
+  "allFindingsSample": [
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BarterRuntimeSmokeTester.cs",
+      "line": 116,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Fail($\"Offer index {offerIndex} is not available.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BarterRuntimeSmokeTester.cs",
+      "line": 124,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogVerbose($\"Archiving unlock entry {offer.requiredScanEntryId}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BarterRuntimeSmokeTester.cs",
+      "line": 149,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Fail($\"Offer not executable before smoke: {PDAExchangeSystem.ResolveStatusLabel(beforeStatus)}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BarterRuntimeSmokeTester.cs",
+      "line": 170,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Fail($\"Execution count mismatch {beforeExecutions} -> {afterExecutions}.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BarterRuntimeSmokeTester.cs",
+      "line": 184,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Hecton8.Core.H8Debug.Log($\"[BarterSmoke] COMPLETE pass=True offer={offer.offerId}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BarterRuntimeSmokeTester.cs",
+      "line": 233,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Fail($\"{label} bundle count {bundle.Length} exceeds smoke snapshot capacity {BundleCountSnapshotCapacity}.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BarterRuntimeSmokeTester.cs",
+      "line": 286,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Fail($\"{label} delta mismatch for {entry.item.itemName}: expected {expectedDelta}, got {actualDelta}.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BarterRuntimeSmokeTester.cs",
+      "line": 310,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Debug.LogWarning($\"[BarterSmoke] FAIL {issue}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BarterRuntimeSmokeTester.cs",
+      "line": 318,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Hecton8.Core.H8Debug.Log($\"[BarterSmoke] {message}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BaseModule.cs",
+      "line": 2564,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[BaseModule] worldItemPrefab not assigned on '{gameObject.name}'. \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BaseModule.cs",
+      "line": 2565,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Resource hash '{itemHashId}' dropped on the ground but has no world prefab. Lost.\",",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BaseModule.cs",
+      "line": 2576,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Resource hash '{itemHashId}' lost.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BaseModule.cs",
+      "line": 4555,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[BaseModule] interiorTrigger on '{gameObject.name}' was not set as Trigger. \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BaseModule.cs",
+      "line": 4564,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[BaseModule] '{gameObject.name}' has no interiorTrigger assigned. \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BaseStressRuntimeSmokeTester.cs",
+      "line": 168,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "\"gen=\" + summary.TotalGeneration.ToString(\"0.###\", CultureInfo.InvariantCulture) +",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BaseStressRuntimeSmokeTester.cs",
+      "line": 169,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "\" demand=\" + summary.TotalConsumption.ToString(\"0.###\", CultureInfo.InvariantCulture) +",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BaseStressRuntimeSmokeTester.cs",
+      "line": 170,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "\" served=\" + summary.ServedDemand.ToString(\"0.###\", CultureInfo.InvariantCulture) +",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BaseStressRuntimeSmokeTester.cs",
+      "line": 171,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "\" unserved=\" + summary.UnservedDemand.ToString(\"0.###\", CultureInfo.InvariantCulture) +",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BaseStressRuntimeSmokeTester.cs",
+      "line": 183,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "\"gen=\" + summary.TotalGeneration.ToString(\"0.###\", CultureInfo.InvariantCulture) +",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BaseStressRuntimeSmokeTester.cs",
+      "line": 184,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "\" demand=\" + summary.TotalConsumption.ToString(\"0.###\", CultureInfo.InvariantCulture) +",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BaseStressRuntimeSmokeTester.cs",
+      "line": 185,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "\" served=\" + summary.ServedDemand.ToString(\"0.###\", CultureInfo.InvariantCulture) +",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BaseStressRuntimeSmokeTester.cs",
+      "line": 186,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "\" unserved=\" + summary.UnservedDemand.ToString(\"0.###\", CultureInfo.InvariantCulture) +",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BeaconNetworkSystem.cs",
+      "line": 898,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "return string.Create(prefixLength + 1 + digitCount, new BeaconLabelState(_labelPrefixBuffer, prefixLength, safeSequence), (buffer, state) =>",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BeaconRuntime.cs",
+      "line": 272,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "return string.Create(BeaconIdLength, hash, (buffer, value) =>",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 58,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogVerbose($\"AWAKE runOnStart={runOnStart} refs={DescribeResolvedRefs()}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 63,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogVerbose($\"ON_ENABLE runOnStart={runOnStart} isRunning={_isRunning}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 68,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogVerbose($\"ON_DISABLE isRunning={_isRunning} activeInHierarchy={gameObject.activeInHierarchy}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 78,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogVerbose($\"START runOnStart={runOnStart} isRunning={_isRunning} refs={DescribeResolvedRefs()}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 117,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogVerbose($\"RUN begin refs={DescribeResolvedRefs()}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 129,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogVerbose($\"WAIT startupDelay={startupDelay:0.00}s\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 163,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"STATE active={buildable.moduleName} registryBefore={moduleCountBefore} inventoryWeight={playerInventory.TotalWeight:0.0}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 165,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogVerbose($\"DEPLOY pose={placePos} rotY={placeRot.eulerAngles.y:0.0}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 178,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogVerbose($\"REGISTRY afterDeploy={moduleCountAfterDeploy}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 182,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[BuilderSmoke] FAIL registry did not grow. before={moduleCountBefore} after={moduleCountAfterDeploy}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 193,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogVerbose($\"MODULE spawned={spawnedModule.name}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 200,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogVerbose($\"WAIT recoverDelay={recoverDelay:0.00}s\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 207,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogVerbose($\"RECOVER module={spawnedModule.name}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 216,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogVerbose($\"REGISTRY afterRecover={moduleCountAfterRecover}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 220,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[BuilderSmoke] FAIL registry did not shrink on recover. deploy={moduleCountAfterDeploy} recover={moduleCountAfterRecover}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 225,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[BuilderSmoke] PASS buildable={buildable.moduleName} registry={moduleCountBefore}->{moduleCountAfterDeploy}->{moduleCountAfterRecover}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 253,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "return $\"builder={(playerBuilder != null ? \"Y\" : \"N\")} logistics={(_constructionLogistics != null ? \"Y\" : \"N\")} inv={(playerInventory != null ? \"Y\" : \"N\")} prov={(loadoutProvisione",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 267,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Hecton8.Core.H8Debug.Log($\"[BuilderSmoke] WAIT_HEARTBEAT phase={phase} remaining={remaining:0.00}s\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 274,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogVerbose($\"WAIT_COMPLETE phase={phase}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 405,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[BuilderSmoke] Build cost count {buildable.buildCost.Count} exceeds snapshot capacity {BuildCostSnapshotCapacity}.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 434,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Debug.LogWarning($\"[BuilderSmoke] Unexpected cost increase for {cost.item.itemName}: {before}->{after}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 439,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"COST {cost.item.itemName}: before={before} after={after} expected<={expectedUpperBound}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/BuilderRuntimeSmokeTester.cs",
+      "line": 469,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Hecton8.Core.H8Debug.Log($\"[BuilderSmoke] {message}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/CaveGlowingTissueRuntimeBuilder.cs",
+      "line": 207,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "string[] names = new string[count];",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+      "line": 260,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "\"[CaveGraph] Terrain height (\" + terrainHeightAtCenter.ToString(\"F1\", CultureInfo.InvariantCulture) + \"m) is above \" +",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+      "line": 261,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "\"volume top (\" + volumeTopY.ToString(\"F1\", CultureInfo.InvariantCulture) + \"m). Entrances may be clipped. \" +",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+      "line": 833,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[CaveGraph] Node {i} at {p} is outside volume bounds [{vMin}, {vMax}]\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+      "line": 842,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[CaveGraph] Node {i} has zero or negative radii: {nodes[i].radii}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+      "line": 851,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[CaveGraph] Node {i} has zero or negative blendRadius: {nodes[i].blendRadius}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+      "line": 864,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[CaveGraph] Tunnel {i} has zero or negative radius\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+      "line": 874,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "\"[CaveGraph] Tunnel \" + i + \" is degenerate (length = \" + tunnelLen.ToString(\"F2\", CultureInfo.InvariantCulture) + \")\");",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+      "line": 888,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "\"[CaveGraph] Entrance \" + i + \" inwardDirection is not normalized (length = \" + dirLen.ToString(\"F3\", CultureInfo.InvariantCulture) + \")\");",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+      "line": 897,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[CaveGraph] Entrance {i} has zero or negative radius/funnelLength\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+      "line": 907,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[CaveGraph] Validation PASSED: {nodes.Length} rooms, \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+      "line": 908,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"{tunnels.Length} tunnels, {entrances.Length} entrances\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+      "line": 965,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "\"Depth span: \" + depth.ToString(\"F0\", CultureInfo.InvariantCulture) +",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/CaveGraphGenerator.cs",
+      "line": 966,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "\"m | Max radius: \" + maxRadius.ToString(\"F1\", CultureInfo.InvariantCulture) + \"m\";",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/CaveSedimentShelfRuntimeBuilder.cs",
+      "line": 217,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "string[] names = new string[count];",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/CaveServiceRemnantRuntimeBuilder.cs",
+      "line": 236,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "string[] names = new string[count];",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/CaveWallGrowthRuntimeBuilder.cs",
+      "line": 205,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "string[] names = new string[count];",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "line": 1905,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[ConstructionManager] Module '{module.name}' has no ModuleMarker. \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "line": 1917,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[ConstructionManager] Module '{module.name}' has empty PrefabId. \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "line": 1928,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[ConstructionManager] Max modules ({ConstructionDTO.MaxModules}) reached. \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "line": 1929,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Truncating save: {count - moduleIndex} modules not saved.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "line": 2038,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Construction load aborted: {catalog.LookupAmbiguitySummary}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "line": 2097,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[ConstructionManager] Module '{prefabId}' \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "line": 2119,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[ConstructionManager] Module '{moduleDto.prefabId}' \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "line": 2140,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[ConstructionManager] ObjectPoolManager unavailable while loading '{prefabId}'. Skipping pooled prefab.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "line": 2152,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[ConstructionManager] Module '{prefabId}' has no finalPrefab and proxy generation failed. Skipping.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "line": 2162,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[ConstructionManager] Failed to spawn '{prefabId}'.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "line": 2243,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[ConstructionManager] Loaded {loadedCount} modules\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "line": 2244,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "(skippedCount > 0 ? $\", skipped {skippedCount}.\" : \".\"));",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ConstructionManager.cs",
+      "line": 2338,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[ConstructionManager] Habitat graph edge budget ({ConstructionDTO.MaxGraphEdges}) exceeded during save. Truncating persisted topology.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/CreatureArchetypeData.cs",
+      "line": 214,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "string[] trimmed = new string[writeIndex];",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/EntityChangeDetector.cs",
+      "line": 260,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[EntityChangeDetector:{_entityId}] Dirty={_dirtyFlags}\";",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/EnvironmentalAnalyzerTool.cs",
+      "line": 959,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "? new string(buffer.Buffer, 0, buffer.Length)",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FabricationRuntimeSmokeTester.cs",
+      "line": 59,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Debug.LogError($\"[FabricationSmoke] Fabricator '{targetFabricatorName}' not found.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FabricationRuntimeSmokeTester.cs",
+      "line": 66,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Debug.LogError($\"[FabricationSmoke] Recipe '{targetRecipeName}' not found on '{fabricator.name}'.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FabricationRuntimeSmokeTester.cs",
+      "line": 86,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Debug.LogError($\"[FabricationSmoke] Failed to start craft '{recipe.recipeName}'.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FabricationRuntimeSmokeTester.cs",
+      "line": 102,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[FabricationSmoke] FAIL recipe='{recipe.recipeName}' menuOpened={menuOpened} before={beforeCount} after={afterCount}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FabricationRuntimeSmokeTester.cs",
+      "line": 109,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[FabricationSmoke] PASS recipe='{recipe.recipeName}' menuOpened={menuOpened} before={beforeCount} after={afterCount}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FieldOperationLogSystem.cs",
+      "line": 537,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "return buffer == null || length <= 0 ? string.Empty : new string(buffer, 0, length);",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FieldTargetSemantics.cs",
+      "line": 638,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "return string.Create(",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FieldTargetSemantics.cs",
+      "line": 663,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "return string.Create(",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FieldToolRuntimeSmokeTester.cs",
+      "line": 93,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Debug.LogWarning($\"[FieldToolSmoke] Missing references refs={DescribeRefs()}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FieldToolRuntimeSmokeTester.cs",
+      "line": 151,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Debug.LogWarning($\"[FieldToolSmoke] FAIL salvage={salvagePass} cutter={cutterPass}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FieldToolRuntimeSmokeTester.cs",
+      "line": 164,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Debug.LogError($\"[FieldToolSmoke] UNHANDLED EXCEPTION: {ex}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FieldToolRuntimeSmokeTester.cs",
+      "line": 245,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "_debugLastIssue = $\"Salvage failed inventory={beforeCount}->{afterCount} probeActive={probe.activeSelf}\";",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FieldToolRuntimeSmokeTester.cs",
+      "line": 246,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Debug.LogWarning($\"[FieldToolSmoke] Salvage failed inventory={beforeCount}->{afterCount} probeActive={probe.activeSelf}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FieldToolRuntimeSmokeTester.cs",
+      "line": 250,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Hecton8.Core.H8Debug.Log($\"[FieldToolSmoke] PASS salvage item={salvageProbeItem.itemName} inventory={beforeCount}->{afterCount}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FieldToolRuntimeSmokeTester.cs",
+      "line": 349,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "_debugLastIssue = $\"Cutter failed recovered={recovered} registry={beforeModuleCount}->{afterModuleCount} moduleGone={moduleGone}\";",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FieldToolRuntimeSmokeTester.cs",
+      "line": 351,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[FieldToolSmoke] Cutter failed recovered={recovered} registry={beforeModuleCount}->{afterModuleCount} moduleGone={moduleGone}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FieldToolRuntimeSmokeTester.cs",
+      "line": 355,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Hecton8.Core.H8Debug.Log($\"[FieldToolSmoke] PASS cutter registry={beforeModuleCount}->{afterModuleCount}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FieldToolRuntimeSmokeTester.cs",
+      "line": 495,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Debug.LogError($\"[FieldToolSmoke] EXCEPTION {label}: {ex}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FieldToolRuntimeSmokeTester.cs",
+      "line": 505,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "_debugLastIssue = $\"TIMEOUT {label}\";",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FieldToolRuntimeSmokeTester.cs",
+      "line": 506,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Debug.LogWarning($\"[FieldToolSmoke] TIMEOUT {label} after {timeout:0.00}s\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FieldToolRuntimeSmokeTester.cs",
+      "line": 532,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "return $\"tools={(toolManager != null ? \"Y\" : \"N\")} inv={(playerInventory != null ? \"Y\" : \"N\")} builder={(playerBuilder != null ? \"Y\" : \"N\")} logistics={(_constructionLogistics != n",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FieldToolRuntimeSmokeTester.cs",
+      "line": 538,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Hecton8.Core.H8Debug.Log($\"[FieldToolSmoke] {message}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FlowFieldVisualizer.cs",
+      "line": 245,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "private static readonly StringBuilder _forceLabelBuilder = new StringBuilder(ForceLabelBuilderCapacity); // COLD ALLOC: StringBuilder[32] \u2014 editor force-label scratch buffer \u2014 owne",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FlowFieldVisualizer.cs",
+      "line": 668,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "sb.Append(\"  Last calc: \").Append(_lastCalculationTime.ToString(\"F3\", CultureInfo.InvariantCulture)).Append(\"s (\").Append(_lastPointCount).Append(\" points)\").AppendLine();",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FlowFieldVisualizer.cs",
+      "line": 669,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "sb.Append(\"  Throughput: \").Append(throughput.ToString(\"F0\", CultureInfo.InvariantCulture)).AppendLine(\" pts/s\");",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FlowFieldVisualizer.cs",
+      "line": 673,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "UnityEditor.Handles.Label(labelPos, sb.ToString(), _cachedLabelStyle);",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FlowFieldVisualizer.cs",
+      "line": 1234,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "_forceLabelBuilder.Append(magnitude.ToString(\"F2\", CultureInfo.InvariantCulture));",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FlowFieldVisualizer.cs",
+      "line": 1239,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "_forceLabelBuilder.ToString(),",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FluidIncursionSmokeTester.cs",
+      "line": 62,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "leakOnlyVolume.ToString(\"F4\", CultureInfo.InvariantCulture) +",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FluidIncursionSmokeTester.cs",
+      "line": 64,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "pumpedVolume.ToString(\"F4\", CultureInfo.InvariantCulture) +",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FluidIncursionSmokeTester.cs",
+      "line": 74,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "leakOnlyVolume.ToString(\"F4\", CultureInfo.InvariantCulture) +",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/FluidIncursionSmokeTester.cs",
+      "line": 76,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "pumpedVolume.ToString(\"F4\", CultureInfo.InvariantCulture) +",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_coroutine",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/GameTickManager.cs",
+      "line": 33,
+      "context": "comment",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "//   \u2022 WaitForSeconds dlya SlowTick keshirovan odin raz.",
+      "route": "Use dispatcher/audio-frame timing."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/GameTickManager.cs",
+      "line": 185,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[GameTickManager] disabled tickables={_tickables?.Count ?? -1} slowTickables={_slowTickables?.Count ?? -1}\",",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/GameTickManager.cs",
+      "line": 213,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[GameTickManager] destroyed isInstance={ReferenceEquals(GlobalRegistry.TickManager, this)} tickables={_tickables?.Count ?? -1} slowTickables={_slowTickables?.Count ?? -1}\",",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "managed_coroutine",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/GameTickManager.cs",
+      "line": 534,
+      "context": "comment",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "/// Vechnaya korutina. WaitForSeconds keshirovan \u2014 zero GC per yield.",
+      "route": "Use dispatcher/audio-frame timing."
+    },
+    {
+      "id": "exception_message_concat",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+      "line": 3455,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Debug.LogError(\"[GlobalPhysicsStateManager] Failed to dump physics culling black box: \" + exception.Message);",
+      "route": "Use stable diagnostic codes or editor-only logging."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "line": 533,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "int frame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "line": 547,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "int frame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "line": 1445,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Time.frameCount < _nextAtmosphereTimelineWarningFrame)",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonAtmosphereManager.cs",
+      "line": 1454,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "_nextAtmosphereTimelineWarningFrame = Time.frameCount + AtmosphereTimelineWarningCooldownFrames;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonBiomeMatrixCatalog.cs",
+      "line": 287,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "error = $\"Biome matrix slot {i} is null.\";",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonBiomeMatrixCatalog.cs",
+      "line": 293,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "error = $\"Biome '{profile.name}' has invalid matrixIndex {profile.matrixIndex}.\";",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonBiomeMatrixCatalog.cs",
+      "line": 299,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "error = $\"Duplicate matrixIndex {profile.matrixIndex}.\";",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 2068,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Time.frameCount < _nextCelestialTimelineWarningFrame)",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 2077,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "_nextCelestialTimelineWarningFrame = Time.frameCount + CelestialTimelineWarningCooldownFrames;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 4661,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "return Time.frameCount >= _nextCelestialSnapshotFrame;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonCelestialEngine.cs",
+      "line": 4674,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "_nextCelestialSnapshotFrame = Time.frameCount + interval;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "line": 301,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "origin._physicsResumeFrame = Time.frameCount + 1;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "line": 519,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Time.frameCount);",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "line": 655,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "if (Time.frameCount >= _physicsResumeFrame)",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "line": 666,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "if (Time.frameCount >= _pendingShiftFrame)",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "line": 771,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "int frame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "line": 806,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "_pendingShiftFrame = Time.frameCount + 1;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "line": 846,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "SystemDispatcher.RequestOriginShiftFrameLock(Time.frameCount);",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "line": 906,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Time.frameCount,",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "line": 909,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "ArmAupJitterMask(Time.frameCount);",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "line": 930,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "_physicsResumeFrame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "line": 935,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "_physicsResumeFrame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "line": 1021,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "int currentFrame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "line": 1034,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "_lastPostShiftUnloadUnusedAssetsFrame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "line": 1066,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "_physicsResumeFrame = Time.frameCount + 1;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "line": 1094,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Time.frameCount,",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "line": 1968,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "if (_lastShiftEvent.Sequence == 0u || _lastShiftEvent.Frame != Time.frameCount)",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "line": 1983,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "if (_aupJitterMaskReleaseFrame < 0 || Time.frameCount <= _aupJitterMaskReleaseFrame)",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFloatingOrigin.cs",
+      "line": 1998,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "return _aupJitterMaskReleaseFrame >= 0 && Time.frameCount <= _aupJitterMaskReleaseFrame ? 1f : 0f;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2634,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "_lastOceanSurfaceDumpFrame == Time.frameCount)",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 2639,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "_lastOceanSurfaceDumpFrame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3157,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "int frame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3348,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "_splashdownImpulseScheduleFrame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 3357,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "if (!_splashdownImpulseJobHandle.IsCompleted || _splashdownImpulseScheduleFrame == Time.frameCount)",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4076,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "int frame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "exception_message_concat",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 4142,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Debug.LogWarning(\"[HectonFluidEngine] Fluid advection telemetry dump failed: \" + exception.Message, this);",
+      "route": "Use stable diagnostic codes or editor-only logging."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 5706,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Frame = Time.frameCount,",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6432,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "int frameCount = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6446,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "int frame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonFluidEngine.cs",
+      "line": 6815,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Frame = Time.frameCount,",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonNarrativeDirector.cs",
+      "line": 53,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "private readonly string[] _poiDiscoveryIds = new string[NativePoiCapacity];",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonNarrativeDirector.cs",
+      "line": 102,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "data.narrativeDiscoveryIds = new string[SaveData.MaxNarrativeDiscoveries];",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+      "line": 274,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[HectonPlayerSpawner] Rigidbody resolved through GameBootstrapper on \\\"{playerRigidbody.gameObject.name}\\\".\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+      "line": 281,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[HectonPlayerSpawner] Current player \\\"{playerTransformRoot.name}\\\" has no Rigidbody on root or children.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+      "line": 358,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[HectonPlayerSpawner] Global timeout ({globalTimeoutSec}s) in phase 1. Using fallback spawn.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+      "line": 369,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[HectonPlayerSpawner] Terrain found at map center. Height: {_hitInfo.point.y:F1}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+      "line": 380,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[HectonPlayerSpawner] Timeout ({maxWaitTime}s): terrain not generated. Spawning at center water level.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+      "line": 388,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[HectonPlayerSpawner] Terrain not ready; waiting ({waitTimer:F1}s).\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+      "line": 452,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[HectonPlayerSpawner] Global timeout ({globalTimeoutSec}s) in phase 2 at point {spiralIndex}/{maxSpiralPoints}. Using fallback spawn.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+      "line": 498,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[HectonPlayerSpawner] Spiral point #{spiralIndex} ({testX:F0}, {testZ:F0}) has no terrain after {maxRetriesPerPoint} retries. Skipping.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+      "line": 557,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[HectonPlayerSpawner] Global timeout ({globalTimeoutSec}s) in phase 3 at point {spiralIndex}/{maxSpiralPoints}. Using fallback spawn.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+      "line": 952,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[HectonPlayerSpawner] Player spawned.\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+      "line": 953,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"   Position: ({position.x:F1}, {position.y:F1}, {position.z:F1})\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+      "line": 954,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"   Water level: {waterLevel:F1}\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+      "line": 955,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"   Ground height under player: {_hitInfo.point.y:F1}\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+      "line": 956,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"   Water depth: {waterLevel - _hitInfo.point.y:F1}m\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+      "line": 957,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"   Search time: {elapsed:F1}s\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+      "line": 1049,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[HectonPlayerSpawner] Fallback spawn at \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+      "line": 1050,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"({_spawnPosition.x:F1}, {_spawnPosition.y:F1}, {_spawnPosition.z:F1})\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonPlayerSpawner.cs",
+      "line": 1051,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"   Time before fallback: {elapsed:F1}s\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonRockManager.cs",
+      "line": 144,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Debug.LogError($\"[HectonRockManager] Rock layer {i} (layerId={cfg.layerId}) \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonRockManager.cs",
+      "line": 154,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Debug.LogError($\"[HectonRockManager] Rock layer {i} (layerId={cfg.layerId}) \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonRockManager.cs",
+      "line": 173,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Debug.LogWarning($\"[HectonRockManager] Duplicate layerId={cfg.layerId} \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonRockManager.cs",
+      "line": 337,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Hecton8.Core.H8Debug.Log($\"[HectonRockManager] RegisterChunk: layer={layerId}, \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonRockManager.cs",
+      "line": 338,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"chunk={chunkCoord}, count={matrices.Length}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonRockManager.cs",
+      "line": 353,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Hecton8.Core.H8Debug.Log($\"[HectonRockManager] UnregisterChunk: {chunkCoord}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonRockManager.cs",
+      "line": 527,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[HectonRockManager] Rock layer aggregation exceeded capacity. layerId={layerId} requested={requestedCount} capacity={capacity}. Excess instances were dropped for this rebuild.\",",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonRockManager.cs",
+      "line": 541,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[HectonRockManager] Proximity aggregation exceeded capacity. requested={requestedCount} capacity={capacity}. Excess collider points were dropped for this rebuild.\",",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonRockManager.cs",
+      "line": 555,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[HectonRockManager] Missing aggregation buffer for layerId={layerId}. Layer rebuild skipped.\",",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonSocketHelper.cs",
+      "line": 103,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[SocketHelper] Snap to Surface is disabled for X_005 PhysX hygiene. \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonSocketHelper.cs",
+      "line": 104,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Route this editor action through the construction surface owner before re-enabling. \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonSocketHelper.cs",
+      "line": 105,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Configured probe: {snapRayDistance:0.###}m, mask {snapLayerMask.value}.\",",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonSocketHelper.cs",
+      "line": 172,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Handles.Label(tipPos + Vector3.up * 0.1f, socketType.ToString(), GetLabelStyle(socketColor));",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonSurvivalSystem.cs",
+      "line": 3528,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "stableId.ToString(),",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
+      "line": 5900,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "int frameIndex = Application.isPlaying ? Time.frameCount : 0;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs",
+      "line": 7434,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Depth: {depth:F0}m  Light: {lf:P0}  Scatter: {scatter:P0}  Turbidity: {_currentTurbidity:F2}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5247,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "int frame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5306,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "int frame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 5791,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "int frame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 6263,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "int frame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 6392,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "int frame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 6407,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "int frame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10706,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"\u2550\u2550\u2550 CAVE VOXEL ENGINE v4.0 \u2550\u2550\u2550\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10707,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Active Volumes: {engine.ActiveVolumeCount}\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10708,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"MC Tables: {(MCTables.IsReady ? \"Ready\" : \"Not Init\")}\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10709,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Height Source: MapMagicBridge\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10710,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"SDF: Multi-Primitive + Smooth Blend\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10711,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Async: Unity 6 Awaitable (Zero GC)\",",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10729,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"\u2550\u2550\u2550 CURRENT PRESET: {preset.presetName} \u2550\u2550\u2550\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10730,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Grid: {dim}\u00b3 | Voxel: {vox}m | Coverage: {coverage:F0}m\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10731,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Rooms: {preset.minRooms}-{preset.maxRooms}\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10732,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Density: {densityMB:F1} MB | MC Buffer: {rawMB:F1} MB\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonVoxelEngine.cs",
+      "line": 10733,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Peak temp: {totalMB:F1} MB (freed after gen)\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4031,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "s_destroyRequestedFrame[slot] = UnityEngine.Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/HectonVoxelVolume.cs",
+      "line": 4064,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "int frame = UnityEngine.Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 2901,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Generating {res}\u00d7{res} vertices...\", 0.2f);",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 2975,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Hecton8.Core.H8Debug.Log($\"[Hecton] Preview: {res}\u00d7{res} = {vc:N0} verts, \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 2976,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"{tc / 3:N0} tris. Bounds: {mesh.bounds.size}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 3228,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"\u2550\u2550\u2550 ESTIMATED STREAMING LOAD \u2550\u2550\u2550\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 3229,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Chunk: {gen.chunkSize} m\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 3230,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"LOD0: {lod0Res}\u00d7{lod0Res} verts/chunk  (~{estL0} chunks)\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 3231,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"LOD1: {lod1Res}\u00d7{lod1Res} verts/chunk  (~{estL1} chunks)\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 3232,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Peak vertices: ~{estVerts:N0}\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 3233,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Est. VRAM: ~{estVRAM:F1} MB\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 3234,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Abyss: -{gen.slopes.maxDepth} m  |  Spine: +{gen.spine.maxHeight} m\",",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 3240,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"\u26a0 Est. VRAM ({estVRAM:F0} MB) high for 2 GB GPU.\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 3285,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"\u2550\u2550\u2550 {mode} STATS \u2550\u2550\u2550\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 3286,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Child objects: {gen.transform.childCount}\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 3288,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Active chunks: {gen.ActiveChunkCount}\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 3289,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Pending (async): {gen.PendingChunkCount}\\n\" : \"\") +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 3290,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Vertices: {realVerts:N0}\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 3291,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Triangles: {realTris:N0}\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 3292,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Est. VRAM: {realVRAM:F1} MB\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 3293,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Base locations: {gen.BaseLocationCount}\\n\" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 3294,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Resource nodes: {gen.ResourceNodeCount}\",",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/HectonWorldGenerator.cs",
+      "line": 3300,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"\u26a0 Active VRAM usage ({realVRAM:F0} MB) is high!\",",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/ItemCatalog.cs",
+      "line": 308,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "runtimeRecord.LastAccessFrame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/ItemCatalog.cs",
+      "line": 343,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LastAccessFrame = Time.frameCount,",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/ItemCatalog.cs",
+      "line": 360,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LastAccessFrame = Time.frameCount,",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/ItemCatalog.cs",
+      "line": 399,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "runtimeRecord.LastAccessFrame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/ItemCatalog.cs",
+      "line": 584,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "int currentFrame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/ItemCatalog.cs",
+      "line": 947,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "runtimeRecord.LastAccessFrame = Time.frameCount;",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ItemCatalog.cs",
+      "line": 1266,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "error = $\"Alias '{alias}' already belongs to '{existing.name}'.\";",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ItemCatalog.cs",
+      "line": 1290,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "error = $\"Hash '{hashId}' already belongs to '{existing.name}'.\";",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ItemCatalog.cs",
+      "line": 1307,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"ItemCatalog alias collision on '{id}' between '{existingName}' and '{duplicateName}'.\";",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ItemCatalog.cs",
+      "line": 1541,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"ItemCatalog hash collision on '{hashId}' between '{existingName}' and '{duplicateName}'.\";",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "legacy_localization_string",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/LocalizationManager.cs",
+      "line": 166,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "string ILocalizationTextReadModel.GetOrFallback(string key, string fallback)",
+      "route": "Use raw span/localization read model routes."
+    },
+    {
+      "id": "legacy_localization_string",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/LocalizationManager.cs",
+      "line": 168,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "return GetOrFallback(_currentLanguage, key, fallback);",
+      "route": "Use raw span/localization read model routes."
+    },
+    {
+      "id": "legacy_localization_string",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/LocalizationManager.cs",
+      "line": 299,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "public string GetFormatted(string key, params object[] args)",
+      "route": "Use raw span/localization read model routes."
+    },
+    {
+      "id": "legacy_localization_string",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/LocalizationManager.cs",
+      "line": 318,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "return ExpandRuntimeTokens(GetOrFallback(language, key, fallback));",
+      "route": "Use raw span/localization read model routes."
+    },
+    {
+      "id": "legacy_localization_string",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/LocalizationManager.cs",
+      "line": 482,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "return GetOrFallback(CurrentLanguage, whisperKey, fallback);",
+      "route": "Use raw span/localization read model routes."
+    },
+    {
+      "id": "legacy_localization_string",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/LocalizationManager.cs",
+      "line": 646,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "public string GetOrFallback(GameLanguage language, string key, string fallback)",
+      "route": "Use raw span/localization read model routes."
+    },
+    {
+      "id": "culture_case",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/LocalizedInlineIconResolver.cs",
+      "line": 339,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "if (char.ToLowerInvariant(token[start + i]) != expected[i])",
+      "route": "Use ASCII span casing for HUD/control tokens."
+    },
+    {
+      "id": "culture_case",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/LocalizedWorldSign.cs",
+      "line": 189,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "_signBuffer[i] = forceUppercase ? char.ToUpperInvariant(current) : current;",
+      "route": "Use ASCII span casing for HUD/control tokens."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+      "line": 951,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "\"0x\" + state.ToolHashID.ToString(\"X8\") +",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+      "line": 952,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "\" B \" + state.CurrentBattery.ToString(\"0.0\") +",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+      "line": 953,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "\" H \" + state.ThermalLoad.ToString(\"0.000\"));",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+      "line": 3660,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "throw new InvalidOperationException($\"[SHINOBU_327] Layout size mismatch for {typeof(T).Name}: {observed} != {expected}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+      "line": 3669,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "throw new InvalidOperationException($\"[SHINOBU_327] Layout field missing for {typeof(T).Name}.{fieldName}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ModularEquipmentEngine.cs",
+      "line": 3672,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "throw new InvalidOperationException($\"[SHINOBU_327] Layout offset mismatch for {typeof(T).Name}.{fieldName}: {observed} != {expected}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ModuleCatalog.cs",
+      "line": 431,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Debug.LogWarning($\"[ModuleCatalog] Duplicate ID alias '{id}'. Skipping duplicate entry.\", data);",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ModuleCatalog.cs",
+      "line": 451,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"Alias '{alias}' resolves to both '{existingName}' and '{incomingName}'.\";",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ModuleCatalog.cs",
+      "line": 465,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "_lookupAmbiguitySummary = $\"Module hash '{moduleHashId}' resolves to both '{existing.name}' and '{data.name}'.\";",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ModuleCatalog.cs",
+      "line": 523,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "error = $\"Alias '{alias}' already belongs to '{existing.name}'.\";",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/NoiseSystem.cs",
+      "line": 198,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Time.frameCount);",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/NoiseSystem.cs",
+      "line": 236,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Time.frameCount,",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/NoiseSystem.cs",
+      "line": 288,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Time.frameCount - _playerNoiseSignal.ReportedFrame <= MaxPlayerSignalAgeFrames)",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/NoiseSystem.cs",
+      "line": 356,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "Time.frameCount,",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ObjectPoolDiagnostics.cs",
+      "line": 499,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "//  REPORTING \u2014 Zero-allocation via pre-allocated StringBuilder",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ObjectPoolDiagnostics.cs",
+      "line": 557,
+      "context": "diagnostic",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "return sb.ToString();",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ObjectPoolManager.cs",
+      "line": 552,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[ObjectPoolManager] Despawn: '{instanceName}' has no PoolItemMarker. Destroying instead.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ObjectPoolManager.cs",
+      "line": 562,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[ObjectPoolManager] Despawn: Pool for '{instanceName}' not found. Destroying.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ObjectPoolManager.cs",
+      "line": 572,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[ObjectPoolManager] Prefab '{instanceName}' is missing a DespawnTimer component. Despawning immediately.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/ObjectPoolManager.cs",
+      "line": 902,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "string report = $\"[ObjectPoolManager] '{prefabName}': {reason} Consider increasing Warmup count.\";",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/OmegaSurvivalKinematicsSmokeTester.cs",
+      "line": 110,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "// COLD ALLOC: StringBuilder[384] - editor batch smoke JSON report - owner: OmegaSurvivalKinematicsSmokeTester",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/OmegaSurvivalKinematicsSmokeTester.cs",
+      "line": 111,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "var builder = new StringBuilder(384);",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/OmegaSurvivalKinematicsSmokeTester.cs",
+      "line": 116,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": ".Append(\"\\\"thermalDps\\\":\").Append(thermalDamagePerSecond.ToString(\"R\", CultureInfo.InvariantCulture)).Append(',')",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/OmegaSurvivalKinematicsSmokeTester.cs",
+      "line": 117,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": ".Append(\"\\\"nitrogenDelta\\\":\").Append(nitrogenBuildUpDelta.ToString(\"R\", CultureInfo.InvariantCulture)).Append(',')",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/OmegaSurvivalKinematicsSmokeTester.cs",
+      "line": 118,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": ".Append(\"\\\"brineSinkMultiplier\\\":\").Append(brineSinkMultiplier.ToString(\"R\", CultureInfo.InvariantCulture))",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/OmegaSurvivalKinematicsSmokeTester.cs",
+      "line": 120,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "return builder.ToString();",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "time_frame_count",
+      "severity": "fatal",
+      "path": "Assets/_Project/Scripts/PerformanceMonitor.cs",
+      "line": 856,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "frameCount: Time.frameCount,",
+      "route": "Use SystemDispatcher audio/frame clock in consumers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PerformanceMonitor.cs",
+      "line": 951,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"[PERF] samples={runtime._sampleCountTotal} \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PerformanceMonitor.cs",
+      "line": 952,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"frame={stats.frameTimeMs:F2}ms avg={stats.avgFrameTimeMs:F2}ms peak={stats.peakFrameTimeMs:F2}ms \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PerformanceMonitor.cs",
+      "line": 953,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"gc={stats.gcAllocRateMBperSec:F2}MB/s heap={stats.totalHeapBytes * GlobalTelemetryBus.BytesToMegabytes:F1}MB \" +",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PerformanceMonitor.cs",
+      "line": 954,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "$\"collections={stats.gcCollectionCountRate}/s\";",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "line": 337,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogBuilderDebug($\"DebugDeploy enter consumeCost={consumeCost} pos={position}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "line": 343,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogBuilderDebug($\"DebugDeploy -> active={(activeBuildable != null ? activeBuildable.moduleName : \"null\")}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "line": 392,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogBuilderDebug($\"DebugDeploy consuming cost for {activeBuildable.moduleName}.\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "line": 413,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogBuilderDebug($\"DebugDeploy spawnResult={(spawned != null ? spawned.name : \"null\")}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "line": 493,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "return _builderLogSummaryBuffer.ToString();",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "line": 592,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "return _builderLogSummaryBuffer.ToString();",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "managed_materializer",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "line": 599,
+      "context": "runtime_source",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "return _builderLogSummaryBuffer.ToString();",
+      "route": "Use ReadOnlySpan<char> and caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "line": 1443,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogBuilderDebug($\"BindRuntimeReferences inventory={(inventory != null ? \"Y\" : \"N\")}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "line": 1450,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogBuilderDebug($\"BindRuntimeReferences camera={(playerCamera != null ? playerCamera.name : \"null\")}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "line": 1457,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogBuilderDebug($\"BindRuntimeReferences buildAnchor={(buildAnchor != null ? buildAnchor.name : \"null\")}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "line": 1464,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogBuilderDebug($\"BindRuntimeReferences hud={(hudNotification != null ? \"Y\" : \"N\")}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "line": 1483,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogBuilderDebug($\"BindRuntimeReferences catalogCount={(_buildCatalog != null ? _buildCatalog.Count : -1)}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "line": 1492,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogBuilderDebug($\"BindRuntimeReferences end activeIndex={_activeBuildableIndex}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "line": 1553,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogBuilderDebug($\"EnsureCatalogSelection picked={candidate.moduleName} index={i}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "line": 1718,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogBuilderDebug($\"SpawnPlacedModule begin module={data.moduleName} prefab=RUNTIME_PROXY\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "line": 1728,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogBuilderDebug($\"SpawnPlacedModule begin module={data.moduleName} prefab={data.finalPrefab.name}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "line": 1742,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogBuilderDebug($\"SpawnPlacedModule registered moduleCount={manager.ModuleCount}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    },
+    {
+      "id": "string_interpolation",
+      "severity": "warning",
+      "path": "Assets/_Project/Scripts/PlayerBuilder.cs",
+      "line": 1749,
+      "context": "editor_only",
+      "ownedHotPath": false,
+      "focusedTextPath": false,
+      "evidence": "LogBuilderDebug($\"SpawnPlacedModule end result={(placedModule != null ? placedModule.name : \"null\")}\");",
+      "route": "Use span formatting into caller-owned buffers."
+    }
+  ],
+  "notes": [
+    "PASS_STATIC_HOT_ROUTE is static source proof only; Unity Profiler/GCMonitor proof is still required for runtime Zero-GC claims.",
+    "TMP rendering cannot consume unmanaged ReadOnlySpan<char> directly; the accepted bridge is preallocated char[] plus SetCharArray.",
+    "Findings outside owned hot route are emitted for integrators and are not treated as X_011 VWS/subtitle regressions unless they enter the focused text route."
+  ]
 }

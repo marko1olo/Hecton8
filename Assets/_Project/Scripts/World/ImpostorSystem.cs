@@ -209,7 +209,7 @@ namespace Hecton8.World
             if (registered != null && registered != this)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[ImpostorSystem] Duplicate registry owner detected. Destroying duplicate.");
+                Hecton8.Core.H8Debug.LogWarning("[ImpostorSystem] Duplicate registry owner detected. Destroying duplicate.");
 #endif
                 Destroy(gameObject);
                 return;
@@ -897,7 +897,7 @@ namespace Hecton8.World
 
         private AbsoluteUniversePosition ResolveViewerAup()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_viewerAupCacheFrame == frame)
                 return _viewerAupCache;
 
@@ -947,7 +947,7 @@ namespace Hecton8.World
 
         private bool TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext)
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_playerRuntimeContextCacheFrame != frame)
             {
                 _playerRuntimeContextCacheFrame = frame;
@@ -1175,13 +1175,13 @@ namespace Hecton8.World
             if (impostorShader != null)
                 Hecton8.Core.H8Debug.Log($"[ImpostorSystem] Impostor shader found: {impostorShader.name}");
             else
-                Debug.LogWarning("[ImpostorSystem] Amplify impostor package or shader not found.");
+                Hecton8.Core.H8Debug.LogWarning("[ImpostorSystem] Amplify impostor package or shader not found.");
         }
 
         [MenuItem("Hecton8/LOD System/Create Impostor Baking Preset")]
         private static void CreateImpostorBakingPreset()
         {
-            Debug.LogWarning("[ImpostorSystem] Amplify impostor bake preset creation is unavailable because the Amplify package is not installed.");
+            Hecton8.Core.H8Debug.LogWarning("[ImpostorSystem] Amplify impostor bake preset creation is unavailable because the Amplify package is not installed.");
         }
 
         [MenuItem("Hecton8/LOD System/Batch Bake Impostors")]

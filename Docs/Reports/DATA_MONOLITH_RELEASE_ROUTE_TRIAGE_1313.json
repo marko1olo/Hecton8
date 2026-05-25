@@ -1,0 +1,51 @@
+{
+  "schema": "HECTON8_DATA_MONOLITH_RELEASE_ROUTE_TRIAGE_V1",
+  "agent": "1313",
+  "date": "2026-05-25",
+  "evidence": "STATIC_SOURCE_TOKEN_TRIAGE_NO_DOTNET_NO_UNITY",
+  "sourceReport": "Docs/Reports/DATA_MONOLITH_RELEASE_ROUTE_SCAN_1313.json",
+  "rawProductionCandidateFindingCount": 281,
+  "strictBlockingCandidateCount": 262,
+  "csvStateOrNoiseCount": 19,
+  "strictBlockingBreakdown": {
+    "csvCallableMethodDeclarations": 121,
+    "csvCallableInvocations": 100,
+    "managedFileOrParserOperations": 41
+  },
+  "managedFileOrParserBreakdown": {
+    "managedTextFileRead": 22,
+    "managedWholeFileByteRead": 7,
+    "managedTextStreamReader": 6,
+    "managedJsonDeserialize": 5,
+    "managedStringSplit": 1
+  },
+  "topCsvRouteFiles": [
+    { "file": "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs", "count": 9 },
+    { "file": "Assets/_Project/Scripts/Physiology/ShinobuRespawnReconciliationRuntime.cs", "count": 8 },
+    { "file": "Assets/_Project/Scripts/Lighting/InteriorGIProbeVolumeRuntime.cs", "count": 8 },
+    { "file": "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs", "count": 6 },
+    { "file": "Assets/_Project/Scripts/Graphics/Materials/VisualPressureAgingRuntime.cs", "count": 6 },
+    { "file": "Assets/_Project/Scripts/Atmosphere/ShinobuOceanSurfaceAtmosphereRuntime.cs", "count": 5 },
+    { "file": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs", "count": 5 },
+    { "file": "Assets/_Project/Scripts/Environment/HectonSeismicTideDirector.cs", "count": 5 },
+    { "file": "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs", "count": 5 },
+    { "file": "Assets/_Project/Scripts/Lighting/DynamicPointLightCulling/DynamicPointLightCullingDirector.cs", "count": 5 }
+  ],
+  "topManagedFileOrParserFiles": [
+    { "file": "Assets/_Project/Scripts/Thermodynamics/OOP_Thermal_Scanner.cs", "count": 4 },
+    { "file": "Assets/_Project/Scripts/Gameplay/Combat/StatusEffectsEditorFacade.cs", "count": 2 },
+    { "file": "Assets/_Project/Scripts/Narrative/LoreDatabaseManager.cs", "count": 2 },
+    { "file": "Assets/_Project/Scripts/AI/Ecosystem/EcosystemPopulationBalancer.cs", "count": 2 },
+    { "file": "Assets/_Project/Scripts/ModdingAPI/ModAssetManager.cs", "count": 2 },
+    { "file": "Assets/_Project/Scripts/Gameplay/Combat/ArmorPenetrationEditorFacade.cs", "count": 2 },
+    { "file": "Assets/_Project/Scripts/ModdingAPI/ModLoader.cs", "count": 2 },
+    { "file": "Assets/_Project/Scripts/SaveThumbnailSystem.cs", "count": 2 },
+    { "file": "Assets/_Project/Scripts/Fauna/PredatorCognitionDomain_Steering.cs", "count": 2 },
+    { "file": "Assets/_Project/Scripts/Input/UserOptionsPersistence.cs", "count": 2 }
+  ],
+  "scannerPatch": {
+    "oopStaticDataScanner": "Csv route names now match generic Csv + parser verb instead of narrow LoadProfilesCsv names.",
+    "releaseBuildGate": "Callable Csv lines now match generic Parse/TryApply/TryIngest/TryLoad/TryReload/Reload/Load verbs."
+  },
+  "releaseReady": false
+}

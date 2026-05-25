@@ -57,7 +57,7 @@ namespace Hecton8.SaveSystem
                 return;
 
             if (!SaveSidecarStorage.SaveMetadata(this, path, out string error))
-                Debug.LogWarning($"[SaveMetadata] Failed to save meta to '{path}': {error}");
+                Hecton8.Core.H8Debug.LogWarning($"[SaveMetadata] Failed to save meta to '{path}': {error}");
         }
 
         public static SaveMetadata Load(string slotName)
@@ -78,7 +78,7 @@ namespace Hecton8.SaveSystem
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[SaveMetadata] Failed to load meta from '{path}': {ex.Message}");
+                Hecton8.Core.H8Debug.LogWarning($"[SaveMetadata] Failed to load meta from '{path}': {ex.Message}");
                 return null;
             }
         }
@@ -134,7 +134,7 @@ namespace Hecton8.SaveSystem
 
         private static SaveMetadata HandleLoadFailure(string path, string error)
         {
-            Debug.LogWarning($"[SaveMetadata] Failed to load meta from '{path}': {error}");
+            Hecton8.Core.H8Debug.LogWarning($"[SaveMetadata] Failed to load meta from '{path}': {error}");
             return null;
         }
     }

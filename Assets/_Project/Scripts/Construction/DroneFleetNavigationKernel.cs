@@ -78,10 +78,22 @@ namespace Hecton8.Construction
         [FieldOffset(36)] public uint CurrentTargetHashID;
         [FieldOffset(40)] public uint TaskStateFlags;
         [FieldOffset(44)] public float BatteryLevel;
-        [FieldOffset(48)] private uint _pad0;
-        [FieldOffset(52)] private uint _pad1;
-        [FieldOffset(56)] private uint _pad2;
-        [FieldOffset(60)] private uint _pad3;
+        [FieldOffset(48)] private byte _pad0;
+        [FieldOffset(49)] private byte _pad1;
+        [FieldOffset(50)] private byte _pad2;
+        [FieldOffset(51)] private byte _pad3;
+        [FieldOffset(52)] private byte _pad4;
+        [FieldOffset(53)] private byte _pad5;
+        [FieldOffset(54)] private byte _pad6;
+        [FieldOffset(55)] private byte _pad7;
+        [FieldOffset(56)] private byte _pad8;
+        [FieldOffset(57)] private byte _pad9;
+        [FieldOffset(58)] private byte _pad10;
+        [FieldOffset(59)] private byte _pad11;
+        [FieldOffset(60)] private byte _pad12;
+        [FieldOffset(61)] private byte _pad13;
+        [FieldOffset(62)] private byte _pad14;
+        [FieldOffset(63)] private byte _pad15;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -120,9 +132,30 @@ namespace Hecton8.Construction
         [FieldOffset(28)] public float MiningHoldSeconds;
         [FieldOffset(32)] public float SdfRepulsionScale;
         [FieldOffset(36)] public float ClearanceRadiusMeters;
-        [FieldOffset(40)] public ulong _pad0;
-        [FieldOffset(48)] public ulong _pad1;
-        [FieldOffset(56)] public ulong _pad2;
+        [FieldOffset(40)] private byte _pad0;
+        [FieldOffset(41)] private byte _pad1;
+        [FieldOffset(42)] private byte _pad2;
+        [FieldOffset(43)] private byte _pad3;
+        [FieldOffset(44)] private byte _pad4;
+        [FieldOffset(45)] private byte _pad5;
+        [FieldOffset(46)] private byte _pad6;
+        [FieldOffset(47)] private byte _pad7;
+        [FieldOffset(48)] private byte _pad8;
+        [FieldOffset(49)] private byte _pad9;
+        [FieldOffset(50)] private byte _pad10;
+        [FieldOffset(51)] private byte _pad11;
+        [FieldOffset(52)] private byte _pad12;
+        [FieldOffset(53)] private byte _pad13;
+        [FieldOffset(54)] private byte _pad14;
+        [FieldOffset(55)] private byte _pad15;
+        [FieldOffset(56)] private byte _pad16;
+        [FieldOffset(57)] private byte _pad17;
+        [FieldOffset(58)] private byte _pad18;
+        [FieldOffset(59)] private byte _pad19;
+        [FieldOffset(60)] private byte _pad20;
+        [FieldOffset(61)] private byte _pad21;
+        [FieldOffset(62)] private byte _pad22;
+        [FieldOffset(63)] private byte _pad23;
     }
 
     internal static class DroneFleetLayoutSentinel
@@ -137,9 +170,9 @@ namespace Hecton8.Construction
                 OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.TaskStateFlags)) == 40 &&
                 OffsetOf<DroneStateDTO>(nameof(DroneStateDTO.BatteryLevel)) == 44 &&
                 OffsetOf<DroneStateDTO>("_pad0") == 48 &&
-                OffsetOf<DroneStateDTO>("_pad1") == 52 &&
-                OffsetOf<DroneStateDTO>("_pad2") == 56 &&
-                OffsetOf<DroneStateDTO>("_pad3") == 60;
+                OffsetOf<DroneStateDTO>("_pad4") == 52 &&
+                OffsetOf<DroneStateDTO>("_pad8") == 56 &&
+                OffsetOf<DroneStateDTO>("_pad15") == 63;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -167,8 +200,9 @@ namespace Hecton8.Construction
                 OffsetOf<DroneTaskDTO>(nameof(DroneTaskDTO.TaskEfficiencyScalar)) == 12 &&
                 OffsetOf<DroneTaskDTO>(nameof(DroneTaskDTO.InventoryPayloadHash)) == 16 &&
                 OffsetOf<DroneTaskDTO>("_pad0") == 20 &&
-                OffsetOf<DroneTaskDTO>("_pad1") == 24 &&
-                OffsetOf<DroneTaskDTO>("_pad2") == 28 &&
+                OffsetOf<DroneTaskDTO>("_pad4") == 24 &&
+                OffsetOf<DroneTaskDTO>("_pad8") == 28 &&
+                OffsetOf<DroneTaskDTO>("_pad11") == 31 &&
                 UnsafeUtility.SizeOf<DroneProceduralIndirectArgsDTO>() == 16;
         }
 
@@ -184,9 +218,9 @@ namespace Hecton8.Construction
                 OffsetOf<PathWaypointDTO>(nameof(PathWaypointDTO.NodeIndex)) == 40 &&
                 OffsetOf<PathWaypointDTO>(nameof(PathWaypointDTO.Flags)) == 44 &&
                 OffsetOf<PathWaypointDTO>("_pad0") == 48 &&
-                OffsetOf<PathWaypointDTO>("_pad1") == 52 &&
-                OffsetOf<PathWaypointDTO>("_pad2") == 56 &&
-                OffsetOf<PathWaypointDTO>("_pad3") == 60 &&
+                OffsetOf<PathWaypointDTO>("_pad4") == 52 &&
+                OffsetOf<PathWaypointDTO>("_pad8") == 56 &&
+                OffsetOf<PathWaypointDTO>("_pad15") == 63 &&
                 UnsafeUtility.SizeOf<MockDroneSDFHeader>() == 64 &&
                 OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.OriginAUP)) == 0 &&
                 OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.Dimensions)) == 24 &&
@@ -195,6 +229,8 @@ namespace Hecton8.Construction
                 OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.CrossShaftRadiusMeters)) == 44 &&
                 OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.GridVersion)) == 48 &&
                 OffsetOf<MockDroneSDFHeader>(nameof(MockDroneSDFHeader.Flags)) == 52 &&
+                OffsetOf<MockDroneSDFHeader>("_pad0") == 56 &&
+                OffsetOf<MockDroneSDFHeader>("_pad7") == 63 &&
                 OffsetOf<DroneAStarPersistentState>(nameof(DroneAStarPersistentState.SearchHash)) == 0 &&
                 OffsetOf<DroneAStarPersistentState>(nameof(DroneAStarPersistentState.OpenCount)) == 4 &&
                 OffsetOf<DroneAStarPersistentState>(nameof(DroneAStarPersistentState.BestNode)) == 8 &&
@@ -204,6 +240,10 @@ namespace Hecton8.Construction
                 OffsetOf<DroneAStarPersistentState>(nameof(DroneAStarPersistentState.BestHeuristic)) == 24 &&
                 OffsetOf<DroneAStarPersistentState>(nameof(DroneAStarPersistentState.CellSize)) == 28 &&
                 OffsetOf<DroneAStarPersistentState>(nameof(DroneAStarPersistentState.Flags)) == 32 &&
+                OffsetOf<DroneAStarPersistentState>("_pad0") == 40 &&
+                OffsetOf<DroneAStarPersistentState>("_pad8") == 48 &&
+                OffsetOf<DroneAStarPersistentState>("_pad16") == 56 &&
+                OffsetOf<DroneAStarPersistentState>("_pad23") == 63 &&
                 UnsafeUtility.SizeOf<DroneProceduralIndirectArgsDTO>() == 16;
         }
 
@@ -221,9 +261,34 @@ namespace Hecton8.Construction
                 OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.MiningHoldSeconds)) == 28 &&
                 OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.SdfRepulsionScale)) == 32 &&
                 OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO.ClearanceRadiusMeters)) == 36 &&
-                OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO._pad0)) == 40 &&
-                OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO._pad1)) == 48 &&
-                OffsetOf<DroneChassisSpecDTO>(nameof(DroneChassisSpecDTO._pad2)) == 56;
+                OffsetOf<DroneChassisSpecDTO>("_pad0") == 40 &&
+                OffsetOf<DroneChassisSpecDTO>("_pad8") == 48 &&
+                OffsetOf<DroneChassisSpecDTO>("_pad16") == 56 &&
+                OffsetOf<DroneChassisSpecDTO>("_pad23") == 63;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool ValidateDroneSnapshotPayload()
+        {
+            return UnsafeUtility.SizeOf<HectonDroneFleetSnapshotPayload>() == 48 &&
+                OffsetOf<HectonDroneFleetSnapshotPayload>(nameof(HectonDroneFleetSnapshotPayload.ActiveHubCount)) == 0 &&
+                OffsetOf<HectonDroneFleetSnapshotPayload>(nameof(HectonDroneFleetSnapshotPayload.ActiveDroneCount)) == 4 &&
+                OffsetOf<HectonDroneFleetSnapshotPayload>(nameof(HectonDroneFleetSnapshotPayload.AssignedTaskCount)) == 8 &&
+                OffsetOf<HectonDroneFleetSnapshotPayload>(nameof(HectonDroneFleetSnapshotPayload.DockedStasisSlotCount)) == 12 &&
+                OffsetOf<HectonDroneFleetSnapshotPayload>(nameof(HectonDroneFleetSnapshotPayload.DestroyedDroneCount)) == 16 &&
+                OffsetOf<HectonDroneFleetSnapshotPayload>(nameof(HectonDroneFleetSnapshotPayload.EmergencyLevel)) == 20 &&
+                OffsetOf<HectonDroneFleetSnapshotPayload>(nameof(HectonDroneFleetSnapshotPayload.AverageBatteryPercent)) == 24 &&
+                OffsetOf<HectonDroneFleetSnapshotPayload>(nameof(HectonDroneFleetSnapshotPayload.SolderReserve)) == 28 &&
+                OffsetOf<HectonDroneFleetSnapshotPayload>(nameof(HectonDroneFleetSnapshotPayload.HostileDroneCount)) == 32 &&
+                OffsetOf<HectonDroneFleetSnapshotPayload>(nameof(HectonDroneFleetSnapshotPayload.LogicLeechHijackCount)) == 36 &&
+                OffsetOf<HectonDroneFleetSnapshotPayload>(nameof(HectonDroneFleetSnapshotPayload.EmergencyOverclockActive)) == 40 &&
+                OffsetOf<HectonDroneFleetSnapshotPayload>("_padding0") == 41 &&
+                OffsetOf<HectonDroneFleetSnapshotPayload>("_padding1") == 42 &&
+                OffsetOf<HectonDroneFleetSnapshotPayload>("_padding2") == 43 &&
+                OffsetOf<HectonDroneFleetSnapshotPayload>("_padding3") == 44 &&
+                OffsetOf<HectonDroneFleetSnapshotPayload>("_padding4") == 45 &&
+                OffsetOf<HectonDroneFleetSnapshotPayload>("_padding5") == 46 &&
+                OffsetOf<HectonDroneFleetSnapshotPayload>("_padding6") == 47;
         }
 
         private static int OffsetOf<T>(string fieldName)
@@ -768,14 +833,22 @@ namespace Hecton8.Construction
         public uint NodeIndex;
         [FieldOffset(44)]
         public uint Flags;
-        [FieldOffset(48)]
-        private uint _pad0;
-        [FieldOffset(52)]
-        private uint _pad1;
-        [FieldOffset(56)]
-        private uint _pad2;
-        [FieldOffset(60)]
-        private uint _pad3;
+        [FieldOffset(48)] private byte _pad0;
+        [FieldOffset(49)] private byte _pad1;
+        [FieldOffset(50)] private byte _pad2;
+        [FieldOffset(51)] private byte _pad3;
+        [FieldOffset(52)] private byte _pad4;
+        [FieldOffset(53)] private byte _pad5;
+        [FieldOffset(54)] private byte _pad6;
+        [FieldOffset(55)] private byte _pad7;
+        [FieldOffset(56)] private byte _pad8;
+        [FieldOffset(57)] private byte _pad9;
+        [FieldOffset(58)] private byte _pad10;
+        [FieldOffset(59)] private byte _pad11;
+        [FieldOffset(60)] private byte _pad12;
+        [FieldOffset(61)] private byte _pad13;
+        [FieldOffset(62)] private byte _pad14;
+        [FieldOffset(63)] private byte _pad15;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 192)]
@@ -878,7 +951,10 @@ namespace Hecton8.Construction
         [FieldOffset(48)] public int ActiveInventorySlots;
         [FieldOffset(52)] public int CommandCount;
         [FieldOffset(56)] public uint LayoutHash;
-        [FieldOffset(60)] private uint _pad0;
+        [FieldOffset(60)] private byte _pad0;
+        [FieldOffset(61)] private byte _pad1;
+        [FieldOffset(62)] private byte _pad2;
+        [FieldOffset(63)] private byte _pad3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 96)]
@@ -901,7 +977,10 @@ namespace Hecton8.Construction
         [FieldOffset(80)] public uint AtomicConflicts;
         [FieldOffset(84)] public float BatteryPercent;
         [FieldOffset(88)] public uint StateFlags;
-        [FieldOffset(92)] private uint _pad0;
+        [FieldOffset(92)] private byte _pad0;
+        [FieldOffset(93)] private byte _pad1;
+        [FieldOffset(94)] private byte _pad2;
+        [FieldOffset(95)] private byte _pad3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -955,12 +1034,18 @@ namespace Hecton8.Construction
         public float TaskEfficiencyScalar;
         [FieldOffset(16)]
         public uint InventoryPayloadHash;
-        [FieldOffset(20)]
-        private uint _pad0;
-        [FieldOffset(24)]
-        private uint _pad1;
-        [FieldOffset(28)]
-        private uint _pad2;
+        [FieldOffset(20)] private byte _pad0;
+        [FieldOffset(21)] private byte _pad1;
+        [FieldOffset(22)] private byte _pad2;
+        [FieldOffset(23)] private byte _pad3;
+        [FieldOffset(24)] private byte _pad4;
+        [FieldOffset(25)] private byte _pad5;
+        [FieldOffset(26)] private byte _pad6;
+        [FieldOffset(27)] private byte _pad7;
+        [FieldOffset(28)] private byte _pad8;
+        [FieldOffset(29)] private byte _pad9;
+        [FieldOffset(30)] private byte _pad10;
+        [FieldOffset(31)] private byte _pad11;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -1133,8 +1218,14 @@ namespace Hecton8.Construction
         [FieldOffset(44)] public float CrossShaftRadiusMeters;
         [FieldOffset(48)] public uint GridVersion;
         [FieldOffset(52)] public uint Flags;
-        [FieldOffset(56)] private uint _pad0;
-        [FieldOffset(60)] private uint _pad1;
+        [FieldOffset(56)] private byte _pad0;
+        [FieldOffset(57)] private byte _pad1;
+        [FieldOffset(58)] private byte _pad2;
+        [FieldOffset(59)] private byte _pad3;
+        [FieldOffset(60)] private byte _pad4;
+        [FieldOffset(61)] private byte _pad5;
+        [FieldOffset(62)] private byte _pad6;
+        [FieldOffset(63)] private byte _pad7;
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]
@@ -1469,9 +1560,30 @@ namespace Hecton8.Construction
         [FieldOffset(28)] public float CellSize;
         [FieldOffset(32)] public uint Flags;
         [FieldOffset(36)] public uint Reserved0;
-        [FieldOffset(40)] private ulong _pad0;
-        [FieldOffset(48)] private ulong _pad1;
-        [FieldOffset(56)] private ulong _pad2;
+        [FieldOffset(40)] private byte _pad0;
+        [FieldOffset(41)] private byte _pad1;
+        [FieldOffset(42)] private byte _pad2;
+        [FieldOffset(43)] private byte _pad3;
+        [FieldOffset(44)] private byte _pad4;
+        [FieldOffset(45)] private byte _pad5;
+        [FieldOffset(46)] private byte _pad6;
+        [FieldOffset(47)] private byte _pad7;
+        [FieldOffset(48)] private byte _pad8;
+        [FieldOffset(49)] private byte _pad9;
+        [FieldOffset(50)] private byte _pad10;
+        [FieldOffset(51)] private byte _pad11;
+        [FieldOffset(52)] private byte _pad12;
+        [FieldOffset(53)] private byte _pad13;
+        [FieldOffset(54)] private byte _pad14;
+        [FieldOffset(55)] private byte _pad15;
+        [FieldOffset(56)] private byte _pad16;
+        [FieldOffset(57)] private byte _pad17;
+        [FieldOffset(58)] private byte _pad18;
+        [FieldOffset(59)] private byte _pad19;
+        [FieldOffset(60)] private byte _pad20;
+        [FieldOffset(61)] private byte _pad21;
+        [FieldOffset(62)] private byte _pad22;
+        [FieldOffset(63)] private byte _pad23;
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Deterministic, FloatPrecision = FloatPrecision.Standard)]

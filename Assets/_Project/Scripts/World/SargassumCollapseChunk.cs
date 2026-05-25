@@ -1,7 +1,6 @@
 using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.Rendering;
-using Hecton8.Physics;
 using Unity.Mathematics;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -127,6 +126,7 @@ namespace Hecton8.World
         private float _pendingSiltTrailEmissionRate;
         private IObjectPoolService _objectPool;
         private SargassumGlobalDragManager _sargassumDrag;
+        private IPhysicsService _physicsService;
         // COLD ALLOC: ParticleSystem.Particle[192] - reusable world-space silt particle shift buffer - owner: SargassumCollapseChunk
         private ParticleSystem.Particle[] _siltTrailShiftParticles;
 
@@ -173,8 +173,9 @@ namespace Hecton8.World
                 chunkRigidbody.angularDamping = activeAngularDrag;
                 chunkRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
                 chunkRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
-                PhysicsForceRouter.QueueLinearVelocitySet(chunkRigidbody, linearVelocityWS);
-                PhysicsForceRouter.QueueAngularVelocitySet(chunkRigidbody, angularVelocityWS);
+                IPhysicsService physicsService = _physicsService;
+                physicsService?.QueueLinearVelocitySet(chunkRigidbody, linearVelocityWS);
+                physicsService?.QueueAngularVelocitySet(chunkRigidbody, angularVelocityWS);
             }
 
             transform.localScale = _defaultLocalScale * Mathf.Max(0.1f, uniformScale);
@@ -268,8 +269,9 @@ namespace Hecton8.World
             {
                 chunkRigidbody.detectCollisions = true;
                 chunkRigidbody.isKinematic = false;
-                PhysicsForceRouter.QueueLinearVelocitySet(chunkRigidbody, Vector3.zero, wake: false);
-                PhysicsForceRouter.QueueAngularVelocitySet(chunkRigidbody, Vector3.zero, wake: false);
+                IPhysicsService physicsService = _physicsService;
+                physicsService?.QueueLinearVelocitySet(chunkRigidbody, Vector3.zero, wake: false);
+                physicsService?.QueueAngularVelocitySet(chunkRigidbody, Vector3.zero, wake: false);
                 chunkRigidbody.linearDamping = _defaultLinearDamping;
                 chunkRigidbody.angularDamping = _defaultAngularDamping;
                 chunkRigidbody.collisionDetectionMode = _defaultCollisionDetectionMode;
@@ -305,8 +307,9 @@ namespace Hecton8.World
             if (chunkRigidbody != null)
             {
                 chunkRigidbody.detectCollisions = true;
-                PhysicsForceRouter.QueueLinearVelocitySet(chunkRigidbody, Vector3.zero, wake: false);
-                PhysicsForceRouter.QueueAngularVelocitySet(chunkRigidbody, Vector3.zero, wake: false);
+                IPhysicsService physicsService = _physicsService;
+                physicsService?.QueueLinearVelocitySet(chunkRigidbody, Vector3.zero, wake: false);
+                physicsService?.QueueAngularVelocitySet(chunkRigidbody, Vector3.zero, wake: false);
                 chunkRigidbody.linearDamping = _defaultLinearDamping;
                 chunkRigidbody.angularDamping = _defaultAngularDamping;
                 chunkRigidbody.collisionDetectionMode = _defaultCollisionDetectionMode;
@@ -413,6 +416,7 @@ namespace Hecton8.World
         {
             _objectPool = GlobalRegistry.ObjectPoolService;
             _sargassumDrag = GlobalRegistry.SargassumDrag;
+            _physicsService = GlobalRegistry.Physics;
         }
 
         private void TryRegisterHotSwapListener()
@@ -450,6 +454,9 @@ namespace Hecton8.World
                     _registeredScavengerHost = false;
                     if (CanHostScavengers)
                         TryRegisterScavengerHost();
+                    break;
+                case GlobalRegistryServiceSlot.Physics:
+                    _physicsService = currentService as IPhysicsService;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _registeredTick = false;
@@ -577,7 +584,11 @@ namespace Hecton8.World
             if (requestedAcceleration <= 0f)
                 return;
 
-            PhysicsForceRouter.QueueForce(
+            IPhysicsService physicsService = _physicsService;
+            if (physicsService == null)
+                return;
+
+            physicsService.QueueForce(
                 chunkRigidbody,
                 -directionAwayFromAnchor * requestedAcceleration,
                 ForceMode.Acceleration);
@@ -587,7 +598,7 @@ namespace Hecton8.World
 
             Vector3 angularVelocity = chunkRigidbody.angularVelocity;
             float angularBlend = 1f / (1f + snagDamper * fixedDeltaTime);
-            PhysicsForceRouter.QueueAngularVelocitySet(chunkRigidbody, angularVelocity * angularBlend);
+            physicsService.QueueAngularVelocitySet(chunkRigidbody, angularVelocity * angularBlend);
         }
 
         private void UpdateSiltTrailEmission()
@@ -821,7 +832,7 @@ namespace Hecton8.World
                     if (scrap == null || !scrap.TryGetComponent(out Rigidbody scrapRigidbody))
                         continue;
 
-                    PhysicsForceRouter.QueueLinearVelocitySet(
+                    _physicsService?.QueueLinearVelocitySet(
                         scrapRigidbody,
                         ResolveSafeDirection(ScrapEjectDirections[i], Vector3.up) * scrapEjectSpeed);
                 }

@@ -15,7 +15,7 @@ namespace Hecton8.PDA
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/PDA/PDA Marker HUD Element")]
-    public sealed class PDAMarkerHUDElement : MonoBehaviour, IUpdatable, ILateFrameTickable, IPDAEventListener, IGlobalRegistryHotSwapListener
+    public sealed class PDAMarkerHUDElement : MonoBehaviour, ILateFrameTickable, IPDAEventListener, IGlobalRegistryHotSwapListener
     {
         private sealed class MarkerIconDisplay
         {
@@ -125,11 +125,6 @@ namespace Hecton8.PDA
         public void LateFrameTick()
         {
             SampleMarkerDisplay(SystemDispatcher.CurrentFrameUnscaledDeltaTime);
-        }
-
-        /// <inheritdoc />
-        public void Tick(float deltaTime)
-        {
         }
 
         private void SampleMarkerDisplay(float deltaTime)
@@ -602,7 +597,7 @@ namespace Hecton8.PDA
 
             if (forceRefresh || !_playerContextColdResolved || _cachedPlayerContext == null)
             {
-                _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
                 _playerContextColdResolved = _cachedPlayerContext != null;
                 _mainCamera = null;
             }

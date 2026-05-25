@@ -1863,7 +1863,7 @@ namespace Hecton8.Crafting
         // Rejected main-thread event emission because it would force a second scan of all fabrication jobs. Rejected managed callbacks because they allocate and break Burst isolation.
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // The job is scheduled once from the dispatcher SIMULATION phase and its returned handle is registered through H8Memory before any lane drain can consume the writer output.
-        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<FabricationCompletedSignal>.ParallelWriter FabricationCompletedSignalWriter;
+        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<FabricationCompletedSignal>.ParallelWriter FabricationCompletedSignalWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> FabricationCompletedSignalWriterBudget;
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
         // Tick signal writes are producer-only and do not read queue state; Unity's container safety cannot see the dispatcher-owned consumer phase.
@@ -1871,7 +1871,7 @@ namespace Hecton8.Crafting
         // Rejected splitting tick events into a NativeArray because sparse event compaction would add another job. Rejected immediate UI writes because UI belongs to VISUAL_SYNC.
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // Signal consumption is phase-separated after the combined simulation handle; this field has no second producer in EmitFabricationSignalsJob.
-        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<FabricationTickSignal>.ParallelWriter FabricationTickSignalWriter;
+        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<FabricationTickSignal>.ParallelWriter FabricationTickSignalWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> FabricationTickSignalWriterBudget;
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
         // Deconstruct results are emitted through the legacy GlobalSignals bridge; the safety restriction is limited to write-only enqueue.
@@ -1879,7 +1879,7 @@ namespace Hecton8.Crafting
         // Rejected direct owner callbacks because deconstruction crosses construction/inventory/UI domains. Rejected a managed event because it violates zero-GC hot path rules.
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // The returned signalHandle chains after progressHandle and is registered with H8Memory; the late-frame bridge drains only after dispatcher fence resolution.
-        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<DeconstructResultSignal>.ParallelWriter DeconstructResultWriter;
+        [WriteOnly, NoAlias, NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<DeconstructResultSignal>.ParallelWriter DeconstructResultWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> DeconstructResultWriterBudget;
         public uint Frame;
         public float GlobalQualityWeight;

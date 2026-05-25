@@ -157,7 +157,7 @@ namespace Hecton8.Audio.Synthesis
         public static double3 ToDouble3(in AcousticAup aup)
         {
             double cell = HectonPhysicsContract.AupSectorSizeMetersDouble;
-            return new double3(
+            return math.double3(
                 (aup.GridX * cell) + (double)aup.Local.x,
                 (aup.GridY * cell) + (double)aup.Local.y,
                 (aup.GridZ * cell) + (double)aup.Local.z);
@@ -307,7 +307,7 @@ namespace Hecton8.Audio.Synthesis
             float quality = math.saturate(HullStressGranularDspMath.FiniteOrDefault(block.GlobalQualityWeight, 1f));
             int voiceLimit = HullStressGranularDspMath.ResolvePolyphonyLimit(quality, voiceCapacity);
             float sampleRate = math.max(1f, block.SampleRate);
-            float3 listenerRight = NormalizeOrFallback(block.ListenerRight, new float3(1f, 0f, 0f));
+            float3 listenerRight = NormalizeOrFallback(block.ListenerRight, math.float3(1f, 0f, 0f));
             float rolloff = math.max(0.0001f, HullStressGranularDspMath.FiniteOrDefault(block.DistanceRolloff, 0.5f));
             float interpolationBlend = math.smoothstep(0.18f, 0.72f, quality);
             float maxAbs = 0f;
@@ -456,19 +456,18 @@ namespace Hecton8.Audio.Synthesis
             if ((uint)cursor >= (uint)telemetryLength)
                 cursor = 0;
 
-            telemetryRing[cursor] = new AudioDspTelemetryEntry
-            {
-                SampleIndex = block.SampleIndexBase,
-                DspExecutionTicks = block.DspExecutionTicks,
-                MaxAmplitude = math.saturate(HullStressGranularDspMath.FiniteOrZero(maxAmplitude)),
-                ActiveVoices = math.max(0, activeVoices),
-                StolenVoices = math.max(0, block.StolenVoices),
-                VoiceLimit = math.max(0, voiceLimit),
-                Flags = flags,
-                NanSampleCount = nanSampleCount,
-                OutputRms = math.saturate(HullStressGranularDspMath.FiniteOrZero(rms)),
-                GlobalQualityWeight = math.saturate(HullStressGranularDspMath.FiniteOrDefault(block.GlobalQualityWeight, 1f))
-            };
+            AudioDspTelemetryEntry entry = default;
+            entry.SampleIndex = block.SampleIndexBase;
+            entry.DspExecutionTicks = block.DspExecutionTicks;
+            entry.MaxAmplitude = math.saturate(HullStressGranularDspMath.FiniteOrZero(maxAmplitude));
+            entry.ActiveVoices = math.max(0, activeVoices);
+            entry.StolenVoices = math.max(0, block.StolenVoices);
+            entry.VoiceLimit = math.max(0, voiceLimit);
+            entry.Flags = flags;
+            entry.NanSampleCount = nanSampleCount;
+            entry.OutputRms = math.saturate(HullStressGranularDspMath.FiniteOrZero(rms));
+            entry.GlobalQualityWeight = math.saturate(HullStressGranularDspMath.FiniteOrDefault(block.GlobalQualityWeight, 1f));
+            telemetryRing[cursor] = entry;
 
             cursor++;
             if (cursor >= telemetryLength)
@@ -538,23 +537,22 @@ namespace Hecton8.Audio.Synthesis
                 float radius = math.lerp(1.5f, 42f, ((hash >> 8) & 255u) * (1f / 255f));
                 Hecton8.Core.MathLodApproximation.ApproxSinCosBhaskara(angle, out float sin, out float cos);
                 float vertical = Hecton8.Core.MathLodApproximation.ApproxSinBhaskara(angle * 0.37f) * 2.5f;
-                double3 offset = new double3(
+                double3 offset = math.double3(
                     cos * radius,
                     vertical,
                     sin * radius);
                 double3 aup = CenterAUP + offset;
                 float stress = math.saturate(0.18f + ((hash & 1023u) * (1f / 1023f)) * 0.82f);
                 float panic = math.saturate(((hash >> 10) & 1023u) * (1f / 1023f));
-                OutputSignals[i] = new BaseStructuralWarningSignal
-                {
-                    EpicenterAup = ToAcousticAup(aup),
-                    BaseHash = hash,
-                    Frame = Frame,
-                    HighestStress01 = stress,
-                    AudioIntensity01 = math.saturate(0.45f + stress * 0.55f),
-                    PanicScalar01 = panic,
-                    CriticalFlags = stress > 0.86f ? BaseStructuralWarningSignal.FlagRedAlert : 0u
-                };
+                BaseStructuralWarningSignal signal = default;
+                signal.EpicenterAup = ToAcousticAup(aup);
+                signal.BaseHash = hash;
+                signal.Frame = Frame;
+                signal.HighestStress01 = stress;
+                signal.AudioIntensity01 = math.saturate(0.45f + stress * 0.55f);
+                signal.PanicScalar01 = panic;
+                signal.CriticalFlags = stress > 0.86f ? BaseStructuralWarningSignal.FlagRedAlert : 0u;
+                OutputSignals[i] = signal;
             }
 
             if (OutputCount.IsCreated && OutputCount.Length > 0)
@@ -568,14 +566,15 @@ namespace Hecton8.Audio.Synthesis
             long gridX = (long)math.floor(absolute.x * invCell);
             long gridY = (long)math.floor(absolute.y * invCell);
             long gridZ = (long)math.floor(absolute.z * invCell);
-            return new AcousticAup(
-                gridX,
-                gridY,
-                gridZ,
-                new float3(
-                    (float)(absolute.x - gridX * cell),
-                    (float)(absolute.y - gridY * cell),
-                    (float)(absolute.z - gridZ * cell)));
+            AcousticAup aup = default;
+            aup.GridX = gridX;
+            aup.GridY = gridY;
+            aup.GridZ = gridZ;
+            aup.Local = math.float3(
+                (float)(absolute.x - gridX * cell),
+                (float)(absolute.y - gridY * cell),
+                (float)(absolute.z - gridZ * cell));
+            return aup;
         }
     }
 
@@ -736,21 +735,19 @@ namespace Hecton8.Audio.Synthesis
             int channels = math.clamp(Channels, 1, 8);
             int outputFrames = math.min(FrameCount, OutputInterleaved.Length / channels);
             int stolen = Counters.IsCreated && Counters.Length > 1 ? Counters[1] : 0;
-            HullStressAudioBlockParamsDTO block = new HullStressAudioBlockParamsDTO
-            {
-                ListenerAUP = ListenerAUP,
-                SampleIndexBase = SampleIndexBase,
-                DspExecutionTicks = DspExecutionTicks,
-                ListenerRight = ListenerRight,
-                GlobalQualityWeight = GlobalQualityWeight,
-                DistanceRolloff = DistanceRolloff,
-                FrameCount = outputFrames,
-                Channels = channels,
-                SampleRate = SampleRate,
-                StolenVoices = stolen,
-                OutputSampleCapacity = OutputInterleaved.Length,
-                Flags = 0u
-            };
+            HullStressAudioBlockParamsDTO block = default;
+            block.ListenerAUP = ListenerAUP;
+            block.SampleIndexBase = SampleIndexBase;
+            block.DspExecutionTicks = DspExecutionTicks;
+            block.ListenerRight = ListenerRight;
+            block.GlobalQualityWeight = GlobalQualityWeight;
+            block.DistanceRolloff = DistanceRolloff;
+            block.FrameCount = outputFrames;
+            block.Channels = channels;
+            block.SampleRate = SampleRate;
+            block.StolenVoices = stolen;
+            block.OutputSampleCapacity = OutputInterleaved.Length;
+            block.Flags = 0u;
 
             float* outputPtr = (float*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(OutputInterleaved);
             GranularVoiceDTO* voicePtr = Voices.IsCreated

@@ -1,6 +1,6 @@
 using Hecton.Localization;
-using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Gameplay;
 using Hecton8.Systems.AI;
 using Hecton8.World;
@@ -50,41 +50,36 @@ namespace Hecton8.UI
     {
         private const int ListenerCapacity = 8;
         private const int PendingEventCapacity = 4;
-        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
         private const uint PDAIntrusionListenerOverflowWarningHash = 0x5049564Cu; // PIVL
         private const uint PDAIntrusionListenerContextHash = 0x50495652u; // PIVR
         private const uint PDAIntrusionListenerExceptionWarningHash = 0x50495645u; // PIVE
         private const uint PDAIntrusionListenerExceptionContextHash = 0x50495658u; // PIVX
         private static readonly uint _RebootCompletedEventHash = unchecked((uint)LocHash.Compute("PDAIntrusion.RebootCompleted"));
 
-        private struct ListenerSlot
-        {
-            public IPDAIntrusionEventListener Listener;
-
-            public void Clear()
-            {
-                Listener = null;
-            }
-        }
-
         private struct PDAIntrusionListenerRegistry
         {
-            private readonly ListenerSlot[] _slots;
             private int _count;
-
-            public PDAIntrusionListenerRegistry(int capacity)
-            {
-                _slots = new ListenerSlot[capacity];
-                _count = 0;
-            }
+            private IPDAIntrusionEventListener _slot0;
+            private IPDAIntrusionEventListener _slot1;
+            private IPDAIntrusionEventListener _slot2;
+            private IPDAIntrusionEventListener _slot3;
+            private IPDAIntrusionEventListener _slot4;
+            private IPDAIntrusionEventListener _slot5;
+            private IPDAIntrusionEventListener _slot6;
+            private IPDAIntrusionEventListener _slot7;
 
             public int Count => _count;
 
             public void Clear()
             {
-                for (int i = 0; i < _count; i++)
-                    _slots[i].Clear();
-
+                _slot0 = null;
+                _slot1 = null;
+                _slot2 = null;
+                _slot3 = null;
+                _slot4 = null;
+                _slot5 = null;
+                _slot6 = null;
+                _slot7 = null;
                 _count = 0;
             }
 
@@ -92,7 +87,7 @@ namespace Hecton8.UI
             {
                 for (int i = 0; i < _count; i++)
                 {
-                    if (ReferenceEquals(_slots[i].Listener, listener))
+                    if (ReferenceEquals(GetAt(i), listener))
                         return true;
                 }
 
@@ -101,10 +96,11 @@ namespace Hecton8.UI
 
             public bool TryRegister(IPDAIntrusionEventListener listener)
             {
-                if (listener == null || _count >= _slots.Length)
+                if (listener == null || _count >= ListenerCapacity)
                     return false;
 
-                _slots[_count++].Listener = listener;
+                SetAt(_count, listener);
+                _count++;
                 return true;
             }
 
@@ -112,12 +108,12 @@ namespace Hecton8.UI
             {
                 for (int i = 0; i < _count; i++)
                 {
-                    if (!ReferenceEquals(_slots[i].Listener, listener))
+                    if (!ReferenceEquals(GetAt(i), listener))
                         continue;
 
                     _count--;
-                    _slots[i] = _slots[_count];
-                    _slots[_count].Clear();
+                    SetAt(i, GetAt(_count));
+                    SetAt(_count, null);
                     return true;
                 }
 
@@ -126,22 +122,61 @@ namespace Hecton8.UI
 
             public IPDAIntrusionEventListener GetAt(int index)
             {
-                return (uint)index < (uint)_count ? _slots[index].Listener : null;
+                return index switch
+                {
+                    0 => _slot0,
+                    1 => _slot1,
+                    2 => _slot2,
+                    3 => _slot3,
+                    4 => _slot4,
+                    5 => _slot5,
+                    6 => _slot6,
+                    7 => _slot7,
+                    _ => null
+                };
+            }
+
+            private void SetAt(int index, IPDAIntrusionEventListener listener)
+            {
+                switch (index)
+                {
+                    case 0:
+                        _slot0 = listener;
+                        break;
+                    case 1:
+                        _slot1 = listener;
+                        break;
+                    case 2:
+                        _slot2 = listener;
+                        break;
+                    case 3:
+                        _slot3 = listener;
+                        break;
+                    case 4:
+                        _slot4 = listener;
+                        break;
+                    case 5:
+                        _slot5 = listener;
+                        break;
+                    case 6:
+                        _slot6 = listener;
+                        break;
+                    case 7:
+                        _slot7 = listener;
+                        break;
+                }
             }
         }
 
-        // COLD ALLOC: ListenerSlot[8] - PDA intrusion listeners drained by SystemDispatcher LateUpdate - owner: PDAIntrusionEvents
-        private static PDAIntrusionListenerRegistry _listeners = new PDAIntrusionListenerRegistry(ListenerCapacity);
-        // COLD ALLOC: ListenerSlot[8] - listener additions deferred while dispatching PDA intrusion events - owner: PDAIntrusionEvents
-        private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[ListenerCapacity];
-        // COLD ALLOC: ListenerSlot[8] - listener removals deferred while dispatching PDA intrusion events - owner: PDAIntrusionEvents
-        private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[ListenerCapacity];
-        private static NativeQueue<PDAIntrusionEventPayload> _pendingEvents;
-        private static NativeQueue<PDAIntrusionEventPayload> _nextFrameEvents;
+        private static PDAIntrusionListenerRegistry _listeners;
+        private static PDAIntrusionListenerRegistry _deferredRegisterListeners;
+        private static PDAIntrusionListenerRegistry _deferredUnregisterListeners;
+        // Fixed inline slots: PDAIntrusionEventPayload[4] - deferred lane flushed by SystemDispatcher LateUpdate - owner: PDAIntrusionEvents
+        private static FixedUiEventQueue<PDAIntrusionEventPayload> _pendingEvents;
+        // Fixed inline slots: PDAIntrusionEventPayload[4] - next-frame lane prevents same-frame reentrant dispatch - owner: PDAIntrusionEvents
+        private static FixedUiEventQueue<PDAIntrusionEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
-        private static int _deferredRegisterCount;
-        private static int _deferredUnregisterCount;
         private static int _droppedListenerRegistrationCount;
         private static int _listenerExceptionCount;
         private static int _lastListenerOverflowTelemetryFrame = -1;
@@ -157,27 +192,13 @@ namespace Hecton8.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PDAIntrusionEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(PDAIntrusionEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
-
+            _pendingEvents.Clear();
+            _nextFrameEvents.Clear();
             _listeners.Clear();
-            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
-            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
+            _deferredRegisterListeners.Clear();
+            _deferredUnregisterListeners.Clear();
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
-            _deferredRegisterCount = 0;
-            _deferredUnregisterCount = 0;
             _droppedListenerRegistrationCount = 0;
             _listenerExceptionCount = 0;
             _lastListenerOverflowTelemetryFrame = -1;
@@ -222,7 +243,7 @@ namespace Hecton8.UI
                 return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.LogError("[PDAIntrusionEvents] Listener destroyed while still registered.");
+            Hecton8.Core.H8Debug.LogError("[PDAIntrusionEvents] Listener destroyed while still registered.");
 #endif
         }
 
@@ -232,28 +253,30 @@ namespace Hecton8.UI
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
                 return;
 
-            PDAIntrusionEventPayload payload = new PDAIntrusionEventPayload
-            {
-                SourceID = sourceId,
-                EventHashID = _RebootCompletedEventHash,
-                EventType = (ushort)PDAIntrusionEventType.RebootCompleted,
-                Reserved = 0
-            };
+            PDAIntrusionEventPayload payload = default;
+            payload.SourceID = sourceId;
+            payload.EventHashID = _RebootCompletedEventHash;
+            payload.EventType = (ushort)PDAIntrusionEventType.RebootCompleted;
+            payload.Reserved = 0;
 
             if (_isDispatching)
             {
-                _nextFrameEvents.Enqueue(payload);
+                if (!_nextFrameEvents.Enqueue(in payload))
+                    return;
+
                 _nextFrameEventCount++;
                 return;
             }
 
-            _pendingEvents.Enqueue(payload);
+            if (!_pendingEvents.Enqueue(in payload))
+                return;
+
             _pendingEventCount++;
         }
 
         public static void FlushPending()
         {
-            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            if (_listeners.Count <= 0)
             {
                 DrainWithoutDispatch();
                 return;
@@ -305,49 +328,14 @@ namespace Hecton8.UI
         private static void EnsureInitialized()
         {
             if (!_pendingEvents.IsCreated)
-            {
-                _pendingEvents = new NativeQueue<PDAIntrusionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PDAIntrusionEventPayload>[4] - deferred PDA intrusion lane flushed by SystemDispatcher LateUpdate - owner: PDAIntrusionEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(PDAIntrusionEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
-            }
+                _pendingEvents.Configure(PendingEventCapacity);
 
             if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<PDAIntrusionEventPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<PDAIntrusionEventPayload>[4] - next-frame PDA intrusion lane prevents same-frame reentrant dispatch - owner: PDAIntrusionEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(PDAIntrusionEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
-            }
-        }
-
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
-        {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
-
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
-            {
-            }
+                _nextFrameEvents.Configure(PendingEventCapacity);
         }
 
         private static void DrainWithoutDispatch()
         {
-            if (!_pendingEvents.IsCreated)
-                return;
-
             if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
                 return;
 
@@ -360,12 +348,11 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (_nextFrameEvents.IsCreated)
-                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+            DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
         }
 
         private static bool DrainQueueWithoutDispatch(
-            ref NativeQueue<PDAIntrusionEventPayload> queue,
+            ref FixedUiEventQueue<PDAIntrusionEventPayload> queue,
             ref int pendingCount)
         {
             int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
@@ -392,15 +379,13 @@ namespace Hecton8.UI
 
         private static void PromoteNextFrameEventsIfFrontEmpty()
         {
-            if (!_pendingEvents.IsCreated ||
-                !_nextFrameEvents.IsCreated ||
-                !_pendingEvents.IsEmpty() ||
+            if (!_pendingEvents.IsEmpty() ||
                 _nextFrameEventCount <= 0)
             {
                 return;
             }
 
-            NativeQueue<PDAIntrusionEventPayload> swap = _pendingEvents;
+            FixedUiEventQueue<PDAIntrusionEventPayload> swap = _pendingEvents;
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
             _pendingEventCount = _nextFrameEventCount;
@@ -427,7 +412,7 @@ namespace Hecton8.UI
         private static void LogListenerDispatchException(Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.LogException(exception);
+            Hecton8.Core.H8Debug.LogException(exception);
 #endif
         }
 
@@ -442,13 +427,11 @@ namespace Hecton8.UI
             if (IsDeferredRegisterPending(listener))
                 return;
 
-            if (_deferredRegisterCount >= _deferredRegisterListeners.Length)
+            if (!_deferredRegisterListeners.TryRegister(listener))
             {
                 ReportListenerRegistrationOverflow();
                 return;
             }
-
-            _deferredRegisterListeners[_deferredRegisterCount++].Listener = listener;
         }
 
         private static void QueueDeferredUnregister(IPDAIntrusionEventListener listener)
@@ -462,88 +445,53 @@ namespace Hecton8.UI
             if (IsDeferredUnregisterPending(listener))
                 return;
 
-            if (_deferredUnregisterCount >= _deferredUnregisterListeners.Length)
+            if (!_deferredUnregisterListeners.TryRegister(listener))
             {
                 ReportListenerRegistrationOverflow();
-                return;
             }
-
-            _deferredUnregisterListeners[_deferredUnregisterCount++].Listener = listener;
         }
 
         private static bool CancelDeferredRegister(IPDAIntrusionEventListener listener)
         {
-            for (int i = 0; i < _deferredRegisterCount; i++)
-            {
-                if (!ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
-                    continue;
-
-                _deferredRegisterCount--;
-                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
-                _deferredRegisterListeners[_deferredRegisterCount].Clear();
-                return true;
-            }
-
-            return false;
+            return _deferredRegisterListeners.TryUnregister(listener);
         }
 
         private static void CancelDeferredUnregister(IPDAIntrusionEventListener listener)
         {
-            for (int i = 0; i < _deferredUnregisterCount; i++)
-            {
-                if (!ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
-                    continue;
-
-                _deferredUnregisterCount--;
-                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
-                _deferredUnregisterListeners[_deferredUnregisterCount].Clear();
-                return;
-            }
+            _deferredUnregisterListeners.TryUnregister(listener);
         }
 
         private static bool IsDeferredRegisterPending(IPDAIntrusionEventListener listener)
         {
-            for (int i = 0; i < _deferredRegisterCount; i++)
-            {
-                if (ReferenceEquals(_deferredRegisterListeners[i].Listener, listener))
-                    return true;
-            }
-
-            return false;
+            return _deferredRegisterListeners.Contains(listener);
         }
 
         private static bool IsDeferredUnregisterPending(IPDAIntrusionEventListener listener)
         {
-            for (int i = 0; i < _deferredUnregisterCount; i++)
-            {
-                if (ReferenceEquals(_deferredUnregisterListeners[i].Listener, listener))
-                    return true;
-            }
-
-            return false;
+            return _deferredUnregisterListeners.Contains(listener);
         }
 
         private static void ApplyDeferredListenerMutations()
         {
-            for (int i = 0; i < _deferredUnregisterCount; i++)
+            int unregisterCount = _deferredUnregisterListeners.Count;
+            for (int i = 0; i < unregisterCount; i++)
             {
-                IPDAIntrusionEventListener listener = _deferredUnregisterListeners[i].Listener;
-                _deferredUnregisterListeners[i].Clear();
+                IPDAIntrusionEventListener listener = _deferredUnregisterListeners.GetAt(i);
                 if (listener != null)
                     _listeners.TryUnregister(listener);
             }
 
-            _deferredUnregisterCount = 0;
+            _deferredUnregisterListeners.Clear();
 
-            for (int i = 0; i < _deferredRegisterCount; i++)
+            int registerCount = _deferredRegisterListeners.Count;
+            for (int i = 0; i < registerCount; i++)
             {
-                IPDAIntrusionEventListener listener = _deferredRegisterListeners[i].Listener;
-                _deferredRegisterListeners[i].Clear();
+                IPDAIntrusionEventListener listener = _deferredRegisterListeners.GetAt(i);
                 if (listener != null)
                     RegisterImmediate(listener);
             }
 
-            _deferredRegisterCount = 0;
+            _deferredRegisterListeners.Clear();
         }
 
         private static void RegisterImmediate(IPDAIntrusionEventListener listener)
@@ -589,7 +537,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Intrusion Manager")]
-    public sealed class PDAIntrusionManager : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IDirectorAIEventListener, IGlobalRegistryHotSwapListener
+    public sealed class PDAIntrusionManager : MonoBehaviour, ILateFrameTickable, IDirectorAIEventListener, IGlobalRegistryHotSwapListener
     {
         private enum IntrusionVisualPhase : byte
         {
@@ -612,6 +560,7 @@ namespace Hecton8.UI
         private const float TextDriftFrequencyMax = 2.7f;
         private const float TextDriftInvTwoPi = 1f / (math.PI * 2f);
         private const float HiddenProgressCutoff = 0.0001f;
+        private const float RuntimeOwnerRetryIntervalSeconds = 0.5f;
         private const int MaxBioformContacts = 24;
         private const int MaxDriftTargets = 96;
 
@@ -633,8 +582,6 @@ namespace Hecton8.UI
 
         // COLD ALLOC: SpatialQueryHit[24] — cached bioform proximity buffer for intrusion scans — owner: PDAIntrusionManager
         private readonly SpatialQueryHit[] _bioformContacts = new SpatialQueryHit[MaxBioformContacts];
-        // COLD ALLOC: List<TextMeshProUGUI>[96] — reusable hacked-text scan buffer for PDA drift — owner: PDAIntrusionManager
-        private readonly System.Collections.Generic.List<TextMeshProUGUI> _driftScanBuffer = new System.Collections.Generic.List<TextMeshProUGUI>(MaxDriftTargets);
         // COLD ALLOC: TextMeshProUGUI[96] — cached PDA text targets for hacked-line drift — owner: PDAIntrusionManager
         private readonly TextMeshProUGUI[] _driftTargets = new TextMeshProUGUI[MaxDriftTargets];
         // COLD ALLOC: RectTransform[96] — cached rect owners for hacked-line drift — owner: PDAIntrusionManager
@@ -651,7 +598,6 @@ namespace Hecton8.UI
         private HectonMapMagicVegetationBridge _vegetationBridge;
         private GameObject _driftPanelRoot;
         private bool _serviceRegistered;
-        private bool _registeredToTick;
         private bool _registeredLateFrame;
         private bool _hotSwapListenerRegistered;
         private bool _isHacked;
@@ -663,6 +609,7 @@ namespace Hecton8.UI
         private float _rebootHoldTimer;
         private float _textDriftRescanTimer;
         private float _textDriftWaveTime;
+        private float _runtimeOwnerResolveRetryTimer;
         private int _driftTargetCount;
         private IntrusionVisualPhase _visualPhase;
 
@@ -763,9 +710,9 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float dt)
+        private void AdvanceIntrusionPresentationState(float dt)
         {
-            ResolveRuntimeOwners();
+            ResolveRuntimeOwners(dt);
 
             if (!_isHacked)
             {
@@ -780,7 +727,9 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
-            float dt = Time.unscaledDeltaTime;
+            float dt = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            AdvanceIntrusionPresentationState(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (_restoreTextDriftRequested)
             {
                 _restoreTextDriftRequested = false;
@@ -849,8 +798,14 @@ namespace Hecton8.UI
 
             _leviathanScanTimer = math.max(0.05f, leviathanScanInterval);
 
-            AbsoluteUniversePosition originAup = ResolveOwnerAup();
-            Vector3 origin = originAup.ToRuntimeFloat3();
+            HectonPlayerMovement playerMovement = _playerMovement;
+            if (playerMovement == null)
+                return;
+
+            AbsoluteUniversePosition originAup = playerMovement.CurrentAup;
+            if (!TryResolveRuntimePosition(in originAup, out Vector3 origin))
+                return;
+
             if (ShouldTriggerAbyssalHack(origin))
             {
                 TriggerHack();
@@ -865,13 +820,11 @@ namespace Hecton8.UI
 
             for (int i = 0; i < contactCount; i++)
             {
-                Component owner = _bioformContacts[i].Owner;
-                FaunaBrain brain = owner as FaunaBrain;
-                if (brain == null || brain.IsDead)
+                IFaunaSpatialContact faunaContact = _bioformContacts[i].Owner as IFaunaSpatialContact;
+                if (faunaContact == null || faunaContact.IsDead)
                     continue;
 
-                FaunaSpeciesProfile speciesProfile = brain.SpeciesProfile;
-                if (speciesProfile == null || !speciesProfile.isLeviathan)
+                if (!faunaContact.IsLeviathanContact)
                     continue;
 
                 TriggerHack();
@@ -897,10 +850,23 @@ namespace Hecton8.UI
             return densitySample.BiomeLayer == HectonMapMagicVegetationBridge.VegetationBiomeLayer.DeadZone;
         }
 
-        private AbsoluteUniversePosition ResolveOwnerAup()
+        private static bool TryResolveRuntimePosition(in AbsoluteUniversePosition positionAup, out Vector3 runtimePosition)
         {
-            HectonPlayerMovement playerMovement = _playerMovement;
-            return playerMovement != null ? playerMovement.CurrentAup : default;
+            runtimePosition = default;
+            AbsoluteUniversePosition originAup = RuntimeOriginRoute.CurrentRuntimeOriginAup();
+            if (!positionAup.IsFinite() || !originAup.IsFinite())
+                return false;
+
+            double3 localDelta = AbsoluteUniversePosition.DeltaMetersClamped(in positionAup, in originAup);
+            if (!math.all(math.isfinite(localDelta)))
+                return false;
+
+            runtimePosition.x = (float)localDelta.x;
+            runtimePosition.y = (float)localDelta.y;
+            runtimePosition.z = (float)localDelta.z;
+            return math.isfinite(runtimePosition.x) &&
+                   math.isfinite(runtimePosition.y) &&
+                   math.isfinite(runtimePosition.z);
         }
 
         private void TickVisualCadence(float dt)
@@ -974,7 +940,8 @@ namespace Hecton8.UI
                 float frequency = math.lerp(TextDriftFrequencyMin, TextDriftFrequencyMax, 1f - normalizedIndex);
                 float offsetX = EvaluateCheapDriftWaveSigned((_textDriftWaveTime * frequency) + _driftPhaseOffsets[i]) * amplitude;
                 Vector2 basePosition = _driftBaseAnchoredPositions[i];
-                rect.anchoredPosition = new Vector2(basePosition.x + offsetX, basePosition.y);
+                basePosition.x += offsetX;
+                rect.anchoredPosition = basePosition;
             }
         }
 
@@ -991,27 +958,44 @@ namespace Hecton8.UI
             _driftPanelRoot = panelRoot;
             _driftTargetCount = 0;
             _textDriftRescanTimer = math.max(0.1f, TextDriftRescanInterval);
-            _driftScanBuffer.Clear();
-            panelRoot.GetComponentsInChildren(true, _driftScanBuffer);
+            RectTransform root = panelRoot.transform as RectTransform;
+            int stackCount = 0;
+            if (root != null)
+                _driftRects[MaxDriftTargets - 1 - stackCount++] = root;
 
-            int candidateCount = _driftScanBuffer.Count;
-            for (int i = 0; i < candidateCount && _driftTargetCount < MaxDriftTargets; i++)
+            while (stackCount > 0 && _driftTargetCount < MaxDriftTargets)
             {
-                TextMeshProUGUI text = _driftScanBuffer[i];
-                if (text == null || !text.enabled)
+                int stackSlot = MaxDriftTargets - stackCount;
+                RectTransform current = _driftRects[stackSlot];
+                _driftRects[stackSlot] = null;
+                stackCount--;
+                if (current == null)
                     continue;
 
-                RectTransform rect = text.rectTransform;
-                if (rect == null)
-                    continue;
+                if (current.TryGetComponent(out TextMeshProUGUI text) && text != null && text.enabled)
+                {
+                    RectTransform rect = text.rectTransform;
+                    if (rect != null)
+                    {
+                        int slot = _driftTargetCount;
+                        _driftTargets[slot] = text;
+                        _driftRects[slot] = rect;
+                        _driftBaseAnchoredPositions[slot] = rect.anchoredPosition;
+                        _driftPhaseOffsets[slot] = (slot * 0.73f) + (text.fontSize * 0.013f);
+                        _driftTargetCount++;
+                    }
+                }
 
-                int slot = _driftTargetCount;
-                _driftTargets[slot] = text;
-                _driftRects[slot] = rect;
-                _driftBaseAnchoredPositions[slot] = rect.anchoredPosition;
-                _driftPhaseOffsets[slot] = (slot * 0.73f) + (text.fontSize * 0.013f);
-                _driftTargetCount++;
+                int childCount = current.childCount;
+                for (int i = childCount - 1; i >= 0 && _driftTargetCount + stackCount < MaxDriftTargets; i--)
+                {
+                    if (current.GetChild(i) is RectTransform child)
+                        _driftRects[MaxDriftTargets - 1 - stackCount++] = child;
+                }
             }
+
+            for (int i = 0; i < stackCount; i++)
+                _driftRects[MaxDriftTargets - 1 - i] = null;
         }
 
         private void RestoreTextDriftPositions()
@@ -1112,6 +1096,21 @@ namespace Hecton8.UI
 
         private void ResolveRuntimeOwners()
         {
+            _runtimeOwnerResolveRetryTimer = 0f;
+            ResolveRuntimeOwners(RuntimeOwnerRetryIntervalSeconds);
+        }
+
+        private void ResolveRuntimeOwners(float dt)
+        {
+            if (_playerPda != null && _playerMovement != null && _vegetationBridge != null)
+                return;
+
+            _runtimeOwnerResolveRetryTimer -= math.max(0f, dt);
+            if (_runtimeOwnerResolveRetryTimer > 0f)
+                return;
+
+            _runtimeOwnerResolveRetryTimer = RuntimeOwnerRetryIntervalSeconds;
+
             if (_playerPda == null)
             {
                 if (!TryGetComponent(out _playerPda))
@@ -1190,26 +1189,18 @@ namespace Hecton8.UI
 
         private void RegisterToTickManager()
         {
-            if ((_registeredToTick && _registeredLateFrame) || !Application.isPlaying)
+            if (_registeredLateFrame || !Application.isPlaying)
                 return;
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_registeredToTick)
-                _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
         {
-            if (_registeredToTick)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registeredToTick = false;
-            }
-
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);

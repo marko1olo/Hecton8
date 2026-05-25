@@ -641,11 +641,11 @@ namespace Hecton8.Habitat.Deformation
         [NoAlias] public NativeArray<IntegrityStateDTO> States;
         [ReadOnly] [NoAlias] public NativeArray<double3> NodeAups;
         [ReadOnly] [NoAlias] public NativeArray<StructuralTuningDTO> Tuning;
-        [WriteOnly] [NoAlias] public NativeQueue<BaseIntegrityEventPayload>.ParallelWriter IntegrityEvents;
+        [WriteOnly] [NoAlias] public global::Hecton8.Core.MpscSignalRingBuffer<BaseIntegrityEventPayload>.ParallelWriter IntegrityEvents;
         [NativeDisableParallelForRestriction] public NativeArray<int> IntegrityEventsBudget;
-        [WriteOnly] [NoAlias] public NativeQueue<FluidIncursionSignal>.ParallelWriter FluidEvents;
+        [WriteOnly] [NoAlias] public global::Hecton8.Core.MpscSignalRingBuffer<FluidIncursionSignal>.ParallelWriter FluidEvents;
         [NativeDisableParallelForRestriction] public NativeArray<int> FluidEventsBudget;
-        [WriteOnly] [NoAlias] public NativeQueue<BaseModuleCompromisedSignal>.ParallelWriter CompromisedEvents;
+        [WriteOnly] [NoAlias] public global::Hecton8.Core.MpscSignalRingBuffer<BaseModuleCompromisedSignal>.ParallelWriter CompromisedEvents;
         [NativeDisableParallelForRestriction] public NativeArray<int> CompromisedEventsBudget;
         public int ActiveNodeCount;
         public uint Frame;

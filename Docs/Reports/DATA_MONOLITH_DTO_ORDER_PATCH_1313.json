@@ -1,0 +1,51 @@
+{
+  "agent": "1313",
+  "date": "2026-05-25",
+  "evidenceClass": "STATIC_SOURCE",
+  "patch": {
+    "formatVersionLine": 18,
+    "formatVersion": 2,
+    "schemaHashLine": 33,
+    "schemaHash": "0x33313331",
+    "itemRecordLines": "217-235",
+    "layoutGuardLines": "53-59"
+  },
+  "h8ItemRecordByteMap": {
+    "size": 80,
+    "sizeMultipleOf8": true,
+    "naturalAlignmentFailures": 0,
+    "fields": [
+      { "name": "RecipeMask0", "offset": 0, "size": 8 },
+      { "name": "RecipeMask1", "offset": 8, "size": 8 },
+      { "name": "HashId", "offset": 16, "size": 4 },
+      { "name": "RecordIndex", "offset": 20, "size": 4 },
+      { "name": "CategoryHash", "offset": 24, "size": 4 },
+      { "name": "Flags", "offset": 28, "size": 4 },
+      { "name": "MassKg", "offset": 32, "size": 4 },
+      { "name": "VolumeM3", "offset": 36, "size": 4 },
+      { "name": "BaseQuality", "offset": 40, "size": 4 },
+      { "name": "HeatCapacity", "offset": 44, "size": 4 },
+      { "name": "YieldHash", "offset": 48, "size": 4 },
+      { "name": "NameUtf8Offset", "offset": 52, "size": 4 },
+      { "name": "DescriptionUtf8Offset", "offset": 56, "size": 4 },
+      { "name": "NameUtf8ByteLength", "offset": 60, "size": 4 },
+      { "name": "DescriptionUtf8ByteLength", "offset": 64, "size": 4 },
+      { "name": "Cost", "offset": 68, "size": 4 },
+      { "name": "AccessFrequency", "offset": 72, "size": 4 },
+      { "name": "MaxStack", "offset": 76, "size": 2 },
+      { "name": "RecipeIngredientCount", "offset": 78, "size": 2 }
+    ]
+  },
+  "activeBlob": {
+    "path": "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin",
+    "exists": true,
+    "bytes": 1064384,
+    "blobFormatVersion": 2,
+    "blobSchemaHash": "0x33313331",
+    "codeFormatVersion": 2,
+    "codeSchemaHash": "0x33313331",
+    "checksum64": "0x19D880780D6E1B46",
+    "validatorStatus": "PASS",
+    "status": "STATIC_VALIDATION_PASS"
+  }
+}

@@ -240,9 +240,9 @@ namespace Hecton8.Visor
             [FieldOffset(40)]
             public float4 OverkillParams;
             [FieldOffset(56)]
-            public uint _pad0;
+            private uint _pad0;
             [FieldOffset(60)]
-            public uint _pad1;
+            private uint _pad1;
         }
 
         private sealed class VisorUberPostPass : ScriptableRenderPass
@@ -1238,7 +1238,7 @@ namespace Hecton8.Visor
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options)
-            where T : struct
+            where T : unmanaged
         {
             if (_dataVault == null || requiredLength <= 0)
             {
@@ -1266,7 +1266,7 @@ namespace Hecton8.Visor
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId)
-            where T : struct
+            where T : unmanaged
         {
             if (vault != null && IsReconstructionVaultHandle(in handle, bufferId))
                 vault.ReleaseBuffer(in handle);
@@ -1280,7 +1280,7 @@ namespace Hecton8.Visor
             BufferID bufferId,
             int requiredLength,
             out NativeArray<T> buffer)
-            where T : struct
+            where T : unmanaged
         {
             return TryOpenReconstructionVaultBuffer(vault, in handle, bufferId, requiredLength, readOnly: false, out buffer);
         }
@@ -1291,7 +1291,7 @@ namespace Hecton8.Visor
             BufferID bufferId,
             int requiredLength,
             out NativeArray<T> buffer)
-            where T : struct
+            where T : unmanaged
         {
             return TryOpenReconstructionVaultBuffer(vault, in handle, bufferId, requiredLength, readOnly: true, out buffer);
         }
@@ -1303,7 +1303,7 @@ namespace Hecton8.Visor
             int requiredLength,
             bool readOnly,
             out NativeArray<T> buffer)
-            where T : struct
+            where T : unmanaged
         {
             buffer = default;
             if (vault == null ||
@@ -1323,7 +1323,7 @@ namespace Hecton8.Visor
         }
 
         private static bool IsReconstructionVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID bufferId)
-            where T : struct
+            where T : unmanaged
         {
             return handle.BufferID == unchecked((uint)(int)bufferId) &&
                    handle.SystemID == (uint)SystemID.GraphicsScalability &&
@@ -1590,8 +1590,6 @@ namespace Hecton8.Visor
                 entry.UpscalerModeHash = modeHash;
                 entry.GpuComputeTimeMs = EstimateReconstructionCostMs(scale, constants.TemporalParams.w, constants.TemporalParams.z, runtimeState.DepthlessTBDR != 0);
                 entry.JitterPixels = math.max(0f, constants.TemporalParams.y);
-                entry._pad0 = 0u;
-                entry._pad1 = 0u;
                 telemetry[index] = entry;
 
                 index++;
@@ -1631,7 +1629,7 @@ namespace Hecton8.Visor
                 {
                     int count = math.min(1024, totalBytes - offset);
                     UnsafeUtility.MemCpy(chunk, source + offset, count);
-                    stream.Write(new ReadOnlySpan<byte>(chunk, count));
+                    stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(chunk), count));
                     offset += count;
                 }
             }
@@ -1690,7 +1688,7 @@ namespace Hecton8.Visor
                 {
                     int max = math.min(scratch.Length, CsvScratchBytes);
                     void* scratchPtr = scratch.GetUnsafePtr();
-                    read = stream.Read(new Span<byte>(scratchPtr, max));
+                    read = stream.Read(MemoryMarshal.CreateSpan(ref UnsafeUtility.AsRef<byte>(scratchPtr), max));
                 }
 
                 if (read <= 0)

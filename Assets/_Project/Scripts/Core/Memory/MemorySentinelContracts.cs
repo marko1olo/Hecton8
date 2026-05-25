@@ -331,7 +331,7 @@ namespace Hecton8.Core.Memory
         [NoAlias] public NativeArray<ValidationStateDTO> States;
         [ReadOnly, NoAlias] public NativeArray<MemorySentinelTargetDTO> Targets;
         [NoAlias] public NativeArray<MemorySentinelResultDTO> Results;
-        public NativeQueue<MemoryDesyncSignal>.ParallelWriter DesyncWriter;
+        public global::Hecton8.Core.MpscSignalRingBuffer<MemoryDesyncSignal>.ParallelWriter DesyncWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> DesyncWriterBudget;
         public uint Frame;
         public float GlobalQualityWeight;
@@ -472,7 +472,7 @@ namespace Hecton8.Core.Memory
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe bool TryEnqueueDesyncBounded(
-            NativeQueue<MemoryDesyncSignal>.ParallelWriter writer,
+            global::Hecton8.Core.MpscSignalRingBuffer<MemoryDesyncSignal>.ParallelWriter writer,
             NativeArray<int> writerBudget,
             in MemoryDesyncSignal signal)
         {
@@ -487,8 +487,11 @@ namespace Hecton8.Core.Memory
                 return false;
             }
 
-            writer.Enqueue(signal);
-            return true;
+            if (writer.TryEnqueue(in signal))
+                return true;
+
+            Interlocked.Increment(ref budget[1]);
+            return false;
         }
     }
 

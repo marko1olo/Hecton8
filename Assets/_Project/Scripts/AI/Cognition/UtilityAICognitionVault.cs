@@ -107,6 +107,7 @@ namespace Hecton8.AI.Cognition
         private const uint DumpEndianMarker = 0x01020304u;
         private const uint DumpVersion = 1u;
         private const string DumpFileName = "Dump_SHINOBU_302.bin";
+        private const string Agent1300DumpFileName = "Dump_1300_AICognition.bin";
 #if UNITY_EDITOR
         private const string CsvFileName = "fauna_cognition_profiles.csv";
 #endif
@@ -122,11 +123,8 @@ namespace Hecton8.AI.Cognition
                 if (!TryReadExistingHandles(vault, out handles))
                     return false;
 
-                if (!TryResolveViews(vault, ref handles, out UtilityAICognitionVaultBuffers lockedBuffers))
-                    return false;
-
-                EnsureColdDefaults(lockedBuffers);
-                return true;
+                UtilityAICognitionVaultBuffers lockedBuffers;
+                return TryResolveViews(vault, ref handles, out lockedBuffers);
             }
 
             handles.States = vault.EnsureGenerationHandle<CognitionStateDTO>(
@@ -237,7 +235,7 @@ namespace Hecton8.AI.Cognition
                 return false;
 
             int scheduleLength = math.max(buffers.States.Length, math.max(buffers.Aups.Length, buffers.Targets.Length));
-            GenerateMockCognitionDataJob mockJob = new GenerateMockCognitionDataJob
+            GenerateMockCognitionLoadJob mockJob = new GenerateMockCognitionLoadJob
             {
                 States = buffers.States,
                 Aups = buffers.Aups,
@@ -333,30 +331,43 @@ namespace Hecton8.AI.Cognition
         public static bool TryGetTuning(IDataVault vault, ref UtilityAICognitionVaultHandles handles, out CognitionUtilityTuningDTO tuning)
         {
             tuning = default;
-            if (!TryResolveViews(vault, ref handles, out UtilityAICognitionVaultBuffers buffers) ||
-                !buffers.Tuning.IsCreated ||
-                buffers.Tuning.Length <= 0)
+            if (vault == null ||
+                handles.Tuning.BufferID == 0u ||
+                handles.Tuning.Generation == 0u ||
+                !vault.TryReadOnlyHandle(in handles.Tuning, out NativeArray<CognitionUtilityTuningDTO>.ReadOnly tuningBuffer) ||
+                tuningBuffer.Length <= 0)
             {
                 return false;
             }
 
-            CognitionUtilityTuningDTO rawTuning = buffers.Tuning[0];
+            CognitionUtilityTuningDTO rawTuning = tuningBuffer[0];
             tuning = UtilityAICognitionJobMath.SanitizeTuning(in rawTuning);
             return true;
         }
 
         public static bool TrySetTuning(IDataVault vault, ref UtilityAICognitionVaultHandles handles, in CognitionUtilityTuningDTO tuning)
         {
-            if (!TryResolveViews(vault, ref handles, out UtilityAICognitionVaultBuffers buffers) ||
-                !buffers.Tuning.IsCreated ||
-                buffers.Tuning.Length <= 0)
+            if (vault == null ||
+                handles.Tuning.BufferID == 0u ||
+                handles.Tuning.Generation == 0u ||
+                !vault.TryAcquireWriteLock(in handles.Tuning, SystemID.AICognition, out NativeArray<CognitionUtilityTuningDTO> tuningBuffer))
             {
                 return false;
             }
 
-            CognitionUtilityTuningDTO sanitized = UtilityAICognitionJobMath.SanitizeTuning(in tuning);
-            WriteTuningDirect(buffers.Tuning, in sanitized);
-            return true;
+            try
+            {
+                if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
+                    return false;
+
+                CognitionUtilityTuningDTO sanitized = UtilityAICognitionJobMath.SanitizeTuning(in tuning);
+                WriteTuningDirect(tuningBuffer, in sanitized);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handles.Tuning, SystemID.AICognition);
+            }
         }
 
 #if UNITY_EDITOR
@@ -461,10 +472,30 @@ namespace Hecton8.AI.Cognition
             if (!buffers.TelemetryRing.IsCreated || buffers.TelemetryRing.Length <= 0)
                 return false;
 
-            string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
-            string directory = Path.Combine(root, "Docs", "AgentLogs");
-            string path = Path.Combine(directory, DumpFileName);
-            return TryWriteDump(path, in buffers, frame);
+            try
+            {
+                string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
+                string directory = Path.Combine(root, "Docs", "AgentLogs");
+                string primary = Path.Combine(directory, DumpFileName);
+                string agent = Path.Combine(directory, Agent1300DumpFileName);
+                return TryWriteDump(primary, in buffers, frame) & TryWriteDump(agent, in buffers, frame);
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
         }
 
         public static bool TryReadLatestTelemetry(in UtilityAICognitionVaultBuffers buffers, out CognitionTelemetryEntry entry)
@@ -602,31 +633,49 @@ namespace Hecton8.AI.Cognition
             tuning = UtilityAICognitionJobMath.SanitizeTuning(in tuning);
         }
 
-        private static unsafe void WriteTuningDirect(NativeArray<CognitionUtilityTuningDTO> tuningBuffer, in CognitionUtilityTuningDTO tuning)
+        private static void WriteTuningDirect(NativeArray<CognitionUtilityTuningDTO> tuningBuffer, in CognitionUtilityTuningDTO tuning)
         {
             if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
                 return;
 
-            void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(tuningBuffer);
-            ref CognitionUtilityTuningDTO destination = ref UnsafeUtility.AsRef<CognitionUtilityTuningDTO>(ptr);
-            destination = tuning;
+            tuningBuffer[0] = tuning;
         }
 
 #if UNITY_EDITOR
         private static string ResolveCsvPath(string projectRoot)
         {
-            string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
-            string sourceDataPath = Path.Combine(root, "Assets", "_SourceData", "AI", CsvFileName);
-            if (File.Exists(sourceDataPath))
-                return sourceDataPath;
+            try
+            {
+                string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
+                string sourceDataPath = Path.Combine(root, "Assets", "_SourceData", "AI", CsvFileName);
+                if (File.Exists(sourceDataPath))
+                    return sourceDataPath;
 
-            string dataPath = Path.Combine(root, "Data", "AI", CsvFileName);
-            if (File.Exists(dataPath))
-                return dataPath;
+                string dataPath = Path.Combine(root, "Data", "AI", CsvFileName);
+                if (File.Exists(dataPath))
+                    return dataPath;
 
-            string rootPath = Path.Combine(root, CsvFileName);
-            if (File.Exists(rootPath))
-                return rootPath;
+                string rootPath = Path.Combine(root, CsvFileName);
+                if (File.Exists(rootPath))
+                    return rootPath;
+            }
+            catch (IOException)
+            {
+                return null;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return null;
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+            catch (NotSupportedException)
+            {
+                return null;
+            }
+
             return null;
         }
 
@@ -881,9 +930,10 @@ namespace Hecton8.AI.Cognition
 
         private static unsafe bool TryWriteDump(string path, in UtilityAICognitionVaultBuffers buffers, uint frame)
         {
-            string tempPath = path + ".tmp";
+            string tempPath = null;
             try
             {
+                tempPath = BuildUtilityDumpTempPath(path);
                 string directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
@@ -957,6 +1007,11 @@ namespace Hecton8.AI.Cognition
             catch (NotSupportedException)
             {
             }
+        }
+
+        private static string BuildUtilityDumpTempPath(string path)
+        {
+            return Path.ChangeExtension(path, ".bin.tmp");
         }
     }
 }

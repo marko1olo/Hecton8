@@ -16,7 +16,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-90)]
-    public sealed class HectonDistantLandmarkRenderer : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
+    public sealed class HectonDistantLandmarkRenderer : MonoBehaviour, ILateFrameTickable, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
 #if UNITY_EDITOR
         private const string SilhouetteShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_DistantLandmarkSilhouette.shader";
@@ -120,10 +120,6 @@ namespace Hecton8.World
         }
 
         /// <inheritdoc />
-        public void Tick(float dt)
-        {
-        }
-
         public void LateFrameTick()
         {
             if (_instanceCount <= 0)

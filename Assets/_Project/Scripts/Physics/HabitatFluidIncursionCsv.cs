@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Core.Contracts.Physics;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;

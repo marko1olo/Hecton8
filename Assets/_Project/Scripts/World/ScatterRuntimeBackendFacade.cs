@@ -144,12 +144,12 @@ namespace Hecton8.World
                     if (ScatterSimulationBackendRegistry.TryCreateBackend(backendKind, out IScatterSimulationBackend dotsBackend))
                         return dotsBackend;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning("[WorldScatter] Entities DOTS backend provider not registered. Falling back to ClassicJobs.");
+                    Hecton8.Core.H8Debug.LogWarning("[WorldScatter] Entities DOTS backend provider not registered. Falling back to ClassicJobs.");
 #endif
                     return new ScatterClassicSimulationBackend();
                 default:
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning("[WorldScatter] Unknown scatter backend kind. Falling back to ClassicJobs.");
+                    Hecton8.Core.H8Debug.LogWarning("[WorldScatter] Unknown scatter backend kind. Falling back to ClassicJobs.");
 #endif
                     return new ScatterClassicSimulationBackend();
             }
@@ -168,7 +168,7 @@ namespace Hecton8.World
                 backend.ForceComplete();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[WorldScatter] Unknown backend provider cannot be scheduled through stale contract compatibility route.");
+            Hecton8.Core.H8Debug.LogWarning("[WorldScatter] Unknown backend provider cannot be scheduled through stale contract compatibility route.");
 #endif
             return false;
         }

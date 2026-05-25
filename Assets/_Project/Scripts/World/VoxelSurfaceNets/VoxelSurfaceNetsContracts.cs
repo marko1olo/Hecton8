@@ -134,35 +134,35 @@ namespace Hecton8.World.VoxelSurfaceNets
     public struct VoxelMeshingTuningDTO
     {
         [FieldOffset(0)]
-        public float GlobalQualityWeight;
-        [FieldOffset(4)]
-        public float IsoSurface;
-        [FieldOffset(8)]
-        public float DecimationAggression;
-        [FieldOffset(12)]
-        public float NormalSmoothingAngleDegrees;
-        [FieldOffset(16)]
-        public float VoxelSize;
-        [FieldOffset(20)]
-        public float BiomeBlendScale;
-        [FieldOffset(24)]
-        public float MaxExtractionMs;
-        [FieldOffset(28)]
-        public float DebugRawCapture01;
-        [FieldOffset(32)]
-        public int MaxChunksPerFrame;
-        [FieldOffset(36)]
-        public int ChunkResolution;
-        [FieldOffset(40)]
-        public uint Version;
-        [FieldOffset(44)]
-        public uint Flags;
-        [FieldOffset(48)]
-        public uint ForceRemeshVersion;
-        [FieldOffset(52)]
-        public uint LastCsvHash;
-        [FieldOffset(56)]
         public ulong LastCsvWriteTicks;
+        [FieldOffset(8)]
+        public float GlobalQualityWeight;
+        [FieldOffset(12)]
+        public float IsoSurface;
+        [FieldOffset(16)]
+        public float DecimationAggression;
+        [FieldOffset(20)]
+        public float NormalSmoothingAngleDegrees;
+        [FieldOffset(24)]
+        public float VoxelSize;
+        [FieldOffset(28)]
+        public float BiomeBlendScale;
+        [FieldOffset(32)]
+        public float MaxExtractionMs;
+        [FieldOffset(36)]
+        public float DebugRawCapture01;
+        [FieldOffset(40)]
+        public int MaxChunksPerFrame;
+        [FieldOffset(44)]
+        public int ChunkResolution;
+        [FieldOffset(48)]
+        public uint Version;
+        [FieldOffset(52)]
+        public uint Flags;
+        [FieldOffset(56)]
+        public uint ForceRemeshVersion;
+        [FieldOffset(60)]
+        public uint LastCsvHash;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = VoxelSurfaceNetsContractsLayout.VoxelMeshingTelemetryEntryStrideBytes)]

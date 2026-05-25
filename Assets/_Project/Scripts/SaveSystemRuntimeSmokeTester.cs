@@ -264,7 +264,7 @@ namespace Hecton8.Dev
             _debugIndexedSubBlockPass = false;
             _debugLastIssue = string.IsNullOrEmpty(issue) ? "Unknown indexed sub-block failure." : issue;
             _debugLastPhase = "Failed";
-            Debug.LogWarning($"[SaveSmoke] Indexed sub-block fallback FAIL {_debugLastIssue}");
+            Hecton8.Core.H8Debug.LogWarning($"[SaveSmoke] Indexed sub-block fallback FAIL {_debugLastIssue}");
         }
 #endif
 

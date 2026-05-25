@@ -28,8 +28,10 @@ namespace Hecton8.Physiology
         private const uint MockSectorHash = 0x4D455441u; // META
         private const ulong DumpMagic = 0x4D45544153524745ul; // METASRGE
         private const uint DumpVersion = 2u;
+#if UNITY_EDITOR
         private const string CsvRelativePath = "biological_metabolism_profiles.csv";
         private const string SuitCsvRelativePath = "suit_thermal_profiles.csv";
+#endif
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_320.bin";
         private const uint ToxicityExposureLaneHash = 0x54584F58u; // TOX
         private const uint MetabolicToxicChemicalHash = 0x4D54584Eu; // MTXN
@@ -47,11 +49,13 @@ namespace Hecton8.Physiology
         [Tooltip("Generate deterministic fallback entities when no creature owner has hydrated metabolism rows yet.")]
         [SerializeField] private bool generateMockEcosystemOnEnable = true;
 
+#if UNITY_EDITOR
         [Tooltip("Load biological_metabolism_profiles.csv from the project root during cold bootstrap.")]
         [SerializeField] private bool loadCsvProfilesOnEnable = true;
 
         [Tooltip("Load suit_thermal_profiles.csv from the project root during cold bootstrap.")]
         [SerializeField] private bool loadSuitThermalProfilesOnEnable = true;
+#endif
 
         [Header("Editor Debug")]
         [Tooltip("Editor-only temperature bars for the first vault rows. Runtime builds ignore this path.")]
@@ -68,7 +72,9 @@ namespace Hecton8.Physiology
         private VaultGenerationHandle<MetabolicTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<MetabolismTuningDTO> _tuningHandle;
         private VaultGenerationHandle<float> _toxinSampleHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
         private VaultGenerationHandle<PhysiologyStateSignal> _physiologySignalHandle;
         private VaultGenerationHandle<MetabolicExposureSignalDTO> _exposureSignalHandle;
         private VaultGenerationHandle<MetabolicDetailTelemetryEntry> _detailTelemetryHandle;
@@ -87,8 +93,10 @@ namespace Hecton8.Physiology
         private MetabolismShaderGlobalsDTO _lastShaderGlobals;
         private MetabolicTelemetryEntry _latestTelemetry;
         private MetabolicDetailTelemetryEntry _latestDetailTelemetry;
+#if UNITY_EDITOR
         private string _csvPath;
         private string _suitCsvPath;
+#endif
         private string _dumpPath;
         private double _lastDispatcherTimeSeconds = -1d;
         private float _simulationAccumulator;
@@ -117,8 +125,10 @@ namespace Hecton8.Physiology
         private void Awake()
         {
             entityCapacity = math.max(1, entityCapacity);
+#if UNITY_EDITOR
             _csvPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", CsvRelativePath));
             _suitCsvPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", SuitCsvRelativePath));
+#endif
             _dumpPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DumpRelativePath));
         }
 
@@ -147,10 +157,12 @@ namespace Hecton8.Physiology
             if (EnsureVaultState())
             {
                 InitializeDefaultVaultContents();
+#if UNITY_EDITOR
                 if (loadCsvProfilesOnEnable)
                     TryLoadBiologicalProfilesCsv();
                 if (loadSuitThermalProfilesOnEnable)
                     TryLoadSuitThermalProfilesCsv();
+#endif
                 TryRegisterTicks();
             }
         }
@@ -494,14 +506,12 @@ namespace Hecton8.Physiology
             return true;
         }
 
+#if UNITY_EDITOR
         /// <summary>
         /// Reloads designer-authored biological metabolism profile rows from the project-root CSV.
         /// </summary>
         public bool TryLoadBiologicalProfilesCsv()
         {
-#if !UNITY_EDITOR
-            return false;
-#else
             if (_jobScheduled)
                 return false;
 
@@ -563,7 +573,6 @@ namespace Hecton8.Physiology
             {
                 return false;
             }
-#endif
         }
 
         /// <summary>
@@ -571,9 +580,6 @@ namespace Hecton8.Physiology
         /// </summary>
         public bool TryLoadSuitThermalProfilesCsv()
         {
-#if !UNITY_EDITOR
-            return false;
-#else
             if (_jobScheduled)
                 return false;
 
@@ -633,8 +639,8 @@ namespace Hecton8.Physiology
             {
                 return false;
             }
-#endif
         }
+#endif
 
         /// <summary>
         /// Reads one metabolism state row for editor or diagnostics.
@@ -1063,6 +1069,7 @@ namespace Hecton8.Physiology
                        entityCapacity,
                        NativeArrayOptions.UninitializedMemory,
                        out _) &&
+#if UNITY_EDITOR
                    OpenOrAcquireMetabolismVaultBuffer(
                        vault,
                        ref _csvScratchHandle,
@@ -1070,6 +1077,7 @@ namespace Hecton8.Physiology
                        ShinobuMetabolismConstants.CsvMaxBytes,
                        NativeArrayOptions.UninitializedMemory,
                        out _) &&
+#endif
                    OpenOrAcquireMetabolismVaultBuffer(
                        vault,
                        ref _physiologySignalHandle,
@@ -1938,8 +1946,14 @@ namespace Hecton8.Physiology
                 return;
 
             NativeArray<MetabolismShaderGlobalsDTO> mapped = writeBuffer.LockBufferForWrite<MetabolismShaderGlobalsDTO>(0, 1);
-            mapped[0] = globals;
-            writeBuffer.UnlockBufferAfterWrite<MetabolismShaderGlobalsDTO>(1);
+            try
+            {
+                mapped[0] = globals;
+            }
+            finally
+            {
+                writeBuffer.UnlockBufferAfterWrite<MetabolismShaderGlobalsDTO>(1);
+            }
             _lastShaderGlobals = globals;
             _shaderGlobalsInitialized = true;
             _activeShaderGlobalsBuffer = writeBuffer;
@@ -2446,7 +2460,9 @@ namespace Hecton8.Physiology
             ReleaseMetabolismVaultHandle(vault, ref _telemetryHandle, ShinobuMetabolismConstants.MetabolismTelemetryRingBuffer);
             ReleaseMetabolismVaultHandle(vault, ref _tuningHandle, ShinobuMetabolismConstants.MetabolismTuningBuffer);
             ReleaseMetabolismVaultHandle(vault, ref _toxinSampleHandle, ShinobuMetabolismConstants.MetabolismToxinSamplesBuffer);
+#if UNITY_EDITOR
             ReleaseMetabolismVaultHandle(vault, ref _csvScratchHandle, ShinobuMetabolismConstants.MetabolismCsvScratchBuffer);
+#endif
             ReleaseMetabolismVaultHandle(vault, ref _physiologySignalHandle, ShinobuMetabolismConstants.MetabolismPhysiologySignalsBuffer);
             ReleaseMetabolismVaultHandle(vault, ref _exposureSignalHandle, ShinobuMetabolismConstants.MetabolismExposureSignalsBuffer);
             ReleaseMetabolismVaultHandle(vault, ref _detailTelemetryHandle, ShinobuMetabolismConstants.MetabolismDetailTelemetryRingBuffer);
@@ -2475,7 +2491,9 @@ namespace Hecton8.Physiology
             _telemetryHandle = default;
             _tuningHandle = default;
             _toxinSampleHandle = default;
+#if UNITY_EDITOR
             _csvScratchHandle = default;
+#endif
             _physiologySignalHandle = default;
             _exposureSignalHandle = default;
             _detailTelemetryHandle = default;

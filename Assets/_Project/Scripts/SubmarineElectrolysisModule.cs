@@ -2,14 +2,15 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Logistics;
-using Hecton8.Physics;
 using Hecton8.Power;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Serialization;
+using SubmarineFluidDynamics = Hecton8.Physics.SubmarineFluidDynamics;
 
 namespace Hecton8.Gameplay
 {
@@ -312,7 +313,7 @@ namespace Hecton8.Gameplay
 
         private static void ReportOverflowOncePerFrame()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastOverflowWarningFrame == frame)
                 return;
 

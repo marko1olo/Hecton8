@@ -3,6 +3,7 @@ using Hecton.Localization;
 using Hecton8.Building;
 using Hecton8.Crafting;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Economy;
 using Hecton8.Gameplay;
 using Hecton8.Items;
@@ -369,22 +370,46 @@ namespace Hecton8.Construction
                 return TryResolveFirstStorageEndpoint(grid, out endpointIndex);
 
             int edgeCount = CountTopologyEdges(grid, topologyNodes, nodeCount);
-            LogisticsRouteScratchMemory.EnsureCapacity(nodeCount, edgeCount);
-            BuildRouteStorageCapacityFlags(grid, topologyNodes, nodeCount);
-            BuildRouteCsr(grid, topologyNodes, nodeCount, edgeCount);
+            IDataVault vault = GlobalRegistry.DataVault;
+            if (!LogisticsRouteScratchMemory.TryAcquireWriteBuffers(
+                    vault,
+                    nodeCount,
+                    edgeCount,
+                    out NativeArray<int> edgeOffsets,
+                    out NativeArray<int> edgeDestinations,
+                    out NativeArray<int> edgeWriteCursor,
+                    out NativeArray<byte> storageCapacityByNode,
+                    out NativeArray<byte> visited,
+                    out NativeArray<int> queue,
+                    out NativeArray<int> resultNodeIndex))
+            {
+                return false;
+            }
 
-            LogisticsRouteScratchMemory.ResultNodeIndex[0] = -1;
-            LogisticsPipeRoutingKernel.ExecuteRouteBfs(
-                nodeCount,
-                startNodeIndex,
-                LogisticsRouteScratchMemory.EdgeOffsets,
-                LogisticsRouteScratchMemory.EdgeDestinations,
-                LogisticsRouteScratchMemory.StorageCapacityByNode,
-                LogisticsRouteScratchMemory.Visited,
-                LogisticsRouteScratchMemory.Queue,
-                LogisticsRouteScratchMemory.ResultNodeIndex);
+            int targetNodeIndex;
+            try
+            {
+                BuildRouteStorageCapacityFlags(grid, topologyNodes, nodeCount, storageCapacityByNode);
+                BuildRouteCsr(grid, topologyNodes, nodeCount, edgeCount, edgeOffsets, edgeDestinations, edgeWriteCursor);
 
-            int targetNodeIndex = LogisticsRouteScratchMemory.ResultNodeIndex[0];
+                resultNodeIndex[0] = -1;
+                LogisticsPipeRoutingKernel.ExecuteRouteBfs(
+                    nodeCount,
+                    startNodeIndex,
+                    edgeOffsets,
+                    edgeDestinations,
+                    storageCapacityByNode,
+                    visited,
+                    queue,
+                    resultNodeIndex);
+
+                targetNodeIndex = resultNodeIndex[0];
+            }
+            finally
+            {
+                LogisticsRouteScratchMemory.ReleaseWriteLocks(vault);
+            }
+
             if (targetNodeIndex < 0 || targetNodeIndex >= nodeCount)
                 return false;
 
@@ -457,10 +482,14 @@ namespace Hecton8.Construction
             return edgeCount;
         }
 
-        private static void BuildRouteStorageCapacityFlags(PowerGrid grid, List<PowerNode> topologyNodes, int nodeCount)
+        private static void BuildRouteStorageCapacityFlags(
+            PowerGrid grid,
+            List<PowerNode> topologyNodes,
+            int nodeCount,
+            NativeArray<byte> storageCapacityByNode)
         {
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
-                LogisticsRouteScratchMemory.StorageCapacityByNode[nodeIndex] = 0;
+                storageCapacityByNode[nodeIndex] = 0;
 
             for (int endpointIndex = 0; endpointIndex < s_StorageEndpoints.Count; endpointIndex++)
             {
@@ -477,15 +506,22 @@ namespace Hecton8.Construction
                     nodeIndex >= 0 &&
                     nodeIndex < nodeCount)
                 {
-                    LogisticsRouteScratchMemory.StorageCapacityByNode[nodeIndex] = 1;
+                    storageCapacityByNode[nodeIndex] = 1;
                 }
             }
         }
 
-        private static void BuildRouteCsr(PowerGrid grid, List<PowerNode> topologyNodes, int nodeCount, int edgeCount)
+        private static void BuildRouteCsr(
+            PowerGrid grid,
+            List<PowerNode> topologyNodes,
+            int nodeCount,
+            int edgeCount,
+            NativeArray<int> edgeOffsets,
+            NativeArray<int> edgeDestinations,
+            NativeArray<int> edgeWriteCursor)
         {
             for (int nodeIndex = 0; nodeIndex <= nodeCount; nodeIndex++)
-                LogisticsRouteScratchMemory.EdgeOffsets[nodeIndex] = 0;
+                edgeOffsets[nodeIndex] = 0;
 
             for (int sourceIndex = 0; sourceIndex < nodeCount; sourceIndex++)
             {
@@ -506,18 +542,18 @@ namespace Hecton8.Construction
                         outDegree++;
                 }
 
-                LogisticsRouteScratchMemory.EdgeOffsets[sourceIndex + 1] = outDegree;
+                edgeOffsets[sourceIndex + 1] = outDegree;
             }
 
             for (int nodeIndex = 1; nodeIndex <= nodeCount; nodeIndex++)
             {
-                LogisticsRouteScratchMemory.EdgeOffsets[nodeIndex] =
-                    LogisticsRouteScratchMemory.EdgeOffsets[nodeIndex] +
-                    LogisticsRouteScratchMemory.EdgeOffsets[nodeIndex - 1];
+                edgeOffsets[nodeIndex] =
+                    edgeOffsets[nodeIndex] +
+                    edgeOffsets[nodeIndex - 1];
             }
 
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
-                LogisticsRouteScratchMemory.EdgeWriteCursor[nodeIndex] = LogisticsRouteScratchMemory.EdgeOffsets[nodeIndex];
+                edgeWriteCursor[nodeIndex] = edgeOffsets[nodeIndex];
 
             for (int sourceIndex = 0; sourceIndex < nodeCount; sourceIndex++)
             {
@@ -536,12 +572,12 @@ namespace Hecton8.Construction
                     if (!TryResolveTopologyNodeIndex(topologyNodes, neighbor, out int destinationIndex))
                         continue;
 
-                    int writeIndex = LogisticsRouteScratchMemory.EdgeWriteCursor[sourceIndex];
+                    int writeIndex = edgeWriteCursor[sourceIndex];
                     if (writeIndex < 0 || writeIndex >= edgeCount)
                         continue;
 
-                    LogisticsRouteScratchMemory.EdgeWriteCursor[sourceIndex] = writeIndex + 1;
-                    LogisticsRouteScratchMemory.EdgeDestinations[writeIndex] = destinationIndex;
+                    edgeWriteCursor[sourceIndex] = writeIndex + 1;
+                    edgeDestinations[writeIndex] = destinationIndex;
                 }
             }
         }

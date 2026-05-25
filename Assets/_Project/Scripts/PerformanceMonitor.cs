@@ -619,6 +619,7 @@ namespace Hecton8.Core
         private bool _isRegisteredToTickManager;
         private bool _serviceRegistered;
         private bool _hotSwapRegistered;
+        private IPhysicsQueryTelemetryReadModel _physicsQueryTelemetry;
 
         private float _avgFrameTimeMs;
         private float _peakFrameTimeMs;
@@ -684,6 +685,7 @@ namespace Hecton8.Core
 
             _lastGCTotalMemory = GC.GetTotalMemory(false);
             _lastGCCollectionCount = GC.CollectionCount(0);
+            _physicsQueryTelemetry = GlobalRegistry.PhysicsQueryTelemetry;
         }
 
         private void OnEnable()
@@ -765,6 +767,12 @@ namespace Hecton8.Core
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.RaycastBatchRuntime)
+            {
+                _physicsQueryTelemetry = currentService as IPhysicsQueryTelemetryReadModel;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
                 return;
 
@@ -846,14 +854,15 @@ namespace Hecton8.Core
                 _lastGCAllocCount += gcAlloc;
             }
 
-            int totalPhysics = trackPhysicsCalls ? Hecton8.Physics.RaycastBatchHelper.TotalRaycastsProcessed : 0;
-            int cachedHits = trackPhysicsCalls ? Hecton8.Physics.QueryCacheContext.CacheHits : 0;
+            IPhysicsQueryTelemetryReadModel physicsQueryTelemetry = _physicsQueryTelemetry;
+            int totalPhysics = trackPhysicsCalls && physicsQueryTelemetry != null ? physicsQueryTelemetry.LegacySurfaceQueriesProcessed : 0;
+            int cachedHits = trackPhysicsCalls && physicsQueryTelemetry != null ? physicsQueryTelemetry.PlayerLookQueryCacheHits : 0;
             int pendingJobs = trackJobSystem ? 0 : 0;
 
             _currentSnapshot = new PerformanceSnapshot(
                 frameTimeMs: (float)_frameStopwatch.Elapsed.TotalMilliseconds * sampleIntervalFrames,
                 deltaTime: deltaTime,
-                frameCount: Time.frameCount,
+                frameCount: Hecton8.Core.SystemDispatcher.CurrentFrameIndex,
                 physicsCallCount: totalPhysics,
                 physicsTimeMs: cachedHits, // Repurposing field: Hits are more important than avg time here
                 pendingJobCount: pendingJobs,
@@ -866,8 +875,7 @@ namespace Hecton8.Core
             );
 
             // Reset counters for next sampling window
-            Hecton8.Physics.RaycastBatchHelper.TotalRaycastsProcessed = 0;
-            Hecton8.Physics.QueryCacheContext.CacheHits = 0;
+            physicsQueryTelemetry?.ResetPhysicsQueryTelemetryCounters();
 
             _lastGCTotalMemory = gcTotal;
             _lastGCCollectionCount = gcCollections;

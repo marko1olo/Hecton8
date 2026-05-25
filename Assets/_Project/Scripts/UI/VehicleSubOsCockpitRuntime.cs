@@ -26,7 +26,7 @@ namespace Hecton8.UI
     /// Dispatcher-owned diegetic submarine cockpit bridge: analytical controls, off-screen screens, and GPU sonar radar.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class VehicleSubOsCockpitRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IRenderable, ISubmarineOsEventListener, IPowerGridTelemetryListener, IGlobalRegistryHotSwapListener
+    public sealed class VehicleSubOsCockpitRuntime : MonoBehaviour, ILateFrameTickable, IRenderable, ISubmarineOsEventListener, IPowerGridTelemetryListener, IGlobalRegistryHotSwapListener
     {
         private const int MaxRadarPoints = 4096;
         private const int MinQualityRadarPoints = 512;
@@ -288,7 +288,6 @@ namespace Hecton8.UI
         private JobHandle _buttonJobHandle;
         private bool _buttonJobScheduled;
         private bool _buttonJobBuffersLocked;
-        private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _registeredRenderable;
         private bool _hotSwapListenerRegistered;
@@ -469,7 +468,7 @@ namespace Hecton8.UI
             }
         }
 
-        public void Tick(float deltaTime)
+        private void AdvanceCockpitFrameState(float deltaTime)
         {
             float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
             RefreshQualityPolicy(allowGraphicsResourceMutation: false);
@@ -495,6 +494,8 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            AdvanceCockpitFrameState(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (_resourceRefreshDirty || !_resourcesReady)
             {
                 _resourceRefreshDirty = false;
@@ -643,8 +644,6 @@ namespace Hecton8.UI
 
         private void TryRegisterRuntime()
         {
-            if (!_registeredUpdate)
-                _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
             if (!_registeredRenderable)
@@ -653,12 +652,6 @@ namespace Hecton8.UI
 
         private void UnregisterRuntime()
         {
-            if (_registeredUpdate)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registeredUpdate = false;
-            }
-
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
@@ -903,7 +896,7 @@ namespace Hecton8.UI
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
-            out bool recreated) where T : struct
+            out bool recreated) where T : unmanaged
         {
             recreated = false;
             IDataVault vault = _dataVault;
@@ -1226,7 +1219,7 @@ namespace Hecton8.UI
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
-            out NativeArray<T>.ReadOnly buffer) where T : struct
+            out NativeArray<T>.ReadOnly buffer) where T : unmanaged
         {
             buffer = default;
             IDataVault vault = _dataVault;
@@ -1242,7 +1235,7 @@ namespace Hecton8.UI
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
             IDataVault vault = _dataVault;
@@ -1254,7 +1247,7 @@ namespace Hecton8.UI
                    buffer.Length >= requiredLength;
         }
 
-        private void ReleaseCockpitVaultHandle<T>(ref VaultGenerationHandle<T> handle) where T : struct
+        private void ReleaseCockpitVaultHandle<T>(ref VaultGenerationHandle<T> handle) where T : unmanaged
         {
             IDataVault vault = _dataVault;
             if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
@@ -1263,7 +1256,7 @@ namespace Hecton8.UI
             handle = default;
         }
 
-        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : unmanaged
         {
             return handle.BufferID == unchecked((uint)(int)expectedBufferId) &&
                    handle.SystemID == (uint)VaultOwnerSystemId &&
@@ -1974,9 +1967,15 @@ namespace Hecton8.UI
                 return;
 
             NativeArray<SonarEchoTap> mapped = sonarWriteBuffer.LockBufferForWrite<SonarEchoTap>(0, safeCount);
-            for (int i = 0; i < safeCount; i++)
-                mapped[i] = taps[i];
-            sonarWriteBuffer.UnlockBufferAfterWrite<SonarEchoTap>(safeCount);
+            try
+            {
+                for (int i = 0; i < safeCount; i++)
+                    mapped[i] = taps[i];
+            }
+            finally
+            {
+                sonarWriteBuffer.UnlockBufferAfterWrite<SonarEchoTap>(safeCount);
+            }
             _activeSonarTapBuffer = sonarWriteBuffer;
             _sonarTapUploadBufferIndex ^= 1;
 
@@ -2167,15 +2166,20 @@ namespace Hecton8.UI
 
             NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
                 argsWriteBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            try
             {
-                indexCountPerInstance = mesh.GetIndexCount(0),
-                instanceCount = (uint)safeInstanceCount,
-                startIndex = mesh.GetIndexStart(0),
-                baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
-                startInstance = 0u
-            };
-            argsWriteBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+                GraphicsBuffer.IndirectDrawIndexedArgs drawArgs = default;
+                drawArgs.indexCountPerInstance = mesh.GetIndexCount(0);
+                drawArgs.instanceCount = (uint)safeInstanceCount;
+                drawArgs.startIndex = mesh.GetIndexStart(0);
+                drawArgs.baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0));
+                drawArgs.startInstance = 0u;
+                argsWrite[0] = drawArgs;
+            }
+            finally
+            {
+                argsWriteBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            }
             _activeRadarArgsBuffer = argsWriteBuffer;
             _radarArgsUploadBufferIndex ^= 1;
             _lastRadarArgsInstanceCount = safeInstanceCount;
@@ -2336,9 +2340,12 @@ namespace Hecton8.UI
             damageHologramCompute.SetBuffer(_damageHologramKernel, DamageProxyVerticesId, _activeDamageProxyVertexBuffer);
             damageHologramCompute.SetBuffer(_damageHologramKernel, DamageHologramPointsId, _damagePointBuffer);
             damageHologramCompute.SetBuffer(_damageHologramKernel, DamageRoomWaterLevelsId, _activeDamageRoomWaterBuffer);
-            damageHologramCompute.SetVector(
-                DamageHologramParamsId,
-                new Vector4(Time.time, ResolveDamageHologramScanlineWidth(), pointBudget, _cheapVisualWeight01));
+            Vector4 computeParams = default;
+            computeParams.x = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            computeParams.y = ResolveDamageHologramScanlineWidth();
+            computeParams.z = pointBudget;
+            computeParams.w = _cheapVisualWeight01;
+            damageHologramCompute.SetVector(DamageHologramParamsId, computeParams);
             damageHologramCompute.SetVector(DamageHologramBoundsId, _damageProxyBounds);
             damageHologramCompute.SetInt(DamageProxyVertexCountId, _damageProxyVertexCount);
             damageHologramCompute.SetInt(DamageRoomCountId, _damageRoomCount);
@@ -2427,9 +2434,12 @@ namespace Hecton8.UI
             }
 
             _damageRuntimeMaterial.SetMatrix(DamageHologramLocalToWorldId, hologramLocalToWorld);
-            _damageRuntimeMaterial.SetVector(
-                DamageHologramParamsId,
-                new Vector4(Time.time, ResolveDamageHologramAlpha(), _damageRoomCount, _cheapVisualWeight01));
+            Vector4 materialParams = default;
+            materialParams.x = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            materialParams.y = ResolveDamageHologramAlpha();
+            materialParams.z = _damageRoomCount;
+            materialParams.w = _cheapVisualWeight01;
+            _damageRuntimeMaterial.SetVector(DamageHologramParamsId, materialParams);
             _damageRuntimeMaterial.SetVector(DamageHologramBoundsId, _damageProxyBounds);
             _damageRuntimeMaterial.SetFloat(DamageHologramFlickerId, ResolveDamageHologramFlicker());
         }
@@ -2450,15 +2460,20 @@ namespace Hecton8.UI
 
             NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
                 _damageArgsBuffer.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            try
             {
-                indexCountPerInstance = mesh.GetIndexCount(0),
-                instanceCount = (uint)safeInstanceCount,
-                startIndex = mesh.GetIndexStart(0),
-                baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0)),
-                startInstance = 0u
-            };
-            _damageArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+                GraphicsBuffer.IndirectDrawIndexedArgs drawArgs = default;
+                drawArgs.indexCountPerInstance = mesh.GetIndexCount(0);
+                drawArgs.instanceCount = (uint)safeInstanceCount;
+                drawArgs.startIndex = mesh.GetIndexStart(0);
+                drawArgs.baseVertexIndex = (uint)Mathf.Max(0, mesh.GetBaseVertex(0));
+                drawArgs.startInstance = 0u;
+                argsWrite[0] = drawArgs;
+            }
+            finally
+            {
+                _damageArgsBuffer.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            }
             _lastDamageArgsMesh = mesh;
             _lastDamageArgsInstanceCount = safeInstanceCount;
         }

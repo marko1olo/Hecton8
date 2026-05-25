@@ -157,6 +157,7 @@ namespace Hecton8.Thermodynamics
 
         private void Awake()
         {
+            PrewarmSignalLanes();
             CacheRegistryServicesCold();
             EnsureNativeState();
         }
@@ -165,10 +166,20 @@ namespace Hecton8.Thermodynamics
         {
             ActiveRuntimeInstance = this;
             _droppedSignalCount = 0;
+            PrewarmSignalLanes();
             CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             EnsureNativeState();
             TryRegister();
+        }
+
+        private static void PrewarmSignalLanes()
+        {
+            SignalBus<ThermalUpdraftSignal>.Configure(
+                expectedCapacity: MaxSignalsPerFrame,
+                maxFrameSignals: MaxSignalsPerFrame,
+                lowTierFrameSignals: 16);
+            SignalBus<ThermalUpdraftSignal>.EnsureInitialized();
         }
 
         private void Start()
@@ -927,6 +938,11 @@ namespace Hecton8.Thermodynamics
             _visualDirty = true;
         }
 
+        private static uint EncodeUnitQ8(float value)
+        {
+            return unchecked((uint)math.clamp((int)math.round(math.saturate(value) * 255f), 0, 255));
+        }
+
         private void ClearAllGridData()
         {
             int length = MaxCellCount;
@@ -1068,6 +1084,9 @@ namespace Hecton8.Thermodynamics
                 handle = diffusionJob.Schedule(activeCellCount, 64, handle);
             }
 
+            float effectiveQuality01 = ResolveContinuousQualityWeight();
+            uint qualityPressureQ8 = EncodeUnitQ8(1f - effectiveQuality01);
+            uint healthPressureQ8 = EncodeUnitQ8(_healthPressureLowTierFrames * math.rcp(math.max(1f, HealthPressureLowTierFrames)));
             ScanTelemetryJob scanJob = new ScanTelemetryJob
             {
                 TemperatureBack = (float*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(temperatureBack),
@@ -1085,8 +1104,8 @@ namespace Hecton8.Thermodynamics
                 GridVersion = unchecked((uint)_gridVersion),
                 SourceCount = unchecked((uint)_sourceCount),
                 ShiftSequence = _shiftSequence,
-                LowTier = _activeResolution < HighResolution ? 1u : 0u,
-                HealthPressureLowTier = _healthPressureLowTierFrames > 0 ? 1u : 0u
+                QualityPressureQ8 = qualityPressureQ8,
+                HealthPressureQ8 = healthPressureQ8
             };
             handle = scanJob.Schedule(handle);
             _simulationHandle = handle;
@@ -1753,15 +1772,15 @@ namespace Hecton8.Thermodynamics
             public uint GridVersion;
             public uint SourceCount;
             public uint ShiftSequence;
-            public uint LowTier;
-            public uint HealthPressureLowTier;
+            public uint QualityPressureQ8;
+            public uint HealthPressureQ8;
 
             public void Execute()
             {
                 float maxTemp = -1000f;
                 float maxRad = 0f;
-                uint flags = LowTier != 0u ? TelemetryFlagLowTier : 0u;
-                if (HealthPressureLowTier != 0u)
+                uint flags = QualityPressureQ8 >= 128u ? TelemetryFlagLowTier : 0u;
+                if (HealthPressureQ8 > 0u)
                     flags |= TelemetryFlagHealthPressureLowTier;
 
                 uint nanIndex = 0u;

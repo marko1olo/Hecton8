@@ -18,7 +18,7 @@ namespace Hecton8.Graphics.VR
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9946)]
     [AddComponentMenu("Hecton8/Graphics/VR/Foveated Render Commander")]
-    internal sealed class FoveatedRenderCommander : MonoBehaviour, IUpdatable, IRenderable, IGlobalRegistryHotSwapListener, IDisposable
+    internal sealed class FoveatedRenderCommander : MonoBehaviour, ILateFrameTickable, IRenderable, IGlobalRegistryHotSwapListener, IDisposable
     {
         private const int TelemetryCapacity = 300;
         private const int TelemetryRecordSizeBytes = 64;
@@ -126,7 +126,7 @@ namespace Hecton8.Graphics.VR
         private XRDisplaySubsystem.FoveatedRenderingFlags _appliedFlags;
         private FoveatedRenderingCaps _lastCaps;
         private ushort _lastFlags;
-        private bool _registeredTick;
+        private bool _registeredLateFrame;
         private bool _registeredHotSwap;
         private bool _registeredRenderable;
         private bool _blackBoxDumped;
@@ -286,11 +286,12 @@ namespace Hecton8.Graphics.VR
             _dataVault = null;
         }
 
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
             if (TryDetachIfInactiveCommander())
                 return;
 
+            float deltaTime = math.max(0f, SystemDispatcher.CurrentFrameDeltaTime);
             DecayFoveationHysteresis(deltaTime);
             ConsumeSignals();
 
@@ -785,25 +786,25 @@ namespace Hecton8.Graphics.VR
 
         private void TryRegisterTick()
         {
-            if (_registeredTick)
+            if (_registeredLateFrame)
                 return;
 
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
             {
-                _registeredTick = false;
+                _registeredLateFrame = false;
                 return;
             }
 
-            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
         }
 
         private void TryUnregisterTick()
         {
-            if (!_registeredTick)
+            if (!_registeredLateFrame)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-            _registeredTick = false;
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+            _registeredLateFrame = false;
         }
 
         private void TryRegisterHotSwap()

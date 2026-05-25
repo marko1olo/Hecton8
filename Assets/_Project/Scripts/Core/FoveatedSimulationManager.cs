@@ -64,7 +64,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Dispatcher-owned simulation foveation service. Computes importance scores,
     /// throttles opt-in targets, smooths low-frequency visual motion, and keeps
-    /// audio/raycast side effects on an allocation-free path.
+    /// audio/surface-probe side effects on an allocation-free path.
     /// </summary>
     internal sealed class FoveatedSimulationManager : IFoveatedDispatcher, IFoveatedSimulationDirector, IOriginShiftListener, IGlobalRegistryHotSwapListener
     {
@@ -162,9 +162,10 @@ namespace Hecton8.Core
         private const float VerticalPenaltyScale = 0.6f;
         private const float MinimumDirectionLength = 0.0001f;
         private const float MinimumVelocityDelta = 0.0001f;
-        private const float MinimumDeferredRaycastImportanceScore = 0.2f;
+        private const float MinimumDeferredSurfaceProbeImportanceScore = 0.2f;
         private const float RearOneHertzDistanceMeters = 100.0f;
         private const float EcosystemOnlyCullDistanceMeters = 300.0f;
+        private const uint KccVelocityListenerMaxAgeFrames = 12u;
         private const float DefaultActiveDistanceMeters = 100.0f;
         private const float DefaultFrozenDistanceMeters = 300.0f;
         private const float SurvivalActiveDistanceMeters = 50.0f;
@@ -205,7 +206,7 @@ namespace Hecton8.Core
         private const BufferID FoveatedToPositionsBufferId = (BufferID)73228;
         private const BufferID FoveatedAlphasBufferId = (BufferID)73229;
         private const BufferID FoveatedPendingProbeIndicesBufferId = (BufferID)73231;
-        private const BufferID FoveatedDeferredRaycastResultsBufferId = (BufferID)73233;
+        private const BufferID FoveatedDeferredSurfaceProbeResultsBufferId = (BufferID)73233;
         private const BufferID FoveatedTelemetryRingBufferId = (BufferID)73234;
 
         // COLD ALLOC: object[512] — dispatcher-owned opt-in simulation target slots, object-backed to avoid interface arrays — owner: FoveatedSimulationManager
@@ -239,10 +240,10 @@ namespace Hecton8.Core
         private readonly int[] _framesSinceTickRateChange = new int[MaxTargets];
         // COLD ALLOC: int[512] — compact target-to-visual-transform mapping — owner: FoveatedSimulationManager
         private readonly int[] _visualTargetIndices = new int[MaxTargets];
-        // COLD ALLOC: object[512] — deferred raycast owner slots, object-backed to avoid interface arrays — owner: FoveatedSimulationManager
-        private readonly object[] _deferredRaycastOwners = new object[MaxDeferredProbeSlots];
-        // COLD ALLOC: object[256] — pending deferred raycast owner refs immune to target index swap, object-backed to avoid interface arrays — owner: FoveatedSimulationManager
-        private readonly object[] _pendingDeferredRaycastOwners = new object[MaxDeferredProbeSlots];
+        // COLD ALLOC: object[512] — deferred surface-probe owner slots, object-backed to avoid interface arrays — owner: FoveatedSimulationManager
+        private readonly object[] _deferredSurfaceProbeOwners = new object[MaxDeferredProbeSlots];
+        // COLD ALLOC: object[256] — pending deferred surface-probe owner refs immune to target index swap, object-backed to avoid interface arrays — owner: FoveatedSimulationManager
+        private readonly object[] _pendingDeferredSurfaceProbeOwners = new object[MaxDeferredProbeSlots];
         private readonly int[] _deferredProbeIndices = new int[MaxDeferredProbeSlots];
 
         private TransformAccessArray _visualTransformAccessArray;
@@ -259,7 +260,7 @@ namespace Hecton8.Core
         private NativeArray<float> _jobAlphas;
         private NativeArray<FoveatedSimulationTelemetryEntry> _telemetryRing;
         private NativeArray<int> _pendingDeferredProbeIndices;
-        private NativeArray<RaycastHit> _deferredRaycastResults;
+        private NativeArray<KinematicSurfaceHit> _deferredSurfaceProbeResults;
         private IDataVault _dataVault;
         private IPlayerRuntimeContext _playerContext;
         private VaultGenerationHandle<float3> _jobScorePositionsHandle;
@@ -274,15 +275,14 @@ namespace Hecton8.Core
         private VaultGenerationHandle<float> _jobAlphasHandle;
         private VaultGenerationHandle<FoveatedSimulationTelemetryEntry> _telemetryRingHandle;
         private VaultGenerationHandle<int> _pendingDeferredProbeIndicesHandle;
-        private VaultGenerationHandle<RaycastHit> _deferredRaycastResultsHandle;
+        private VaultGenerationHandle<KinematicSurfaceHit> _deferredSurfaceProbeResultsHandle;
         private JobHandle _importanceHandle;
         private JobHandle _interpolationHandle;
-        private JobHandle _deferredRaycastHandle;
+        private JobHandle _deferredSurfaceProbeHandle;
 
         private Camera _viewCamera;
         private Transform _cameraTransform;
         private Transform _listenerTransform;
-        private Rigidbody _listenerRigidbody;
         private Vector3 _listenerVelocity;
         private Vector3 _lastListenerPosition;
 
@@ -293,7 +293,7 @@ namespace Hecton8.Core
         private bool _visualTargetCacheDirty = true;
         private bool _importanceScheduled;
         private bool _interpolationScheduled;
-        private bool _deferredRaycastScheduled;
+        private bool _deferredSurfaceProbeScheduled;
         private bool _listenerStateInitialized;
         private bool _originShiftListenerRegistered;
         private bool _nativeMemoryBudgetRegistered;
@@ -303,11 +303,11 @@ namespace Hecton8.Core
         private bool _hasSignalCameraPose;
         private bool _blackBoxDumped;
         private int _voxelTeardownBackpressurePendingCount;
-        private int _queuedDeferredRaycastCount;
+        private int _queuedDeferredSurfaceProbeCount;
         private int _deferredProbeCount;
-        private int _pendingDeferredRaycastHead;
-        private int _pendingDeferredRaycastTail;
-        private int _lastDeferredRaycastScheduleFrame = -1;
+        private int _pendingDeferredSurfaceProbeHead;
+        private int _pendingDeferredSurfaceProbeTail;
+        private int _lastDeferredSurfaceProbeScheduleFrame = -1;
         private int _frozenEntityCount;
         private int _tier0Count;
         private int _tier1Count;
@@ -340,7 +340,7 @@ namespace Hecton8.Core
         {
             TryRegisterHotSwapListener();
             RebindDataVaultForOwnerRoute(_dataVault, GlobalRegistry.DataVault);
-            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerContext = GlobalRegistry.Player;
 
             if (!_originShiftListenerRegistered)
             {
@@ -418,7 +418,7 @@ namespace Hecton8.Core
             if (_targetCount >= MaxTargets)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError(
+                Hecton8.Core.H8Debug.LogError(
                     $"[FoveatedSimulationManager] Target capacity ({MaxTargets}) exceeded.");
 #endif
                 return;
@@ -463,7 +463,7 @@ namespace Hecton8.Core
             if (removedIndex < 0 || removedIndex >= _targetCount)
                 return;
 
-            InvalidateDeferredRaycastOwner(target);
+            InvalidateDeferredSurfaceProbeOwner(target);
 
             int lastIndex = _targetCount - 1;
             if (removedIndex != lastIndex)
@@ -509,7 +509,7 @@ namespace Hecton8.Core
             ConsumeCameraSignals();
             _importanceAccumulator += math.max(frameDeltaTime, 0.0f);
 
-            if (!_deferredRaycastScheduled)
+            if (!_deferredSurfaceProbeScheduled)
                 _deferredProbeCount = 0;
 
             if (!RefreshViewCameraBinding(frameDeltaTime) && !_hasSignalCameraPose)
@@ -670,7 +670,7 @@ namespace Hecton8.Core
             movement.SetRuntimeVoxelBackpressureSwimSpeedMultiplier(active ? VoxelTeardownBackpressureSwimSpeedMultiplier : 1f);
         }
 
-        private bool TryCompleteFrameJobsInternal(bool includeDeferredRaycasts, bool forceComplete)
+        private bool TryCompleteFrameJobsInternal(bool includeDeferredSurfaceProbes, bool forceComplete)
         {
             bool completedAll = true;
             if (_interpolationScheduled)
@@ -711,7 +711,7 @@ namespace Hecton8.Core
             DisposeNativeBuffers(JobHandle.CombineDependencies(_importanceHandle, _interpolationHandle));
             _importanceHandle = default;
             _interpolationHandle = default;
-            _deferredRaycastHandle = default;
+            _deferredSurfaceProbeHandle = default;
 
             Array.Clear(_targets, 0, _targets.Length);
             Array.Clear(_simulationTransforms, 0, _simulationTransforms.Length);
@@ -731,14 +731,13 @@ namespace Hecton8.Core
             Array.Clear(_tier0LockUntilTimes, 0, _tier0LockUntilTimes.Length);
             Array.Clear(_framesSinceTickRateChange, 0, _framesSinceTickRateChange.Length);
             Array.Clear(_visualTargetIndices, 0, _visualTargetIndices.Length);
-            Array.Clear(_deferredRaycastOwners, 0, _deferredRaycastOwners.Length);
+            Array.Clear(_deferredSurfaceProbeOwners, 0, _deferredSurfaceProbeOwners.Length);
             Array.Clear(_deferredProbeIndices, 0, _deferredProbeIndices.Length);
-            DrainDeferredRaycastQueueResidue();
+            DrainDeferredSurfaceProbeQueueResidue();
 
             _viewCamera = null;
             _cameraTransform = null;
             _listenerTransform = null;
-            _listenerRigidbody = null;
             _listenerVelocity = Vector3.zero;
             _lastListenerPosition = Vector3.zero;
             _targetCount = 0;
@@ -749,8 +748,8 @@ namespace Hecton8.Core
             _importanceScheduled = false;
             _listenerStateInitialized = false;
             _interpolationScheduled = false;
-            _deferredRaycastScheduled = false;
-            _lastDeferredRaycastScheduleFrame = -1;
+            _deferredSurfaceProbeScheduled = false;
+            _lastDeferredSurfaceProbeScheduleFrame = -1;
             _voxelTeardownBackpressureActive = false;
             _voxelTeardownBackpressurePendingCount = 0;
             _forceImmediateImportanceRefresh = false;
@@ -840,7 +839,7 @@ namespace Hecton8.Core
             double elapsedMilliseconds = elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
             if (elapsedMilliseconds > SlowJobCompleteWarningMilliseconds)
             {
-                Debug.LogWarning(SlowJobCompleteWarningMessage);
+                Hecton8.Core.H8Debug.LogWarning(SlowJobCompleteWarningMessage);
             }
 #else
             DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
@@ -1136,7 +1135,7 @@ namespace Hecton8.Core
             int cursor = _telemetryCursor;
             _telemetryRing[cursor] = new FoveatedSimulationTelemetryEntry
             {
-                Frame = Time.frameCount,
+                Frame = unchecked((int)Hecton8.Core.SystemDispatcher.CurrentFrameId),
                 TargetCount = _targetCount,
                 FrozenEntityCount = _frozenEntityCount,
                 Tier0Count = _tier0Count,
@@ -1336,7 +1335,7 @@ namespace Hecton8.Core
                 TryEnsureVaultArray(vault, ref _jobToPositionsHandle, FoveatedToPositionsBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobToPositions) &&
                 TryEnsureVaultArray(vault, ref _jobAlphasHandle, FoveatedAlphasBufferId, MaxTargets, NativeArrayOptions.UninitializedMemory, out _jobAlphas) &&
                 TryEnsureVaultArray(vault, ref _pendingDeferredProbeIndicesHandle, FoveatedPendingProbeIndicesBufferId, MaxDeferredProbeSlots, NativeArrayOptions.UninitializedMemory, out _pendingDeferredProbeIndices) &&
-                TryEnsureVaultArray(vault, ref _deferredRaycastResultsHandle, FoveatedDeferredRaycastResultsBufferId, MaxDeferredProbeSlots, NativeArrayOptions.UninitializedMemory, out _deferredRaycastResults) &&
+                TryEnsureVaultArray(vault, ref _deferredSurfaceProbeResultsHandle, FoveatedDeferredSurfaceProbeResultsBufferId, MaxDeferredProbeSlots, NativeArrayOptions.UninitializedMemory, out _deferredSurfaceProbeResults) &&
                 TryEnsureVaultArray(vault, ref _telemetryRingHandle, FoveatedTelemetryRingBufferId, TelemetryCapacity, NativeArrayOptions.ClearMemory, out _telemetryRing);
 
             if (!resolved)
@@ -1395,10 +1394,10 @@ namespace Hecton8.Core
             _jobToPositions = default;
             _jobAlphas = default;
             _pendingDeferredProbeIndices = default;
-            _deferredRaycastResults = default;
+            _deferredSurfaceProbeResults = default;
             _telemetryRing = default;
             _deferredProbeCount = 0;
-            DrainDeferredRaycastQueueResidue();
+            DrainDeferredSurfaceProbeQueueResidue();
             _nativeMemoryBudgetRegistered = false;
         }
 
@@ -1418,7 +1417,7 @@ namespace Hecton8.Core
             ReleaseVaultHandle(vault, ref _jobToPositionsHandle);
             ReleaseVaultHandle(vault, ref _jobAlphasHandle);
             ReleaseVaultHandle(vault, ref _pendingDeferredProbeIndicesHandle);
-            ReleaseVaultHandle(vault, ref _deferredRaycastResultsHandle);
+            ReleaseVaultHandle(vault, ref _deferredSurfaceProbeResultsHandle);
             ReleaseVaultHandle(vault, ref _telemetryRingHandle);
         }
 
@@ -1470,16 +1469,16 @@ namespace Hecton8.Core
             handle = default;
         }
 
-        private void DrainDeferredRaycastQueueResidue()
+        private void DrainDeferredSurfaceProbeQueueResidue()
         {
-            Array.Clear(_pendingDeferredRaycastOwners, 0, _pendingDeferredRaycastOwners.Length);
-            _pendingDeferredRaycastHead = 0;
-            _pendingDeferredRaycastTail = 0;
-            _queuedDeferredRaycastCount = 0;
+            Array.Clear(_pendingDeferredSurfaceProbeOwners, 0, _pendingDeferredSurfaceProbeOwners.Length);
+            _pendingDeferredSurfaceProbeHead = 0;
+            _pendingDeferredSurfaceProbeTail = 0;
+            _queuedDeferredSurfaceProbeCount = 0;
             _deferredProbeCount = 0;
         }
 
-        private static int IncrementDeferredRaycastRingIndex(int index)
+        private static int IncrementDeferredSurfaceProbeRingIndex(int index)
         {
             index++;
             return index >= MaxDeferredProbeSlots ? 0 : index;
@@ -1501,29 +1500,29 @@ namespace Hecton8.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private IFoveatedSimulationTarget GetDeferredRaycastOwnerAt(int index)
+        private IFoveatedSimulationTarget GetDeferredSurfaceProbeOwnerAt(int index)
         {
-            return _deferredRaycastOwners[index] as IFoveatedSimulationTarget;
+            return _deferredSurfaceProbeOwners[index] as IFoveatedSimulationTarget;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private IFoveatedSimulationTarget GetPendingDeferredRaycastOwnerAt(int index)
+        private IFoveatedSimulationTarget GetPendingDeferredSurfaceProbeOwnerAt(int index)
         {
-            return _pendingDeferredRaycastOwners[index] as IFoveatedSimulationTarget;
+            return _pendingDeferredSurfaceProbeOwners[index] as IFoveatedSimulationTarget;
         }
 
-        private void InvalidateDeferredRaycastOwner(IFoveatedSimulationTarget target)
+        private void InvalidateDeferredSurfaceProbeOwner(IFoveatedSimulationTarget target)
         {
-            for (int i = 0; i < _pendingDeferredRaycastOwners.Length; i++)
+            for (int i = 0; i < _pendingDeferredSurfaceProbeOwners.Length; i++)
             {
-                if (ReferenceEquals(_pendingDeferredRaycastOwners[i], target))
-                    _pendingDeferredRaycastOwners[i] = null;
+                if (ReferenceEquals(_pendingDeferredSurfaceProbeOwners[i], target))
+                    _pendingDeferredSurfaceProbeOwners[i] = null;
             }
 
-            for (int i = 0; i < _deferredRaycastOwners.Length; i++)
+            for (int i = 0; i < _deferredSurfaceProbeOwners.Length; i++)
             {
-                if (ReferenceEquals(_deferredRaycastOwners[i], target))
-                    _deferredRaycastOwners[i] = null;
+                if (ReferenceEquals(_deferredSurfaceProbeOwners[i], target))
+                    _deferredSurfaceProbeOwners[i] = null;
             }
         }
 
@@ -1540,7 +1539,7 @@ namespace Hecton8.Core
                               GetNativeArrayBytes(_jobToPositions) +
                               GetNativeArrayBytes(_jobAlphas) +
                               GetNativeArrayBytes(_pendingDeferredProbeIndices) +
-                              GetNativeArrayBytes(_deferredRaycastResults) +
+                              GetNativeArrayBytes(_deferredSurfaceProbeResults) +
                               GetNativeArrayBytes(_telemetryRing);
             MemoryBudgetTracker.Register(MemoryBudgetOwnerName, totalBytes, PersistentNativeBudgetBytes);
             _nativeMemoryBudgetRegistered = true;
@@ -1593,8 +1592,6 @@ namespace Hecton8.Core
 
             _listenerResolveRetryTimer = ListenerResolveRetryInterval;
             _listenerTransform = _cameraTransform;
-            IPlayerRuntimeContext playerContext = _playerContext;
-            _listenerRigidbody = playerContext != null ? playerContext.PlayerRigidbody : null;
 
             if (_listenerTransform != null)
                 _listenerResolveRetryTimer = 0.0f;
@@ -1605,9 +1602,9 @@ namespace Hecton8.Core
             if (_listenerTransform == null)
                 return;
 
-            if (_listenerRigidbody != null)
+            if (CoreDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityListenerMaxAgeFrames, out Vector3 kccVelocity))
             {
-                _listenerVelocity = _listenerRigidbody.linearVelocity;
+                _listenerVelocity = kccVelocity;
                 _lastListenerPosition = _listenerTransform.position;
                 _listenerStateInitialized = true;
                 return;

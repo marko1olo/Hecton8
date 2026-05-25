@@ -175,8 +175,9 @@ namespace Hecton8.AI.Cognition
         [FieldOffset(40)] public uint TargetHash;
         [FieldOffset(44)] public uint AcousticMemoryHash;
         [FieldOffset(48)] public float Stamina;
-        [FieldOffset(52)] public uint _padAlign0;
-        [FieldOffset(56)] public ulong _pad0;
+        [FieldOffset(52)] private uint _padAlign0;
+        [FieldOffset(56)] private uint _pad0;
+        [FieldOffset(60)] private uint _pad1;
     }
 
     /// <summary>
@@ -186,21 +187,27 @@ namespace Hecton8.AI.Cognition
     public partial struct MockPlayerAUP
     {
         [FieldOffset(0)] public double3 AUP;
-        [FieldOffset(24)] public float3 Velocity;
-        [FieldOffset(36)] public float3 Forward;
-        [FieldOffset(48)] public uint TargetHash;
-        [FieldOffset(52)] public uint BiomeHash;
-        [FieldOffset(56)] public float Noise01;
-        [FieldOffset(60)] public float AcousticMagnitude01;
-        [FieldOffset(64)] public float SimulationTickDelta;
-        [FieldOffset(68)] public uint Flags;
-        [FieldOffset(72)] public ulong _pad0;
-        [FieldOffset(80)] public ulong _pad1;
-        [FieldOffset(88)] public ulong _pad2;
-        [FieldOffset(96)] private ulong _pad3;
-        [FieldOffset(104)] private ulong _pad4;
-        [FieldOffset(112)] private ulong _pad5;
-        [FieldOffset(120)] private ulong _pad6;
+        [FieldOffset(24)] public ulong LastAdvanceFrame;
+        [FieldOffset(32)] public float3 Velocity;
+        [FieldOffset(44)] public float3 Forward;
+        [FieldOffset(56)] public uint TargetHash;
+        [FieldOffset(60)] public uint BiomeHash;
+        [FieldOffset(64)] public float Noise01;
+        [FieldOffset(68)] public float AcousticMagnitude01;
+        [FieldOffset(72)] public float SimulationTickDelta;
+        [FieldOffset(76)] public uint Flags;
+        [FieldOffset(80)] private uint _pad0;
+        [FieldOffset(84)] private uint _pad1;
+        [FieldOffset(88)] private uint _pad2;
+        [FieldOffset(92)] private uint _pad3;
+        [FieldOffset(96)] private uint _pad4;
+        [FieldOffset(100)] private uint _pad5;
+        [FieldOffset(104)] private uint _pad6;
+        [FieldOffset(108)] private uint _pad7;
+        [FieldOffset(112)] private uint _pad8;
+        [FieldOffset(116)] private uint _pad9;
+        [FieldOffset(120)] private uint _pad10;
+        [FieldOffset(124)] private uint _pad11;
     }
 
     /// <summary>
@@ -216,8 +223,25 @@ namespace Hecton8.AI.Cognition
         [FieldOffset(36)] public uint Frame;
         [FieldOffset(40)] public uint AcousticMemoryHash;
         [FieldOffset(44)] public byte Flags;
-        [FieldOffset(48)] private ulong _pad0;
-        [FieldOffset(56)] private ulong _pad1;
+        [FieldOffset(45)] private byte _pad0;
+        [FieldOffset(46)] private byte _pad1;
+        [FieldOffset(47)] private byte _pad2;
+        [FieldOffset(48)] private byte _pad3;
+        [FieldOffset(49)] private byte _pad4;
+        [FieldOffset(50)] private byte _pad5;
+        [FieldOffset(51)] private byte _pad6;
+        [FieldOffset(52)] private byte _pad7;
+        [FieldOffset(53)] private byte _pad8;
+        [FieldOffset(54)] private byte _pad9;
+        [FieldOffset(55)] private byte _pad10;
+        [FieldOffset(56)] private byte _pad11;
+        [FieldOffset(57)] private byte _pad12;
+        [FieldOffset(58)] private byte _pad13;
+        [FieldOffset(59)] private byte _pad14;
+        [FieldOffset(60)] private byte _pad15;
+        [FieldOffset(61)] private byte _pad16;
+        [FieldOffset(62)] private byte _pad17;
+        [FieldOffset(63)] private byte _pad18;
     }
 
     /// <summary>
@@ -248,36 +272,37 @@ namespace Hecton8.AI.Cognition
     [StructLayout(LayoutKind.Explicit, Size = ApexBrainContractLayout.TuningStrideBytes)]
     public struct ApexBrainTuning
     {
-        [FieldOffset(0)] public float AggressionMultiplier;
-        [FieldOffset(4)] public float AcousticSensitivity;
-        [FieldOffset(8)] public float TurnRate;
-        [FieldOffset(12)] public float StalkingDistance;
-        [FieldOffset(16)] public float LeviathanSpeed;
-        [FieldOffset(20)] public float TerrorRadius;
-        [FieldOffset(24)] public float BaseDamageMagnitude;
-        [FieldOffset(28)] public float BiomeAggressionMultiplier;
-        [FieldOffset(32)] public float GlobalQualityWeight;
-        [FieldOffset(36)] public float SimulationTickDelta;
-        [FieldOffset(40)] public float CurrentTimeSeconds;
-        [FieldOffset(44)] public float StrikeDistance;
-        [FieldOffset(48)] public float HeadOffsetMeters;
-        [FieldOffset(52)] public float MidOffsetMeters;
-        [FieldOffset(56)] public float TailOffsetMeters;
-        [FieldOffset(60)] public uint PreferredBiomeHash;
-        [FieldOffset(64)] public float NoiseAggroGain;
-        [FieldOffset(68)] public float StaminaRecoveryPerSecond;
-        [FieldOffset(72)] public float StaminaStrikeCost;
-        [FieldOffset(76)] public float SweetLieShadowGain;
-        [FieldOffset(80)] public float SweetLieViewDotThreshold;
-        [FieldOffset(84)] public float AmbushNodeRadiusMeters;
-        [FieldOffset(88)] public float VisualOverkillGain;
-        [FieldOffset(92)] public float BiteHeadLocalOffset;
-        [FieldOffset(96)] public uint SourceHash;
-        [FieldOffset(100)] public uint Flags;
-        [FieldOffset(104)] public uint LastCsvHash;
-        [FieldOffset(108)] public uint CsvReloadVersion;
-        [FieldOffset(112)] public ulong LastCsvWriteTicks;
-        [FieldOffset(120)] private ulong _pad2;
+        [FieldOffset(0)] public ulong LastCsvWriteTicks;
+        [FieldOffset(8)] public float AggressionMultiplier;
+        [FieldOffset(12)] public float AcousticSensitivity;
+        [FieldOffset(16)] public float TurnRate;
+        [FieldOffset(20)] public float StalkingDistance;
+        [FieldOffset(24)] public float LeviathanSpeed;
+        [FieldOffset(28)] public float TerrorRadius;
+        [FieldOffset(32)] public float BaseDamageMagnitude;
+        [FieldOffset(36)] public float BiomeAggressionMultiplier;
+        [FieldOffset(40)] public float GlobalQualityWeight;
+        [FieldOffset(44)] public float SimulationTickDelta;
+        [FieldOffset(48)] public float CurrentTimeSeconds;
+        [FieldOffset(52)] public float StrikeDistance;
+        [FieldOffset(56)] public float HeadOffsetMeters;
+        [FieldOffset(60)] public float MidOffsetMeters;
+        [FieldOffset(64)] public float TailOffsetMeters;
+        [FieldOffset(68)] public uint PreferredBiomeHash;
+        [FieldOffset(72)] public float NoiseAggroGain;
+        [FieldOffset(76)] public float StaminaRecoveryPerSecond;
+        [FieldOffset(80)] public float StaminaStrikeCost;
+        [FieldOffset(84)] public float SweetLieShadowGain;
+        [FieldOffset(88)] public float SweetLieViewDotThreshold;
+        [FieldOffset(92)] public float AmbushNodeRadiusMeters;
+        [FieldOffset(96)] public float VisualOverkillGain;
+        [FieldOffset(100)] public float BiteHeadLocalOffset;
+        [FieldOffset(104)] public uint SourceHash;
+        [FieldOffset(108)] public uint Flags;
+        [FieldOffset(112)] public uint LastCsvHash;
+        [FieldOffset(116)] public uint CsvReloadVersion;
+        [FieldOffset(120)] private uint _pad0;
+        [FieldOffset(124)] private uint _pad1;
     }
 
     /// <summary>
@@ -308,7 +333,8 @@ namespace Hecton8.AI.Cognition
         [FieldOffset(44)] public uint NodeIndex;
         [FieldOffset(48)] public uint Flags;
         [FieldOffset(52)] private uint _pad0;
-        [FieldOffset(56)] private ulong _pad1;
+        [FieldOffset(56)] private uint _pad1;
+        [FieldOffset(60)] private uint _pad2;
     }
 
     /// <summary>
@@ -336,16 +362,47 @@ namespace Hecton8.AI.Cognition
         [FieldOffset(112)] public float3 DesiredDirection;
         [FieldOffset(124)] public float TerrorRadiusMeters;
         [FieldOffset(128)] public float4 VisualOverkillScalars;
-        [FieldOffset(144)] public ushort Slot;
-        [FieldOffset(146)] public byte Phase;
-        [FieldOffset(147)] public byte Flags;
-        [FieldOffset(148)] public uint TargetHash;
-        [FieldOffset(152)] public uint AcousticMemoryHash;
-        [FieldOffset(156)] private uint _pad0;
-        [FieldOffset(160)] private ulong _pad1;
-        [FieldOffset(168)] private ulong _pad2;
-        [FieldOffset(176)] private ulong _pad3;
-        [FieldOffset(184)] private ulong _pad4;
+        [FieldOffset(144)] public uint TargetHash;
+        [FieldOffset(148)] public uint AcousticMemoryHash;
+        [FieldOffset(152)] public ushort Slot;
+        [FieldOffset(154)] public byte Phase;
+        [FieldOffset(155)] public byte Flags;
+        [FieldOffset(156)] private byte _pad0;
+        [FieldOffset(157)] private byte _pad1;
+        [FieldOffset(158)] private byte _pad2;
+        [FieldOffset(159)] private byte _pad3;
+        [FieldOffset(160)] private byte _pad4;
+        [FieldOffset(161)] private byte _pad5;
+        [FieldOffset(162)] private byte _pad6;
+        [FieldOffset(163)] private byte _pad7;
+        [FieldOffset(164)] private byte _pad8;
+        [FieldOffset(165)] private byte _pad9;
+        [FieldOffset(166)] private byte _pad10;
+        [FieldOffset(167)] private byte _pad11;
+        [FieldOffset(168)] private byte _pad12;
+        [FieldOffset(169)] private byte _pad13;
+        [FieldOffset(170)] private byte _pad14;
+        [FieldOffset(171)] private byte _pad15;
+        [FieldOffset(172)] private byte _pad16;
+        [FieldOffset(173)] private byte _pad17;
+        [FieldOffset(174)] private byte _pad18;
+        [FieldOffset(175)] private byte _pad19;
+        [FieldOffset(176)] private byte _pad20;
+        [FieldOffset(177)] private byte _pad21;
+        [FieldOffset(178)] private byte _pad22;
+        [FieldOffset(179)] private byte _pad23;
+        [FieldOffset(180)] private byte _pad24;
+        [FieldOffset(181)] private byte _pad25;
+        [FieldOffset(182)] private byte _pad26;
+        [FieldOffset(183)] private byte _pad27;
+        [FieldOffset(184)] private byte _pad28;
+        [FieldOffset(185)] private byte _pad29;
+        [FieldOffset(186)] private byte _pad30;
+        [FieldOffset(187)] private byte _pad31;
+        [FieldOffset(188)] private byte _pad32;
+        [FieldOffset(189)] private byte _pad33;
+        [FieldOffset(190)] private byte _pad34;
+        [FieldOffset(191)] private byte _pad35;
     }
 
     /// <summary>
@@ -371,12 +428,26 @@ namespace Hecton8.AI.Cognition
         [FieldOffset(92)] public float GlobalQualityWeight;
         [FieldOffset(96)] public float ActiveLeviathans;
         [FieldOffset(100)] public float InterceptComputeTimeMs;
-        [FieldOffset(104)] public ushort Slot;
-        [FieldOffset(106)] public byte Phase;
-        [FieldOffset(107)] public byte Flags;
-        [FieldOffset(108)] public uint FaultCode;
-        [FieldOffset(112)] private ulong _pad0;
-        [FieldOffset(120)] private ulong _pad1;
+        [FieldOffset(104)] public uint FaultCode;
+        [FieldOffset(108)] public ushort Slot;
+        [FieldOffset(110)] public byte Phase;
+        [FieldOffset(111)] public byte Flags;
+        [FieldOffset(112)] private byte _pad0;
+        [FieldOffset(113)] private byte _pad1;
+        [FieldOffset(114)] private byte _pad2;
+        [FieldOffset(115)] private byte _pad3;
+        [FieldOffset(116)] private byte _pad4;
+        [FieldOffset(117)] private byte _pad5;
+        [FieldOffset(118)] private byte _pad6;
+        [FieldOffset(119)] private byte _pad7;
+        [FieldOffset(120)] private byte _pad8;
+        [FieldOffset(121)] private byte _pad9;
+        [FieldOffset(122)] private byte _pad10;
+        [FieldOffset(123)] private byte _pad11;
+        [FieldOffset(124)] private byte _pad12;
+        [FieldOffset(125)] private byte _pad13;
+        [FieldOffset(126)] private byte _pad14;
+        [FieldOffset(127)] private byte _pad15;
     }
 
     /// <summary>
@@ -394,8 +465,22 @@ namespace Hecton8.AI.Cognition
         [FieldOffset(44)] public ushort Slot;
         [FieldOffset(46)] public byte Phase;
         [FieldOffset(47)] public byte Flags;
-        [FieldOffset(48)] private ulong _pad0;
-        [FieldOffset(56)] private ulong _pad1;
+        [FieldOffset(48)] private byte _pad0;
+        [FieldOffset(49)] private byte _pad1;
+        [FieldOffset(50)] private byte _pad2;
+        [FieldOffset(51)] private byte _pad3;
+        [FieldOffset(52)] private byte _pad4;
+        [FieldOffset(53)] private byte _pad5;
+        [FieldOffset(54)] private byte _pad6;
+        [FieldOffset(55)] private byte _pad7;
+        [FieldOffset(56)] private byte _pad8;
+        [FieldOffset(57)] private byte _pad9;
+        [FieldOffset(58)] private byte _pad10;
+        [FieldOffset(59)] private byte _pad11;
+        [FieldOffset(60)] private byte _pad12;
+        [FieldOffset(61)] private byte _pad13;
+        [FieldOffset(62)] private byte _pad14;
+        [FieldOffset(63)] private byte _pad15;
     }
 
     /// <summary>
@@ -413,7 +498,14 @@ namespace Hecton8.AI.Cognition
         [FieldOffset(52)] public ushort Slot;
         [FieldOffset(54)] public byte Flags;
         [FieldOffset(55)] private byte _pad0;
-        [FieldOffset(56)] private ulong _pad1;
+        [FieldOffset(56)] private byte _pad1;
+        [FieldOffset(57)] private byte _pad2;
+        [FieldOffset(58)] private byte _pad3;
+        [FieldOffset(59)] private byte _pad4;
+        [FieldOffset(60)] private byte _pad5;
+        [FieldOffset(61)] private byte _pad6;
+        [FieldOffset(62)] private byte _pad7;
+        [FieldOffset(63)] private byte _pad8;
     }
 
     /// <summary>
@@ -431,6 +523,13 @@ namespace Hecton8.AI.Cognition
         [FieldOffset(52)] public ushort Slot;
         [FieldOffset(54)] public byte Flags;
         [FieldOffset(55)] private byte _pad0;
-        [FieldOffset(56)] private ulong _pad1;
+        [FieldOffset(56)] private byte _pad1;
+        [FieldOffset(57)] private byte _pad2;
+        [FieldOffset(58)] private byte _pad3;
+        [FieldOffset(59)] private byte _pad4;
+        [FieldOffset(60)] private byte _pad5;
+        [FieldOffset(61)] private byte _pad6;
+        [FieldOffset(62)] private byte _pad7;
+        [FieldOffset(63)] private byte _pad8;
     }
 }

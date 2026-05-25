@@ -188,7 +188,7 @@ namespace Hecton8.Optimization
             if (rt == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[RTPool] Return called with null RenderTexture");
+                Hecton8.Core.H8Debug.LogWarning("[RTPool] Return called with null RenderTexture");
 #endif
                 return;
             }
@@ -417,8 +417,9 @@ namespace Hecton8.Optimization
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void LogPoolStats()
         {
-            if (Time.time >= _nextStatsLogTime)
-                _nextStatsLogTime = Time.time + 60f; // Log every 60s
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
+            if (now >= _nextStatsLogTime)
+                _nextStatsLogTime = now + 60f; // Log every 60s
         }
 #endif
     }

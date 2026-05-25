@@ -19,9 +19,9 @@ namespace Hecton8.Gameplay
     using Hecton.Localization;
     using Hecton8.Core;
     using Hecton8.Core.Contracts;
+    using Hecton8.Core.Contracts.Physics;
     using Hecton8.Core.Contracts.Signals;
     using Hecton8.Items;
-    using Hecton8.Physics;
     using Hecton8.Tools;
     using Hecton8.UI;
     using System;

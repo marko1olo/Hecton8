@@ -698,7 +698,7 @@ namespace Hecton8.Atmosphere.EditorValidation
         static ShinobuStormPropagationLayoutValidator()
         {
             if (!ShinobuStormPropagationNative.ValidateLayouts())
-                UnityEngine.Debug.LogError("SHINOBU_234 StormPropagationDTO layout validation failed.");
+                Hecton8.Core.H8Debug.LogError("SHINOBU_234 StormPropagationDTO layout validation failed.");
         }
     }
 }

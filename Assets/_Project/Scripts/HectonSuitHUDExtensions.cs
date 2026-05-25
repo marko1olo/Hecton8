@@ -14,8 +14,6 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
 {
     // COLD ALLOC: List<HectonSuitHUD_v4>[4] — legacy HUD resolver scratch — owner: HectonSuitHUDExtensions
     private static readonly List<HectonSuitHUD_v4> s_hudResolveBuffer = new List<HectonSuitHUD_v4>(4);
-    // COLD ALLOC: List<SuitHUDV4CanvasOverlay>[4] — overlay resolver scratch — owner: HectonSuitHUDExtensions
-    private static readonly List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer = new List<SuitHUDV4CanvasOverlay>(4);
 
     private const float AutoResolveRetryInterval = 1f;
 
@@ -72,7 +70,7 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
         if (!force && _referencesResolved && primaryHud != null && canvasOverlay != null && hudCamera != null)
             return;
 
-        float now = Application.isPlaying ? Time.realtimeSinceStartup : 0f;
+        float now = Application.isPlaying ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
         if (!force && now < _nextAutoResolveAt)
             return;
 
@@ -95,9 +93,7 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
             TryGetComponent(out canvasOverlay);
             if (canvasOverlay == null)
             {
-                SuitHUDV4CanvasOverlay.CopyActiveOverlaysTo(s_overlayResolveBuffer);
-                canvasOverlay = FindOverlayForRoot(s_overlayResolveBuffer, preferredRoot);
-                s_overlayResolveBuffer.Clear();
+                canvasOverlay = FindOverlayForRoot(preferredRoot);
             }
         }
 
@@ -176,14 +172,11 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
         return null;
     }
 
-    private static SuitHUDV4CanvasOverlay FindOverlayForRoot(List<SuitHUDV4CanvasOverlay> overlays, Transform preferredRoot)
+    private static SuitHUDV4CanvasOverlay FindOverlayForRoot(Transform preferredRoot)
     {
-        if (overlays == null)
-            return null;
-
-        for (int i = 0; i < overlays.Count; i++)
+        for (int i = 0; i < SuitHUDV4CanvasOverlay.ActiveOverlayCount; i++)
         {
-            SuitHUDV4CanvasOverlay candidate = overlays[i];
+            SuitHUDV4CanvasOverlay candidate = SuitHUDV4CanvasOverlay.GetActiveOverlay(i);
             if (candidate == null)
                 continue;
 

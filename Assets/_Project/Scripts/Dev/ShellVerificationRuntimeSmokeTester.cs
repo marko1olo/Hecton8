@@ -756,7 +756,7 @@ namespace Hecton8.Dev
         private static void LogDiagnosticWarning(string message)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning(message);
+            Hecton8.Core.H8Debug.LogWarning(message);
 #endif
         }
 
@@ -765,7 +765,7 @@ namespace Hecton8.Dev
         private static void LogDiagnosticError(string message)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError(message);
+            Hecton8.Core.H8Debug.LogError(message);
 #endif
         }
 

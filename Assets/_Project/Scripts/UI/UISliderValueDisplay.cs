@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -94,7 +95,7 @@ namespace Hecton8.UI
             _cachedValue = value;
 
             float displayValue = value * multiplier;
-            LocNumericBuffer.Write(new System.ReadOnlySpan<char>(_resolvedTemplateChars, 0, _resolvedTemplateLength), LocNumericArg.Float(displayValue), out char[] buffer, out int length);
+            LocNumericBuffer.Write(_resolvedTemplateChars.AsSpan(0, _resolvedTemplateLength), LocNumericArg.Float(displayValue), out char[] buffer, out int length);
             int safeLength = Mathf.Clamp(length, 0, buffer != null ? buffer.Length : 0);
             valueText.SetCharArray(buffer, 0, safeLength);
         }

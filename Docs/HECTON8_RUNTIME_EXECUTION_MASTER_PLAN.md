@@ -17,13 +17,20 @@ This document is active only where it agrees with:
 No Unity import, Unity Console, Play Mode, profiler, GCMonitor, Memory Profiler, Frame Debugger, player build, save/load route, shader import, or visual-route proof is implied unless this document links a fresh evidence artifact. Historical counters and older version claims inside this file are subordinate to the current authority spine above.
 Current DOC_GLOBAL boundary (2026-05-21 R51): `Docs/_Archive/Reports_X_012_2026-05-23/2026-05-21_DOCUMENTATION_R51_ROOT_ARCHITECTURE_ENCODING_BOUNDARY_READORDER_AND_ROUTE_GAPS_LOCAL.md` is the latest local static root/architecture encoding repair, boundary-gap, read-order, route-card/static-contract, and source/AtlasCheck orientation correction. R50 remains the prior generated-atlas regeneration, stale R48 interior-boundary, dump-target wording, and source-counter drift correction. R49 remains the prior AtlasCheck-red-state/boundary-gap/route-field/source-counter correction. R48 remains the prior date-rollover/AtlasCheck/source-counter correction. R47 remains the prior authority-spine/runtime-wording/counter-drift correction. R46 remains the prior interior-authority/route-field/proof-language correction. R45/R44/R43/R42/R41/R40/R39/R38/R37/R36/R35/R34 remain prior static correction layers. Current AtlasCheck remains red until `Tools/AtlasCheck.py` exits `0`; runtime proof remains absent.
 <!-- DOC_GLOBAL_DOCS_REFRESH:R4_INTERIOR_BOUNDARY_END -->
-Verification: `PENDING VERIFICATION`
-
+Verification: `PENDING VERIFICATION`
+
+Current CLI compile boundary:
+
+- `Docs/Reports/BUILD_UNKNOWN_RECHECK_20260526_020504.log`
+- Scope: full `Hecton8.slnx`
+- Result: exit `0`, `0 Warning(s)`, `0 Error(s)`
+- Evidence class: CLI_COMPILE only; Unity/runtime/player/profiler proof remains pending
+
 This is the working execution plan for getting HECTON-8 to a stable, optimized, verifiable runtime state.
 
 Current-state boundary:
 
-- 2026-05-23 EXTERNAL_CODEX local CLI boundary: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup52_cultivation_inventory_rebind_retry4.log` is the latest dirty-workspace `Hecton8.Editor.csproj --no-restore -m:1 /nr:false /p:UseSharedCompilation=false` artifact with 0 `: warning ` / 0 `: error ` text matches. It is CLI_COMPILE evidence only and does not change runtime proof status. Generated-project durability still requires Unity/project regeneration after the local ignored `Hecton8.Core.csproj` verification patch.
+- 2026-05-26 current CLI boundary: `Docs/Reports/BUILD_UNKNOWN_RECHECK_20260526_020504.log` is the latest full-solution CLI artifact, exit `0`, `0 Warning(s)`, `0 Error(s)`. It is CLI_COMPILE evidence only and does not change runtime proof status.
 - 2026-05-14 DOC_AUDIT override: read `Docs/Reports/2026-05-13_DOC_AUDIT_XRAY.md` before treating May 11 counters or build-artifact paths as current evidence.
 - The May 11 compile artifact paths cited below are absent from the current filesystem. They are stale report text, not current artifact-backed proof. Historical R43 external root `Hecton8*.csproj` no-restore CLI output is CLI evidence only and not current dirty-workspace proof unless rerun with artifact path, command, timestamp, environment, and output; it is not Unity runtime proof.
 - This stable plan is the runtime execution authority. Dated reports are evidence/counter snapshots only.

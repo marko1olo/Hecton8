@@ -438,14 +438,14 @@ namespace Hecton8.Gameplay
         private static void LogListenerDispatchException(Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.LogException(exception);
+            Hecton8.Core.H8Debug.LogException(exception);
 #endif
         }
 
         private static void ReportEventQueueOverflow()
         {
             IncrementCounterSaturated(ref _droppedEventCount);
-            int frame = UnityEngine.Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastEventOverflowTelemetryFrame == frame)
                 return;
 
@@ -459,7 +459,7 @@ namespace Hecton8.Gameplay
         private static void ReportListenerMutationOverflow()
         {
             IncrementCounterSaturated(ref _droppedDeferredListenerMutationCount);
-            int frame = UnityEngine.Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerOverflowTelemetryFrame == frame)
                 return;
 
@@ -473,7 +473,7 @@ namespace Hecton8.Gameplay
         private static void ReportListenerDispatchException()
         {
             IncrementCounterSaturated(ref _listenerExceptionCount);
-            int frame = UnityEngine.Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 
@@ -514,7 +514,7 @@ namespace Hecton8.Gameplay
 
         public static bool TryRaiseWreckSignalPing(float3 center, float radius)
         {
-            double now = UnityEngine.Time.unscaledTimeAsDouble;
+            double now = SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (now < _nextWreckSignalTime)
                 return false;
 

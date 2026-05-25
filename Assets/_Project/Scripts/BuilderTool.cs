@@ -155,7 +155,7 @@ namespace Hecton8.Gameplay
             if (!GameBootstrapper.TryGetCurrentPlayerTransform(out Transform playerTransform))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[BuilderTool] OnSpawn: Player transform could not be resolved via GameBootstrapper. Builder tool will not function.");
+                Hecton8.Core.H8Debug.LogError("[BuilderTool] OnSpawn: Player transform could not be resolved via GameBootstrapper. Builder tool will not function.");
 #endif
                 return;
             }
@@ -168,7 +168,7 @@ namespace Hecton8.Gameplay
             if (!playerRoot.TryGetComponent(out _playerBuilder))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError(
+                Hecton8.Core.H8Debug.LogError(
                     "[BuilderTool] OnSpawn: PlayerBuilder not found on Player root!");
 #endif
                 return;
@@ -177,7 +177,7 @@ namespace Hecton8.Gameplay
             if (!playerRoot.TryGetComponent(out _playerInventory))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[BuilderTool] OnSpawn: PlayerInventory not found on Player root. Resource display will be unavailable.");
+                Hecton8.Core.H8Debug.LogWarning("[BuilderTool] OnSpawn: PlayerInventory not found on Player root. Resource display will be unavailable.");
 #endif
                 // Ne kritichno — prodolzhaem bez inventarya
             }
@@ -195,7 +195,7 @@ namespace Hecton8.Gameplay
             else
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     "[BuilderTool] OnSpawn: Player camera not found in player hierarchy. Sway effect disabled.");
 #endif
             }

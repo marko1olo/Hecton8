@@ -2,7 +2,6 @@ using System;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Physics;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
@@ -75,9 +74,6 @@ namespace Hecton8.Gameplay
         [Header("-- References ----------------------------")]
         [Tooltip("Resolved movement owner. Required for locomotion truth.")]
         [SerializeField] private HectonPlayerMovement playerMovement;
-
-        [Tooltip("Player rigidbody used for speed and acceleration sampling.")]
-        [SerializeField] private Rigidbody playerRigidbody;
 
         [Tooltip("Optional tool owner. When a held tool is active, swim-body presentation can be reduced to avoid rig fighting.")]
         [SerializeField] private PlayerToolManager playerToolManager;
@@ -1062,9 +1058,6 @@ namespace Hecton8.Gameplay
         {
             if (playerMovement == null)
                 gameObject.TryGetComponent(out playerMovement);
-
-            if (playerRigidbody == null)
-                gameObject.TryGetComponent(out playerRigidbody);
 
             if (playerToolManager == null)
                 gameObject.TryGetComponent(out playerToolManager);
@@ -3153,7 +3146,7 @@ namespace Hecton8.Gameplay
         private static bool TryResolveKccPresentationVelocity(out Vector3 velocity)
         {
             velocity = Vector3.zero;
-            if (!PhysicsDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal))
+            if (!CoreDeterminismSignals.TryGetLatestKccVelocity(out KccVelocitySignal signal))
                 return false;
 
             uint currentFrame = SystemDispatcher.CurrentFrameId;

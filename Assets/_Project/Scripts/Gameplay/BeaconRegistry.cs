@@ -179,7 +179,7 @@ namespace Hecton8.Gameplay
         private static void LogCapacityExceeded()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[BeaconRegistry] Fixed active beacon capacity exceeded.");
+            Hecton8.Core.H8Debug.LogWarning("[BeaconRegistry] Fixed active beacon capacity exceeded.");
 #endif
         }
     }

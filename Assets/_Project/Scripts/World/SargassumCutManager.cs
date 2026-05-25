@@ -465,7 +465,7 @@ namespace Hecton8.World
             if (registered != null && registered != this)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[SargassumCutManager] Duplicate instance detected. Destroying the newer component.", this);
+                Hecton8.Core.H8Debug.LogError("[SargassumCutManager] Duplicate instance detected. Destroying the newer component.", this);
 #endif
                 Destroy(this);
                 return;
@@ -655,7 +655,7 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerContext = GlobalRegistry.Player;
             _inputService = GlobalRegistry.Input;
             ResolveDependencies();
             ResolveVisualDependencies();
@@ -730,7 +730,7 @@ namespace Hecton8.World
                 if (_stampCompute == null)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError("[SargassumCutManager] Missing cut-mask compute shader. Expected Hecton_SargassumCutMask.compute.", this);
+                    Hecton8.Core.H8Debug.LogError("[SargassumCutManager] Missing cut-mask compute shader. Expected Hecton_SargassumCutMask.compute.", this);
 #endif
                     enabled = false;
                     return;
@@ -745,7 +745,7 @@ namespace Hecton8.World
                 if (_damageVolumeCompute == null)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError("[SargassumCutManager] Missing terrain damage-volume compute shader. Expected Hecton_TerrainDamageVolume.compute.", this);
+                    Hecton8.Core.H8Debug.LogError("[SargassumCutManager] Missing terrain damage-volume compute shader. Expected Hecton_TerrainDamageVolume.compute.", this);
 #endif
                     enabled = false;
                     return;
@@ -1283,7 +1283,7 @@ namespace Hecton8.World
 
         private static float ResolveThermalShaderClockSeconds()
         {
-            return Time.timeSinceLevelLoad;
+            return (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
         }
 
         private void QueueDebrisBurst(Vector3 positionWS, Vector3 directionWS, float cutStrength, float bubbleWeight)
@@ -1508,7 +1508,7 @@ namespace Hecton8.World
                 _stampKernel < 0 ||
                 !EnsureActiveStampCommandBufferReady() ||
                 !HasPendingMaskUpdate() ||
-                _lastMaskDispatchFrame == Time.frameCount)
+                _lastMaskDispatchFrame == SystemDispatcher.CurrentFrameIndex)
             {
                 return;
             }
@@ -1563,7 +1563,7 @@ namespace Hecton8.World
             RenderTexture temp = _maskRead;
             _maskRead = _maskWrite;
             _maskWrite = temp;
-            _lastMaskDispatchFrame = Time.frameCount;
+            _lastMaskDispatchFrame = SystemDispatcher.CurrentFrameIndex;
             ResetQueuedMaskUpdateState();
         }
 
@@ -1683,7 +1683,7 @@ namespace Hecton8.World
                 _damageVolumeKernel < 0 ||
                 !EnsureActiveDamageVolumeStampCommandBufferReady() ||
                 (_queuedDamageVolumeStampCount <= 0 && deltaTime <= 0f) ||
-                _lastDamageVolumeDispatchFrame == Time.frameCount)
+                _lastDamageVolumeDispatchFrame == SystemDispatcher.CurrentFrameIndex)
             {
                 return;
             }
@@ -1758,7 +1758,7 @@ namespace Hecton8.World
             RenderTexture temp = _damageVolumeRead;
             _damageVolumeRead = _damageVolumeWrite;
             _damageVolumeWrite = temp;
-            _lastDamageVolumeDispatchFrame = Time.frameCount;
+            _lastDamageVolumeDispatchFrame = SystemDispatcher.CurrentFrameIndex;
             _queuedDamageVolumeStampCount = 0;
             _damageVolumeStampOverflowCoalesceCount = 0;
         }

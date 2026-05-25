@@ -722,7 +722,7 @@ namespace Hecton8.Core
             runtime.LastNonFiniteCount = nonFiniteCount;
             arrays.RuntimeState[0] = runtime;
 
-            int cursor = Time.frameCount % TelemetryCapacity;
+            int cursor = SystemDispatcher.CurrentFrameIndex % TelemetryCapacity;
             uint flags = TelemetryFlagShiftCommit | (info.TimeSliced != 0 ? TelemetryFlagTimeSliced : 0u);
             if (nonFiniteCount > 0)
                 flags |= TelemetryFlagNaN;
@@ -1014,7 +1014,7 @@ namespace Hecton8.Core
             int telemetryActiveCount = math.clamp(runtime.ActiveEntityCount, 0, MockEntityCapacity);
             int telemetryBatchCount = ResolveQualityScaledBatchSize(runtime.BatchSize, telemetryActiveCount, qualityWeight);
 
-            telemetryRing[Time.frameCount % TelemetryCapacity] = new AupOriginShiftTelemetryEntry
+            telemetryRing[SystemDispatcher.CurrentFrameIndex % TelemetryCapacity] = new AupOriginShiftTelemetryEntry
             {
                 Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 RebaseCount = runtime.RebaseCount,
@@ -1346,7 +1346,7 @@ namespace Hecton8.Core
             byte* basePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(telemetryRing);
             int entryStride = UnsafeUtility.SizeOf<AupOriginShiftTelemetryEntry>();
             int entryCount = math.min(telemetryRing.Length, TelemetryCapacity);
-            int writeCursor = entryCount > 0 ? Time.frameCount % entryCount : 0;
+            int writeCursor = entryCount > 0 ? SystemDispatcher.CurrentFrameIndex % entryCount : 0;
             WriteOriginShiftDump(ResolveDumpPath(), basePtr, entryCount, entryStride, writeCursor);
             WriteOriginShiftDump(ResolveH8DumpPath(), basePtr, entryCount, entryStride, writeCursor);
         }

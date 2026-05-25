@@ -1,0 +1,223 @@
+{
+  "agentId": "1311",
+  "role": "SIGNAL_CORRIDOR_SPSC_ARCHITECT",
+  "status": "STATIC_SOURCE_REVIEWED_RUNTIME_PENDING",
+  "scope": [
+    "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+    "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs"
+  ],
+  "activePromptTaskCount": 11,
+  "mandatesRead": [
+    ".agents-skills/ARCH_Signal_Lane_Segregation.txt",
+    ".agents-skills/DATA_Runtime_Struct_Layout_ARM64.txt",
+    ".agents-skills/OPT_Native_Memory_Collections_JobSystem_Protocol.txt",
+    ".agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt",
+    ".agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt",
+    "Docs/ARCHITECTURE/GLOBAL_SIGNAL_CORRIDOR.md"
+  ],
+  "signalBusNativeQueueFindings": [
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 305,
+      "symbol": "_queue",
+      "kind": "persistentStaticField",
+      "source": "private static NativeQueue<T> _queue",
+      "severity": "RED_ACTIVE_SIGNAL_PATH",
+      "note": "Active SignalBus<T> storage is Unity NativeQueue<T>, not the SPSC fallback."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 395,
+      "symbol": "OpenLegacyMpscWriter",
+      "kind": "writerFactory",
+      "source": "private static NativeQueue<T>.ParallelWriter OpenLegacyMpscWriter()",
+      "severity": "RED_ACTIVE_PRODUCER_API",
+      "note": "Public writer aliases still expose NativeQueue<T>.ParallelWriter to job producers."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 406,
+      "symbol": "OpenParallelWriter",
+      "kind": "publicCompatibilityApi",
+      "source": "public static NativeQueue<T>.ParallelWriter OpenParallelWriter()",
+      "severity": "RED_PUBLIC_API_DEBT",
+      "note": "Changing this signature requires cross-file producer migration or a legacy wrapper."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 422,
+      "symbol": "ParallelWriter",
+      "kind": "publicCompatibilityApi",
+      "source": "public static NativeQueue<T>.ParallelWriter ParallelWriter",
+      "severity": "RED_PUBLIC_API_DEBT",
+      "note": "Many job structs currently store this Unity writer type."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 640,
+      "symbol": "TryEnqueueBounded",
+      "kind": "boundedWriterApi",
+      "source": "NativeQueue<T>.ParallelWriter writer",
+      "severity": "RED_ACTIVE_PRODUCER_API",
+      "note": "Bounded writer helper is tied to NativeQueue<T>.ParallelWriter."
+    }
+  ],
+  "nativeQueueOperations": [
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 531,
+      "operation": "allocate",
+      "source": "_queue = new NativeQueue<T>(Allocator.Persistent)",
+      "impact": "Cold allocation, active storage path."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 597,
+      "operation": "countBeforeMainThreadPush",
+      "source": "if (_queue.Count >= _expectedCapacity)",
+      "impact": "NativeQueue<T>.Count is not a constant-time ring cursor read."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 616,
+      "operation": "mainThreadEnqueue",
+      "source": "_queue.Enqueue(sanitizedSignal)",
+      "impact": "Main producer writes into NativeQueue<T>."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 661,
+      "operation": "jobWriterEnqueue",
+      "source": "writer.Enqueue(signal)",
+      "impact": "Job producer writes through NativeQueue<T>.ParallelWriter."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 809,
+      "operation": "flushCount",
+      "source": "int queued = _queue.Count",
+      "impact": "Pre-simulation flush depends on NativeQueue<T>.Count."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 847,
+      "operation": "copyLimitCount",
+      "source": "int copyLimit = Math.Min(_queue.Count, frameLimit)",
+      "impact": "Second count read in same flush."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 850,
+      "operation": "flushDequeue",
+      "source": "_queue.TryDequeue(out T signal)",
+      "impact": "Frame snapshot drain is queue-backed."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 1190,
+      "operation": "clear",
+      "source": "_queue.Clear()",
+      "impact": "Overflow recovery clears Unity queue storage."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 1204,
+      "operation": "dispose",
+      "source": "_queue.Dispose()",
+      "impact": "Lane lifetime owns NativeQueue<T>."
+    }
+  ],
+  "flushArchitecture": [
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 341,
+      "symbol": "_flushDispatch",
+      "source": "private static readonly SignalBusRegistry.SignalLaneFlushDelegate _flushDispatch = FlushPreSimulation",
+      "status": "REGISTERED_CLOSED_GENERIC_DELEGATE"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 148,
+      "symbol": "SignalBusRegistry.FlushPreSimulation",
+      "source": "public static void FlushPreSimulation()",
+      "status": "PUBLIC_DISPATCH_ENTRY"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "line": 783,
+      "symbol": "SignalBus<T>.FlushPreSimulation",
+      "source": "internal static void FlushPreSimulation(int systemStressMilli)",
+      "status": "LANE_DRAIN_ENTRY"
+    }
+  ],
+  "spscCursorAlignmentSourceAudit": {
+    "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+    "currentParentLayout": "implicit sequential wrapper over native backing arrays",
+    "cursorHeaderStruct": "SignalRingCursorState",
+    "cursorHeaderLine": 11,
+    "headOffsetBytes": 0,
+    "tailOffsetBytes": 64,
+    "cursorHeaderSizeBytes": 128,
+    "sourceProvenFacts": [
+      "SignalRingCursorState is explicit 128 bytes.",
+      "Head is declared at FieldOffset(0).",
+      "Tail is declared at FieldOffset(64).",
+      "SPSC and MPSC cursors now resolve through a NativeArray<SignalRingCursorState> header."
+    ],
+    "unprovenFacts": [
+      "Parent SpscSignalRingBuffer<T> still cannot honestly use a fixed explicit size because it wraps NativeArray<T> fields whose internal safety layout varies by Unity configuration.",
+      "Runtime cache-line alignment of the native allocation itself still requires Unity/UnsafeUtility proof."
+    ],
+    "verdict": "CURSOR_HEADER_SOURCE_PROOF_COMPLETE_PARENT_EXPLICIT_LAYOUT_REJECTED"
+  },
+  "ringPrimitivePatch": {
+    "spsc": {
+      "status": "SOURCE_PATCHED_COMPILE_PENDING",
+      "storage": "NativeArray<T> payload plus NativeArray<SignalRingCursorState> cursor header",
+      "barriers": "Volatile.Read cursor observation; Interlocked.Exchange cursor publication after payload read/write"
+    },
+    "mpsc": {
+      "status": "SOURCE_PATCHED_COMPILE_PENDING",
+      "storage": "NativeArray<T> payload, NativeArray<int> per-slot publication tickets, NativeArray<SignalRingCursorState> cursor header",
+      "producerReservation": "Interlocked.CompareExchange on Tail",
+      "publication": "Payload write followed by Interlocked.Exchange of per-slot ticket",
+      "consumerSafety": "Consumer requires expected ticket before reading payload"
+    }
+  },
+  "memoryBarrierAudit": [
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+      "lines": "64-70",
+      "path": "TryEnqueue",
+      "verdict": "PAYLOAD_BEFORE_TAIL_PUBLICATION",
+      "details": "Reads tail/head with Volatile.Read, writes payload, publishes tail with Interlocked.Exchange."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SpscSignalRingBuffer.cs",
+      "lines": "82-90",
+      "path": "TryDequeue",
+      "verdict": "TAIL_READ_BEFORE_PAYLOAD_READ",
+      "details": "Reads head/tail with Volatile.Read, reads payload, publishes head with Interlocked.Exchange."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "lines": "616-619",
+      "path": "SignalBus<T>.TryPush",
+      "verdict": "NATIVEQUEUE_SYNC_DELEGATED",
+      "details": "Signal payload enters NativeQueue<T>; source-level barriers are not owned by SignalBus<T>."
+    },
+    {
+      "file": "Assets/_Project/Scripts/Core/Signals/SignalBusRuntime.cs",
+      "lines": "617,1298-1302",
+      "path": "LatestSignal sequence",
+      "verdict": "SEQUENCE_VOLATILE_VALUE_PLAIN",
+      "details": "_latestSignal is plain-assigned before a Volatile.Write sequence. Latest reads may observe sequence ordering, but T payload atomicity is not proven for wide structs."
+    }
+  ],
+  "phase1Risk": {
+    "publicWriterMigrationRequired": true,
+    "nativeQueueParallelWriterCallsites": "broad project-wide usage found under Assets/_Project/Scripts",
+    "strictTwoFileImplementationRisk": "A two-file-only replacement cannot remove NativeQueue<T>.ParallelWriter from job producers without either keeping a NativeQueue bridge or breaking callsites.",
+    "recommendedNextStep": "Add an unmanaged SignalBus<T>.ParallelWriter backed by MpscSignalRingBuffer<T>, then migrate producer job fields/calls mechanically or keep a documented legacy bridge outside the active hot path until all producers are converted."
+  }
+}

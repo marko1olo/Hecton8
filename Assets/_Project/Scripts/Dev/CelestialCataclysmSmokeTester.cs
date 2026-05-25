@@ -10,10 +10,11 @@ using Hecton8.Celestial;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Items;
-using Hecton8.Physics;
 using Hecton8.World;
 using NASAPunk.Visor;
 using UnityEngine;
+
+using IElectromagneticPulseEventListener = global::Hecton8.Core.Contracts.Physics.IElectromagneticPulseEventListener;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -482,7 +483,7 @@ namespace Hecton8.Dev
             _debugLastPass = false;
             _debugLastIssue = issue;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[CelestialCataclysmSmoke] FAIL " + issue, this);
+            Hecton8.Core.H8Debug.LogWarning("[CelestialCataclysmSmoke] FAIL " + issue, this);
 #endif
             return false;
         }

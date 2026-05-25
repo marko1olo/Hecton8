@@ -1,0 +1,16 @@
+﻿{
+    "generatedAtUtc":  "2026-05-25T16:47:15.8746488Z",
+    "agent":  "1303",
+    "promptHash":  "9a3528042794113df9c5d3c4840d010ac34b37f3eff28dacd9a611dff5917309",
+    "taskCount":  20,
+    "codePatch":  "TetherInstance static DataVault slot reservations changed from bool[64] to ulong mask.",
+    "zeroGcReport":  "Docs/Reports/ZERO_GC_HOTPATH_SCAN_1303.json",
+    "rawNewKeywordTotal":  13,
+    "diffAddedNewKeywordCount":  0,
+    "roslynHotPathHash":  "2d75b3135cd202dbf95cad4012857c141fec51528911d7b8eba3896c10210f66",
+    "vaultWholeScriptsHash":  "a8920ccb4bc926880c51855d4d97b30bc8bfc0aeb1fe507bc5f5c1e9e2c29531",
+    "ownedForbiddenPersistentCandidates":  0,
+    "dtoSizeFailureCount":  0,
+    "buildLaunched":  false,
+    "buildReason":  "User explicitly requested rare dotnet/build usage; this v6 pass used existing analyzer binaries and static CLI scans only."
+}

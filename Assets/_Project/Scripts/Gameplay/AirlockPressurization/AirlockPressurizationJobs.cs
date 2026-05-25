@@ -8,13 +8,16 @@ using System.Threading;
 using Hecton8.Atmosphere;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
+
+using FluidCompartmentDTO = global::Hecton8.Core.Contracts.Physics.FluidCompartmentDTO;
+using FluidCompartmentFlags = global::Hecton8.Core.Contracts.Physics.FluidCompartmentFlags;
+using HabitatFluidIncursionConstants = global::Hecton8.Core.Contracts.Physics.HabitatFluidIncursionConstants;
 
 namespace Hecton8.Gameplay.AirlockPressurization
 {

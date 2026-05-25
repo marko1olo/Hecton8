@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using Hecton8.Core;
-using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -108,6 +107,7 @@ namespace Hecton8.World
         private GraphicsBuffer _activeArgsBuffer;
         private Mesh _quadMesh;
         private IPlayerRuntimeContext _playerRuntimeContext;
+        private IAmbientCurrentReadModel _ambientCurrentReadModel;
         private bool _registeredToDispatcher;
         private bool _registeredLateFrame;
         private int _pendingVisualInstanceCount;
@@ -263,6 +263,7 @@ namespace Hecton8.World
                 seamRegistry = SeamRegistry.ActiveRuntimeInstance;
 
             CachePlayerRuntimeContext(GlobalRegistry.Player);
+            _ambientCurrentReadModel = GlobalRegistry.AmbientCurrent;
 
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
@@ -321,6 +322,9 @@ namespace Hecton8.World
                 case GlobalRegistryServiceSlot.Player:
                     ClearPlayerRuntimeContext(previousService as IPlayerRuntimeContext);
                     CachePlayerRuntimeContext(currentService as IPlayerRuntimeContext);
+                    break;
+                case GlobalRegistryServiceSlot.FluidRuntime:
+                    _ambientCurrentReadModel = currentService as IAmbientCurrentReadModel;
                     break;
                 case GlobalRegistryServiceSlot.Dispatcher:
                     _registeredToDispatcher = false;
@@ -497,7 +501,7 @@ namespace Hecton8.World
         private static void LogMissingSeamDitherMaterial(UnityEngine.Object context)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError("[SeamGapDitherRenderer] Missing seamDitherMaterial asset. Runtime material creation is forbidden for seam gap indirect draws.", context);
+            Hecton8.Core.H8Debug.LogError("[SeamGapDitherRenderer] Missing seamDitherMaterial asset. Runtime material creation is forbidden for seam gap indirect draws.", context);
 #endif
         }
 
@@ -556,7 +560,10 @@ namespace Hecton8.World
                         continue;
 
                     float scale = moteSize * (0.75f + (0.6f * scaleSeed));
-                    Vector3 sampledCurrent = CurrentVolume.SampleCombinedCurrent(runtimePoint);
+                    Vector3 sampledCurrent = Vector3.zero;
+                    IAmbientCurrentReadModel ambientCurrent = _ambientCurrentReadModel;
+                    if (ambientCurrent != null)
+                        ambientCurrent.TrySampleCombinedCurrent(runtimePoint, out sampledCurrent);
                     float currentSpeedSq = sampledCurrent.x * sampledCurrent.x
                         + sampledCurrent.y * sampledCurrent.y
                         + sampledCurrent.z * sampledCurrent.z;
@@ -776,7 +783,7 @@ namespace Hecton8.World
 
         private void DisableLegacyGapDitherIfNeeded()
         {
-            float now = Application.isPlaying ? Time.unscaledTime : 0f;
+            float now = Application.isPlaying ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
             if (now < _nextLegacyVfxDisableTime)
                 return;
 

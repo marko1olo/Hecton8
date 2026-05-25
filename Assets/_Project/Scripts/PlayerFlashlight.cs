@@ -979,7 +979,7 @@ namespace Hecton8.Gameplay
             if (_cachedMainCameraTransform != null)
                 return _cachedMainCameraTransform;
 
-            float currentTime = Time.unscaledTime;
+            float currentTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (!force && currentTime < _nextCameraResolveTime)
                 return null;
 
@@ -1006,7 +1006,7 @@ namespace Hecton8.Gameplay
         {
             _playerRuntimeContext = GlobalRegistry.Player;
             _modularEquipmentService = GlobalRegistry.ModularEquipment;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
         }
 
         private void TryRegisterHotSwap()

@@ -463,7 +463,7 @@ namespace Hecton8.World
         private void CacheRegistryServicesCold()
         {
             _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
         }
 
         private void TryRegisterDispatcherLanes()
@@ -1513,7 +1513,7 @@ namespace Hecton8.World
         {
             return _saveService != null
                 ? _saveService.CurrentPlayTimeSeconds
-                : Time.realtimeSinceStartup;
+                : (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds;
         }
 
         private static Vector3 ToRuntimePosition(AbsoluteUniversePosition position)

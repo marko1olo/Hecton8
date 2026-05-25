@@ -1,3 +1,4 @@
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Memory;
 using Unity.Collections;
 using Unity.Jobs;

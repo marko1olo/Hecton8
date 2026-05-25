@@ -1,0 +1,1590 @@
+﻿{
+    "schema":  "AUP_CAST_SCAN_1302_PASS10_V1",
+    "generatedUtc":  "2026-05-25T18:45:25.9121511Z",
+    "scannedFiles":  30,
+    "hitCount":  263,
+    "possibleViolationCount":  0,
+    "possibleViolations":  [
+
+                           ],
+    "hits":  [
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                     "line":  777,
+                     "classification":  "neutral",
+                     "text":  "double3 origin = _cachedOriginAUP;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                     "line":  789,
+                     "classification":  "neutral",
+                     "text":  "double3 origin = shiftEvent.NewTotalOffsetDouble;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                     "line":  220,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 delta = sampleAup - cameraAup;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                     "line":  1134,
+                     "classification":  "neutral",
+                     "text":  "double3 origin = ResolveCachedOriginAup();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                     "line":  1156,
+                     "classification":  "neutral",
+                     "text":  "double3 origin = _cachedOriginAup;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                     "line":  1168,
+                     "classification":  "neutral",
+                     "text":  "double3 origin = shiftData.NewTotalOffsetDouble;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                     "line":  1744,
+                     "classification":  "neutral",
+                     "text":  "value.BaseFlowVelocity = math.select(new float3(0.04f, 0f, -0.03f), value.BaseFlowVelocity, math.isfinite(value.BaseFlowVelocity));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                     "line":  1806,
+                     "classification":  "neutral",
+                     "text":  "double3 sectorAup = HectonFloatingOrigin.CurrentTotalOffsetDouble;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  264,
+                     "classification":  "neutral",
+                     "text":  "LocalPositions[index] = SimdFloat3Padded.FromFloat3(new float3(lane * 0.45f, layer * 2.0f + a, row * 0.45f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  265,
+                     "classification":  "neutral",
+                     "text":  "Velocities[index] = SimdFloat3Padded.FromFloat3(new float3(a * 4.25f, b * 1.5f, c * 4.25f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  402,
+                     "classification":  "neutral",
+                     "text":  "float3 acceleration = new float3(baseFlow.x + turbulence, buoyancyY, baseFlow.z - turbulence * 0.65f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  559,
+                     "classification":  "neutral",
+                     "text":  "float3 f0 = new float3(x.x, y.x, z.x);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  560,
+                     "classification":  "neutral",
+                     "text":  "float3 f1 = new float3(x.y, y.y, z.y);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  561,
+                     "classification":  "neutral",
+                     "text":  "float3 f2 = new float3(x.z, y.z, z.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  562,
+                     "classification":  "neutral",
+                     "text":  "float3 f3 = new float3(x.w, y.w, z.w);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  567,
+                     "classification":  "neutral",
+                     "text":  "OutputForces[baseIndex] = SimdFloat3Padded.FromFloat3((f0 - new float3(previousX.x, previousY.x, previousZ.x)) * invDt.x);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  568,
+                     "classification":  "neutral",
+                     "text":  "OutputForces[index1] = SimdFloat3Padded.FromFloat3((f1 - new float3(previousX.y, previousY.y, previousZ.y)) * invDt.y);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  569,
+                     "classification":  "neutral",
+                     "text":  "OutputForces[index2] = SimdFloat3Padded.FromFloat3((f2 - new float3(previousX.z, previousY.z, previousZ.z)) * invDt.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  570,
+                     "classification":  "neutral",
+                     "text":  "OutputForces[index3] = SimdFloat3Padded.FromFloat3((f3 - new float3(previousX.w, previousY.w, previousZ.w)) * invDt.w);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  629,
+                     "classification":  "neutral",
+                     "text":  "float3 acceleration = new float3(baseFlow.x + turbulence, buoyancyY, baseFlow.z - turbulence * 0.65f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  663,
+                     "classification":  "neutral",
+                     "text":  "double3 safeAup = math.select(double3.zero, AbsoluteAups[index], math.isfinite(AbsoluteAups[index]));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  664,
+                     "classification":  "neutral",
+                     "text":  "double3 safeOrigin = math.select(double3.zero, OriginAup, math.isfinite(OriginAup));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  665,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 delta = safeAup - safeOrigin;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  667,
+                     "classification":  "neutral",
+                     "text":  "float3 local = new float3((float)delta.x, (float)delta.y, (float)delta.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancySimdVectorization.cs",
+                     "line":  802,
+                     "classification":  "neutral",
+                     "text":  "float3 extents = math.max(math.select(float3.zero, rawExtents, math.isfinite(rawExtents)), new float3(0.001f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  428,
+                     "classification":  "neutral",
+                     "text":  "CellSizeMeters = math.max(cellSizeMeters, new float3(0.0001f)),"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  630,
+                     "classification":  "neutral",
+                     "text":  "SphereCenter = new float3(18f, tuning.MockSeafloorY + 8f, -12f),"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  632,
+                     "classification":  "neutral",
+                     "text":  "SecondarySphereCenter = new float3(-22f, tuning.MockSeafloorY + 11f, 15f),"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  638,
+                     "classification":  "neutral",
+                     "text":  "double3 originAup = ResolveCurrentRuntimeOriginDouble3();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  749,
+                     "classification":  "neutral",
+                     "text":  "public static int FlushForcesToPhysics(double3 localOriginAUP, uint frameIndex = 0u, int maxPackets = 64)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  778,
+                     "classification":  "neutral",
+                     "text":  "public static int FlushForcesToPhysics(Rigidbody[] bodySlots, double3 localOriginAUP, uint frameIndex = 0u, int maxPackets = 64)"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1192,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 clamped = math.clamp(delta, new double3(-span), new double3(span));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1193,
+                     "classification":  "neutral",
+                     "text":  "float3 local = new float3((float)clamped.x, (float)clamped.y, (float)clamped.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1200,
+                     "classification":  "neutral",
+                     "text":  "float3 local = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1204,
+                     "classification":  "neutral",
+                     "text":  "double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1221,
+                     "classification":  "neutral",
+                     "text":  "double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1385,
+                     "classification":  "neutral",
+                     "text":  "double3 origin = ResolveCurrentRuntimeOriginDouble3();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1392,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 delta = wave.EpicenterAUP - origin;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1416,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 delta = entities[i].AUP - origin;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1425,
+                     "classification":  "neutral",
+                     "text":  "float3 sideVector = math.cross(direction, new float3(0f, 1f, 0f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1427,
+                     "classification":  "neutral",
+                     "text":  "float3 side = math.select(new float3(1f, 0f, 0f), sideVector * math.rsqrt(math.max(sideSq, 0.000001f)), math.isfinite(sideSq) \u0026 sideSq \u003e 0.000001f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1459,
+                     "classification":  "neutral",
+                     "text":  "float3 local = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1463,
+                     "classification":  "neutral",
+                     "text":  "double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1480,
+                     "classification":  "neutral",
+                     "text":  "double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1822,
+                     "classification":  "neutral",
+                     "text":  "double3 applicationAup = entity.AUP;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1836,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 deltaD = entity.AUP - wave.EpicenterAUP;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1935,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 ray = targetAup - epicenterAup;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1936,
+                     "classification":  "neutral",
+                     "text":  "double3 p25 = epicenterAup + ray * 0.25;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1937,
+                     "classification":  "neutral",
+                     "text":  "double3 p50 = epicenterAup + ray * 0.5;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1938,
+                     "classification":  "neutral",
+                     "text":  "double3 p75 = epicenterAup + ray * 0.75;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1973,
+                     "classification":  "neutral",
+                     "text":  "float3 cellSize = math.max(SdfVolume.CellSizeMeters, new float3(0.0001f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1975,
+                     "classification":  "neutral",
+                     "text":  "float3 grid = local * math.rcp(math.max(cellSize, new float3(0.0001f)));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1976,
+                     "classification":  "neutral",
+                     "text":  "float3 maxGrid = new float3(dimensions - 1);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  1990,
+                     "classification":  "neutral",
+                     "text":  "float3 t = math.saturate(grid - (float3)baseCoord);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  2052,
+                     "classification":  "neutral",
+                     "text":  "float3 value = new float3(HashToSigned(hx), HashToSigned(hy), HashToSigned(hz));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  2055,
+                     "classification":  "neutral",
+                     "text":  "new float3(0f, 1f, 0f),"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  2087,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 clamped = math.clamp(delta, new double3(-span), new double3(span));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  2088,
+                     "classification":  "neutral",
+                     "text":  "float3 local = new float3((float)clamped.x, (float)clamped.y, (float)clamped.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  2102,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 clamped = math.clamp(delta, new double3(-span), new double3(span));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  2103,
+                     "classification":  "neutral",
+                     "text":  "float3 local = new float3((float)clamped.x, (float)clamped.y, (float)clamped.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  2198,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 clamped = math.clamp(delta, new double3(-span), new double3(span));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  2199,
+                     "classification":  "neutral",
+                     "text":  "float3 local = new float3((float)clamped.x, (float)clamped.y, (float)clamped.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  2244,
+                     "classification":  "neutral",
+                     "text":  "double3 epicenter = double3.zero;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  2455,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 clamped = math.clamp(delta, new double3(-span), new double3(span));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                     "line":  2456,
+                     "classification":  "neutral",
+                     "text":  "return new float3((float)clamped.x, (float)clamped.y, (float)clamped.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                     "line":  577,
+                     "classification":  "neutral",
+                     "text":  "double3 originAup = ResolveRuntimeOriginAupDouble();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                     "line":  579,
+                     "classification":  "neutral",
+                     "text":  "double3 aup = originAup + new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                     "line":  713,
+                     "classification":  "neutral",
+                     "text":  "double3 originAup = ResolveRuntimeOriginAupDouble();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                     "line":  1096,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 localDouble = state.AUP_Position - terrain.CameraAup;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                     "line":  1152,
+                     "classification":  "neutral",
+                     "text":  "float3 resolvedCellSize = new float3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                     "line":  1795,
+                     "classification":  "neutral",
+                     "text":  "return new float3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/FluidImpulseJob.cs",
+                     "line":  59,
+                     "classification":  "neutral",
+                     "text":  "float3 uvw = (new float3(x, y, z) + 0.5f) * inverseResolution;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/FluidImpulseJob.cs",
+                     "line":  74,
+                     "classification":  "neutral",
+                     "text":  ": new float3(0f, 1f, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+                     "line":  605,
+                     "classification":  "neutral",
+                     "text":  "double3 leakAup = signal.LeakAup.ToAbsoluteDouble3();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+                     "line":  652,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 delta = compartments[i].LocalCenterOfMass - leakAup;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+                     "line":  974,
+                     "classification":  "neutral",
+                     "text":  "double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionDirector.cs",
+                     "line":  1324,
+                     "classification":  "neutral",
+                     "text":  "double3 origin = HectonFloatingOrigin.CurrentTotalOffsetDouble;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/HabitatFluidIncursionJobs.cs",
+                     "line":  126,
+                     "classification":  "neutral",
+                     "text":  "float3 centroid = new float3(laneX, DefaultFloorHeightLocal, laneZ);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  426,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 delta = Sanitize(aup - sectorOriginAup, double3.zero);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  433,
+                     "classification":  "neutral",
+                     "text":  "return new float3((float)delta.x, (float)delta.y, (float)delta.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  538,
+                     "classification":  "neutral",
+                     "text":  "double3 safeAup = Sanitize(aup, double3.zero);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  557,
+                     "classification":  "neutral",
+                     "text":  "double3 safe = Sanitize(absolutePosition, double3.zero);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  642,
+                     "classification":  "neutral",
+                     "text":  "MoveAxis = new float3(strafe, 0f, forward),"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  643,
+                     "classification":  "neutral",
+                     "text":  "LookAxis = new float3(strafe, 0f, 1f),"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  731,
+                     "classification":  "neutral",
+                     "text":  "LookAxis = HydrodynamicKccMath.NormalizeSafe(lookAxis, new float3(0f, 0f, 1f)),"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  813,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 targetDelta = HydrodynamicKccMath.Sanitize(input.TargetAup - SectorOriginAup, double3.zero);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  822,
+                     "classification":  "neutral",
+                     "text":  "LookAxis = new float3(0f, 0f, 1f),"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  834,
+                     "classification":  "neutral",
+                     "text":  "input.LookAxis = HydrodynamicKccMath.NormalizeSafe(input.LookAxis, new float3(0f, 0f, 1f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  869,
+                     "classification":  "neutral",
+                     "text":  "float3 invDims = math.rcp(new float3(math.max(1, dimensions.x - 1), math.max(1, dimensions.y - 1), math.max(1, dimensions.z - 1)));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  870,
+                     "classification":  "neutral",
+                     "text":  "float3 uvw = new float3(x, y, z) * invDims;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  874,
+                     "classification":  "neutral",
+                     "text":  "float3 tangent = HydrodynamicKccMath.NormalizeSafe(new float3(-centered.z, 0f, centered.x), new float3(0f, 0f, 1f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  878,
+                     "classification":  "neutral",
+                     "text":  "FlowField[index] = tangent * speed + new float3(centered.x * 0.12f, lift, centered.z * -0.08f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  973,
+                     "classification":  "neutral",
+                     "text":  "double3 externalPositionTarget = HydrodynamicKccMath.Sanitize(ExternalPositionTargetAup, state.AUP_Position);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1037,
+                     "classification":  "neutral",
+                     "text":  "velocity += new float3(0f, buoyancy * dt, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1054,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 footAup = state.AUP_Position - new double3(0d, (double)math.max(0f, (height * 0.5f) - radius), 0d);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1058,
+                     "classification":  "neutral",
+                     "text":  "float upDot = math.saturate(math.dot(sdfNormal, new float3(0f, 1f, 0f)));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1065,
+                     "classification":  "neutral",
+                     "text":  "float3 down = new float3(0f, -1f, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1224,
+                     "classification":  "neutral",
+                     "text":  "float3 frac = math.saturate(cell - new float3(baseCoord.x, baseCoord.y, baseCoord.z));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1265,
+                     "classification":  "neutral",
+                     "text":  "float3 frac = math.saturate(cell - new float3(baseCoord.x, baseCoord.y, baseCoord.z));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1293,
+                     "classification":  "neutral",
+                     "text":  "return new float3(0f, 1f, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1310,
+                     "classification":  "neutral",
+                     "text":  "float3 gradientNormal = HydrodynamicKccMath.NormalizeSafe(new float3(dx, dy, dz) * invCellSpan, new float3(0f, 1f, 0f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1313,
+                     "classification":  "neutral",
+                     "text":  "return HydrodynamicKccMath.NormalizeSafe(math.lerp(new float3(0f, 1f, 0f), gradientNormal, gradientBlend), new float3(0f, 1f, 0f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1318,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 delta = HydrodynamicKccMath.Sanitize(aup - grid.GridOriginAup, double3.zero);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1320,
+                     "classification":  "neutral",
+                     "text":  "float3 cell = new float3((float)delta.x, (float)delta.y, (float)delta.z) * invCell;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1321,
+                     "classification":  "neutral",
+                     "text":  "float3 maxCell = new float3(dimensions.x - 1, dimensions.y - 1, dimensions.z - 1);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1486,
+                     "classification":  "neutral",
+                     "text":  "double3 deltaAup = new double3(delta.x, delta.y, delta.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1505,
+                     "classification":  "neutral",
+                     "text":  "double3 centerAup = state.AUP_Position + deltaAup * (double)t;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1510,
+                     "classification":  "neutral",
+                     "text":  "double3 probeAup = centerAup + new double3(0d, (double)yOffset, 0d);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1519,
+                     "classification":  "neutral",
+                     "text":  "normal = new float3(0f, 1f, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1521,
+                     "classification":  "neutral",
+                     "text":  "float3 safeNormal = HydrodynamicKccMath.NormalizeSafe(normal, new float3(0f, 1f, 0f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1576,
+                     "classification":  "neutral",
+                     "text":  "float3 frac = math.saturate(cell - new float3(baseCoord.x, baseCoord.y, baseCoord.z));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1603,
+                     "classification":  "neutral",
+                     "text":  "normal = new float3(0f, 1f, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1620,
+                     "classification":  "neutral",
+                     "text":  "normal = HydrodynamicKccMath.NormalizeSafe(new float3(dx, dy, dz) * invCellSpan, new float3(0f, 1f, 0f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1626,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 delta = HydrodynamicKccMath.Sanitize(aup - grid.GridOriginAup, double3.zero);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1628,
+                     "classification":  "neutral",
+                     "text":  "float3 cell = new float3((float)delta.x, (float)delta.y, (float)delta.z) * invCell;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1629,
+                     "classification":  "neutral",
+                     "text":  "float3 maxCell = new float3(dimensions.x - 1, dimensions.y - 1, dimensions.z - 1);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1749,
+                     "classification":  "neutral",
+                     "text":  "float3 normal = HydrodynamicKccMath.NormalizeSafe(hit.Normal, new float3(0f, 1f, 0f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1750,
+                     "classification":  "neutral",
+                     "text":  "float upDot = math.saturate(math.dot(normal, new float3(0f, 1f, 0f)));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1761,
+                     "classification":  "neutral",
+                     "text":  "float3 down = new float3(0f, -1f, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1888,
+                     "classification":  "neutral",
+                     "text":  "double3 previous = state.AUP_Position;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1893,
+                     "classification":  "neutral",
+                     "text":  "float3 direction = HydrodynamicKccMath.NormalizeSafe(displacement, new float3(0f, 0f, 1f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  1925,
+                     "classification":  "neutral",
+                     "text":  "float3 contactNormal = HydrodynamicKccMath.NormalizeSafe(hit.Normal, new float3(0f, 1f, 0f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2057,
+                     "classification":  "neutral",
+                     "text":  "double3 firstAup = States[0].AUP_Position;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2129,
+                     "classification":  "neutral",
+                     "text":  "double3 firstAup = States[0].AUP_Position;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2194,
+                     "classification":  "neutral",
+                     "text":  "double3 previous = index \u003c PreviousAup.Length ? PreviousAup[index] : state.AUP_Position;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2278,
+                     "classification":  "neutral",
+                     "text":  "float3 direction = HydrodynamicKccMath.NormalizeSafe(packet.Velocity, new float3(0f, 0f, 1f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  2960,
+                     "classification":  "neutral",
+                     "text":  "double3 sectorOrigin = ResolveSectorOriginAup();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  3003,
+                     "classification":  "neutral",
+                     "text":  "double3 externalPositionTargetAup = _queuedExternalPositionTargetAup;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  3153,
+                     "classification":  "neutral",
+                     "text":  "double3 sectorOrigin = ResolveSectorOriginAup();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  3319,
+                     "classification":  "neutral",
+                     "text":  "_queuedExternalAcceleration + new float3(acceptedAcceleration.x, acceptedAcceleration.y, acceptedAcceleration.z),"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  3331,
+                     "classification":  "neutral",
+                     "text":  "_queuedExternalVelocityChange + new float3(acceptedVelocityChange.x, acceptedVelocityChange.y, acceptedVelocityChange.z),"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  3342,
+                     "classification":  "neutral",
+                     "text":  "_queuedExternalVelocityTarget = new float3(acceptedVelocityTarget.x, acceptedVelocityTarget.y, acceptedVelocityTarget.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  3356,
+                     "classification":  "neutral",
+                     "text":  "double3 absolute = aup.ToAbsoluteDouble3();"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/KCC/HydrodynamicKccRuntime.cs",
+                     "line":  4316,
+                     "classification":  "neutral",
+                     "text":  "float3 normalDirection = HydrodynamicKccMath.NormalizeSafe(_lastGizmoNormal, new float3(0f, 1f, 0f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  88,
+                     "classification":  "neutral",
+                     "text":  "double3 origin = math.select(double3.zero, OriginAUP, math.isfinite(OriginAUP));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  89,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 aup = origin + new double3(lane * 2.5f, -depth, row * 2.5f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  90,
+                     "classification":  "neutral",
+                     "text":  "float3 forward = SafeNormalize(new float3(0.12f * thrustSwing, 0.02f * TriangleSigned(phase + 0.21f), 1f), new float3(0f, 0f, 1f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  117,
+                     "classification":  "neutral",
+                     "text":  "request.SurfaceNormal = new float3(0f, 1f, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  142,
+                     "classification":  "neutral",
+                     "text":  "double3 displacementMeters = new double3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  147,
+                     "classification":  "neutral",
+                     "text":  "double3 localOrigin = currentAup;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  148,
+                     "classification":  "neutral",
+                     "text":  "double3 currentLocal = AupPrecisionMath.LocalDeltaDouble(currentAup, localOrigin);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  149,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 previousLocal = currentLocal - displacementMeters;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  150,
+                     "classification":  "neutral",
+                     "text":  "double3 previous = localOrigin + previousLocal;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  207,
+                     "classification":  "neutral",
+                     "text":  "double3 sector = math.select(double3.zero, tuning.SectorAUP, math.isfinite(tuning.SectorAUP));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  208,
+                     "classification":  "neutral",
+                     "text":  "double3 currentAup = math.select(double3.zero, request.CurrentAUP, math.isfinite(request.CurrentAUP));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  209,
+                     "classification":  "neutral",
+                     "text":  "double3 localAupDelta = AupPrecisionMath.LocalDeltaDouble(currentAup, sector);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  211,
+                     "classification":  "neutral",
+                     "text":  "float3 inputDirection = SafeNormalize(request.InputVector, SafeNormalize(request.ForwardVector, new float3(0f, 0f, 1f)));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  337,
+                     "classification":  "neutral",
+                     "text":  "double3 localDelta = AupPrecisionMath.LocalDeltaDouble(currentAup, anchor.SampleAUP);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  353,
+                     "classification":  "neutral",
+                     "text":  "return new float3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsJobs.cs",
+                     "line":  498,
+                     "classification":  "neutral",
+                     "text":  "double3 deltaAup = AupPrecisionMath.LocalDeltaDouble(request.CurrentAUP, request.PreviousAUP);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                     "line":  1056,
+                     "classification":  "neutral",
+                     "text":  "return math.select(new float3(0f, 0f, 1f), direction * math.rsqrt(math.max(lengthSq, 0.000001f)), math.isfinite(lengthSq) \u0026\u0026 lengthSq \u003e 0.000001f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  414,
+                     "classification":  "neutral",
+                     "text":  "double3 aup = double3.zero;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  477,
+                     "classification":  "neutral",
+                     "text":  "float3 position = Origin + (new float3(x, y, z) + new float3(0.5f)) * CellSize;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  524,
+                     "classification":  "neutral",
+                     "text":  "float3 p = Origin + (new float3(x, y, z) + new float3(0.5f)) * CellSize;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  525,
+                     "classification":  "neutral",
+                     "text":  "FlowSamples[index] = new float3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  573,
+                     "classification":  "neutral",
+                     "text":  "float3 up = NormalizeOrFallback(math.cross(right, forward), new float3(0f, 1f, 0f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  719,
+                     "classification":  "neutral",
+                     "text":  "float3 dx = new float3(step, 0f, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  720,
+                     "classification":  "neutral",
+                     "text":  "float3 dy = new float3(0f, step, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  721,
+                     "classification":  "neutral",
+                     "text":  "float3 dz = new float3(0f, 0f, step);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  732,
+                     "classification":  "neutral",
+                     "text":  "float3 openGradient = -new float3(px - nx, py - ny, pz - nz);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  751,
+                     "classification":  "neutral",
+                     "text":  "float3 invCell = math.rcp(math.max(math.abs(Tuning.SdfCellSize), new float3(0.001f)));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  753,
+                     "classification":  "neutral",
+                     "text":  "float3 minSample = new float3(-0.5f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  754,
+                     "classification":  "neutral",
+                     "text":  "float3 maxSample = new float3(dims.x - 0.5f, dims.y - 0.5f, dims.z - 0.5f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  758,
+                     "classification":  "neutral",
+                     "text":  "sample = math.clamp(sample, float3.zero, new float3(dims.x - 1f, dims.y - 1f, dims.z - 1f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  854,
+                     "classification":  "neutral",
+                     "text":  "return NormalizeOrFallback(velocity, new float3(0f, 0f, 1f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  855,
+                     "classification":  "neutral",
+                     "text":  "return NormalizeOrFallback(math.rotate(vehicle.Rotation, new float3(0f, 0f, 1f)), new float3(0f, 0f, 1f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  861,
+                     "classification":  "neutral",
+                     "text":  "float3 right = math.rotate(rotation, new float3(1f, 0f, 0f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  863,
+                     "classification":  "neutral",
+                     "text":  "right = math.cross(new float3(0f, 1f, 0f), forward);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  864,
+                     "classification":  "neutral",
+                     "text":  "return NormalizeOrFallback(right, new float3(1f, 0f, 0f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  902,
+                     "classification":  "neutral",
+                     "text":  "return new float3(0f, 0f, 1f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  1039,
+                     "classification":  "neutral",
+                     "text":  "float3 invCell = math.rcp(math.max(math.abs(Tuning.FlowCellSize), new float3(0.001f)));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  1041,
+                     "classification":  "neutral",
+                     "text":  "if (math.any(sample \u003c float3.zero) || math.any(sample \u003e new float3(dims.x - 1f, dims.y - 1f, dims.z - 1f)))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  1044,
+                     "classification":  "neutral",
+                     "text":  "sample = math.clamp(sample, float3.zero, new float3(dims.x - 1f, dims.y - 1f, dims.z - 1f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  1098,
+                     "classification":  "neutral",
+                     "text":  "return new float3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  1254,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 delta = targetAup - originAup;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  1261,
+                     "classification":  "neutral",
+                     "text":  "double3 scaled = delta * (1.0d / math.max(0.000001d, axisMax));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  1270,
+                     "classification":  "neutral",
+                     "text":  "localDelta = new float3((float)delta.x, (float)delta.y, (float)delta.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  1282,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 delta = targetAup - originAup;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  1329,
+                     "classification":  "neutral",
+                     "text":  "double3 firstAup = double3.zero;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  1339,
+                     "classification":  "neutral",
+                     "text":  "double3 candidateAup = UnsafeUtility.AsRef\u003cSubmarineKinematicState\u003e(KinematicStates + i).Aup;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  2731,
+                     "classification":  "neutral",
+                     "text":  "tuning.SdfOrigin = new float3(-96f, -48f, -96f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  2732,
+                     "classification":  "neutral",
+                     "text":  "tuning.SdfCellSize = new float3(4f, 4f, 4f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  2739,
+                     "classification":  "neutral",
+                     "text":  "tuning.FlowOrigin = new float3(-128f, -48f, -128f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  2740,
+                     "classification":  "neutral",
+                     "text":  "tuning.FlowCellSize = new float3(16f, 12f, 16f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  2768,
+                     "classification":  "neutral",
+                     "text":  "tuning.SdfOrigin = new float3(-96f, -48f, -96f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  2770,
+                     "classification":  "neutral",
+                     "text":  "tuning.SdfCellSize = new float3(4f, 4f, 4f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  2775,
+                     "classification":  "neutral",
+                     "text":  "tuning.FlowOrigin = new float3(-128f, -48f, -128f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                     "line":  2777,
+                     "classification":  "neutral",
+                     "text":  "tuning.FlowCellSize = new float3(16f, 12f, 16f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                     "line":  582,
+                     "classification":  "neutral",
+                     "text":  "double3 hullAup = SafeFinite(sample.HullAup, double3.zero);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                     "line":  583,
+                     "classification":  "neutral",
+                     "text":  "double3 surfaceAup = SafeFinite(sample.OceanSurfaceAup, hullAup);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                     "line":  584,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 surfaceDelta = surfaceAup - hullAup;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                     "line":  627,
+                     "classification":  "neutral",
+                     "text":  "float3 netForce = new float3(0f, netY, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                     "line":  652,
+                     "classification":  "neutral",
+                     "text":  "packet.BuoyantForce = new float3(0f, buoyantY, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                     "line":  653,
+                     "classification":  "neutral",
+                     "text":  "packet.BallastGravityForce = new float3(0f, ballastGravityY, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineBallastBuoyancyContracts.cs",
+                     "line":  665,
+                     "classification":  "neutral",
+                     "text":  "packet.LocalizedSurfaceDelta = new float3((float)surfaceDelta.x, (float)surfaceDelta.y, (float)surfaceDelta.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  577,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 delta = SafeAup(aup) - SafeAup(config.LocalOriginAup);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  578,
+                     "classification":  "neutral",
+                     "text":  "float3 local = new float3((float)delta.x, (float)delta.y, (float)delta.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  705,
+                     "classification":  "neutral",
+                     "text":  "float3 safe = math.max(new float3(1f), math.abs(diagonalLocal));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  706,
+                     "classification":  "neutral",
+                     "text":  "float3x3 r = new float3x3(NormalizeSafe(rotation));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  707,
+                     "classification":  "neutral",
+                     "text":  "float3x3 d = new float3x3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  708,
+                     "classification":  "neutral",
+                     "text":  "new float3(safe.x, 0f, 0f),"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  709,
+                     "classification":  "neutral",
+                     "text":  "new float3(0f, safe.y, 0f),"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  710,
+                     "classification":  "neutral",
+                     "text":  "new float3(0f, 0f, safe.z));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  722,
+                     "classification":  "neutral",
+                     "text":  "return math.max(new float3(1f), new float3(matrix.c0.x, matrix.c1.y, matrix.c2.z));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  752,
+                     "classification":  "neutral",
+                     "text":  "result = new float3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  764,
+                     "classification":  "neutral",
+                     "text":  "float3 diagonal = ExtractDiagonal(in profile.LinearAddedMass) + new float3(safeBaseMass);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  765,
+                     "classification":  "neutral",
+                     "text":  "float3 diagonalAcceleration = forceWorld / math.max(diagonal, new float3(1f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  790,
+                     "classification":  "neutral",
+                     "text":  "float3 diagonal = ExtractDiagonal(in profile.AngularAddedMass) + math.max(baseInertia, new float3(1f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  791,
+                     "classification":  "neutral",
+                     "text":  "float3 diagonalAcceleration = torqueWorld / math.max(diagonal, new float3(1f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  999,
+                     "classification":  "neutral",
+                     "text":  "float3 spike = new float3(t0, t1 * 0.35f, t2) * amplitude;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1028,
+                     "classification":  "neutral",
+                     "text":  "float3 currentUp = math.mul(rotation, new float3(0f, 1f, 0f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1029,
+                     "classification":  "neutral",
+                     "text":  "currentUp = SubmarineDynamicsSimdMath.NormalizeOrFallback(currentUp, new float3(0f, 1f, 0f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1030,
+                     "classification":  "neutral",
+                     "text":  "float3 error = math.cross(currentUp, new float3(0f, 1f, 0f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1036,
+                     "classification":  "neutral",
+                     "text":  "dto.CurrentUp = finite ? currentUp : new float3(0f, 1f, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1110,
+                     "classification":  "neutral",
+                     "text":  "float3 right = SubmarineDynamicsSimdMath.NormalizeOrFallback(math.mul(rotation, new float3(1f, 0f, 0f)), new float3(1f, 0f, 0f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1111,
+                     "classification":  "neutral",
+                     "text":  "float3 forward = SubmarineDynamicsSimdMath.NormalizeOrFallback(math.mul(rotation, new float3(0f, 0f, 1f)), new float3(0f, 0f, 1f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1140,
+                     "classification":  "neutral",
+                     "text":  "math.max(state.InertiaTensor, new float3(1f)),"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1361,
+                     "classification":  "neutral",
+                     "text":  "float3 linearDiagonalLocal = new float3(lateralAddedMass, verticalAddedMass, forwardAddedMass) * addedMassMultiplier;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1368,
+                     "classification":  "neutral",
+                     "text":  "float3 angularDiagonalLocal = new float3(rollAddedInertia, pitchAddedInertia, yawAddedInertia) * addedMassMultiplier;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1377,
+                     "classification":  "neutral",
+                     "text":  "profile.LinearAddedMass = SubmarineAddedMassMath.BuildWorldTensor(new float3(1f), quaternion.identity);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1378,
+                     "classification":  "neutral",
+                     "text":  "profile.AngularAddedMass = SubmarineAddedMassMath.BuildWorldTensor(new float3(1f), quaternion.identity);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1553,
+                     "classification":  "neutral",
+                     "text":  "float3 linear = new float3(6400f * skew, 8200f, 2100f / skew);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1554,
+                     "classification":  "neutral",
+                     "text":  "float3 angular = new float3(18000f, 92000f * skew, 104000f / skew);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1561,
+                     "classification":  "neutral",
+                     "text":  "force.LinearForceWorld = new float3(5000f * skew, 1200f, 24000f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1562,
+                     "classification":  "neutral",
+                     "text":  "force.TorqueWorld = new float3(900f, 1800f * skew, 400f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1660,
+                     "classification":  "neutral",
+                     "text":  "state.InertiaTensor = SafePositive(state.InertiaTensor, new float3(1f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1663,
+                     "classification":  "neutral",
+                     "text":  "mass.CargoCenterLocal = SafeFinite(mass.CargoCenterLocal, new float3(0f, -0.2f, config.CargoForwardMeters));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1665,
+                     "classification":  "neutral",
+                     "text":  "mass.CenterOfBuoyancyLocal = SafeFinite(mass.CenterOfBuoyancyLocal, new float3(0f, 0.7f, 0f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1697,
+                     "classification":  "neutral",
+                     "text":  "addedMassProfile.LinearAddedMass = SubmarineAddedMassMath.BuildWorldTensor(new float3(0.72f, 0.86f, 0.18f) * fallbackWaterMass, rotation);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1709,
+                     "classification":  "neutral",
+                     "text":  "float3 forward = math.mul(rotation, new float3(0f, 0f, 1f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1711,
+                     "classification":  "neutral",
+                     "text":  "? math.mul(rotation, SubmarineDynamicsSimdMath.NormalizeOrFallback(control.ThrustLocal, new float3(0f, 0f, 1f)))"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1747,
+                     "classification":  "neutral",
+                     "text":  "float3 buoyancyWorld = new float3(0f, buoyancyN, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1748,
+                     "classification":  "neutral",
+                     "text":  "float3 gravityWorld = new float3(0f, -SubmarineDynamicsConstants.Gravity * totalMass, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1784,
+                     "classification":  "neutral",
+                     "text":  "state.LinearVelocity = math.clamp(state.LinearVelocity, new float3(-90f), new float3(90f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1789,
+                     "classification":  "neutral",
+                     "text":  "float3 inertia = math.max(new float3(1f), state.InertiaTensor);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1793,
+                     "classification":  "neutral",
+                     "text":  "state.AngularVelocity = math.clamp(state.AngularVelocity, new float3(-2.8f), new float3(2.8f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1819,
+                     "classification":  "neutral",
+                     "text":  "state.CenterOfBuoyancyLocal = new float3(0f, 0.7f, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1820,
+                     "classification":  "neutral",
+                     "text":  "state.InertiaTensor = new float3(1f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1856,
+                     "classification":  "neutral",
+                     "text":  "state.CenterOfBuoyancyLocal = new float3(0f, 0.7f, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1904,
+                     "classification":  "double_delta_assignment",
+                     "text":  "double3 delta = SafeAup(aup) - SafeAup(config.LocalOriginAup);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1905,
+                     "classification":  "neutral",
+                     "text":  "float3 local = new float3((float)delta.x, (float)delta.y, (float)delta.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  1978,
+                     "classification":  "neutral",
+                     "text":  "return new float3(ix, iz * pitchBias, iz);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsContracts.cs",
+                     "line":  2093,
+                     "classification":  "neutral",
+                     "text":  "return math.all(math.isfinite(value)) ? math.max(value, new float3(0.0001f)) : fallback;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                     "line":  837,
+                     "classification":  "neutral",
+                     "text":  "control.ThrustLocal = new float3(0f, 0f, 1f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                     "line":  847,
+                     "classification":  "neutral",
+                     "text":  "control.TorqueLocal = new float3(-pitch, yaw, 0f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                     "line":  860,
+                     "classification":  "neutral",
+                     "text":  "mass.CargoCenterLocal = new float3(0f, -0.2f, config.CargoForwardMeters);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                     "line":  985,
+                     "classification":  "neutral",
+                     "text":  "force.ImpactNormalWorld = SubmarineDynamicsSimdMath.NormalizeOrFallback(normalWorld, new float3(0f, 0f, -1f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                     "line":  1013,
+                     "classification":  "neutral",
+                     "text":  "float3 safePoint = math.all(math.isfinite(localPoint)) ? localPoint : new float3(0f, 0f, 1f);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                     "line":  1014,
+                     "classification":  "neutral",
+                     "text":  "return SubmarineDynamicsSimdMath.NormalizeOrFallback(-safePoint, new float3(0f, 0f, -1f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                     "line":  117,
+                     "classification":  "neutral",
+                     "text":  "float3 local = new float3("
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                     "line":  124,
+                     "classification":  "neutral",
+                     "text":  "signal.Direction = NormalizeOrFallback(-local, new float3(0f, 0f, -1f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                     "line":  275,
+                     "classification":  "neutral",
+                     "text":  "double3 deltaAup = AupPrecisionMath.LocalDeltaDouble(signal.ImpactAup, RootAup);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                     "line":  315,
+                     "classification":  "neutral",
+                     "text":  "float3 safeSize = math.max(size, new float3(0.001f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                     "line":  377,
+                     "classification":  "neutral",
+                     "text":  "float3 safeGridSize = math.select(new float3(0.001f), GridSizeLocal, math.all(math.isfinite(GridSizeLocal)));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                     "line":  380,
+                     "classification":  "neutral",
+                     "text":  "float3 cellSize = safeGridSize / new float3(width, height, depth);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                     "line":  659,
+                     "classification":  "neutral",
+                     "text":  "float3 size = math.max(Tuning.GridSizeLocal, new float3(0.001f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                     "line":  661,
+                     "classification":  "neutral",
+                     "text":  "float3 cellSize = size / new float3(width, height, math.max(1, Tuning.GridDepth));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageJobs.cs",
+                     "line":  662,
+                     "classification":  "neutral",
+                     "text":  "return gridMin + (cellSize * (new float3(x, y, z) + 0.5f));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  566,
+                     "classification":  "neutral",
+                     "text":  "tuning.CellSizeMeters = math.cmin(new float3(safeSize.x / tuning.GridWidth, safeSize.y / tuning.GridHeight, safeSize.z / tuning.GridDepth));"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  567,
+                     "classification":  "neutral",
+                     "text":  "tuning.GridCenterLocal = new float3(gridCenterLocal.x, gridCenterLocal.y, gridCenterLocal.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  568,
+                     "classification":  "neutral",
+                     "text":  "tuning.GridSizeLocal = new float3(safeSize.x, safeSize.y, safeSize.z);"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  999,
+                     "classification":  "neutral",
+                     "text":  "double3 origin = config.LocalOriginAup;"
+                 },
+                 {
+                     "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                     "line":  1000,
+                     "classification":  "neutral",
+                     "text":  "double3 resolvedAup = origin + new double3(localPosition.x, localPosition.y, localPosition.z);"
+                 }
+             ]
+}

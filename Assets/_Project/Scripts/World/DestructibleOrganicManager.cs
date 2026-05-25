@@ -1265,7 +1265,7 @@ namespace Hecton8.World
             _playerInventoryService = GlobalRegistry.PlayerInventory;
             _persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
             _dearLieVault = GlobalRegistry.DataVault;
-            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
+            CacheAudioService(GlobalRegistry.Audio);
             CacheDearLieFallbackQualityWeightCold();
         }
 
@@ -1622,7 +1622,7 @@ namespace Hecton8.World
             bool dropBufferDrained = DrainDropBuffer();
             if (dropBufferDrained &&
                 _deferredYieldScheduleFrame >= 0 &&
-                Time.frameCount >= _deferredYieldScheduleFrame)
+                Hecton8.Core.SystemDispatcher.CurrentFrameIndex >= _deferredYieldScheduleFrame)
             {
                 _deferredYieldScheduleFrame = -1;
                 ScheduleYieldJobIfNeeded();
@@ -1666,13 +1666,13 @@ namespace Hecton8.World
 
             if (!HasAnyAuthoritativeDearLieDamageSignal() && !dearLieGenerateMockDamageBurst)
             {
-                RecordDearLieTelemetry(Time.frameCount, 0, 0, 0, 0, 0, 0, 0f, 0u, 0);
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 0, 0, 0f, 0u, 0);
                 return;
             }
 
             if (!TryLockDearLieVaultJobBuffers())
             {
-                RecordDearLieTelemetry(Time.frameCount, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, 1, 0, 0f, 0u, 32);
                 return;
             }
 
@@ -1683,7 +1683,7 @@ namespace Hecton8.World
             {
                 int rejectedOnlyCount = math.max(0, ReadDearLieCounter(4));
                 int nanOnlyCount = math.max(0, ReadDearLieCounter(5));
-                RecordDearLieTelemetry(Time.frameCount, 0, 0, 0, 0, rejectedOnlyCount, nanOnlyCount, 0f, 0u, nanOnlyCount > 0 ? (byte)1 : (byte)0);
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, 0, rejectedOnlyCount, nanOnlyCount, 0f, 0u, nanOnlyCount > 0 ? (byte)1 : (byte)0);
                 if (nanOnlyCount > 0)
                     DumpDearLieTelemetry();
                 UnlockDearLieVaultJobBuffers();
@@ -1694,7 +1694,7 @@ namespace Hecton8.World
             JobHandle underwaterHandle = ScheduleDearLieLane(true, damageCount, stageHandle);
             _dearLieJobHandle = JobHandle.CombineDependencies(stageHandle, JobHandle.CombineDependencies(surfaceHandle, underwaterHandle));
             _dearLieScheduledDamageCount = damageCount;
-            _dearLieJobScheduleFrame = Time.frameCount;
+            _dearLieJobScheduleFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             _dearLieJobStartTimeSeconds = Time.realtimeSinceStartupAsDouble;
             _dearLieJobScheduled = true;
         }
@@ -1748,7 +1748,8 @@ namespace Hecton8.World
                 return false;
 
             _dearLieJobScheduled = false;
-            bool sameFrameCompletion = _dearLieJobScheduleFrame == Time.frameCount;
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            bool sameFrameCompletion = _dearLieJobScheduleFrame == currentFrame;
             float queryMicroseconds = 0f;
             if (_dearLieJobStartTimeSeconds > 0d)
             {
@@ -1764,7 +1765,7 @@ namespace Hecton8.World
             try
             {
                 int destroyedCount = ApplyDearLieDestructionResults(currentTime, out uint lastInstanceUid, out int vfxCount);
-                _dearLieLastDamageFrame = Time.frameCount;
+                _dearLieLastDamageFrame = currentFrame;
                 _dearLieLastDestroyedCount = destroyedCount;
                 _dearLieLastVfxCount = vfxCount;
 
@@ -1780,7 +1781,7 @@ namespace Hecton8.World
                     flags |= 8;
                 if (overflowCount > 0)
                     flags |= 16;
-                RecordDearLieTelemetry(Time.frameCount, damageCount, destroyedCount, vfxCount, 0, rejectedCount, nanRejectCount, queryMicroseconds, lastInstanceUid, flags);
+                RecordDearLieTelemetry(currentFrame, damageCount, destroyedCount, vfxCount, 0, rejectedCount, nanRejectCount, queryMicroseconds, lastInstanceUid, flags);
                 if (nanRejectCount > 0 || overflowCount > 0 || (sameFrameCompletion && queryMicroseconds > 500f))
                     DumpDearLieTelemetry();
             }
@@ -1827,7 +1828,7 @@ namespace Hecton8.World
                     Offset = writeCount,
                     Count = mockCount,
                     CenterAUP = centerAup,
-                    Seed = unchecked((uint)(Time.frameCount * 268 + 0x51A268u))
+                    Seed = unchecked((uint)(Hecton8.Core.SystemDispatcher.CurrentFrameIndex * 268 + 0x51A268u))
                 };
                 stageHandle = mockJob.Schedule(mockCount, DearLieJobBatchSize);
                 writeCount += mockCount;
@@ -2097,7 +2098,7 @@ namespace Hecton8.World
             }
 
             if (recoveredCount > 0)
-                RecordDearLieTelemetry(Time.frameCount, 0, 0, 0, recoveredCount, 0, 0, 0f, 0u, 4);
+                RecordDearLieTelemetry(Hecton8.Core.SystemDispatcher.CurrentFrameIndex, 0, 0, 0, recoveredCount, 0, 0, 0f, 0u, 4);
         }
 
         private bool TryRestoreDearLieOriginalMatrix(in FloraDearLieRegenRecord record)
@@ -3514,7 +3515,7 @@ namespace Hecton8.World
                     _pendingYieldEvents[i] = _pendingYieldEvents[eventCount + i];
 
                 _pendingYieldEvents.ResizeUninitialized(remainderCount);
-                _deferredYieldScheduleFrame = math.max(_deferredYieldScheduleFrame, Time.frameCount + 1);
+                _deferredYieldScheduleFrame = math.max(_deferredYieldScheduleFrame, Hecton8.Core.SystemDispatcher.CurrentFrameIndex + 1);
             }
             else
             {

@@ -30,7 +30,13 @@ namespace Hecton8.Construction
         [FieldOffset(24)]
         public int QueueOverflow;
         [FieldOffset(28)]
-        private uint _pad0;
+        private byte _pad0;
+        [FieldOffset(29)]
+        private byte _pad1;
+        [FieldOffset(30)]
+        private byte _pad2;
+        [FieldOffset(31)]
+        private byte _pad3;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = HabitatStressJobLayout.FloodPropagationSummaryStrideBytes)]
@@ -51,7 +57,13 @@ namespace Hecton8.Construction
         [FieldOffset(24)]
         public float MaxDeltaLevel01;
         [FieldOffset(28)]
-        private uint _pad0;
+        private byte _pad0;
+        [FieldOffset(29)]
+        private byte _pad1;
+        [FieldOffset(30)]
+        private byte _pad2;
+        [FieldOffset(31)]
+        private byte _pad3;
     }
 
     [BurstCompile(CompileSynchronously = true, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -66,11 +78,13 @@ namespace Hecton8.Construction
         public float MaxTransferPerEdgeM3;
         public float WaterEpsilon01;
 
+        [NoAlias, ReadOnly] public NativeArray<int> EdgeOffsets;
+        [NoAlias, ReadOnly] public NativeArray<int> EdgeDestinations;
+        [NoAlias, ReadOnly] public NativeArray<float> EdgeResistance;
         [NoAlias, ReadOnly] public NativeArray<float> RoomWaterLevels;
         [NoAlias, ReadOnly] public NativeArray<float> RoomVolumes;
         [NoAlias, ReadOnly] public NativeArray<byte> RoomFlags;
         [NoAlias, ReadOnly] public NativeArray<byte> EdgeFlags;
-        [ReadOnly] public NativeParallelMultiHashMap<int, HabitatFloodConnection> Connections;
 
         [NoAlias] public NativeArray<float> RoomDeltaLevels;
         [NoAlias] public NativeArray<HabitatFloodPropagationSummary> Result;
@@ -81,8 +95,10 @@ namespace Hecton8.Construction
             if (!RoomWaterLevels.IsCreated ||
                 !RoomVolumes.IsCreated ||
                 !RoomFlags.IsCreated ||
+                !EdgeOffsets.IsCreated ||
+                !EdgeDestinations.IsCreated ||
+                !EdgeResistance.IsCreated ||
                 !RoomDeltaLevels.IsCreated ||
-                !Connections.IsCreated ||
                 DeltaTime <= 0f ||
                 !math.isfinite(DeltaTime))
             {
@@ -91,11 +107,11 @@ namespace Hecton8.Construction
             }
 
             int safeNodeCount = math.min(
-                math.max(0, NodeCount),
+                math.min(math.max(0, NodeCount), math.max(0, EdgeOffsets.Length - 1)),
                 math.min(RoomWaterLevels.Length, math.min(RoomVolumes.Length, math.min(RoomFlags.Length, RoomDeltaLevels.Length))));
-            int safeEdgeCount = EdgeFlags.IsCreated
-                ? math.min(math.max(0, EdgeCount), EdgeFlags.Length)
-                : 0;
+            int safeEdgeCount = math.min(
+                math.max(0, EdgeCount),
+                math.min(EdgeDestinations.Length, math.min(EdgeResistance.Length, EdgeFlags.IsCreated ? EdgeFlags.Length : 0)));
             if (safeNodeCount <= 0)
             {
                 WriteResult(summary);
@@ -137,23 +153,22 @@ namespace Hecton8.Construction
                     continue;
                 }
 
-                NativeParallelMultiHashMapIterator<int> iterator;
-                HabitatFloodConnection connection;
-                if (!Connections.TryGetFirstValue(sourceIndex, out connection, out iterator))
+                int edgeStart = math.clamp(EdgeOffsets[sourceIndex], 0, safeEdgeCount);
+                int edgeEnd = sourceIndex + 1 < EdgeOffsets.Length
+                    ? math.clamp(EdgeOffsets[sourceIndex + 1], edgeStart, safeEdgeCount)
+                    : edgeStart;
+                if (edgeStart >= edgeEnd)
                     continue;
 
-                do
+                for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
                 {
                     sourceLevel01 = ResolveSourceAvailableLevel01(sourceIndex);
                     if (sourceLevel01 <= epsilon)
                         break;
 
-                    int destinationIndex = connection.DestinationIndex;
-                    int edgeIndex = connection.CsrEdgeIndex;
+                    int destinationIndex = EdgeDestinations[edgeIndex];
                     if (destinationIndex < 0 ||
-                        destinationIndex >= safeNodeCount ||
-                        edgeIndex < 0 ||
-                        edgeIndex >= safeEdgeCount)
+                        destinationIndex >= safeNodeCount)
                     {
                         summary.InvalidConnectionCount++;
                         continue;
@@ -177,7 +192,7 @@ namespace Hecton8.Construction
                         continue;
                     }
 
-                    float resistance = math.max(0.1f, connection.FlowResistance);
+                    float resistance = math.max(0.1f, EdgeResistance[edgeIndex]);
                     float transferLevel01 = math.min(
                         sourceLevel01,
                         levelDelta01 * safeFlowRate * safeDeltaTime * math.rcp(resistance));
@@ -201,7 +216,6 @@ namespace Hecton8.Construction
                         summary.MaxDeltaLevel01,
                         math.max(math.abs(sourceDelta01), math.abs(destinationDelta01)));
                 }
-                while (Connections.TryGetNextValue(out connection, ref iterator));
             }
 
             WriteResult(summary);

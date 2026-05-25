@@ -22,7 +22,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Construction Tab")]
-    public sealed class PDAConstructionTab : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IPDAEventListener, IQuestEventListener, IGlobalRegistryHotSwapListener
+    public sealed class PDAConstructionTab : MonoBehaviour, ILateFrameTickable, IPDAEventListener, IQuestEventListener, IGlobalRegistryHotSwapListener
     {
         private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.84f);
         private static readonly Color BoxBg = new Color(0.05f, 0.12f, 0.14f, 0.72f);
@@ -92,7 +92,6 @@ namespace Hecton8.UI
         private readonly char[] _hintBuffer = new char[512];
         // COLD ALLOC: char[96] - construction action label TMP staging buffer - owner: PDAConstructionTab
         private readonly char[] _actionLabelBuffer = new char[96];
-        private bool _tickRegistered;
         private bool _lateFrameRegistered;
         private bool _refreshPending;
         private bool _refreshImmediatePending;
@@ -290,7 +289,7 @@ namespace Hecton8.UI
             {
                 if (currentService == null)
                 {
-                    _tickRegistered = false;
+                    _lateFrameRegistered = false;
                     return;
                 }
 
@@ -318,7 +317,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _cachedEnvironmentContext = GlobalRegistry.Environment;
             _cachedQuestSystem = GlobalRegistry.QuestSystem;
         }
@@ -364,14 +363,12 @@ namespace Hecton8.UI
             IEnvironmentRuntimeContext environmentContext = _cachedEnvironmentContext;
             if (environmentContext == null)
             {
-                _constructionLogistics = GlobalRegistry.Logistics;
-
                 return;
             }
 
             if (forceAssign || _constructionLogistics == null)
             {
-                _constructionLogistics = environmentContext.Logistics ?? GlobalRegistry.Logistics;
+                _constructionLogistics = environmentContext.Logistics ?? _constructionLogistics;
             }
         }
 
@@ -556,7 +553,7 @@ namespace Hecton8.UI
             }
         }
 
-        public void Tick(float deltaTime)
+        private void AdvanceConstructionPresentationState(float deltaTime)
         {
             float safeDeltaTime = Mathf.Max(0f, deltaTime);
 
@@ -584,6 +581,8 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            AdvanceConstructionPresentationState(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (!_refreshPending)
                 return;
 
@@ -891,14 +890,13 @@ namespace Hecton8.UI
 
         private void RegisterTick()
         {
-            if (_tickRegistered || !Application.isPlaying)
+            if (!Application.isPlaying)
             {
                 if (!_lateFrameRegistered && GlobalRegistry.Dispatcher != null)
                     _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
                 return;
             }
 
-            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             if (!_lateFrameRegistered)
                 _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
@@ -909,12 +907,6 @@ namespace Hecton8.UI
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
                 _lateFrameRegistered = false;
-            }
-
-            if (_tickRegistered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _tickRegistered = false;
             }
 
             _refreshPending = false;
@@ -1429,12 +1421,15 @@ namespace Hecton8.UI
                 TryAppend(buffer, ref cursor, "TACTIC   ".AsSpan()) &&
                 TryAppend(buffer, ref cursor, isActive ? "FIELD ACTIVE".AsSpan() : (hasCost ? "ARM NEXT".AsSpan() : "GATHER MATS".AsSpan()));
 
-            if (written && !string.IsNullOrWhiteSpace(data.description))
+            ReadOnlySpan<char> description = string.IsNullOrEmpty(data.description)
+                ? ReadOnlySpan<char>.Empty
+                : data.description.AsSpan();
+            if (written && HasNonWhiteSpace(description))
             {
                 written =
                     TryAppendNewLine(buffer, ref cursor) &&
                     TryAppend(buffer, ref cursor, "NOTES    ".AsSpan()) &&
-                    TryAppendTrimmedUpperForCard(buffer, ref cursor, data.description, 56);
+                    TryAppendTrimmedUpperForCard(buffer, ref cursor, description, 56);
             }
 
             ApplyBufferedText(target, _cardBodyBuffer, written ? cursor : 0);
@@ -1889,9 +1884,9 @@ namespace Hecton8.UI
             }
         }
 
-        private static bool TryAppendTrimmedUpperForCard(Span<char> buffer, ref int cursor, string text, int maxChars)
+        private static bool TryAppendTrimmedUpperForCard(Span<char> buffer, ref int cursor, ReadOnlySpan<char> text, int maxChars)
         {
-            if (string.IsNullOrWhiteSpace(text) || maxChars <= 0)
+            if (!HasNonWhiteSpace(text) || maxChars <= 0)
                 return true;
 
             int appended = 0;
@@ -1935,6 +1930,17 @@ namespace Hecton8.UI
                 return TryAppend(buffer, ref cursor, "...".AsSpan());
 
             return true;
+        }
+
+        private static bool HasNonWhiteSpace(ReadOnlySpan<char> value)
+        {
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (!char.IsWhiteSpace(value[i]))
+                    return true;
+            }
+
+            return false;
         }
 
         private static void SetUpperInvariant(TextMeshProUGUI target, char[] buffer, string value, string fallback)

@@ -7,7 +7,6 @@ using Hecton8.Core;
 using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Physics;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Physics;
 using Hecton8.Core.Memory;
 using Hecton8.World;
 using Unity.Collections.LowLevel.Unsafe;
@@ -103,6 +102,8 @@ namespace Hecton8.Gameplay
         private float _brineViscosityQueryRadiusMeters = 0.5f;
         private float _brineViscosityVerticalHalfExtentMeters = 0.5f;
         private IDataVault _dataVault;
+        private IPhysicsService _physicsService;
+        private IPhysicsStateEventService _physicsStateEvents;
         private VaultGenerationHandle<SubmarineState> _submarineStateHandle;
         private bool _safeTeleportCollisionModeCaptured;
         private Vector3 _linearVelocity;
@@ -134,7 +135,7 @@ namespace Hecton8.Gameplay
         private Vector3 _lastBlockingImpactPoint;
         private Vector3 _lastBlockingImpactNormal = Vector3.up;
         private float _wakeSiltDecalCooldown;
-        private AbyssalFluidDecalManager _fluidDecals;
+        private IFluidDecalPresentationSink _fluidDecals;
 
         /// <summary>Current kinematic linear velocity in world space.</summary>
         public Vector3 LinearVelocity => _linearVelocity;
@@ -203,6 +204,7 @@ namespace Hecton8.Gameplay
             CacheBrineViscosityQueryShape();
             RegisterMotor();
             CacheDataVaultCold();
+            CachePhysicsServiceCold();
             CacheVisualServicesCold();
             EnsureSubmarineState();
             TryRegisterHotSwapListener();
@@ -217,6 +219,7 @@ namespace Hecton8.Gameplay
             CacheBrineViscosityQueryShape();
             RegisterMotor();
             CacheDataVaultCold();
+            CachePhysicsServiceCold();
             CacheVisualServicesCold();
             TryRegisterHotSwapListener();
             TryRegisterOriginShiftListener();
@@ -289,7 +292,7 @@ namespace Hecton8.Gameplay
             {
                 if (!_body.isKinematic)
                 {
-                    PhysicsForceRouter.QueueAngularVelocitySet(_body, Vector3.zero, wake: false);
+                    _physicsService?.QueueAngularVelocitySet(_body, Vector3.zero, wake: false);
                 }
 
                 WriteSubmarineState(_body.position, _body.rotation);
@@ -307,7 +310,11 @@ namespace Hecton8.Gameplay
         {
             _hydrodynamicSubmersionFactor = math.saturate(submersionFactor);
             if (_body != null)
-                GlobalPhysicsStateManager.SetHydrodynamicSubmersion(_body, _hydrodynamicSubmersionFactor);
+            {
+                IPhysicsStateEventService physicsStateEvents = _physicsStateEvents;
+                if (physicsStateEvents != null)
+                    physicsStateEvents.SetHydrodynamicSubmersion(_body, _hydrodynamicSubmersionFactor);
+            }
         }
 
         /// <summary>Sets the current water depth used by cinematic velocity bleed.</summary>
@@ -1100,7 +1107,7 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(emitter)) || !math.all(math.isfinite(velocity)))
                 return;
 
-            AbyssalFluidDecalManager fluidDecals = _fluidDecals;
+            IFluidDecalPresentationSink fluidDecals = _fluidDecals;
             if (fluidDecals == null)
                 return;
 
@@ -1250,7 +1257,19 @@ namespace Hecton8.Gameplay
 
             if (serviceSlot == GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime)
             {
-                _fluidDecals = currentService as AbyssalFluidDecalManager;
+                _fluidDecals = currentService as IFluidDecalPresentationSink;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Physics)
+            {
+                _physicsService = currentService as IPhysicsService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.PhysicsStateManager)
+            {
+                _physicsStateEvents = currentService as IPhysicsStateEventService;
                 return;
             }
 
@@ -1280,7 +1299,7 @@ namespace Hecton8.Gameplay
             }
 
             _body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
-            PhysicsForceRouter.QueueAngularVelocitySet(_body, Vector3.zero, wake: false);
+            _physicsService?.QueueAngularVelocitySet(_body, Vector3.zero, wake: false);
             _body.PublishTransform();
             _safeTeleportCollisionGuardActive = true;
             TryRegisterPostFixedTickable();
@@ -1553,7 +1572,13 @@ namespace Hecton8.Gameplay
 
         private void CacheVisualServicesCold()
         {
-            _fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            _fluidDecals = GlobalRegistry.FluidDecalPresentation;
+        }
+
+        private void CachePhysicsServiceCold()
+        {
+            _physicsService = GlobalRegistry.Physics;
+            _physicsStateEvents = GlobalRegistry.PhysicsStateEvents;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -1569,7 +1594,7 @@ namespace Hecton8.Gameplay
                 SubmarineStatePad0Offset != 100 ||
                 SubmarineStatePad1Offset != 104)
             {
-                Debug.LogError("VehicleMotor vault DTO layout drift detected.");
+                Hecton8.Core.H8Debug.LogError("VehicleMotor vault DTO layout drift detected.");
             }
         }
 

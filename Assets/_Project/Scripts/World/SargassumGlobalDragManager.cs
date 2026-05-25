@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.SaveSystem;
 using Unity.Burst;
@@ -63,10 +64,11 @@ namespace Hecton8.World
         private const uint ListenerContextHash = 0x53474C53u;
         private const int DebrisPetrificationTimerCapacity = 128;
         private const int DebrisPetrificationDisableBudgetPerSlowTick = 16;
-        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
+        private const SystemID VaultOwnerSystemId = SystemID.WorldSargassum;
+        private const BufferID DensityBuildSourcesBufferId = BufferID.SargassumGlobalDragDensityBuildSources;
+        private const BufferID ScavengerMatricesBufferId = BufferID.SargassumGlobalDragScavengerMatrices;
+        private const BufferID ScavengerBatchMetadataBufferId = BufferID.SargassumGlobalDragBatchMetadata;
         private const Allocator DataVaultExemptDensityBuildAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptRenderStagingAllocator = Allocator.Persistent;
-        private const Allocator DataVaultExemptSceneTimerAllocator = Allocator.Persistent;
         private const float DebrisPetrificationDelaySeconds = 4f;
         private const float DebrisPetrificationSlowTickSeconds = 0.5f;
         private const int ScavengerBrgMetadataPlaceholderCount = 1;
@@ -305,10 +307,10 @@ namespace Hecton8.World
         private static readonly ListenerSlot[] _deferredRegisterListeners = new ListenerSlot[EventListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - deferred listener registers during event dispatch - owner: SargassumGlobalDragManager
         private static readonly ListenerSlot[] _deferredUnregisterListeners = new ListenerSlot[EventListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - deferred listener unregisters during event dispatch - owner: SargassumGlobalDragManager
         private static int _listenerCount;
-        private static NativeQueue<EntanglementStrainSignal> _pendingEntanglementStrain;
-        private static NativeQueue<EntanglementStrainSignal> _nextFrameEntanglementStrain;
-        private static NativeQueue<MassiveDisplacementSignal> _pendingMassiveDisplacement;
-        private static NativeQueue<MassiveDisplacementSignal> _nextFrameMassiveDisplacement;
+        private static readonly EntanglementStrainSignal[] _pendingEntanglementStrain = new EntanglementStrainSignal[EntanglementStrainEventCapacity]; // COLD ALLOC: EntanglementStrainSignal[16] - pending sargassum strain event lane - owner: SargassumGlobalDragManager
+        private static readonly EntanglementStrainSignal[] _nextFrameEntanglementStrain = new EntanglementStrainSignal[EntanglementStrainEventCapacity]; // COLD ALLOC: EntanglementStrainSignal[16] - next-frame sargassum strain event lane - owner: SargassumGlobalDragManager
+        private static readonly MassiveDisplacementSignal[] _pendingMassiveDisplacement = new MassiveDisplacementSignal[MassiveDisplacementEventCapacity]; // COLD ALLOC: MassiveDisplacementSignal[16] - pending sargassum displacement event lane - owner: SargassumGlobalDragManager
+        private static readonly MassiveDisplacementSignal[] _nextFrameMassiveDisplacement = new MassiveDisplacementSignal[MassiveDisplacementEventCapacity]; // COLD ALLOC: MassiveDisplacementSignal[16] - next-frame sargassum displacement event lane - owner: SargassumGlobalDragManager
         private static int _pendingEntanglementStrainCount;
         private static int _nextFrameEntanglementStrainCount;
         private static int _pendingMassiveDisplacementCount;
@@ -324,7 +326,7 @@ namespace Hecton8.World
         private static int _lastListenerRejectedTelemetryFrame = -1;
         private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatchingEvents;
-        private NativeQueue<DebrisTimer> _debrisPetrificationTimers;
+        private readonly DebrisTimer[] _debrisPetrificationTimers = new DebrisTimer[DebrisPetrificationTimerCapacity]; // COLD ALLOC: DebrisTimer[128] - slow-tick debris petrification timers - owner: SargassumGlobalDragManager
         // COLD ALLOC: Rigidbody[128] - managed handles for queued debris petrification timers - owner: SargassumGlobalDragManager
         private readonly Rigidbody[] _debrisPetrificationBodies = new Rigidbody[DebrisPetrificationTimerCapacity];
         private int _debrisPetrificationTimerCount;
@@ -351,38 +353,7 @@ namespace Hecton8.World
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEntanglementStrain.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(SargassumGlobalDragManager), nameof(_pendingEntanglementStrain));
-                _pendingEntanglementStrain.Dispose();
-                _pendingEntanglementStrain = default;
-            }
-
-            if (_nextFrameEntanglementStrain.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(SargassumGlobalDragManager), nameof(_nextFrameEntanglementStrain));
-                _nextFrameEntanglementStrain.Dispose();
-                _nextFrameEntanglementStrain = default;
-            }
-
-            if (_pendingMassiveDisplacement.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(SargassumGlobalDragManager), nameof(_pendingMassiveDisplacement));
-                _pendingMassiveDisplacement.Dispose();
-                _pendingMassiveDisplacement = default;
-            }
-
-            if (_nextFrameMassiveDisplacement.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(SargassumGlobalDragManager), nameof(_nextFrameMassiveDisplacement));
-                _nextFrameMassiveDisplacement.Dispose();
-                _nextFrameMassiveDisplacement = default;
-            }
-
-            _pendingEntanglementStrainCount = 0;
-            _nextFrameEntanglementStrainCount = 0;
-            _pendingMassiveDisplacementCount = 0;
-            _nextFrameMassiveDisplacementCount = 0;
+            DropQueuedEvents();
             for (int i = 0; i < _deferredRegisterCount; i++)
                 _deferredRegisterListeners[i].Clear();
             for (int i = 0; i < _deferredUnregisterCount; i++)
@@ -775,12 +746,12 @@ namespace Hecton8.World
         private DisruptionZoneState[] _disruptionZones;
         private ScavengerHostState[] _scavengerHosts;
         private ExternalScavengerSiteState[] _externalScavengerSites;
-        private NativeArray<Matrix4x4> _scavengerMatricesNative;
+        private VaultGenerationHandle<Matrix4x4> _scavengerMatricesHandle;
         private GraphicsBuffer _scavengerMatrixBufferA;
         private GraphicsBuffer _scavengerMatrixBufferB;
         private GraphicsBuffer _activeScavengerMatrixBuffer;
         private BatchRendererGroup _scavengerBatchRendererGroup;
-        private NativeArray<MetadataValue> _scavengerBatchMetadata;
+        private VaultGenerationHandle<MetadataValue> _scavengerBatchMetadataHandle;
         private GraphicsBuffer _scavengerBatchHandleBuffer;
         private BatchID _scavengerBatchId;
         private BatchMeshID _scavengerBatchMeshId;
@@ -829,13 +800,15 @@ namespace Hecton8.World
         private bool _hasFieldData;
         private float _inverseCellSize;
         private int _fieldRevision;
+        private IDataVault _dataVault;
         private HectonMapMagicVegetationBridge.FloatingLabyrinthConfig _fallbackLabyrinthConfig;
         private Vector4 _densityFieldWorldRect;
-        private NativeArray<DensitySourceData> _densityBuildSources;
+        private VaultGenerationHandle<DensitySourceData> _densityBuildSourcesHandle;
         private NativeParallelMultiHashMap<long, DensityContributionData> _densityContributions;
         private JobHandle _densityBuildHandle;
         private bool _serviceRegistered;
         private bool _densityBuildScheduled;
+        private bool _densityBuildSourcesLocked;
         private int _pendingDensityTrackedInstances;
         private Bounds _pendingDensityFieldBounds;
         private bool _pendingDensityFieldBoundsInitialized;
@@ -953,22 +926,19 @@ namespace Hecton8.World
             if (_listenerCount <= 0)
                 return true;
 
-            EnsureEventQueues();
             if (_pendingEntanglementStrainCount + _nextFrameEntanglementStrainCount >= EntanglementStrainEventCapacity)
             {
                 ReportEntanglementStrainOverflow();
                 return false;
             }
 
-            if (_isDispatchingEvents)
+            bool accepted = _isDispatchingEvents
+                ? TryEnqueueEntanglementStrain(_nextFrameEntanglementStrain, ref _nextFrameEntanglementStrainCount, in signal)
+                : TryEnqueueEntanglementStrain(_pendingEntanglementStrain, ref _pendingEntanglementStrainCount, in signal);
+            if (!accepted)
             {
-                _nextFrameEntanglementStrain.Enqueue(signal);
-                _nextFrameEntanglementStrainCount++;
-            }
-            else
-            {
-                _pendingEntanglementStrain.Enqueue(signal);
-                _pendingEntanglementStrainCount++;
+                ReportEntanglementStrainOverflow();
+                return false;
             }
 
             return true;
@@ -994,22 +964,19 @@ namespace Hecton8.World
             if (_listenerCount <= 0)
                 return true;
 
-            EnsureEventQueues();
             if (_pendingMassiveDisplacementCount + _nextFrameMassiveDisplacementCount >= MassiveDisplacementEventCapacity)
             {
                 ReportMassiveDisplacementOverflow();
                 return false;
             }
 
-            if (_isDispatchingEvents)
+            bool accepted = _isDispatchingEvents
+                ? TryEnqueueMassiveDisplacement(_nextFrameMassiveDisplacement, ref _nextFrameMassiveDisplacementCount, in signal)
+                : TryEnqueueMassiveDisplacement(_pendingMassiveDisplacement, ref _pendingMassiveDisplacementCount, in signal);
+            if (!accepted)
             {
-                _nextFrameMassiveDisplacement.Enqueue(signal);
-                _nextFrameMassiveDisplacementCount++;
-            }
-            else
-            {
-                _pendingMassiveDisplacement.Enqueue(signal);
-                _pendingMassiveDisplacementCount++;
+                ReportMassiveDisplacementOverflow();
+                return false;
             }
 
             return true;
@@ -1048,92 +1015,76 @@ namespace Hecton8.World
             PromoteNextFrameEvents();
         }
 
-        private static void EnsureEventQueues()
+        private static bool TryEnqueueEntanglementStrain(EntanglementStrainSignal[] queue, ref int count, in EntanglementStrainSignal signal)
         {
-            if (!_pendingEntanglementStrain.IsCreated)
-            {
-                _pendingEntanglementStrain = new NativeQueue<EntanglementStrainSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EntanglementStrainSignal>[16] - sargassum strain event lane flushed by SystemDispatcher - owner: SargassumGlobalDragManager
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEntanglementStrain,
-                    EntanglementStrainEventCapacity,
-                    nameof(SargassumGlobalDragManager),
-                    nameof(_pendingEntanglementStrain),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEntanglementStrain, EntanglementStrainEventCapacity);
-            }
+            if ((uint)count >= (uint)queue.Length)
+                return false;
 
-            if (!_nextFrameEntanglementStrain.IsCreated)
-            {
-                _nextFrameEntanglementStrain = new NativeQueue<EntanglementStrainSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<EntanglementStrainSignal>[16] - next-frame sargassum strain lane - owner: SargassumGlobalDragManager
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEntanglementStrain,
-                    EntanglementStrainEventCapacity,
-                    nameof(SargassumGlobalDragManager),
-                    nameof(_nextFrameEntanglementStrain),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEntanglementStrain, EntanglementStrainEventCapacity);
-            }
-
-            if (!_pendingMassiveDisplacement.IsCreated)
-            {
-                _pendingMassiveDisplacement = new NativeQueue<MassiveDisplacementSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<MassiveDisplacementSignal>[16] - sargassum displacement event lane flushed by SystemDispatcher - owner: SargassumGlobalDragManager
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingMassiveDisplacement,
-                    MassiveDisplacementEventCapacity,
-                    nameof(SargassumGlobalDragManager),
-                    nameof(_pendingMassiveDisplacement),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingMassiveDisplacement, MassiveDisplacementEventCapacity);
-            }
-
-            if (!_nextFrameMassiveDisplacement.IsCreated)
-            {
-                _nextFrameMassiveDisplacement = new NativeQueue<MassiveDisplacementSignal>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<MassiveDisplacementSignal>[16] - next-frame sargassum displacement lane - owner: SargassumGlobalDragManager
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameMassiveDisplacement,
-                    MassiveDisplacementEventCapacity,
-                    nameof(SargassumGlobalDragManager),
-                    nameof(_nextFrameMassiveDisplacement),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameMassiveDisplacement, MassiveDisplacementEventCapacity);
-            }
+            queue[count] = signal;
+            count++;
+            return true;
         }
 
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
+        private static bool TryDequeueEntanglementStrain(EntanglementStrainSignal[] queue, ref int count, out EntanglementStrainSignal signal)
         {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
-
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
+            if (count <= 0)
             {
+                signal = default;
+                return false;
             }
+
+            signal = queue[0];
+            count--;
+            for (int i = 0; i < count; i++)
+                queue[i] = queue[i + 1];
+
+            queue[count] = default;
+            return true;
+        }
+
+        private static bool TryEnqueueMassiveDisplacement(MassiveDisplacementSignal[] queue, ref int count, in MassiveDisplacementSignal signal)
+        {
+            if ((uint)count >= (uint)queue.Length)
+                return false;
+
+            queue[count] = signal;
+            count++;
+            return true;
+        }
+
+        private static bool TryDequeueMassiveDisplacement(MassiveDisplacementSignal[] queue, ref int count, out MassiveDisplacementSignal signal)
+        {
+            if (count <= 0)
+            {
+                signal = default;
+                return false;
+            }
+
+            signal = queue[0];
+            count--;
+            for (int i = 0; i < count; i++)
+                queue[i] = queue[i + 1];
+
+            queue[count] = default;
+            return true;
         }
 
         private static bool FlushEntanglementStrain()
         {
-            if (!_pendingEntanglementStrain.IsCreated)
+            if (_pendingEntanglementStrainCount <= 0)
                 return true;
 
-            int scanBudget = _pendingEntanglementStrainCount > 0
-                ? _pendingEntanglementStrainCount
-                : EntanglementStrainEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEntanglementStrain.IsEmpty())
+            int scanBudget = _pendingEntanglementStrainCount;
+            while (scanBudget-- > 0 && _pendingEntanglementStrainCount > 0)
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return false;
 
-                if (!_pendingEntanglementStrain.TryDequeue(out EntanglementStrainSignal signal))
+                if (!TryDequeueEntanglementStrain(_pendingEntanglementStrain, ref _pendingEntanglementStrainCount, out EntanglementStrainSignal signal))
                 {
                     _pendingEntanglementStrainCount = 0;
                     return true;
                 }
-
-                if (_pendingEntanglementStrainCount > 0)
-                    _pendingEntanglementStrainCount--;
 
                 int count = _listenerCount;
                 for (int i = count - 1; i >= 0; i--)
@@ -1146,33 +1097,25 @@ namespace Hecton8.World
                 }
             }
 
-            if (_pendingEntanglementStrain.IsEmpty())
-                _pendingEntanglementStrainCount = 0;
-
             return true;
         }
 
         private static bool FlushMassiveDisplacement()
         {
-            if (!_pendingMassiveDisplacement.IsCreated)
+            if (_pendingMassiveDisplacementCount <= 0)
                 return true;
 
-            int scanBudget = _pendingMassiveDisplacementCount > 0
-                ? _pendingMassiveDisplacementCount
-                : MassiveDisplacementEventCapacity;
-            while (scanBudget-- > 0 && !_pendingMassiveDisplacement.IsEmpty())
+            int scanBudget = _pendingMassiveDisplacementCount;
+            while (scanBudget-- > 0 && _pendingMassiveDisplacementCount > 0)
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return false;
 
-                if (!_pendingMassiveDisplacement.TryDequeue(out MassiveDisplacementSignal signal))
+                if (!TryDequeueMassiveDisplacement(_pendingMassiveDisplacement, ref _pendingMassiveDisplacementCount, out MassiveDisplacementSignal signal))
                 {
                     _pendingMassiveDisplacementCount = 0;
                     return true;
                 }
-
-                if (_pendingMassiveDisplacementCount > 0)
-                    _pendingMassiveDisplacementCount--;
 
                 int count = _listenerCount;
                 for (int i = count - 1; i >= 0; i--)
@@ -1185,47 +1128,21 @@ namespace Hecton8.World
                 }
             }
 
-            if (_pendingMassiveDisplacement.IsEmpty())
-                _pendingMassiveDisplacementCount = 0;
-
             return true;
         }
 
         private static bool HasPendingFrontEvents()
         {
-            return (_pendingEntanglementStrain.IsCreated && !_pendingEntanglementStrain.IsEmpty())
-                || (_pendingMassiveDisplacement.IsCreated && !_pendingMassiveDisplacement.IsEmpty());
+            return _pendingEntanglementStrainCount > 0
+                || _pendingMassiveDisplacementCount > 0;
         }
 
         private static void DropQueuedEvents()
         {
-            if (_pendingEntanglementStrain.IsCreated)
-            {
-                while (_pendingEntanglementStrain.TryDequeue(out _))
-                {
-                }
-            }
-
-            if (_nextFrameEntanglementStrain.IsCreated)
-            {
-                while (_nextFrameEntanglementStrain.TryDequeue(out _))
-                {
-                }
-            }
-
-            if (_pendingMassiveDisplacement.IsCreated)
-            {
-                while (_pendingMassiveDisplacement.TryDequeue(out _))
-                {
-                }
-            }
-
-            if (_nextFrameMassiveDisplacement.IsCreated)
-            {
-                while (_nextFrameMassiveDisplacement.TryDequeue(out _))
-                {
-                }
-            }
+            Array.Clear(_pendingEntanglementStrain, 0, _pendingEntanglementStrain.Length);
+            Array.Clear(_nextFrameEntanglementStrain, 0, _nextFrameEntanglementStrain.Length);
+            Array.Clear(_pendingMassiveDisplacement, 0, _pendingMassiveDisplacement.Length);
+            Array.Clear(_nextFrameMassiveDisplacement, 0, _nextFrameMassiveDisplacement.Length);
 
             _pendingEntanglementStrainCount = 0;
             _nextFrameEntanglementStrainCount = 0;
@@ -1264,7 +1181,7 @@ namespace Hecton8.World
         private static void LogListenerDispatchException(Exception exception)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogException(exception);
+            Hecton8.Core.H8Debug.LogException(exception);
 #endif
         }
 
@@ -1441,7 +1358,7 @@ namespace Hecton8.World
         private static void ReportEntanglementStrainOverflow()
         {
             _droppedEntanglementStrainCount++;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastEntanglementOverflowTelemetryFrame == frame)
                 return;
 
@@ -1455,7 +1372,7 @@ namespace Hecton8.World
         private static void ReportMassiveDisplacementOverflow()
         {
             _droppedMassiveDisplacementCount++;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastMassiveDisplacementOverflowTelemetryFrame == frame)
                 return;
 
@@ -1469,7 +1386,7 @@ namespace Hecton8.World
         private static void ReportListenerRegistrationRejected()
         {
             _droppedListenerRegistrationCount++;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerRejectedTelemetryFrame == frame)
                 return;
 
@@ -1483,7 +1400,7 @@ namespace Hecton8.World
         private static void ReportListenerDispatchException()
         {
             _listenerExceptionCount++;
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastListenerExceptionTelemetryFrame == frame)
                 return;
 
@@ -1496,23 +1413,27 @@ namespace Hecton8.World
 
         private static void PromoteNextFrameEvents()
         {
-            if (_nextFrameEntanglementStrain.IsCreated)
+            while (_nextFrameEntanglementStrainCount > 0)
             {
-                while (_nextFrameEntanglementStrainCount > 0 && _nextFrameEntanglementStrain.TryDequeue(out EntanglementStrainSignal signal))
+                if (!TryDequeueEntanglementStrain(_nextFrameEntanglementStrain, ref _nextFrameEntanglementStrainCount, out EntanglementStrainSignal signal))
+                    break;
+
+                if (!TryEnqueueEntanglementStrain(_pendingEntanglementStrain, ref _pendingEntanglementStrainCount, in signal))
                 {
-                    _nextFrameEntanglementStrainCount--;
-                    _pendingEntanglementStrain.Enqueue(signal);
-                    _pendingEntanglementStrainCount++;
+                    ReportEntanglementStrainOverflow();
+                    break;
                 }
             }
 
-            if (_nextFrameMassiveDisplacement.IsCreated)
+            while (_nextFrameMassiveDisplacementCount > 0)
             {
-                while (_nextFrameMassiveDisplacementCount > 0 && _nextFrameMassiveDisplacement.TryDequeue(out MassiveDisplacementSignal signal))
+                if (!TryDequeueMassiveDisplacement(_nextFrameMassiveDisplacement, ref _nextFrameMassiveDisplacementCount, out MassiveDisplacementSignal signal))
+                    break;
+
+                if (!TryEnqueueMassiveDisplacement(_pendingMassiveDisplacement, ref _pendingMassiveDisplacementCount, in signal))
                 {
-                    _nextFrameMassiveDisplacementCount--;
-                    _pendingMassiveDisplacement.Enqueue(signal);
-                    _pendingMassiveDisplacementCount++;
+                    ReportMassiveDisplacementOverflow();
+                    break;
                 }
             }
         }
@@ -1523,13 +1444,14 @@ namespace Hecton8.World
             if (registered != null && registered != this)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[SargassumGlobalDragManager] Duplicate instance detected. Destroying the newer component.", this);
+                Hecton8.Core.H8Debug.LogError("[SargassumGlobalDragManager] Duplicate instance detected. Destroying the newer component.", this);
 #endif
                 Destroy(this);
                 return;
             }
 
             TryRegisterService();
+            CacheDataVaultCold();
             RefreshRenderLayerCache();
             SanitizeSettings();
             ResolveBridge();
@@ -2088,69 +2010,85 @@ namespace Hecton8.World
             Vector3 boundsMax = default;
             int trackedInstances = 0;
             double3 universeOffset = mapMagicVegetationBridge.TotalUniverseOffsetDouble;
-            EnsureDensityBuildSourceCapacity(activeCount);
-
-            int sourceCount = 0;
-            int estimatedContributionCount = 0;
-
-            for (int i = 0; i < activeCount; i++)
-            {
-                if ((HectonVegetationInstanceType)types[i] != HectonVegetationInstanceType.Sargassum)
-                    continue;
-
-                Matrix4x4 matrix = matrices[i];
-                double3 originDouble = new double3(matrix.m03, matrix.m13, matrix.m23) + universeOffset;
-                Vector3 origin = new Vector3((float)originDouble.x, (float)originDouble.y, (float)originDouble.z);
-                float scale = ExtractUniformScale(matrix);
-                float influenceRadius = Mathf.Max(baseInfluenceRadius * scale, cellSize * 0.35f);
-                float verticalHalfExtent = Mathf.Max(baseVerticalHalfExtent * scale, 0.5f);
-
-                _densityBuildSources[sourceCount++] = new DensitySourceData
-                {
-                    OriginWS = origin,
-                    Scale = scale
-                };
-
-                int minCellX = Mathf.FloorToInt((origin.x - influenceRadius) * _inverseCellSize);
-                int maxCellX = Mathf.FloorToInt((origin.x + influenceRadius) * _inverseCellSize);
-                int minCellZ = Mathf.FloorToInt((origin.z - influenceRadius) * _inverseCellSize);
-                int maxCellZ = Mathf.FloorToInt((origin.z + influenceRadius) * _inverseCellSize);
-                estimatedContributionCount += Mathf.Max(1, (maxCellX - minCellX + 1) * (maxCellZ - minCellZ + 1));
-                EncapsulateExtents(
-                    origin,
-                    new Vector3(influenceRadius, verticalHalfExtent, influenceRadius),
-                    ref boundsMin,
-                    ref boundsMax,
-                    ref boundsInitialized);
-
-                trackedInstances++;
-            }
-
-            if (sourceCount <= 0)
+            if (!EnsureDensityBuildSourceCapacity(activeCount) ||
+                !TryAcquireVaultBuffer(in _densityBuildSourcesHandle, activeCount, out NativeArray<DensitySourceData> densityBuildSources))
             {
                 ClearField();
                 return;
             }
 
-            EnsureDensityContributionCapacity(estimatedContributionCount);
-            _densityContributions.Clear();
+            int sourceCount = 0;
+            int estimatedContributionCount = 0;
+            bool densitySourceLockTransferred = false;
 
-            BuildDensityContributionJob buildJob = new BuildDensityContributionJob
+            try
             {
-                Sources = _densityBuildSources.GetSubArray(0, sourceCount),
-                Contributions = _densityContributions.AsParallelWriter(),
-                CellSize = cellSize,
-                InverseCellSize = _inverseCellSize,
-                BaseInfluenceRadius = baseInfluenceRadius,
-                BaseVerticalHalfExtent = baseVerticalHalfExtent,
-                DistancePower = distancePower
-            };
+                for (int i = 0; i < activeCount; i++)
+                {
+                    if ((HectonVegetationInstanceType)types[i] != HectonVegetationInstanceType.Sargassum)
+                        continue;
 
-            _densityBuildHandle = buildJob.Schedule(sourceCount, math.max(1, math.min(32, sourceCount / 4)));
-            _densityBuildScheduled = true;
-            _pendingDensityTrackedInstances = trackedInstances;
-            _pendingDensityFieldBounds = boundsInitialized ? BuildBoundsFromMinMax(boundsMin, boundsMax) : default;
-            _pendingDensityFieldBoundsInitialized = boundsInitialized;
+                    Matrix4x4 matrix = matrices[i];
+                    double3 originDouble = new double3(matrix.m03, matrix.m13, matrix.m23) + universeOffset;
+                    Vector3 origin = new Vector3((float)originDouble.x, (float)originDouble.y, (float)originDouble.z);
+                    float scale = ExtractUniformScale(matrix);
+                    float influenceRadius = Mathf.Max(baseInfluenceRadius * scale, cellSize * 0.35f);
+                    float verticalHalfExtent = Mathf.Max(baseVerticalHalfExtent * scale, 0.5f);
+
+                    densityBuildSources[sourceCount++] = new DensitySourceData
+                    {
+                        OriginWS = origin,
+                        Scale = scale
+                    };
+
+                    int minCellX = Mathf.FloorToInt((origin.x - influenceRadius) * _inverseCellSize);
+                    int maxCellX = Mathf.FloorToInt((origin.x + influenceRadius) * _inverseCellSize);
+                    int minCellZ = Mathf.FloorToInt((origin.z - influenceRadius) * _inverseCellSize);
+                    int maxCellZ = Mathf.FloorToInt((origin.z + influenceRadius) * _inverseCellSize);
+                    estimatedContributionCount += Mathf.Max(1, (maxCellX - minCellX + 1) * (maxCellZ - minCellZ + 1));
+                    EncapsulateExtents(
+                        origin,
+                        new Vector3(influenceRadius, verticalHalfExtent, influenceRadius),
+                        ref boundsMin,
+                        ref boundsMax,
+                        ref boundsInitialized);
+
+                    trackedInstances++;
+                }
+
+                if (sourceCount <= 0)
+                {
+                    ClearField();
+                    return;
+                }
+
+                EnsureDensityContributionCapacity(estimatedContributionCount);
+                _densityContributions.Clear();
+
+                BuildDensityContributionJob buildJob = new BuildDensityContributionJob
+                {
+                    Sources = densityBuildSources.GetSubArray(0, sourceCount),
+                    Contributions = _densityContributions.AsParallelWriter(),
+                    CellSize = cellSize,
+                    InverseCellSize = _inverseCellSize,
+                    BaseInfluenceRadius = baseInfluenceRadius,
+                    BaseVerticalHalfExtent = baseVerticalHalfExtent,
+                    DistancePower = distancePower
+                };
+
+                _densityBuildHandle = buildJob.Schedule(sourceCount, math.max(1, math.min(32, sourceCount / 4)));
+                _densityBuildScheduled = true;
+                _densityBuildSourcesLocked = true;
+                densitySourceLockTransferred = true;
+                _pendingDensityTrackedInstances = trackedInstances;
+                _pendingDensityFieldBounds = boundsInitialized ? BuildBoundsFromMinMax(boundsMin, boundsMax) : default;
+                _pendingDensityFieldBoundsInitialized = boundsInitialized;
+            }
+            finally
+            {
+                if (!densitySourceLockTransferred)
+                    ReleaseVaultWrite(in _densityBuildSourcesHandle);
+            }
         }
 
         private void CompleteDensityFieldBuildIfReady()
@@ -2162,6 +2100,7 @@ namespace Hecton8.World
                 return;
 
             _densityBuildScheduled = false;
+            ReleaseDensityBuildSourceWrite();
             ApplyDensityFieldBuildResults();
         }
 
@@ -2211,25 +2150,10 @@ namespace Hecton8.World
             _debugDensityFieldWorldRect = Vector4.zero;
         }
 
-        private void EnsureDensityBuildSourceCapacity(int requiredCount)
+        private bool EnsureDensityBuildSourceCapacity(int requiredCount)
         {
             int safeCount = Mathf.Max(1, Mathf.NextPowerOfTwo(requiredCount));
-            if (_densityBuildSources.IsCreated && _densityBuildSources.Length >= safeCount)
-                return;
-
-            if (_densityBuildSources.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_densityBuildSources);
-                _densityBuildSources.Dispose();
-            }
-
-            // COLD ALLOC: NativeArray<DensitySourceData>[capacity] - transient Burst source staging for canopy density rebuilds - owner: SargassumGlobalDragManager
-            _densityBuildSources = new NativeArray<DensitySourceData>(safeCount, DataVaultExemptDensityBuildAllocator, NativeArrayOptions.UninitializedMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                _densityBuildSources,
-                nameof(SargassumGlobalDragManager),
-                nameof(_densityBuildSources),
-                NativeAllocationLifetime.Scene);
+            return EnsureVaultBuffer(ref _densityBuildSourcesHandle, DensityBuildSourcesBufferId, safeCount, NativeArrayOptions.UninitializedMemory);
         }
 
         private void EnsureDensityContributionCapacity(int requiredCount)
@@ -2258,8 +2182,14 @@ namespace Hecton8.World
         private void ReleaseDensityBuildStorage()
         {
             JobHandle dependency = _densityBuildScheduled ? _densityBuildHandle : default;
-            if (_densityBuildSources.IsCreated)
-                NativeMemorySentinel.UnregisterNativeArray(_densityBuildSources);
+            if (_densityBuildSourcesLocked)
+            {
+                if (_densityBuildScheduled)
+                    _densityBuildHandle.Complete();
+
+                ReleaseDensityBuildSourceWrite();
+                dependency = default;
+            }
 
             if (_densityContributions.IsCreated)
             {
@@ -2268,27 +2198,13 @@ namespace Hecton8.World
                     nameof(_densityContributions));
             }
 
-            DisposeNativeArray(ref _densityBuildSources, dependency);
+            ReleaseVaultBuffer(ref _densityBuildSourcesHandle);
             DisposeNativeParallelMultiHashMap(ref _densityContributions, dependency);
             _densityBuildHandle = default;
             _densityBuildScheduled = false;
             _pendingDensityTrackedInstances = 0;
             _pendingDensityFieldBounds = default;
             _pendingDensityFieldBoundsInitialized = false;
-        }
-
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency)
-            where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            if (dependency.IsCompleted)
-                array.Dispose();
-            else
-                array.Dispose(dependency);
-
-            array = default;
         }
 
         private static void DisposeNativeParallelMultiHashMap<TKey, TValue>(
@@ -2306,6 +2222,119 @@ namespace Hecton8.World
                 hashMap.Dispose(dependency);
 
             hashMap = default;
+        }
+
+        private IDataVault CacheDataVaultCold()
+        {
+            if (_dataVault == null)
+                _dataVault = GlobalRegistry.DataVault;
+
+            return _dataVault;
+        }
+
+        private bool EnsureScavengerMatrixCapacity(int requiredCount)
+        {
+            return EnsureVaultBuffer(
+                ref _scavengerMatricesHandle,
+                ScavengerMatricesBufferId,
+                Mathf.Max(1, requiredCount),
+                NativeArrayOptions.UninitializedMemory);
+        }
+
+        private bool EnsureScavengerBatchMetadataCapacity()
+        {
+            return EnsureVaultBuffer(
+                ref _scavengerBatchMetadataHandle,
+                ScavengerBatchMetadataBufferId,
+                ScavengerBrgMetadataPlaceholderCount,
+                NativeArrayOptions.ClearMemory);
+        }
+
+        private bool EnsureVaultBuffer<T>(
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength,
+            NativeArrayOptions options) where T : struct
+        {
+            IDataVault vault = CacheDataVaultCold();
+            if (vault == null || requiredLength <= 0)
+                return false;
+
+            uint expectedBufferId = unchecked((uint)(int)bufferId);
+            if (IsVaultHandleCreated(in handle) &&
+                handle.BufferID == expectedBufferId &&
+                vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly existing) &&
+                existing.IsCreated &&
+                existing.Length >= requiredLength)
+            {
+                return true;
+            }
+
+            if (IsVaultHandleCreated(in handle))
+                vault.ReleaseBuffer(in handle);
+
+            handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                requiredLength,
+                VaultOwnerSystemId,
+                options);
+
+            return IsVaultHandleCreated(in handle) &&
+                   handle.BufferID == expectedBufferId &&
+                   vault.TryReadOnlyHandle(in handle, out NativeArray<T>.ReadOnly resolved) &&
+                   resolved.IsCreated &&
+                   resolved.Length >= requiredLength;
+        }
+
+        private bool TryAcquireVaultBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = _dataVault;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsVaultHandleCreated(in handle) ||
+                !vault.TryAcquireWriteLock(in handle, VaultOwnerSystemId, out buffer))
+            {
+                return false;
+            }
+
+            if (buffer.IsCreated && buffer.Length >= requiredLength)
+                return true;
+
+            vault.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+            buffer = default;
+            return false;
+        }
+
+        private void ReleaseDensityBuildSourceWrite()
+        {
+            if (!_densityBuildSourcesLocked)
+                return;
+
+            ReleaseVaultWrite(in _densityBuildSourcesHandle);
+            _densityBuildSourcesLocked = false;
+        }
+
+        private void ReleaseVaultWrite<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            _dataVault?.ReleaseWriteLock(in handle, VaultOwnerSystemId);
+        }
+
+        private void ReleaseVaultBuffer<T>(ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            IDataVault vault = _dataVault;
+            if (vault != null && IsVaultHandleCreated(in handle))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private void ClearNestedAttachments()
@@ -3252,12 +3281,11 @@ namespace Hecton8.World
             int instanceCapacity = Mathf.Max(1, hostCapacity * Mathf.Clamp(scavengersPerHost, 4, 32));
             if (_scavengerHosts != null &&
                 _externalScavengerSites != null &&
-                _scavengerMatricesNative.IsCreated &&
-                _scavengerMatricesNative.Length == instanceCapacity &&
                 _scavengerHosts.Length == hostCapacity &&
                 _externalScavengerSites.Length == externalSiteCapacity &&
                 _scavengerInstanceCapacity == instanceCapacity)
             {
+                EnsureScavengerMatrixCapacity(instanceCapacity);
                 return;
             }
 
@@ -3268,9 +3296,8 @@ namespace Hecton8.World
             _scavengerHosts = new ScavengerHostState[hostCapacity];
             // COLD ALLOC: ExternalScavengerSiteState[externalSiteCapacity] - corpse/carcass scavenger targets without live chunk owners - owner: SargassumGlobalDragManager
             _externalScavengerSites = new ExternalScavengerSiteState[externalSiteCapacity];
-            _scavengerMatricesNative = new NativeArray<Matrix4x4>(instanceCapacity, DataVaultExemptRenderStagingAllocator, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Matrix4x4>[instanceCapacity] - Burst-readable scavenger BRG culling payload mirror - owner: SargassumGlobalDragManager
-            NativeMemorySentinel.RegisterNativeArray(_scavengerMatricesNative, nameof(SargassumGlobalDragManager), nameof(_scavengerMatricesNative), NativeAllocationLifetime.Session);
             _scavengerInstanceCapacity = instanceCapacity;
+            EnsureScavengerMatrixCapacity(instanceCapacity);
         }
 
         private void EnsureScavengerRenderResources()
@@ -3316,10 +3343,23 @@ namespace Hecton8.World
                     userContext = IntPtr.Zero
                 });
 
-                _scavengerBatchMetadata = new NativeArray<MetadataValue>(ScavengerBrgMetadataPlaceholderCount, DataVaultExemptRenderStagingAllocator); // COLD ALLOC: NativeArray<MetadataValue>[1] - BRG metadata placeholder for scavenger scatter - owner: SargassumGlobalDragManager
-                NativeMemorySentinel.RegisterNativeArray(_scavengerBatchMetadata, nameof(SargassumGlobalDragManager), nameof(_scavengerBatchMetadata), NativeAllocationLifetime.Session);
+                if (!EnsureScavengerBatchMetadataCapacity() ||
+                    !TryAcquireVaultBuffer(in _scavengerBatchMetadataHandle, ScavengerBrgMetadataPlaceholderCount, out NativeArray<MetadataValue> batchMetadata))
+                {
+                    _scavengerBatchRendererGroup.Dispose();
+                    _scavengerBatchRendererGroup = null;
+                    return;
+                }
+
                 _scavengerBatchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for scavenger scatter - owner: SargassumGlobalDragManager
-                _scavengerBatchId = _scavengerBatchRendererGroup.AddBatch(_scavengerBatchMetadata, _scavengerBatchHandleBuffer.bufferHandle);
+                try
+                {
+                    _scavengerBatchId = _scavengerBatchRendererGroup.AddBatch(batchMetadata, _scavengerBatchHandleBuffer.bufferHandle);
+                }
+                finally
+                {
+                    ReleaseVaultWrite(in _scavengerBatchMetadataHandle);
+                }
             }
         }
 
@@ -3332,13 +3372,7 @@ namespace Hecton8.World
             _boundScavengerMatrixBuffer = null;
             _boundScavengerMatrixMaterial = null;
             _scavengerMatrixUploadIndex = 0;
-
-            if (_scavengerMatricesNative.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_scavengerMatricesNative);
-                _scavengerMatricesNative.Dispose();
-                _scavengerMatricesNative = default;
-            }
+            ReleaseVaultBuffer(ref _scavengerMatricesHandle);
         }
 
         private void ReleaseScavengerResources()
@@ -3388,11 +3422,7 @@ namespace Hecton8.World
                 _scavengerBatchHandleBuffer = null;
             }
 
-            if (_scavengerBatchMetadata.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_scavengerBatchMetadata);
-                _scavengerBatchMetadata.Dispose();
-            }
+            ReleaseVaultBuffer(ref _scavengerBatchMetadataHandle);
 
             ReleaseScavengerBrgMaterial();
         }
@@ -3457,6 +3487,17 @@ namespace Hecton8.World
             float externalSiteDurationInv = 1f / math.max(0.1f, externalScavengerSiteDuration);
             int maxScavengersPerHost = math.max(1, scavengersPerHost);
 
+            if (!TryAcquireVaultBuffer(in _scavengerMatricesHandle, _scavengerInstanceCapacity, out NativeArray<Matrix4x4> scavengerMatrices))
+            {
+                _debugScavengerHostCount = 0;
+                _debugScavengerInstanceCount = 0;
+                _debugScavengerBounds = default;
+                UploadScavengerInstances(0);
+                return;
+            }
+
+            try
+            {
             for (int readHostIndex = 0; readHostIndex < _activeScavengerHostCount; readHostIndex++)
             {
                 ScavengerHostState host = _scavengerHosts[readHostIndex];
@@ -3496,8 +3537,8 @@ namespace Hecton8.World
 
                         float scale = LerpClamped(scavengerScaleMin, scavengerScaleMax, scaleHash);
                         Matrix4x4 matrix = BuildScavengerCardinalMatrix(positionWS, orbitPhase01, scale);
-                        if (_scavengerMatricesNative.IsCreated && matrixCount < _scavengerMatricesNative.Length)
-                            _scavengerMatricesNative[matrixCount] = matrix;
+                        if (matrixCount < scavengerMatrices.Length)
+                            scavengerMatrices[matrixCount] = matrix;
                         matrixCount++;
 
                         EncapsulateRadius(positionWS, math.max(0.1f, scale * 1.4f), ref boundsMin, ref boundsMax, ref boundsInitialized);
@@ -3540,8 +3581,8 @@ namespace Hecton8.World
 
                         float scale = LerpClamped(scavengerScaleMin, scavengerScaleMax, scaleHash) * LerpClamped(0.7f, 1f, 1f - life01);
                         Matrix4x4 matrix = BuildScavengerCardinalMatrix(positionWS, orbitPhase01, scale);
-                        if (_scavengerMatricesNative.IsCreated && matrixCount < _scavengerMatricesNative.Length)
-                            _scavengerMatricesNative[matrixCount] = matrix;
+                        if (matrixCount < scavengerMatrices.Length)
+                            scavengerMatrices[matrixCount] = matrix;
                         matrixCount++;
 
                         EncapsulateRadius(positionWS, math.max(0.1f, scale * 1.4f), ref boundsMin, ref boundsMax, ref boundsInitialized);
@@ -3567,12 +3608,17 @@ namespace Hecton8.World
             _debugScavengerInstanceCount = matrixCount;
             _scavengerDrawBounds = boundsInitialized ? BuildBoundsFromMinMax(boundsMin, boundsMax) : default;
             _debugScavengerBounds = _scavengerDrawBounds;
-            UploadScavengerInstances(matrixCount);
+            UploadScavengerInstances(matrixCount, scavengerMatrices);
+            }
+            finally
+            {
+                ReleaseVaultWrite(in _scavengerMatricesHandle);
+            }
         }
 
-        private void UploadScavengerInstances(int instanceCount)
+        private void UploadScavengerInstances(int instanceCount, NativeArray<Matrix4x4> scavengerMatrices = default)
         {
-            if (!_scavengerMatricesNative.IsCreated)
+            if (instanceCount > 0 && !scavengerMatrices.IsCreated)
                 return;
             if (instanceCount > 0)
             {
@@ -3580,7 +3626,7 @@ namespace Hecton8.World
                 if (writeBuffer == null)
                     return;
 
-                GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, _scavengerMatricesNative, instanceCount);
+                GraphicsBufferUploadUtility.UploadNativeArray(writeBuffer, scavengerMatrices, instanceCount);
                 _activeScavengerMatrixBuffer = writeBuffer;
                 _scavengerMatrixUploadIndex ^= 1;
             }
@@ -3938,7 +3984,7 @@ namespace Hecton8.World
             {
                 _editorValidateDepth--;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("SargassumGlobalDragManager editor validation watchdog tripped.", this);
+                Hecton8.Core.H8Debug.LogError("SargassumGlobalDragManager editor validation watchdog tripped.", this);
 #endif
                 return;
             }
@@ -4096,13 +4142,30 @@ namespace Hecton8.World
                     if (Application.isPlaying && isActiveAndEnabled)
                         TryRegisterSaveOwner();
                     break;
+                case GlobalRegistryServiceSlot.DataVault:
+                    if (_densityBuildSourcesLocked)
+                    {
+                        if (_densityBuildScheduled)
+                            _densityBuildHandle.Complete();
+
+                        ReleaseDensityBuildSourceWrite();
+                        _densityBuildScheduled = false;
+                        _densityBuildHandle = default;
+                    }
+
+                    ReleaseVaultBuffer(ref _densityBuildSourcesHandle);
+                    ReleaseVaultBuffer(ref _scavengerMatricesHandle);
+                    ReleaseVaultBuffer(ref _scavengerBatchMetadataHandle);
+                    _dataVault = currentService as IDataVault;
+                    break;
             }
         }
 
         private void RefreshColdRegistryDependencies()
         {
+            _dataVault = GlobalRegistry.DataVault;
             _cutManager = GlobalRegistry.SargassumCut;
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
         }
 
         private void TryRegisterSaveOwner()
@@ -4794,10 +4857,10 @@ namespace Hecton8.World
             if (body == null)
                 return;
 
-            Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(
+            GlobalRegistry.Physics?.QueueLinearVelocitySet(
                 body,
                 HectonPlayerMotor.SafeVelocity(linearVelocity, body.linearVelocity));
-            Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(
+            GlobalRegistry.Physics?.QueueAngularVelocitySet(
                 body,
                 HectonPlayerMotor.SafeVelocity(angularVelocity, body.angularVelocity));
         }
@@ -4827,28 +4890,47 @@ namespace Hecton8.World
             }
 
             _debrisPetrificationBodies[slot] = body;
-            _debrisPetrificationTimers.Enqueue(new DebrisTimer
+            if (!TryEnqueueDebrisPetrificationTimer(new DebrisTimer
             {
                 Slot = slot,
                 RemainingSeconds = DebrisPetrificationDelaySeconds
-            });
-            _debrisPetrificationTimerCount++;
+            }))
+            {
+                _debrisPetrificationBodies[slot] = null;
+                ApplyDebrisPetrification(body);
+            }
         }
 
         private bool EnsureDebrisPetrificationStorage()
         {
-            if (_debrisPetrificationTimers.IsCreated)
-                return true;
+            return _debrisPetrificationTimers != null && _debrisPetrificationBodies != null;
+        }
 
-            _debrisPetrificationTimers = new NativeQueue<DebrisTimer>(DataVaultExemptSceneTimerAllocator); // COLD ALLOC: NativeQueue<DebrisTimer>[128] - slow-tick debris petrification timers - owner: SargassumGlobalDragManager
-            NativeMemorySentinel.RegisterNativeQueue(
-                _debrisPetrificationTimers,
-                DebrisPetrificationTimerCapacity,
-                nameof(SargassumGlobalDragManager),
-                nameof(_debrisPetrificationTimers),
-                NativeAllocationLifetime.Scene);
-            PrewarmQueue(ref _debrisPetrificationTimers, DebrisPetrificationTimerCapacity);
-            return _debrisPetrificationTimers.IsCreated;
+        private bool TryEnqueueDebrisPetrificationTimer(in DebrisTimer timer)
+        {
+            if ((uint)_debrisPetrificationTimerCount >= (uint)_debrisPetrificationTimers.Length)
+                return false;
+
+            _debrisPetrificationTimers[_debrisPetrificationTimerCount] = timer;
+            _debrisPetrificationTimerCount++;
+            return true;
+        }
+
+        private bool TryDequeueDebrisPetrificationTimer(out DebrisTimer timer)
+        {
+            if (_debrisPetrificationTimerCount <= 0)
+            {
+                timer = default;
+                return false;
+            }
+
+            timer = _debrisPetrificationTimers[0];
+            _debrisPetrificationTimerCount--;
+            for (int i = 0; i < _debrisPetrificationTimerCount; i++)
+                _debrisPetrificationTimers[i] = _debrisPetrificationTimers[i + 1];
+
+            _debrisPetrificationTimers[_debrisPetrificationTimerCount] = default;
+            return true;
         }
 
         private int FindDebrisPetrificationSlot()
@@ -4868,25 +4950,28 @@ namespace Hecton8.World
 
         private void ProcessDebrisPetrificationTimers()
         {
-            if (!_debrisPetrificationTimers.IsCreated || _debrisPetrificationTimerCount <= 0)
+            if (_debrisPetrificationTimerCount <= 0)
                 return;
 
             int scanBudget = _debrisPetrificationTimerCount;
             int disableBudget = DebrisPetrificationDisableBudgetPerSlowTick;
-            while (scanBudget-- > 0 && _debrisPetrificationTimerCount > 0 && !_debrisPetrificationTimers.IsEmpty())
+            while (scanBudget-- > 0 && _debrisPetrificationTimerCount > 0)
             {
-                if (!_debrisPetrificationTimers.TryDequeue(out DebrisTimer timer))
+                if (!TryDequeueDebrisPetrificationTimer(out DebrisTimer timer))
                 {
                     _debrisPetrificationTimerCount = 0;
                     return;
                 }
 
-                _debrisPetrificationTimerCount--;
                 timer.RemainingSeconds -= DebrisPetrificationSlowTickSeconds;
                 if (timer.RemainingSeconds > 0f || disableBudget <= 0)
                 {
-                    _debrisPetrificationTimers.Enqueue(timer);
-                    _debrisPetrificationTimerCount++;
+                    if (!TryEnqueueDebrisPetrificationTimer(in timer) &&
+                        (uint)timer.Slot < (uint)_debrisPetrificationBodies.Length)
+                    {
+                        ApplyDebrisPetrification(_debrisPetrificationBodies[timer.Slot]);
+                        _debrisPetrificationBodies[timer.Slot] = null;
+                    }
                     continue;
                 }
 
@@ -4904,8 +4989,8 @@ namespace Hecton8.World
             if (body == null)
                 return;
 
-            Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(body, Vector3.zero, wake: false);
-            Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
+            GlobalRegistry.Physics?.QueueLinearVelocitySet(body, Vector3.zero, wake: false);
+            GlobalRegistry.Physics?.QueueAngularVelocitySet(body, Vector3.zero, wake: false);
             body.isKinematic = true;
             body.detectCollisions = false;
             body.Sleep();
@@ -4913,13 +4998,7 @@ namespace Hecton8.World
 
         private void ReleaseDebrisPetrificationStorage()
         {
-            if (_debrisPetrificationTimers.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(SargassumGlobalDragManager), nameof(_debrisPetrificationTimers));
-                _debrisPetrificationTimers.Dispose();
-                _debrisPetrificationTimers = default;
-            }
-
+            Array.Clear(_debrisPetrificationTimers, 0, _debrisPetrificationTimers.Length);
             Array.Clear(_debrisPetrificationBodies, 0, _debrisPetrificationBodies.Length);
             _debrisPetrificationTimerCount = 0;
             _debrisPetrificationCursor = 0;

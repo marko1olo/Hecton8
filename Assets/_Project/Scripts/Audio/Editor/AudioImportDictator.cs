@@ -78,7 +78,7 @@ namespace Hecton8.Audio.Editor
             if (guardArmed)
             {
                 SessionState.SetBool(guardKey, false);
-                Debug.LogError(LogUnstable);
+                Hecton8.Core.H8Debug.LogError(LogUnstable);
                 return;
             }
 
@@ -304,7 +304,7 @@ namespace Hecton8.Audio.Editor
         internal static void ApplyPolicyToAllAudioAssetsMenu()
         {
             int changedCount = ApplyPolicyToAllAudioAssets();
-            Debug.Log("[AudioImportDictator:0xA1D10005] Applied import policy to " +
+            Hecton8.Core.H8Debug.Log("[AudioImportDictator:0xA1D10005] Applied import policy to " +
                       changedCount +
                       " changed audio assets under " +
                       ProjectAudioRoot +
@@ -587,7 +587,7 @@ namespace Hecton8.Audio.Editor
                 return;
 
             string reportText = BuildPolicyDriftReport(offenderCount, builder);
-            Debug.LogError(reportText);
+            Hecton8.Core.H8Debug.LogError(reportText);
             if (failBuild)
                 throw new BuildFailedException(reportText);
         }
@@ -626,7 +626,7 @@ namespace Hecton8.Audio.Editor
 
             offenders.Sort(CompareBudgetItemsDescending);
             string reportText = BuildFailureReport(totalBytes, offenders);
-            Debug.LogError(reportText);
+            Hecton8.Core.H8Debug.LogError(reportText);
 
             if (failBuild)
                 throw new BuildFailedException(reportText);
@@ -753,7 +753,7 @@ namespace Hecton8.Audio.Editor
                 return;
 
             string report = BuildFailureReport(issues);
-            Debug.LogError(report);
+            Hecton8.Core.H8Debug.LogError(report);
             if (failBuild)
                 throw new BuildFailedException(report);
         }
@@ -864,7 +864,7 @@ namespace Hecton8.Audio.Editor
             }
 
             AssetDatabase.SaveAssets();
-            Debug.Log("[EnvironmentAudioSourcePurgeGate:0xA1D10003] Removed " +
+            Hecton8.Core.H8Debug.Log("[EnvironmentAudioSourcePurgeGate:0xA1D10003] Removed " +
                       removedSourceCount +
                       " AudioSource components from " +
                       changedPrefabCount +
@@ -901,7 +901,7 @@ namespace Hecton8.Audio.Editor
                 return;
 
             string report = BuildFailureReport(issues);
-            Debug.LogError(report);
+            Hecton8.Core.H8Debug.LogError(report);
             if (failBuild)
                 throw new BuildFailedException(report);
         }

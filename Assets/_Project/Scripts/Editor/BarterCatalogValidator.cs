@@ -19,7 +19,7 @@ namespace Hecton8.EditorTools
             Array.Sort(guids, StringComparer.Ordinal);
             if (guids.Length <= 0)
             {
-                Debug.LogWarning("[BarterValidation] No BarterOfferCatalog assets found.");
+                Hecton8.Core.H8Debug.LogWarning("[BarterValidation] No BarterOfferCatalog assets found.");
                 return;
             }
 
@@ -35,26 +35,26 @@ namespace Hecton8.EditorTools
                     BarterOfferData offer = catalog.GetAt(j);
                     if (offer == null)
                     {
-                        Debug.LogError($"[BarterValidation] Null offer in catalog: {path}", catalog);
+                        Hecton8.Core.H8Debug.LogError($"[BarterValidation] Null offer in catalog: {path}", catalog);
                         errors++;
                         continue;
                     }
 
                     if (string.IsNullOrWhiteSpace(offer.offerId))
                     {
-                        Debug.LogError($"[BarterValidation] Offer missing offerId: {offer.name}", offer);
+                        Hecton8.Core.H8Debug.LogError($"[BarterValidation] Offer missing offerId: {offer.name}", offer);
                         errors++;
                     }
 
                     if (offer.costs == null || offer.costs.Length == 0)
                     {
-                        Debug.LogError($"[BarterValidation] Offer missing costs: {offer.name}", offer);
+                        Hecton8.Core.H8Debug.LogError($"[BarterValidation] Offer missing costs: {offer.name}", offer);
                         errors++;
                     }
 
                     if (offer.rewards == null || offer.rewards.Length == 0)
                     {
-                        Debug.LogError($"[BarterValidation] Offer missing rewards: {offer.name}", offer);
+                        Hecton8.Core.H8Debug.LogError($"[BarterValidation] Offer missing rewards: {offer.name}", offer);
                         errors++;
                     }
 
@@ -69,7 +69,7 @@ namespace Hecton8.EditorTools
                 return;
             }
 
-            Debug.LogWarning($"[BarterValidation] COMPLETE errors={errors} warnings={warnings}");
+            Hecton8.Core.H8Debug.LogWarning($"[BarterValidation] COMPLETE errors={errors} warnings={warnings}");
         }
 
         private static void ValidateBundle(string label, BarterItemAmount[] bundle, UnityEngine.Object context, ref int errors)
@@ -82,13 +82,13 @@ namespace Hecton8.EditorTools
                 ItemData item = bundle[i].item;
                 if (item == null)
                 {
-                    Debug.LogError($"[BarterValidation] Offer has null {label} item at index {i}.", context);
+                    Hecton8.Core.H8Debug.LogError($"[BarterValidation] Offer has null {label} item at index {i}.", context);
                     errors++;
                 }
 
                 if (bundle[i].amount <= 0)
                 {
-                    Debug.LogError($"[BarterValidation] Offer has non-positive {label} amount at index {i}.", context);
+                    Hecton8.Core.H8Debug.LogError($"[BarterValidation] Offer has non-positive {label} amount at index {i}.", context);
                     errors++;
                 }
             }

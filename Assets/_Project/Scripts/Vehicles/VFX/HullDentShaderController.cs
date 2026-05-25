@@ -2,11 +2,11 @@ using System;
 using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Physics;
 using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
+using Hecton8.Core.Contracts;
 
 namespace Hecton8.Vehicles.VFX
 {
@@ -231,7 +231,7 @@ namespace Hecton8.Vehicles.VFX
 
         private int ConsumeCombatDamageSignals()
         {
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastProcessedFrame == frame)
                 return 0;
 
@@ -394,7 +394,7 @@ namespace Hecton8.Vehicles.VFX
                     return dispatcherDelta > 1d ? 1f : (float)dispatcherDelta;
             }
 
-            float fallbackDelta = Time.unscaledDeltaTime;
+            float fallbackDelta = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             return math.isfinite(fallbackDelta) && fallbackDelta > 0f
                 ? math.min(fallbackDelta, 1f)
                 : 0f;

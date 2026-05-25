@@ -360,7 +360,7 @@ namespace Hecton8.World
             if (!force && !NeedsAutoResolve())
                 return;
 
-            float now = Time.realtimeSinceStartup;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (!force && now < _nextAutoResolveAttemptTime)
                 return;
 

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
@@ -56,8 +55,6 @@ namespace Hecton8.UI
         private Vector2 _lastAppliedReferenceResolution = Vector2.zero;
         private float _lastAppliedMatch = -1f;
         private Matrix4x4 _uiMatrix = Matrix4x4.identity;
-        private readonly List<HorizontalOrVerticalLayoutGroup> _layoutGroupDisableBuffer = new List<HorizontalOrVerticalLayoutGroup>(16); // COLD ALLOC: List<HorizontalOrVerticalLayoutGroup>[16] — scaler-owned layout group disable scratch — owner: HectonUIScaler
-
         /// <summary>Current matrix applied to the scaled content root.</summary>
         public Matrix4x4 CurrentMatrix => _uiMatrix;
 
@@ -433,14 +430,19 @@ namespace Hecton8.UI
             if (contentRoot == null)
                 return;
 
-            _layoutGroupDisableBuffer.Clear();
-            contentRoot.GetComponentsInChildren(true, _layoutGroupDisableBuffer);
-            for (int i = 0; i < _layoutGroupDisableBuffer.Count; i++)
-            {
-                HorizontalOrVerticalLayoutGroup layoutGroup = _layoutGroupDisableBuffer[i];
-                if (layoutGroup != null && layoutGroup.enabled)
-                    layoutGroup.enabled = false;
-            }
+            DisableUnityLayoutGroupsInHierarchy(contentRoot);
+        }
+
+        private static void DisableUnityLayoutGroupsInHierarchy(Transform root)
+        {
+            if (root == null)
+                return;
+
+            if (root.TryGetComponent(out HorizontalOrVerticalLayoutGroup layoutGroup) && layoutGroup.enabled)
+                layoutGroup.enabled = false;
+
+            for (int i = 0; i < root.childCount; i++)
+                DisableUnityLayoutGroupsInHierarchy(root.GetChild(i));
         }
 
         private void ApplyManualLinearLayout()

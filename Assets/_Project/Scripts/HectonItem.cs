@@ -21,10 +21,10 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Inventory;
 using Hecton8.Interaction;
-using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using Hecton.Localization;
+using BuoyancyObject = Hecton8.Physics.BuoyancyObject;
 
 namespace Hecton8.Items
 {
@@ -34,7 +34,7 @@ namespace Hecton8.Items
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(InteractionHighlighter))]
     [DisallowMultipleComponent]
-    public class HectonItem : MonoBehaviour, IInteractable, IInteractableTextProvider, ITickable, IUpdatable, IInventoryPickupSource, IInventoryPickupPreviewSource, IInteractionVulnerabilitySource, Hecton8.Physics.IPhysicsImpactMaterialProvider, ILocalizationLanguageChangedListener
+    public class HectonItem : MonoBehaviour, IInteractable, IInteractableTextProvider, ITickable, IUpdatable, IInventoryPickupSource, IInventoryPickupPreviewSource, IInteractionVulnerabilitySource, Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider, ILocalizationLanguageChangedListener
     {
         private static int s_x001HectonItemSignalPushDropCount;
         private const float OverflowScatterImpulse = 2.5f;
@@ -46,6 +46,7 @@ namespace Hecton8.Items
         private static IPlayerRuntimeContext s_playerRuntimeContext;
         private static IPlayerInventoryService s_playerInventoryService;
         private static IPhysicsService s_physicsService;
+        private static IPhysicsStateEventService s_physicsStateEvents;
         private static IObjectPoolService s_objectPool;
         // COLD ALLOC: StaticRegistryHotSwapListener[1] - shared pickup service cache rebind bridge - owner: HectonItem
         private static readonly StaticRegistryHotSwapListener s_hotSwapListener = new StaticRegistryHotSwapListener();
@@ -105,6 +106,7 @@ namespace Hecton8.Items
             s_playerRuntimeContext = null;
             s_playerInventoryService = null;
             s_physicsService = null;
+            s_physicsStateEvents = null;
             s_objectPool = null;
             s_hotSwapListenerRegistered = false;
         }
@@ -135,7 +137,7 @@ namespace Hecton8.Items
             if (_rb != null)
             {
                 if (!_rb.isKinematic)
-                    GlobalPhysicsStateManager.RegisterTrackedBody(_rb);
+                    s_physicsStateEvents?.RegisterBodyStateTracking(_rb);
 
                 _rb.WakeUp();
                 BeginSettle();
@@ -156,7 +158,7 @@ namespace Hecton8.Items
             // Reset phase so the next OnEnable starts clean.
             StopSettle();
             if (_rb != null)
-                GlobalPhysicsStateManager.UnregisterTrackedBody(_rb);
+                s_physicsStateEvents?.UnregisterBodyStateTracking(_rb);
             ClearPersistentWorldRecord();
         }
 
@@ -513,6 +515,7 @@ namespace Hecton8.Items
             s_playerRuntimeContext = GlobalRegistry.Player;
             s_playerInventoryService = GlobalRegistry.PlayerInventory;
             s_physicsService = GlobalRegistry.Physics;
+            s_physicsStateEvents = GlobalRegistry.PhysicsStateEvents;
             s_objectPool = GlobalRegistry.ObjectPoolService;
             TryRegisterStaticHotSwapListener();
         }
@@ -542,6 +545,9 @@ namespace Hecton8.Items
                         break;
                     case GlobalRegistryServiceSlot.Physics:
                         s_physicsService = currentService as IPhysicsService;
+                        break;
+                    case GlobalRegistryServiceSlot.PhysicsStateManager:
+                        s_physicsStateEvents = currentService as IPhysicsStateEventService;
                         break;
                     case GlobalRegistryServiceSlot.ObjectPool:
                         s_objectPool = currentService as IObjectPoolService;

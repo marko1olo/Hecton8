@@ -161,6 +161,7 @@ namespace Hecton8.Construction
         private IObjectPoolService _cachedObjectPool;
         private IPlayerInventoryService _cachedPlayerInventoryService;
         private IDataVault _cachedDataVault;
+        private IGasDynamicsSolver _cachedGasDynamics;
         private bool _isInitialized;
         private bool _habitatGraphDirty;
         private float _slowTickAccumulator;
@@ -388,7 +389,8 @@ namespace Hecton8.Construction
             _cachedObjectPool = GlobalRegistry.ObjectPoolService;
             _cachedPlayerInventoryService = GlobalRegistry.PlayerInventory;
             _cachedDataVault = GlobalRegistry.DataVault;
-            _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _cachedSaveService = GlobalRegistry.Save;
+            _cachedGasDynamics = GlobalRegistry.GasDynamics;
         }
 
         private void ClearCachedRegistryServices()
@@ -397,6 +399,7 @@ namespace Hecton8.Construction
             _cachedPlayerInventoryService = null;
             _cachedDataVault = null;
             _cachedSaveService = null;
+            _cachedGasDynamics = null;
         }
 
         private void OnEnable()
@@ -507,7 +510,10 @@ namespace Hecton8.Construction
         public void SlowTick()
         {
             if (_habitatGraphManager != null)
+            {
                 _habitatGraphManager.ApplyHydrodynamicStress(SlowTickDeltaTime);
+                _habitatGraphManager.PublishRoomSubmergedFractionsToGas(_cachedGasDynamics);
+            }
 
             if (!enableAmbientAccidents || ambientAccidentCheckInterval <= 0f)
                 return;
@@ -1065,9 +1071,10 @@ namespace Hecton8.Construction
             NativeArray<byte> edgeFlags = default;
             int nodeCount = 0;
             int edgeCount = 0;
+            bool deconstructionCsrLocked = false;
             if (_habitatGraphManager != null)
             {
-                _habitatGraphManager.TryGetDeconstructionCsrLanes(
+                deconstructionCsrLocked = _habitatGraphManager.TryGetDeconstructionCsrLanes(
                     module,
                     out edgeOffsets,
                     out edgeDestinations,
@@ -1117,7 +1124,16 @@ namespace Hecton8.Construction
                 LayoutValid = 1u,
                 GlobalQualityWeight = HomeostasisBrain.GlobalQualityWeight
             };
-            job.Execute(); // COLD SYNC JOB: player-triggered teardown transaction, bounded to <= 4 refund pairs.
+            try
+            {
+                job.Execute(); // COLD SYNC JOB: player-triggered teardown transaction, bounded to <= 4 refund pairs.
+            }
+            finally
+            {
+                if (deconstructionCsrLocked && _habitatGraphManager != null)
+                    _habitatGraphManager.ReleaseDeconstructionCsrLanes();
+            }
+
             long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTicks;
             float burstMicroseconds = (float)(elapsedTicks * 1000000.0 / System.Diagnostics.Stopwatch.Frequency);
 
@@ -1901,7 +1917,7 @@ namespace Hecton8.Construction
                 if (!module.TryGetComponent(out ModuleMarker marker))
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         $"[ConstructionManager] Module '{module.name}' has no ModuleMarker. " +
                         "Skipping save for this module.");
 #endif
@@ -1913,7 +1929,7 @@ namespace Hecton8.Construction
                 if (string.IsNullOrEmpty(prefabId))
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         $"[ConstructionManager] Module '{module.name}' has empty PrefabId. " +
                         "Skipping.");
 #endif
@@ -1924,7 +1940,7 @@ namespace Hecton8.Construction
                 if (moduleIndex >= ConstructionDTO.MaxModules)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         $"[ConstructionManager] Max modules ({ConstructionDTO.MaxModules}) reached. " +
                         $"Truncating save: {count - moduleIndex} modules not saved.");
 #endif
@@ -2024,7 +2040,7 @@ namespace Hecton8.Construction
             // Validation.
             if (catalog == null)
             {
-                Debug.LogError(
+                Hecton8.Core.H8Debug.LogError(
                     "[ConstructionManager] ModuleCatalog not assigned! " +
                     "Cannot load construction data.");
                 return;
@@ -2033,7 +2049,7 @@ namespace Hecton8.Construction
             if (catalog.HasLookupAmbiguity)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError(
+                Hecton8.Core.H8Debug.LogError(
                     "[ConstructionManager] ModuleCatalog has ambiguous ID aliases. " +
                     $"Construction load aborted: {catalog.LookupAmbiguitySummary}");
 #endif
@@ -2093,7 +2109,7 @@ namespace Hecton8.Construction
                 if (buildData == null)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         $"[ConstructionManager] Module '{prefabId}' " +
                         "not found in catalog. Skipping.");
 #endif
@@ -2115,7 +2131,7 @@ namespace Hecton8.Construction
                     float.IsNaN(pos.z) || float.IsInfinity(pos.z))
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         $"[ConstructionManager] Module '{moduleDto.prefabId}' " +
                         "has invalid position. Skipping.");
 #endif
@@ -2136,7 +2152,7 @@ namespace Hecton8.Construction
                     if (pool == null)
                     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                        Debug.LogWarning(
+                        Hecton8.Core.H8Debug.LogWarning(
                             $"[ConstructionManager] ObjectPoolManager unavailable while loading '{prefabId}'. Skipping pooled prefab.");
 #endif
                         skippedCount++;
@@ -2148,7 +2164,7 @@ namespace Hecton8.Construction
                 else if (!ConstructionRuntimeProxyFactory.TryCreatePlacedProxy(buildData, pos, rot, out module))
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         $"[ConstructionManager] Module '{prefabId}' has no finalPrefab and proxy generation failed. Skipping.");
 #endif
                     skippedCount++;
@@ -2158,7 +2174,7 @@ namespace Hecton8.Construction
                 if (module == null)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         $"[ConstructionManager] Failed to spawn '{prefabId}'.");
 #endif
                     skippedCount++;
@@ -2334,7 +2350,7 @@ namespace Hecton8.Construction
                 if (edgeWriteIndex >= ConstructionDTO.MaxGraphEdges)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         $"[ConstructionManager] Habitat graph edge budget ({ConstructionDTO.MaxGraphEdges}) exceeded during save. Truncating persisted topology.");
 #endif
                     dto.graphEdgeCount = edgeWriteIndex;
@@ -2578,6 +2594,9 @@ namespace Hecton8.Construction
                     if (_isInitialized && isActiveAndEnabled)
                         TryEnsureDeconstructionVaultBuffers();
                     break;
+                case GlobalRegistryServiceSlot.GasDynamicsRuntime:
+                    _cachedGasDynamics = currentService as IGasDynamicsSolver;
+                    break;
             }
         }
 
@@ -2740,7 +2759,7 @@ namespace Hecton8.Construction
             RestoreCapturedJointBodyVelocities(capturedBodyCount);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (capacityOverflow)
-                Debug.LogWarning("[ConstructionManager] AUP joint recovery body cache exhausted; increase initialCapacity.", this);
+                Hecton8.Core.H8Debug.LogWarning("[ConstructionManager] AUP joint recovery body cache exhausted; increase initialCapacity.", this);
 #endif
         }
 
@@ -2767,13 +2786,14 @@ namespace Hecton8.Construction
 
         private void RestoreCapturedJointBodyVelocities(int capturedBodyCount)
         {
+            IPhysicsService physicsService = GlobalRegistry.Physics;
             for (int i = 0; i < capturedBodyCount; i++)
             {
                 Rigidbody body = _jointRecoveryBodies[i];
-                if (body != null)
+                if (body != null && physicsService != null)
                 {
-                    Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(body, _jointRecoveryLinearVelocities[i]);
-                    Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(body, _jointRecoveryAngularVelocities[i]);
+                    physicsService.QueueLinearVelocitySet(body, _jointRecoveryLinearVelocities[i]);
+                    physicsService.QueueAngularVelocitySet(body, _jointRecoveryAngularVelocities[i]);
                 }
 
                 _jointRecoveryBodies[i] = null;

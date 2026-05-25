@@ -22,54 +22,6 @@ using UnityEngine.Serialization;
 namespace Hecton8.Physics
 {
     /// <summary>
-    /// Read-only structural breach publication contract consumed by submarine flooding systems.
-    /// </summary>
-    public interface ISubmarineHullBreachReadModel
-    {
-        /// <summary>True when the structural grid has initialized its native state and published buffers.</summary>
-        bool IsReady { get; }
-
-        /// <summary>Number of 64-bit words in the published hull breach mask.</summary>
-        int BreachMaskWordCount { get; }
-
-        /// <summary>Current active local-space breach count available for visual repair coupling.</summary>
-        int ActiveBreachCount { get; }
-
-        /// <summary>Current normalized structural fatigue peak for non-owning presentation consumers.</summary>
-        float FatiguePeakNormalized { get; }
-
-        /// <summary>Current normalized transient impact severity for non-owning presentation consumers.</summary>
-        float RecentImpactSeverityNormalized { get; }
-
-        /// <summary>Returns one published 64-bit word from the hull breach mask. Invalid indices return zero.</summary>
-        ulong GetHullBreachMaskWord(int wordIndex);
-
-        /// <summary>Returns the published breach area in square meters for a compartment. Invalid indices return zero.</summary>
-        float GetCompartmentBreachAreaSquareMeters(int compartmentIndex);
-
-        /// <summary>Returns one active local-space breach as xyz position and w severity. Invalid indices return false.</summary>
-        bool TryGetActiveBreach(int index, out Vector4 localPointSeverity);
-    }
-
-    /// <summary>
-    /// Repair-tool contract for submarine-local breach patching without exposing structural internals.
-    /// </summary>
-    public interface ISubmarineDamageControlTarget
-    {
-        /// <summary>Queues a repair hit resolved by the interaction probe lane.</summary>
-        bool TryQueueRepairHit(Vector3 worldHitPoint, float deltaTime, float repairUnitsPerSecond, float intensity01);
-    }
-
-    /// <summary>
-    /// Maps repair hits to gas-dynamics room indices without coupling tools to submarine internals.
-    /// </summary>
-    public interface ISubmarineRepairRoomResolver
-    {
-        /// <summary>Returns the nearest mapped compartment for a repair hit. Room ids match gas-dynamics room ids.</summary>
-        bool TryResolveRepairRoom(Vector3 worldHitPoint, out int roomId);
-    }
-
-    /// <summary>
     /// Fixed-step voxelized hull integrity grid with Burst-distributed impact diffusion and double-buffered breach publication.
     /// </summary>
     [DisallowMultipleComponent]
@@ -553,6 +505,8 @@ namespace Hecton8.Physics
         private IDamageSignalEmitter _damageEmitter;
         private Transform _cachedTransform;
         private Rigidbody _cachedHullRigidbody;
+        private IPlayerRuntimeContext _cachedPlayerRuntime;
+        private IFluidDecalPresentationSink _cachedFluidDecals;
         private ParticleSystem _hullImpactSparkParticles;
         private ParticleSystemRenderer _hullImpactSparkRenderer;
         private ParticleSystem.EmitParams _hullImpactSparkEmitParams;
@@ -668,6 +622,7 @@ namespace Hecton8.Physics
         {
             _droppedSignalCount = 0;
             CacheReferences();
+            CacheGlobalRegistryServices();
             ResolveGridBounds();
             EnsureNativeState();
             SeedStructuralState();
@@ -686,6 +641,7 @@ namespace Hecton8.Physics
             TryUnregisterDamageReceiver();
             TryUnregister();
             GlobalRegistry.TryUnregisterHotSwapListener(this);
+            ClearGlobalRegistryServiceCache();
             if (ReferenceEquals(GlobalRegistry.SubmarineHullBreach, this))
                 GlobalRegistry.UnregisterSubmarineHullBreach(this);
             ResetFakeCrushDepthGlobals();
@@ -699,6 +655,7 @@ namespace Hecton8.Physics
             TryUnregisterDamageReceiver();
             TryUnregister();
             GlobalRegistry.TryUnregisterHotSwapListener(this);
+            ClearGlobalRegistryServiceCache();
             if (ReferenceEquals(GlobalRegistry.SubmarineHullBreach, this))
                 GlobalRegistry.UnregisterSubmarineHullBreach(this);
             ResetFakeCrushDepthGlobals();
@@ -1326,7 +1283,7 @@ namespace Hecton8.Physics
                 return;
 
             _pendingBreachPressureSprayCount = 0;
-            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            IFluidDecalPresentationSink fluidDecals = _cachedFluidDecals;
             if (fluidDecals == null)
                 return;
 
@@ -1666,9 +1623,9 @@ namespace Hecton8.Physics
             return bounds;
         }
 
-        private static Camera ResolvePlayerCamera()
+        private Camera ResolvePlayerCamera()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            IPlayerRuntimeContext playerContext = _cachedPlayerRuntime;
             return playerContext != null ? playerContext.PlayerCamera : null;
         }
 
@@ -2032,6 +1989,18 @@ namespace Hecton8.Physics
                     }
                 }
             }
+        }
+
+        private void CacheGlobalRegistryServices()
+        {
+            _cachedPlayerRuntime = GlobalRegistry.Player;
+            _cachedFluidDecals = GlobalRegistry.FluidDecalPresentation;
+        }
+
+        private void ClearGlobalRegistryServiceCache()
+        {
+            _cachedPlayerRuntime = null;
+            _cachedFluidDecals = null;
         }
 
         private void ApplyAbyssalCompression()
@@ -2548,6 +2517,18 @@ namespace Hecton8.Physics
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _cachedPlayerRuntime = currentService as IPlayerRuntimeContext;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime)
+            {
+                _cachedFluidDecals = currentService as IFluidDecalPresentationSink;
+                return;
+            }
+
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
                 _registered = false;

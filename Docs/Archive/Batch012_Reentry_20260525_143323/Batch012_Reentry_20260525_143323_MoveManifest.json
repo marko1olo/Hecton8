@@ -1,0 +1,1803 @@
+﻿[
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_AUTOFIX.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_AUTOFIX.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_AUTOFIX.md",
+        "length":  3284,
+        "lastWriteTimeUtc":  "\/Date(1779693569954)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_AUTOFIX2.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_AUTOFIX2.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_AUTOFIX2.md",
+        "length":  1961,
+        "lastWriteTimeUtc":  "\/Date(1779694137600)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_AUTOFIX3.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_AUTOFIX3.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_AUTOFIX3.md",
+        "length":  2043,
+        "lastWriteTimeUtc":  "\/Date(1779694596680)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_AUTOFIX4.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_AUTOFIX4.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_AUTOFIX4.md",
+        "length":  2658,
+        "lastWriteTimeUtc":  "\/Date(1779695166424)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_AUTOFIX5.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_AUTOFIX5.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_AUTOFIX5.md",
+        "length":  3120,
+        "lastWriteTimeUtc":  "\/Date(1779695797731)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_AUTOFIX6.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_AUTOFIX6.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_AUTOFIX6.md",
+        "length":  2389,
+        "lastWriteTimeUtc":  "\/Date(1779698370416)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_AUTOFIX7.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_AUTOFIX7.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_AUTOFIX7.md",
+        "length":  2392,
+        "lastWriteTimeUtc":  "\/Date(1779698764848)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_AUTOFIX8.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_AUTOFIX8.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_AUTOFIX8.md",
+        "length":  2394,
+        "lastWriteTimeUtc":  "\/Date(1779699348766)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_AUTOFIX9.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_AUTOFIX9.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_AUTOFIX9.md",
+        "length":  2890,
+        "lastWriteTimeUtc":  "\/Date(1779699770454)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_DataVaultNativeOwnershipAuditor.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_DataVaultNativeOwnershipAuditor.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_DataVaultNativeOwnershipAuditor.md",
+        "length":  2070,
+        "lastWriteTimeUtc":  "\/Date(1779679614378)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_DENTE.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_DENTE.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_DENTE.md",
+        "length":  77187,
+        "lastWriteTimeUtc":  "\/Date(1779679719980)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_EXTERNAL_CODEX.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_EXTERNAL_CODEX.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_EXTERNAL_CODEX.md",
+        "length":  129335,
+        "lastWriteTimeUtc":  "\/Date(1779672635928)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_EXTERNAL_FIXER.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_EXTERNAL_FIXER.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_EXTERNAL_FIXER.md",
+        "length":  98536,
+        "lastWriteTimeUtc":  "\/Date(1779679188983)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_SHINOBU_315.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_315.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_SHINOBU_315.md",
+        "length":  18789,
+        "lastWriteTimeUtc":  "\/Date(1779533607007)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_SHINOBU_361.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_SHINOBU_361.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_SHINOBU_361.md",
+        "length":  24016,
+        "lastWriteTimeUtc":  "\/Date(1779547342389)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_TASTE.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_TASTE.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_TASTE.md",
+        "length":  3564,
+        "lastWriteTimeUtc":  "\/Date(1779690813888)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_TOKEN_USAGE_AUDIT.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_TOKEN_USAGE_AUDIT.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_TOKEN_USAGE_AUDIT.md",
+        "length":  5904,
+        "lastWriteTimeUtc":  "\/Date(1779681720637)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_UNKNOWN.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_UNKNOWN.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_UNKNOWN.md",
+        "length":  14999,
+        "lastWriteTimeUtc":  "\/Date(1779703547779)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_X_000.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_X_000.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_X_000.md",
+        "length":  75593,
+        "lastWriteTimeUtc":  "\/Date(1779704644281)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_X_001.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_X_001.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_X_001.md",
+        "length":  51762,
+        "lastWriteTimeUtc":  "\/Date(1779675104428)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_X_002.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_X_002.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_X_002.md",
+        "length":  63040,
+        "lastWriteTimeUtc":  "\/Date(1779703177276)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_X_003.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_X_003.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_X_003.md",
+        "length":  97071,
+        "lastWriteTimeUtc":  "\/Date(1779702560754)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_X_004.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_X_004.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_X_004.md",
+        "length":  104826,
+        "lastWriteTimeUtc":  "\/Date(1779702434321)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_X_004_A.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_X_004_A.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_X_004_A.md",
+        "length":  1344,
+        "lastWriteTimeUtc":  "\/Date(1779638942722)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_X_004_SUB_A.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_X_004_SUB_A.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_X_004_SUB_A.md",
+        "length":  2872,
+        "lastWriteTimeUtc":  "\/Date(1779547134022)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_X_005.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_X_005.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_X_005.md",
+        "length":  225823,
+        "lastWriteTimeUtc":  "\/Date(1779704637296)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_X_006.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_X_006.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_X_006.md",
+        "length":  126217,
+        "lastWriteTimeUtc":  "\/Date(1779675433499)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_X_007.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_X_007.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_X_007.md",
+        "length":  63534,
+        "lastWriteTimeUtc":  "\/Date(1779685105947)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_X_008.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_X_008.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_X_008.md",
+        "length":  128672,
+        "lastWriteTimeUtc":  "\/Date(1779676972743)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_X_009.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_X_009.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_X_009.md",
+        "length":  65075,
+        "lastWriteTimeUtc":  "\/Date(1779633469100)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_X_010.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_X_010.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_X_010.md",
+        "length":  5881,
+        "lastWriteTimeUtc":  "\/Date(1779559414060)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_X_011.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_X_011.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_X_011.md",
+        "length":  97602,
+        "lastWriteTimeUtc":  "\/Date(1779680102677)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "Status_X_012.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\Status_X_012.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\Status_X_012.md",
+        "length":  51860,
+        "lastWriteTimeUtc":  "\/Date(1779676409496)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "_X_004_extracted_prompt.tmp.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\_X_004_extracted_prompt.tmp.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\_X_004_extracted_prompt.tmp.md",
+        "length":  12664,
+        "lastWriteTimeUtc":  "\/Date(1779681183863)\/"
+    },
+    {
+        "bucket":  "Tasks",
+        "name":  "_X_006_extracted_prompt.tmp.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\Tasks\\_X_006_extracted_prompt.tmp.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\Tasks\\_X_006_extracted_prompt.tmp.md",
+        "length":  11994,
+        "lastWriteTimeUtc":  "\/Date(1779667589457)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "_tmp",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\_tmp",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\_tmp",
+        "isDirectory":  true,
+        "length":  null,
+        "lastWriteTimeUtc":  "\/Date(1779679057229)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "AssemblyDependencyAudit_HFI_AUDIT.json",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\AssemblyDependencyAudit_HFI_AUDIT.json",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\AssemblyDependencyAudit_HFI_AUDIT.json",
+        "isDirectory":  false,
+        "length":  102541,
+        "lastWriteTimeUtc":  "\/Date(1779702312305)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "AssemblyDependencyAudit_HFI_AUDIT.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\AssemblyDependencyAudit_HFI_AUDIT.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\AssemblyDependencyAudit_HFI_AUDIT.md",
+        "isDirectory":  false,
+        "length":  22736,
+        "lastWriteTimeUtc":  "\/Date(1779702312307)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "AssemblyDependencyAudit_X_003.json",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\AssemblyDependencyAudit_X_003.json",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\AssemblyDependencyAudit_X_003.json",
+        "isDirectory":  false,
+        "length":  102541,
+        "lastWriteTimeUtc":  "\/Date(1779699232490)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "AssemblyDependencyAudit_X_003.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\AssemblyDependencyAudit_X_003.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\AssemblyDependencyAudit_X_003.md",
+        "isDirectory":  false,
+        "length":  22736,
+        "lastWriteTimeUtc":  "\/Date(1779683690418)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "AssemblyDependencyAudit_X_003_cycles.json",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\AssemblyDependencyAudit_X_003_cycles.json",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\AssemblyDependencyAudit_X_003_cycles.json",
+        "isDirectory":  false,
+        "length":  113847,
+        "lastWriteTimeUtc":  "\/Date(1779545334147)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "AssemblyDependencyAudit_X_003_cycles.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\AssemblyDependencyAudit_X_003_cycles.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\AssemblyDependencyAudit_X_003_cycles.md",
+        "isDirectory":  false,
+        "length":  23181,
+        "lastWriteTimeUtc":  "\/Date(1779545334148)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "AssemblyDependencyAudit_X_003_FULL.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\AssemblyDependencyAudit_X_003_FULL.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\AssemblyDependencyAudit_X_003_FULL.md",
+        "isDirectory":  false,
+        "length":  22947,
+        "lastWriteTimeUtc":  "\/Date(1779610705803)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "AssemblyDependencyAudit_X_003_runtime_refs.json",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\AssemblyDependencyAudit_X_003_runtime_refs.json",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\AssemblyDependencyAudit_X_003_runtime_refs.json",
+        "isDirectory":  false,
+        "length":  113847,
+        "lastWriteTimeUtc":  "\/Date(1779545334149)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "AssemblyDependencyAudit_X_003_runtime_refs.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\AssemblyDependencyAudit_X_003_runtime_refs.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\AssemblyDependencyAudit_X_003_runtime_refs.md",
+        "isDirectory":  false,
+        "length":  23181,
+        "lastWriteTimeUtc":  "\/Date(1779545334150)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "AssemblyDependencyMatrix_X_003.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\AssemblyDependencyMatrix_X_003.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\AssemblyDependencyMatrix_X_003.md",
+        "isDirectory":  false,
+        "length":  23129,
+        "lastWriteTimeUtc":  "\/Date(1779595483579)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "AssemblyDependencyUsingAudit_X_003.json",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\AssemblyDependencyUsingAudit_X_003.json",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\AssemblyDependencyUsingAudit_X_003.json",
+        "isDirectory":  false,
+        "length":  458260,
+        "lastWriteTimeUtc":  "\/Date(1779683690416)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "AssemblyDependencyUsingAudit_X_003.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\AssemblyDependencyUsingAudit_X_003.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\AssemblyDependencyUsingAudit_X_003.md",
+        "isDirectory":  false,
+        "length":  458179,
+        "lastWriteTimeUtc":  "\/Date(1779679666746)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_AUTOFIX9_Assembly-CSharp-Editor.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_AUTOFIX9_Assembly-CSharp-Editor.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_AUTOFIX9_Assembly-CSharp-Editor.log",
+        "isDirectory":  false,
+        "length":  2029,
+        "lastWriteTimeUtc":  "\/Date(1779699748295)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup106_save_owner_tail.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup106_save_owner_tail.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup106_save_owner_tail.log",
+        "isDirectory":  false,
+        "length":  7040,
+        "lastWriteTimeUtc":  "\/Date(1779611386550)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup122_dispatcher_rebind_tail.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup122_dispatcher_rebind_tail.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup122_dispatcher_rebind_tail.log",
+        "isDirectory":  false,
+        "length":  4338,
+        "lastWriteTimeUtc":  "\/Date(1779626140394)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup122_tick_registration.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup122_tick_registration.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup122_tick_registration.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779626162511)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup129_buildserver_shutdown.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup129_buildserver_shutdown.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup129_buildserver_shutdown.log",
+        "isDirectory":  false,
+        "length":  322,
+        "lastWriteTimeUtc":  "\/Date(1779628345548)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup129_registration_probe_multilane.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup129_registration_probe_multilane.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup129_registration_probe_multilane.log",
+        "isDirectory":  false,
+        "length":  23214,
+        "lastWriteTimeUtc":  "\/Date(1779628344985)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup129_registration_probe_zero.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup129_registration_probe_zero.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup129_registration_probe_zero.log",
+        "isDirectory":  false,
+        "length":  4904,
+        "lastWriteTimeUtc":  "\/Date(1779628037985)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup131_target_dedupe.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup131_target_dedupe.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup131_target_dedupe.log",
+        "isDirectory":  false,
+        "length":  1030,
+        "lastWriteTimeUtc":  "\/Date(1779629286999)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup139_context_purity.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup139_context_purity.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup139_context_purity.log",
+        "isDirectory":  false,
+        "length":  610,
+        "lastWriteTimeUtc":  "\/Date(1779632402396)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup144_rebind_batch.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup144_rebind_batch.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup144_rebind_batch.log",
+        "isDirectory":  false,
+        "length":  610,
+        "lastWriteTimeUtc":  "\/Date(1779635299030)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup147_gi_despawn.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup147_gi_despawn.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup147_gi_despawn.log",
+        "isDirectory":  false,
+        "length":  610,
+        "lastWriteTimeUtc":  "\/Date(1779637969340)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log",
+        "isDirectory":  false,
+        "length":  1440,
+        "lastWriteTimeUtc":  "\/Date(1779667125787)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup16.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup16.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup16.log",
+        "isDirectory":  false,
+        "length":  755,
+        "lastWriteTimeUtc":  "\/Date(1779533394054)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup16_retry1.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup16_retry1.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup16_retry1.log",
+        "isDirectory":  false,
+        "length":  808,
+        "lastWriteTimeUtc":  "\/Date(1779533736689)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup16_retry2.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup16_retry2.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup16_retry2.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779534492520)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup17.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup17.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup17.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779535040955)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup18.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup18.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup18.log",
+        "isDirectory":  false,
+        "length":  828,
+        "lastWriteTimeUtc":  "\/Date(1779536043387)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup18_retry1.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup18_retry1.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup18_retry1.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779536234032)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup19.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup19.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup19.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779536751414)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup19_retry1.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup19_retry1.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup19_retry1.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779536885347)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup20.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup20.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup20.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779537605582)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup21.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup21.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup21.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779540220657)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup21_beacon_pause.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup21_beacon_pause.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup21_beacon_pause.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779537644434)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup22_audio_log.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup22_audio_log.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup22_audio_log.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779540410622)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup22_flora_genome.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup22_flora_genome.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup22_flora_genome.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779540789458)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup23_outpost_quality.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup23_outpost_quality.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup23_outpost_quality.log",
+        "isDirectory":  false,
+        "length":  4705,
+        "lastWriteTimeUtc":  "\/Date(1779541749345)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup23_outpost_quality_retry1.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup23_outpost_quality_retry1.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup23_outpost_quality_retry1.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779542011569)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup23_outpost_quality_retry2.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup23_outpost_quality_retry2.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup23_outpost_quality_retry2.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779542299817)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup23_resource_scarcity.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup23_resource_scarcity.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup23_resource_scarcity.log",
+        "isDirectory":  false,
+        "length":  1370,
+        "lastWriteTimeUtc":  "\/Date(1779541760079)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup24_soundscape_quality.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup24_soundscape_quality.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup24_soundscape_quality.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779543134078)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup25_save_thumbnail_quality.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup25_save_thumbnail_quality.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup25_save_thumbnail_quality.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779543990223)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup26_contextual_ik_quality.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup26_contextual_ik_quality.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup26_contextual_ik_quality.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779544686315)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup27_acoustic_service_rebind.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup27_acoustic_service_rebind.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup27_acoustic_service_rebind.log",
+        "isDirectory":  false,
+        "length":  966,
+        "lastWriteTimeUtc":  "\/Date(1779545309214)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup27_acoustic_service_rebind_retry1.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup27_acoustic_service_rebind_retry1.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup27_acoustic_service_rebind_retry1.log",
+        "isDirectory":  false,
+        "length":  744,
+        "lastWriteTimeUtc":  "\/Date(1779547162245)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup27_wreck_quality.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup27_wreck_quality.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup27_wreck_quality.log",
+        "isDirectory":  false,
+        "length":  1618,
+        "lastWriteTimeUtc":  "\/Date(1779545850038)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup27_wreck_quality_retry1.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup27_wreck_quality_retry1.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup27_wreck_quality_retry1.log",
+        "isDirectory":  false,
+        "length":  946,
+        "lastWriteTimeUtc":  "\/Date(1779546101322)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup27_wreck_quality_retry2.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup27_wreck_quality_retry2.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup27_wreck_quality_retry2.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779546964461)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup28_ui_quality.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup28_ui_quality.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup28_ui_quality.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779547738885)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup29_battery_charger.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup29_battery_charger.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup29_battery_charger.log",
+        "isDirectory":  false,
+        "length":  781,
+        "lastWriteTimeUtc":  "\/Date(1779549445294)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup29_battery_charger_retry1.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup29_battery_charger_retry1.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup29_battery_charger_retry1.log",
+        "isDirectory":  false,
+        "length":  725,
+        "lastWriteTimeUtc":  "\/Date(1779551910167)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup29_smoke_guard.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup29_smoke_guard.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup29_smoke_guard.log",
+        "isDirectory":  false,
+        "length":  2817,
+        "lastWriteTimeUtc":  "\/Date(1779549046923)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup29_smoke_guard_retry1.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup29_smoke_guard_retry1.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup29_smoke_guard_retry1.log",
+        "isDirectory":  false,
+        "length":  748,
+        "lastWriteTimeUtc":  "\/Date(1779550154507)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup29_smoke_guard_retry2.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup29_smoke_guard_retry2.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup29_smoke_guard_retry2.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779550515150)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup30_loot_quality.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup30_loot_quality.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup30_loot_quality.log",
+        "isDirectory":  false,
+        "length":  2858,
+        "lastWriteTimeUtc":  "\/Date(1779550970103)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup30_loot_quality_retry1.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup30_loot_quality_retry1.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup30_loot_quality_retry1.log",
+        "isDirectory":  false,
+        "length":  767,
+        "lastWriteTimeUtc":  "\/Date(1779551048459)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup30_loot_quality_retry2.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup30_loot_quality_retry2.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup30_loot_quality_retry2.log",
+        "isDirectory":  false,
+        "length":  2858,
+        "lastWriteTimeUtc":  "\/Date(1779552076910)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup30_loot_quality_retry3.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup30_loot_quality_retry3.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup30_loot_quality_retry3.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779552902520)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup31_airlock_flora_quality.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup31_airlock_flora_quality.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup31_airlock_flora_quality.log",
+        "isDirectory":  false,
+        "length":  3680,
+        "lastWriteTimeUtc":  "\/Date(1779553530050)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup31_airlock_flora_quality_retry1.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup31_airlock_flora_quality_retry1.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup31_airlock_flora_quality_retry1.log",
+        "isDirectory":  false,
+        "length":  1348,
+        "lastWriteTimeUtc":  "\/Date(1779553698869)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup31_airlock_flora_quality_retry2.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup31_airlock_flora_quality_retry2.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup31_airlock_flora_quality_retry2.log",
+        "isDirectory":  false,
+        "length":  732,
+        "lastWriteTimeUtc":  "\/Date(1779553962253)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup31_airlock_flora_quality_retry3.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup31_airlock_flora_quality_retry3.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup31_airlock_flora_quality_retry3.log",
+        "isDirectory":  false,
+        "length":  7619,
+        "lastWriteTimeUtc":  "\/Date(1779554118684)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup31_airlock_flora_quality_retry4.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup31_airlock_flora_quality_retry4.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup31_airlock_flora_quality_retry4.log",
+        "isDirectory":  false,
+        "length":  4112,
+        "lastWriteTimeUtc":  "\/Date(1779554290763)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup31_airlock_flora_quality_retry5.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup31_airlock_flora_quality_retry5.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup31_airlock_flora_quality_retry5.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779556073728)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup32_scatter_quality.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup32_scatter_quality.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup32_scatter_quality.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779556860739)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup33_atmo_thermo_quality.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup33_atmo_thermo_quality.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup33_atmo_thermo_quality.log",
+        "isDirectory":  false,
+        "length":  945,
+        "lastWriteTimeUtc":  "\/Date(1779557584900)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup33_atmo_thermo_quality_retry1.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup33_atmo_thermo_quality_retry1.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup33_atmo_thermo_quality_retry1.log",
+        "isDirectory":  false,
+        "length":  11893,
+        "lastWriteTimeUtc":  "\/Date(1779557762704)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup33_atmo_thermo_quality_retry2.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup33_atmo_thermo_quality_retry2.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup33_atmo_thermo_quality_retry2.log",
+        "isDirectory":  false,
+        "length":  854,
+        "lastWriteTimeUtc":  "\/Date(1779558011829)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup33_atmo_thermo_quality_retry3.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup33_atmo_thermo_quality_retry3.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup33_atmo_thermo_quality_retry3.log",
+        "isDirectory":  false,
+        "length":  3682,
+        "lastWriteTimeUtc":  "\/Date(1779558536745)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup33_atmo_thermo_quality_retry4.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup33_atmo_thermo_quality_retry4.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup33_atmo_thermo_quality_retry4.log",
+        "isDirectory":  false,
+        "length":  1591,
+        "lastWriteTimeUtc":  "\/Date(1779559547458)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup33_atmo_thermo_quality_retry5.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup33_atmo_thermo_quality_retry5.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup33_atmo_thermo_quality_retry5.log",
+        "isDirectory":  false,
+        "length":  1092,
+        "lastWriteTimeUtc":  "\/Date(1779562074863)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup44_battery_physics_retry2.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup44_battery_physics_retry2.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup44_battery_physics_retry2.log",
+        "isDirectory":  false,
+        "length":  4184,
+        "lastWriteTimeUtc":  "\/Date(1779552646835)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup49_service_rebind.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup49_service_rebind.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup49_service_rebind.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779557324981)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup52_cultivation_inventory_rebind.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup52_cultivation_inventory_rebind.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup52_cultivation_inventory_rebind.log",
+        "isDirectory":  false,
+        "length":  11893,
+        "lastWriteTimeUtc":  "\/Date(1779557765134)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup52_cultivation_inventory_rebind_retry1.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup52_cultivation_inventory_rebind_retry1.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup52_cultivation_inventory_rebind_retry1.log",
+        "isDirectory":  false,
+        "length":  783,
+        "lastWriteTimeUtc":  "\/Date(1779557845141)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup52_cultivation_inventory_rebind_retry2.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup52_cultivation_inventory_rebind_retry2.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup52_cultivation_inventory_rebind_retry2.log",
+        "isDirectory":  false,
+        "length":  854,
+        "lastWriteTimeUtc":  "\/Date(1779558169145)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup52_cultivation_inventory_rebind_retry3.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup52_cultivation_inventory_rebind_retry3.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup52_cultivation_inventory_rebind_retry3.log",
+        "isDirectory":  false,
+        "length":  3682,
+        "lastWriteTimeUtc":  "\/Date(1779558420320)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup52_cultivation_inventory_rebind_retry4.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup52_cultivation_inventory_rebind_retry4.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup52_cultivation_inventory_rebind_retry4.log",
+        "isDirectory":  false,
+        "length":  666,
+        "lastWriteTimeUtc":  "\/Date(1779558731787)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup53_atmo_thermo_interaction.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup53_atmo_thermo_interaction.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup53_atmo_thermo_interaction.log",
+        "isDirectory":  false,
+        "length":  1847,
+        "lastWriteTimeUtc":  "\/Date(1779565746549)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup53_atmo_thermo_interaction_retry1.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup53_atmo_thermo_interaction_retry1.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup53_atmo_thermo_interaction_retry1.log",
+        "isDirectory":  false,
+        "length":  728,
+        "lastWriteTimeUtc":  "\/Date(1779566001791)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup53_atmo_thermo_interaction_retry2.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup53_atmo_thermo_interaction_retry2.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup53_atmo_thermo_interaction_retry2.log",
+        "isDirectory":  false,
+        "length":  1855,
+        "lastWriteTimeUtc":  "\/Date(1779566240132)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup53_atmo_thermo_interaction_retry3.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup53_atmo_thermo_interaction_retry3.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup53_atmo_thermo_interaction_retry3.log",
+        "isDirectory":  false,
+        "length":  779,
+        "lastWriteTimeUtc":  "\/Date(1779566364263)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup53_basemodule_service_rebind.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup53_basemodule_service_rebind.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup53_basemodule_service_rebind.log",
+        "isDirectory":  false,
+        "length":  96556,
+        "lastWriteTimeUtc":  "\/Date(1779562341384)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup54_somatic_quality_retry1.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup54_somatic_quality_retry1.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup54_somatic_quality_retry1.log",
+        "isDirectory":  false,
+        "length":  9788,
+        "lastWriteTimeUtc":  "\/Date(1779592861218)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup59_runtime_binary_tail.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup59_runtime_binary_tail.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup59_runtime_binary_tail.log",
+        "isDirectory":  false,
+        "length":  0,
+        "lastWriteTimeUtc":  "\/Date(1779596919894)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup65_owner_cache.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup65_owner_cache.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup65_owner_cache.log",
+        "isDirectory":  false,
+        "length":  1233,
+        "lastWriteTimeUtc":  "\/Date(1779598981392)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup66_warning_fix.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup66_warning_fix.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup66_warning_fix.log",
+        "isDirectory":  false,
+        "length":  2398,
+        "lastWriteTimeUtc":  "\/Date(1779599387781)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Build_EXTERNAL_CODEX_hotpath_cleanup86_player_kinematics_rebind.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup86_player_kinematics_rebind.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Build_EXTERNAL_CODEX_hotpath_cleanup86_player_kinematics_rebind.log",
+        "isDirectory":  false,
+        "length":  729,
+        "lastWriteTimeUtc":  "\/Date(1779605095544)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "CompileWallX003Audit.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\CompileWallX003Audit.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\CompileWallX003Audit.md",
+        "isDirectory":  false,
+        "length":  16993,
+        "lastWriteTimeUtc":  "\/Date(1779683741806)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "CompileWall_X_003_Archaeology.json",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\CompileWall_X_003_Archaeology.json",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\CompileWall_X_003_Archaeology.json",
+        "isDirectory":  false,
+        "length":  801500,
+        "lastWriteTimeUtc":  "\/Date(1779702510677)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "CompileWall_X_003_Archaeology.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\CompileWall_X_003_Archaeology.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\CompileWall_X_003_Archaeology.md",
+        "isDirectory":  false,
+        "length":  16970,
+        "lastWriteTimeUtc":  "\/Date(1779702510679)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "DataVaultSovereigntyAudit_X_000_pre_roslyn_blocked.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\DataVaultSovereigntyAudit_X_000_pre_roslyn_blocked.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\DataVaultSovereigntyAudit_X_000_pre_roslyn_blocked.md",
+        "isDirectory":  false,
+        "length":  29314,
+        "lastWriteTimeUtc":  "\/Date(1779540844348)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Dump_DATA_MONOLITH.bin",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Dump_DATA_MONOLITH.bin",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Dump_DATA_MONOLITH.bin",
+        "isDirectory":  false,
+        "length":  19220,
+        "lastWriteTimeUtc":  "\/Date(1779687537894)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Dump_SHINOBU_103.bin",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Dump_SHINOBU_103.bin",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Dump_SHINOBU_103.bin",
+        "isDirectory":  false,
+        "length":  19220,
+        "lastWriteTimeUtc":  "\/Date(1779687537894)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Dump_SHINOBU_202.bin",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Dump_SHINOBU_202.bin",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Dump_SHINOBU_202.bin",
+        "isDirectory":  false,
+        "length":  152,
+        "lastWriteTimeUtc":  "\/Date(1779687537770)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Dump_X_002.bin",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Dump_X_002.bin",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Dump_X_002.bin",
+        "isDirectory":  false,
+        "length":  19220,
+        "lastWriteTimeUtc":  "\/Date(1779687537898)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_AUTOFIX.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_AUTOFIX.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_AUTOFIX.md",
+        "isDirectory":  false,
+        "length":  2325,
+        "lastWriteTimeUtc":  "\/Date(1779693569956)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_AUTOFIX2.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_AUTOFIX2.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_AUTOFIX2.md",
+        "isDirectory":  false,
+        "length":  2201,
+        "lastWriteTimeUtc":  "\/Date(1779694137604)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_AUTOFIX3.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_AUTOFIX3.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_AUTOFIX3.md",
+        "isDirectory":  false,
+        "length":  1114,
+        "lastWriteTimeUtc":  "\/Date(1779694671024)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_AUTOFIX4.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_AUTOFIX4.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_AUTOFIX4.md",
+        "isDirectory":  false,
+        "length":  1550,
+        "lastWriteTimeUtc":  "\/Date(1779695166426)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_AUTOFIX5.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_AUTOFIX5.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_AUTOFIX5.md",
+        "isDirectory":  false,
+        "length":  3538,
+        "lastWriteTimeUtc":  "\/Date(1779695797731)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_AUTOFIX6.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_AUTOFIX6.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_AUTOFIX6.md",
+        "isDirectory":  false,
+        "length":  3782,
+        "lastWriteTimeUtc":  "\/Date(1779698345663)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_AUTOFIX7.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_AUTOFIX7.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_AUTOFIX7.md",
+        "isDirectory":  false,
+        "length":  3793,
+        "lastWriteTimeUtc":  "\/Date(1779698765005)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_AUTOFIX8.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_AUTOFIX8.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_AUTOFIX8.md",
+        "isDirectory":  false,
+        "length":  4178,
+        "lastWriteTimeUtc":  "\/Date(1779699353904)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_AUTOFIX9.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_AUTOFIX9.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_AUTOFIX9.md",
+        "isDirectory":  false,
+        "length":  5686,
+        "lastWriteTimeUtc":  "\/Date(1779699812037)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_DataVaultNativeOwnershipAuditor.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_DataVaultNativeOwnershipAuditor.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_DataVaultNativeOwnershipAuditor.md",
+        "isDirectory":  false,
+        "length":  1934,
+        "lastWriteTimeUtc":  "\/Date(1779679614380)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_DENTE.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_DENTE.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_DENTE.md",
+        "isDirectory":  false,
+        "length":  111918,
+        "lastWriteTimeUtc":  "\/Date(1779679758834)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_EXTERNAL_CODEX.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_EXTERNAL_CODEX.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_EXTERNAL_CODEX.md",
+        "isDirectory":  false,
+        "length":  175607,
+        "lastWriteTimeUtc":  "\/Date(1779672653865)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_EXTERNAL_FIXER.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_EXTERNAL_FIXER.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_EXTERNAL_FIXER.md",
+        "isDirectory":  false,
+        "length":  72596,
+        "lastWriteTimeUtc":  "\/Date(1779679189849)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_SHINOBU_315.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_315.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_SHINOBU_315.md",
+        "isDirectory":  false,
+        "length":  33566,
+        "lastWriteTimeUtc":  "\/Date(1779533607009)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_SHINOBU_361.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_SHINOBU_361.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_SHINOBU_361.md",
+        "isDirectory":  false,
+        "length":  74278,
+        "lastWriteTimeUtc":  "\/Date(1779547342395)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_TASTE.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_TASTE.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_TASTE.md",
+        "isDirectory":  false,
+        "length":  1556,
+        "lastWriteTimeUtc":  "\/Date(1779690787446)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_TOKEN_USAGE_AUDIT.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_TOKEN_USAGE_AUDIT.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_TOKEN_USAGE_AUDIT.md",
+        "isDirectory":  false,
+        "length":  4972,
+        "lastWriteTimeUtc":  "\/Date(1779681714658)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_UNKNOWN.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_UNKNOWN.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_UNKNOWN.md",
+        "isDirectory":  false,
+        "length":  44874,
+        "lastWriteTimeUtc":  "\/Date(1779703547782)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_X_000.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_X_000.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_X_000.md",
+        "isDirectory":  false,
+        "length":  94935,
+        "lastWriteTimeUtc":  "\/Date(1779704644310)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_X_001.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_X_001.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_X_001.md",
+        "isDirectory":  false,
+        "length":  89587,
+        "lastWriteTimeUtc":  "\/Date(1779675104436)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_X_002.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_X_002.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_X_002.md",
+        "isDirectory":  false,
+        "length":  87079,
+        "lastWriteTimeUtc":  "\/Date(1779703217881)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_X_003.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_X_003.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_X_003.md",
+        "isDirectory":  false,
+        "length":  170163,
+        "lastWriteTimeUtc":  "\/Date(1779702602782)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_X_004.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_X_004.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_X_004.md",
+        "isDirectory":  false,
+        "length":  116671,
+        "lastWriteTimeUtc":  "\/Date(1779702434326)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_X_004_A.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_X_004_A.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_X_004_A.md",
+        "isDirectory":  false,
+        "length":  3386,
+        "lastWriteTimeUtc":  "\/Date(1779638942724)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_X_004_SUB_A.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_X_004_SUB_A.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_X_004_SUB_A.md",
+        "isDirectory":  false,
+        "length":  15900,
+        "lastWriteTimeUtc":  "\/Date(1779547203272)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_X_005.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_X_005.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_X_005.md",
+        "isDirectory":  false,
+        "length":  183355,
+        "lastWriteTimeUtc":  "\/Date(1779704656317)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_X_006.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_X_006.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_X_006.md",
+        "isDirectory":  false,
+        "length":  174126,
+        "lastWriteTimeUtc":  "\/Date(1779675454688)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_X_007.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_X_007.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_X_007.md",
+        "isDirectory":  false,
+        "length":  98315,
+        "lastWriteTimeUtc":  "\/Date(1779685120946)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_X_008.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_X_008.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_X_008.md",
+        "isDirectory":  false,
+        "length":  173637,
+        "lastWriteTimeUtc":  "\/Date(1779677001902)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_X_009.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_X_009.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_X_009.md",
+        "isDirectory":  false,
+        "length":  76396,
+        "lastWriteTimeUtc":  "\/Date(1779633505124)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_X_010.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_X_010.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_X_010.md",
+        "isDirectory":  false,
+        "length":  5950,
+        "lastWriteTimeUtc":  "\/Date(1779559414062)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_X_011.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_X_011.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_X_011.md",
+        "isDirectory":  false,
+        "length":  132087,
+        "lastWriteTimeUtc":  "\/Date(1779680111633)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "LOG_X_012.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\LOG_X_012.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\LOG_X_012.md",
+        "isDirectory":  false,
+        "length":  58493,
+        "lastWriteTimeUtc":  "\/Date(1779676449165)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Prompt_X_003_EXTRACTED_CURRENT.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Prompt_X_003_EXTRACTED_CURRENT.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Prompt_X_003_EXTRACTED_CURRENT.md",
+        "isDirectory":  false,
+        "length":  12598,
+        "lastWriteTimeUtc":  "\/Date(1779683909039)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_AUTOFIX.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_AUTOFIX.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_AUTOFIX.md",
+        "isDirectory":  false,
+        "length":  4169,
+        "lastWriteTimeUtc":  "\/Date(1779693569955)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_AUTOFIX2.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_AUTOFIX2.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_AUTOFIX2.md",
+        "isDirectory":  false,
+        "length":  2747,
+        "lastWriteTimeUtc":  "\/Date(1779694137602)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_AUTOFIX3.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_AUTOFIX3.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_AUTOFIX3.md",
+        "isDirectory":  false,
+        "length":  3018,
+        "lastWriteTimeUtc":  "\/Date(1779694690665)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_AUTOFIX4.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_AUTOFIX4.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_AUTOFIX4.md",
+        "isDirectory":  false,
+        "length":  3065,
+        "lastWriteTimeUtc":  "\/Date(1779695166424)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_AUTOFIX5.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_AUTOFIX5.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_AUTOFIX5.md",
+        "isDirectory":  false,
+        "length":  3337,
+        "lastWriteTimeUtc":  "\/Date(1779695797731)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_AUTOFIX6.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_AUTOFIX6.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_AUTOFIX6.md",
+        "isDirectory":  false,
+        "length":  2799,
+        "lastWriteTimeUtc":  "\/Date(1779698345662)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_AUTOFIX7.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_AUTOFIX7.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_AUTOFIX7.md",
+        "isDirectory":  false,
+        "length":  2790,
+        "lastWriteTimeUtc":  "\/Date(1779698764970)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_AUTOFIX8.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_AUTOFIX8.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_AUTOFIX8.md",
+        "isDirectory":  false,
+        "length":  2613,
+        "lastWriteTimeUtc":  "\/Date(1779699243358)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_AUTOFIX9.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_AUTOFIX9.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_AUTOFIX9.md",
+        "isDirectory":  false,
+        "length":  2947,
+        "lastWriteTimeUtc":  "\/Date(1779699782137)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_DataVaultNativeOwnershipAuditor.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_DataVaultNativeOwnershipAuditor.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_DataVaultNativeOwnershipAuditor.md",
+        "isDirectory":  false,
+        "length":  3765,
+        "lastWriteTimeUtc":  "\/Date(1779679614378)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_DENTE.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_DENTE.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_DENTE.md",
+        "isDirectory":  false,
+        "length":  135280,
+        "lastWriteTimeUtc":  "\/Date(1779679739257)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_EXTERNAL_CODEX.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_EXTERNAL_CODEX.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_EXTERNAL_CODEX.md",
+        "isDirectory":  false,
+        "length":  211673,
+        "lastWriteTimeUtc":  "\/Date(1779672653862)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_EXTERNAL_FIXER.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_EXTERNAL_FIXER.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_EXTERNAL_FIXER.md",
+        "isDirectory":  false,
+        "length":  77583,
+        "lastWriteTimeUtc":  "\/Date(1779679189351)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_SHINOBU_315.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_315.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_SHINOBU_315.md",
+        "isDirectory":  false,
+        "length":  23173,
+        "lastWriteTimeUtc":  "\/Date(1779533607008)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_SHINOBU_361.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_SHINOBU_361.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_SHINOBU_361.md",
+        "isDirectory":  false,
+        "length":  44695,
+        "lastWriteTimeUtc":  "\/Date(1779547342391)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_TASTE.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_TASTE.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_TASTE.md",
+        "isDirectory":  false,
+        "length":  4417,
+        "lastWriteTimeUtc":  "\/Date(1779690787428)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_TOKEN_USAGE_AUDIT.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_TOKEN_USAGE_AUDIT.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_TOKEN_USAGE_AUDIT.md",
+        "isDirectory":  false,
+        "length":  6872,
+        "lastWriteTimeUtc":  "\/Date(1779681688264)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_UNKNOWN.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_UNKNOWN.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_UNKNOWN.md",
+        "isDirectory":  false,
+        "length":  30295,
+        "lastWriteTimeUtc":  "\/Date(1779703547781)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_X_000.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_X_000.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_X_000.md",
+        "isDirectory":  false,
+        "length":  121371,
+        "lastWriteTimeUtc":  "\/Date(1779704644301)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_X_001.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_X_001.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_X_001.md",
+        "isDirectory":  false,
+        "length":  115252,
+        "lastWriteTimeUtc":  "\/Date(1779675104436)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_X_002.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_X_002.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_X_002.md",
+        "isDirectory":  false,
+        "length":  107334,
+        "lastWriteTimeUtc":  "\/Date(1779703196603)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_X_003.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_X_003.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_X_003.md",
+        "isDirectory":  false,
+        "length":  172828,
+        "lastWriteTimeUtc":  "\/Date(1779702587840)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_X_004.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_X_004.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_X_004.md",
+        "isDirectory":  false,
+        "length":  149331,
+        "lastWriteTimeUtc":  "\/Date(1779702434324)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_X_004_A.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_X_004_A.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_X_004_A.md",
+        "isDirectory":  false,
+        "length":  2496,
+        "lastWriteTimeUtc":  "\/Date(1779638942723)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_X_004_SUB_A.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_X_004_SUB_A.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_X_004_SUB_A.md",
+        "isDirectory":  false,
+        "length":  3293,
+        "lastWriteTimeUtc":  "\/Date(1779547134024)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_X_005.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_X_005.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_X_005.md",
+        "isDirectory":  false,
+        "length":  220182,
+        "lastWriteTimeUtc":  "\/Date(1779704646763)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_X_006.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_X_006.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_X_006.md",
+        "isDirectory":  false,
+        "length":  220087,
+        "lastWriteTimeUtc":  "\/Date(1779675443561)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_X_007.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_X_007.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_X_007.md",
+        "isDirectory":  false,
+        "length":  110084,
+        "lastWriteTimeUtc":  "\/Date(1779685120786)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_X_008.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_X_008.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_X_008.md",
+        "isDirectory":  false,
+        "length":  179442,
+        "lastWriteTimeUtc":  "\/Date(1779676989624)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_X_009.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_X_009.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_X_009.md",
+        "isDirectory":  false,
+        "length":  94254,
+        "lastWriteTimeUtc":  "\/Date(1779633488258)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_X_010.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_X_010.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_X_010.md",
+        "isDirectory":  false,
+        "length":  9976,
+        "lastWriteTimeUtc":  "\/Date(1779559414062)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_X_011.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_X_011.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_X_011.md",
+        "isDirectory":  false,
+        "length":  140160,
+        "lastWriteTimeUtc":  "\/Date(1779679986013)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Rationale_X_012.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Rationale_X_012.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Rationale_X_012.md",
+        "isDirectory":  false,
+        "length":  29052,
+        "lastWriteTimeUtc":  "\/Date(1779676427318)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Restore_EXTERNAL_CODEX_loop140_editor.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Restore_EXTERNAL_CODEX_loop140_editor.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Restore_EXTERNAL_CODEX_loop140_editor.log",
+        "isDirectory":  false,
+        "length":  38,
+        "lastWriteTimeUtc":  "\/Date(1779632686080)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "SIGNAL_ARCHITECTURE_OPTIMIZATION_REPORT_X_001.md",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\SIGNAL_ARCHITECTURE_OPTIMIZATION_REPORT_X_001.md",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\SIGNAL_ARCHITECTURE_OPTIMIZATION_REPORT_X_001.md",
+        "isDirectory":  false,
+        "length":  24516,
+        "lastWriteTimeUtc":  "\/Date(1779557986887)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Unity_X_008_ArmorRuntimeProof.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Unity_X_008_ArmorRuntimeProof.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Unity_X_008_ArmorRuntimeProof.log",
+        "isDirectory":  false,
+        "length":  4377,
+        "lastWriteTimeUtc":  "\/Date(1779626105824)\/"
+    },
+    {
+        "bucket":  "AgentLogs",
+        "name":  "Unity_X_008_ArmorRuntimeProof_escalated.log",
+        "source":  "C:\\hades\\Hecton8\\Docs\\AgentLogs\\Unity_X_008_ArmorRuntimeProof_escalated.log",
+        "destination":  "C:\\hades\\Hecton8\\Docs\\Archive\\Batch012_Reentry_20260525_143323\\AgentLogs\\Unity_X_008_ArmorRuntimeProof_escalated.log",
+        "isDirectory":  false,
+        "length":  5791,
+        "lastWriteTimeUtc":  "\/Date(1779627233024)\/"
+    }
+]

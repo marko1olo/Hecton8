@@ -50,7 +50,7 @@ namespace Hecton8.Gameplay
 
             if (!valid)
             {
-                Debug.LogError("[StatusEffectLayoutVerifier] Status FSM DTO layout mismatch. SHINOBU_319 output rejected until fixed.");
+                Hecton8.Core.H8Debug.LogError("[StatusEffectLayoutVerifier] Status FSM DTO layout mismatch. SHINOBU_319 output rejected until fixed.");
                 return false;
             }
 

@@ -870,7 +870,7 @@
 
         private void RefreshColdRegistryReferences()
         {
-            _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntime = GlobalRegistry.Player;
             _cachedObserverMovement = null;
         }
 

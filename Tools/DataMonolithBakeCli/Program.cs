@@ -56,6 +56,13 @@ namespace Hecton8.Tools.DataMonolithBakeCli
                 return 6;
             }
 
+            bool sourceInventoryPassed = DataMonolithSourceInventoryProbe.Run(projectRoot);
+            if (!sourceInventoryPassed)
+            {
+                Console.Error.WriteLine("Data Monolith source inventory probe failed.");
+                return 7;
+            }
+
             Console.WriteLine("Data Monolith baked: " + H8DataMonolithCompiler.OutputAssetPath);
             return 0;
         }

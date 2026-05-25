@@ -57,7 +57,7 @@ namespace Hecton8.Dev
             bool passed = EvaluateSmokePass(out float leakOnlyVolume, out float pumpedVolume);
             if (!passed)
             {
-                Debug.LogError(
+                Hecton8.Core.H8Debug.LogError(
                     "[FluidIncursionSmoke] FAIL leakOnly=" +
                     leakOnlyVolume.ToString("F4", CultureInfo.InvariantCulture) +
                     "m3 pumped=" +

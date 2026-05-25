@@ -87,7 +87,7 @@ namespace Hecton8.Editor.AITextureControlMaps
         {
             if (string.IsNullOrEmpty(folderAssetPath) || !AssetDatabase.IsValidFolder(folderAssetPath))
             {
-                Debug.LogError("[AITextureControlMapBaker] Invalid mesh folder: " + folderAssetPath);
+                Hecton8.Core.H8Debug.LogError("[AITextureControlMapBaker] Invalid mesh folder: " + folderAssetPath);
                 return;
             }
 
@@ -108,7 +108,7 @@ namespace Hecton8.Editor.AITextureControlMaps
         {
             if (meshes == null || meshes.Count == 0)
             {
-                Debug.LogWarning("[AITextureControlMapBaker] No meshes supplied.");
+                Hecton8.Core.H8Debug.LogWarning("[AITextureControlMapBaker] No meshes supplied.");
                 return;
             }
 
@@ -116,7 +116,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             int requestedPasses = CountPasses(settings.PassMask);
             if (requestedPasses == 0)
             {
-                Debug.LogWarning("[AITextureControlMapBaker] No bake passes enabled.");
+                Hecton8.Core.H8Debug.LogWarning("[AITextureControlMapBaker] No bake passes enabled.");
                 return;
             }
 
@@ -178,7 +178,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(SelectShaderPath(pass));
             if (shader == null)
             {
-                Debug.LogError("[AITextureControlMapBaker] Missing shader for pass " + pass + ".");
+                Hecton8.Core.H8Debug.LogError("[AITextureControlMapBaker] Missing shader for pass " + pass + ".");
                 state.AddCriticalWarning();
                 AITextureBakeBlackBox.Record(BuildTelemetry(meshHash, resolution, pass, 0.0, 0.0, 0.0, mesh.vertexCount, mesh.subMeshCount, WarningReadback, boundsExtents, quality));
                 AITextureBakeBlackBox.Dump(AITextureControlMapConstants.BakeBlackBoxDumpPath);
@@ -291,7 +291,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             }
             catch (Exception ex)
             {
-                Debug.LogError("[AITextureControlMapBaker] Bake pass failed for " + safeName + "_" + pass + ": " + ex.Message);
+                Hecton8.Core.H8Debug.LogError("[AITextureControlMapBaker] Bake pass failed for " + safeName + "_" + pass + ": " + ex.Message);
                 state.AddCriticalWarning();
                 AITextureBakeBlackBox.Record(BuildTelemetry(meshHash, resolution, pass, renderStopwatch.Elapsed.TotalMilliseconds, 0.0, 0.0, mesh.vertexCount, mesh.subMeshCount, WarningReadback, boundsExtents, quality));
                 AITextureBakeBlackBox.Dump(AITextureControlMapConstants.BakeBlackBoxDumpPath);
@@ -337,7 +337,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             {
                 if (completion.HasError)
                 {
-                    Debug.LogError("[AITextureControlMapBaker] AsyncGPUReadback failed for " + context.OutputPath);
+                    Hecton8.Core.H8Debug.LogError("[AITextureControlMapBaker] AsyncGPUReadback failed for " + context.OutputPath);
                     context.WarningFlags |= WarningReadback;
                     context.State.AddCriticalWarning();
                     completedWithoutWrite = true;
@@ -362,7 +362,7 @@ namespace Hecton8.Editor.AITextureControlMaps
             }
             catch (Exception ex)
             {
-                Debug.LogError("[AITextureControlMapBaker] PNG encode failed: " + ex.Message);
+                Hecton8.Core.H8Debug.LogError("[AITextureControlMapBaker] PNG encode failed: " + ex.Message);
                 context.WarningFlags |= WarningEncode;
                 context.State.AddCriticalWarning();
                 completedWithoutWrite = true;
@@ -723,7 +723,7 @@ namespace Hecton8.Editor.AITextureControlMaps
                 ReadbackContext context = completion.Context;
                 if (!string.IsNullOrEmpty(completion.Error))
                 {
-                    Debug.LogError("[AITextureControlMapBaker] PNG write failed: " + completion.Error);
+                    Hecton8.Core.H8Debug.LogError("[AITextureControlMapBaker] PNG write failed: " + completion.Error);
                     context.WarningFlags |= WarningWrite;
                     context.State.AddCriticalWarning();
                 }
@@ -1114,7 +1114,7 @@ namespace Hecton8.Editor.AITextureControlMaps
                 {
                     AssetDatabase.Refresh();
                     AITexturePipelineReport.WriteBakeReport(_modelCount, _resolution, completed, warnings, render, encode, write);
-                    Debug.Log("[AITextureControlMapBaker] Batch report written. RenderMs=" + render.ToString("0.000", CultureInfo.InvariantCulture) +
+                    Hecton8.Core.H8Debug.Log("[AITextureControlMapBaker] Batch report written. RenderMs=" + render.ToString("0.000", CultureInfo.InvariantCulture) +
                               " EncodeMs=" + encode.ToString("0.000", CultureInfo.InvariantCulture) +
                               " WriteMs=" + write.ToString("0.000", CultureInfo.InvariantCulture) +
                               " CriticalWarnings=" + warnings.ToString(CultureInfo.InvariantCulture) + ".");

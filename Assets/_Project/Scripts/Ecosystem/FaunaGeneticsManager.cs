@@ -16,7 +16,7 @@ namespace Hecton8.Ecosystem
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6235)]
     [AddComponentMenu("Hecton8/Ecosystem/Fauna Genetics Manager")]
-    public sealed class FaunaGeneticsManager : MonoBehaviour, ISaveable, IGlobalRegistryHotSwapListener
+    public sealed class FaunaGeneticsManager : MonoBehaviour, ISaveable, IFaunaWorldSeedReadModel, IGlobalRegistryHotSwapListener
     {
         private const int FallbackWorldSeed = unchecked((int)0x51ED270B);
 
@@ -112,7 +112,7 @@ namespace Hecton8.Ecosystem
 
         private void CacheSaveServiceCold()
         {
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
         }
 
         private void TryRegisterHotSwapListener()

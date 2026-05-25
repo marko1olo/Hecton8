@@ -2123,7 +2123,8 @@ namespace Hecton8.World
             int y = GridAxisY / 2;
             float cellSize = ResolveCellSizeMeters();
             Vector3 size = new Vector3(cellSize, 0.02f, cellSize);
-            int step = ResolveGlobalQualityWeight() < 0.35f ? 4 : 2;
+            float debugQuality01 = Smooth01(ResolveGlobalQualityWeight());
+            int step = math.clamp((int)math.round(math.lerp(4f, 2f, debugQuality01)), 2, 4);
             for (int z = 0; z < GridAxisZ; z += step)
             {
                 for (int x = 0; x < GridAxisX; x += step)
@@ -2759,7 +2760,7 @@ namespace Hecton8.World
                 UnsafeUtility.SizeOf<ChemicalEmitterProfileDTO>() == 64;
 
             if (!valid)
-                Debug.LogError("[SHINOBU_138] Chemical DTO layout validation failed. ARM64 padding contract broken.");
+                Hecton8.Core.H8Debug.LogError("[SHINOBU_138] Chemical DTO layout validation failed. ARM64 padding contract broken.");
         }
 
 #if UNITY_EDITOR

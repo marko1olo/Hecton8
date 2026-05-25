@@ -1,0 +1,1777 @@
+{
+  "schema": "hecton8.memory_sentry_optimization_report.v1",
+  "agent": "1310",
+  "source": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+  "status": "PASS",
+  "checkCount": 50,
+  "failedCount": 0,
+  "reallocateRawLines": [
+    4541
+  ],
+  "byteOffsetMap": [
+    {
+      "name": "VaultRelocationRecord",
+      "source": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+      "sizeBytes": 32,
+      "multipleOf8": true,
+      "declaredLargestToSmallest": true,
+      "misalignedFields": [],
+      "unknownSizeFields": [],
+      "fields": [
+        {
+          "name": "OldOffsetBytes",
+          "type": "long",
+          "offset": 0,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "NewOffsetBytes",
+          "type": "long",
+          "offset": 8,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "BufferId",
+          "type": "int",
+          "offset": 16,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "ByteLength",
+          "type": "int",
+          "offset": 20,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Generation",
+          "type": "uint",
+          "offset": 24,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Reserved",
+          "type": "ushort",
+          "offset": 30,
+          "sizeBytes": 2,
+          "alignmentOk": true
+        },
+        {
+          "name": "Flags",
+          "type": "byte",
+          "offset": 28,
+          "sizeBytes": 1,
+          "alignmentOk": true
+        },
+        {
+          "name": "SystemId",
+          "type": "byte",
+          "offset": 29,
+          "sizeBytes": 1,
+          "alignmentOk": true
+        }
+      ]
+    },
+    {
+      "name": "VaultBufferMeta",
+      "source": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+      "sizeBytes": 64,
+      "multipleOf8": true,
+      "declaredLargestToSmallest": true,
+      "misalignedFields": [],
+      "unknownSizeFields": [],
+      "fields": [
+        {
+          "name": "OffsetBytes",
+          "type": "long",
+          "offset": 0,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "Bytes",
+          "type": "long",
+          "offset": 8,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "Length",
+          "type": "int",
+          "offset": 16,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Stride",
+          "type": "int",
+          "offset": 20,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Alignment",
+          "type": "int",
+          "offset": 24,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "BlockIndex",
+          "type": "int",
+          "offset": 28,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Allocator",
+          "type": "Allocator",
+          "offset": 32,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Version",
+          "type": "uint",
+          "offset": 36,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "ActiveWriterSystemID",
+          "type": "int",
+          "offset": 44,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "TypeHash",
+          "type": "uint",
+          "offset": 48,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "RefCount",
+          "type": "uint",
+          "offset": 52,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Flags",
+          "type": "uint",
+          "offset": 56,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "BufferKey",
+          "type": "int",
+          "offset": 60,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Owner",
+          "type": "SystemID",
+          "offset": 40,
+          "sizeBytes": 2,
+          "alignmentOk": true
+        },
+        {
+          "name": "LastAliasRequester",
+          "type": "SystemID",
+          "offset": 42,
+          "sizeBytes": 2,
+          "alignmentOk": true
+        }
+      ]
+    },
+    {
+      "name": "VaultTelemetrySnapshot",
+      "source": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+      "sizeBytes": 64,
+      "multipleOf8": true,
+      "declaredLargestToSmallest": true,
+      "misalignedFields": [],
+      "unknownSizeFields": [],
+      "fields": [
+        {
+          "name": "AllocatedBytes",
+          "type": "long",
+          "offset": 0,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "ArenaBytes",
+          "type": "long",
+          "offset": 8,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "LastMovedBytes",
+          "type": "long",
+          "offset": 16,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "ResolutionTicks",
+          "type": "long",
+          "offset": 24,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "ResolvedHandleCount",
+          "type": "long",
+          "offset": 56,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "VaultGenerationID",
+          "type": "uint",
+          "offset": 32,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "GenerationMismatchCount",
+          "type": "uint",
+          "offset": 36,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "LastFaultBufferID",
+          "type": "int",
+          "offset": 40,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "LastFaultHandleGeneration",
+          "type": "uint",
+          "offset": 44,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "LastFaultMetaGeneration",
+          "type": "uint",
+          "offset": 48,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Reserved1",
+          "type": "ushort",
+          "offset": 54,
+          "sizeBytes": 2,
+          "alignmentOk": true
+        },
+        {
+          "name": "LastDefragFlags",
+          "type": "byte",
+          "offset": 52,
+          "sizeBytes": 1,
+          "alignmentOk": true
+        },
+        {
+          "name": "Reserved0",
+          "type": "byte",
+          "offset": 53,
+          "sizeBytes": 1,
+          "alignmentOk": true
+        }
+      ]
+    },
+    {
+      "name": "VaultMemoryBudgetEntry",
+      "source": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+      "sizeBytes": 32,
+      "multipleOf8": true,
+      "declaredLargestToSmallest": true,
+      "misalignedFields": [],
+      "unknownSizeFields": [],
+      "fields": [
+        {
+          "name": "BudgetBytes",
+          "type": "long",
+          "offset": 8,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "DefragThresholdBytes",
+          "type": "long",
+          "offset": 16,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "SystemHash",
+          "type": "uint",
+          "offset": 0,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "BufferID",
+          "type": "int",
+          "offset": 4,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Flags",
+          "type": "uint",
+          "offset": 24,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Reserved0",
+          "type": "uint",
+          "offset": 28,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        }
+      ]
+    },
+    {
+      "name": "VaultMemoryBlockSnapshot",
+      "source": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+      "sizeBytes": 48,
+      "multipleOf8": true,
+      "declaredLargestToSmallest": true,
+      "misalignedFields": [],
+      "unknownSizeFields": [],
+      "fields": [
+        {
+          "name": "OffsetBytes",
+          "type": "long",
+          "offset": 0,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "Bytes",
+          "type": "long",
+          "offset": 8,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "Reserved2",
+          "type": "long",
+          "offset": 40,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "BufferKey",
+          "type": "int",
+          "offset": 16,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "H8BlockIndex",
+          "type": "int",
+          "offset": 20,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Version",
+          "type": "uint",
+          "offset": 24,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Reserved1",
+          "type": "uint",
+          "offset": 36,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Owner",
+          "type": "ushort",
+          "offset": 28,
+          "sizeBytes": 2,
+          "alignmentOk": true
+        },
+        {
+          "name": "LockCount",
+          "type": "ushort",
+          "offset": 30,
+          "sizeBytes": 2,
+          "alignmentOk": true
+        },
+        {
+          "name": "Reserved0",
+          "type": "ushort",
+          "offset": 34,
+          "sizeBytes": 2,
+          "alignmentOk": true
+        },
+        {
+          "name": "State",
+          "type": "byte",
+          "offset": 32,
+          "sizeBytes": 1,
+          "alignmentOk": true
+        },
+        {
+          "name": "Flags",
+          "type": "byte",
+          "offset": 33,
+          "sizeBytes": 1,
+          "alignmentOk": true
+        }
+      ]
+    },
+    {
+      "name": "VaultArenaBlock",
+      "source": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+      "sizeBytes": 32,
+      "multipleOf8": true,
+      "declaredLargestToSmallest": true,
+      "misalignedFields": [],
+      "unknownSizeFields": [],
+      "fields": [
+        {
+          "name": "OffsetBytes",
+          "type": "long",
+          "offset": 0,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "Bytes",
+          "type": "long",
+          "offset": 8,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "BufferKey",
+          "type": "int",
+          "offset": 16,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "H8BlockIndex",
+          "type": "int",
+          "offset": 20,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Version",
+          "type": "uint",
+          "offset": 24,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Reserved1",
+          "type": "ushort",
+          "offset": 30,
+          "sizeBytes": 2,
+          "alignmentOk": true
+        },
+        {
+          "name": "State",
+          "type": "byte",
+          "offset": 28,
+          "sizeBytes": 1,
+          "alignmentOk": true
+        },
+        {
+          "name": "Reserved0",
+          "type": "byte",
+          "offset": 29,
+          "sizeBytes": 1,
+          "alignmentOk": true
+        }
+      ]
+    },
+    {
+      "name": "MemoryDefragTelemetryEntry",
+      "source": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+      "sizeBytes": 128,
+      "multipleOf8": true,
+      "declaredLargestToSmallest": true,
+      "misalignedFields": [],
+      "unknownSizeFields": [],
+      "fields": [
+        {
+          "name": "TotalFreeSpaceBytes",
+          "type": "long",
+          "offset": 0,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "LargestContiguousBlockBytes",
+          "type": "long",
+          "offset": 8,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "LastMovedBytes",
+          "type": "long",
+          "offset": 16,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "TotalMovedBytes",
+          "type": "long",
+          "offset": 24,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "PendingMassiveMoveBytes",
+          "type": "long",
+          "offset": 32,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "ActiveMutationGuardMask",
+          "type": "ulong",
+          "offset": 40,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "ResolutionTicks",
+          "type": "long",
+          "offset": 96,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "ResolvedHandleCount",
+          "type": "long",
+          "offset": 104,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "Sequence",
+          "type": "uint",
+          "offset": 48,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Frame",
+          "type": "uint",
+          "offset": 52,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "VaultGenerationID",
+          "type": "uint",
+          "offset": 56,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "ActiveBurstLockMask",
+          "type": "uint",
+          "offset": 60,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "BlockCount",
+          "type": "int",
+          "offset": 64,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "ActiveBufferCount",
+          "type": "int",
+          "offset": 68,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "WatchdogBreaches",
+          "type": "int",
+          "offset": 72,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "LockedSkipCount",
+          "type": "int",
+          "offset": 76,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "HeapFragmentationRatio",
+          "type": "float",
+          "offset": 80,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "GenerationMismatchCount",
+          "type": "uint",
+          "offset": 92,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "LastFaultBufferID",
+          "type": "int",
+          "offset": 112,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "LastFaultHandleGeneration",
+          "type": "uint",
+          "offset": 116,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "LastFaultMetaGeneration",
+          "type": "uint",
+          "offset": 120,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Reserved32",
+          "type": "uint",
+          "offset": 124,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "LastRelocatedSystemId",
+          "type": "ushort",
+          "offset": 84,
+          "sizeBytes": 2,
+          "alignmentOk": true
+        },
+        {
+          "name": "Reserved16",
+          "type": "ushort",
+          "offset": 86,
+          "sizeBytes": 2,
+          "alignmentOk": true
+        },
+        {
+          "name": "Flags",
+          "type": "byte",
+          "offset": 88,
+          "sizeBytes": 1,
+          "alignmentOk": true
+        },
+        {
+          "name": "IsFragmented",
+          "type": "byte",
+          "offset": 89,
+          "sizeBytes": 1,
+          "alignmentOk": true
+        },
+        {
+          "name": "WatchdogExceeded",
+          "type": "byte",
+          "offset": 90,
+          "sizeBytes": 1,
+          "alignmentOk": true
+        },
+        {
+          "name": "MemoryStarvationWarnings",
+          "type": "byte",
+          "offset": 91,
+          "sizeBytes": 1,
+          "alignmentOk": true
+        }
+      ]
+    },
+    {
+      "name": "MacroDatabasePayloadCacheEntry",
+      "source": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+      "sizeBytes": 48,
+      "multipleOf8": true,
+      "declaredLargestToSmallest": true,
+      "misalignedFields": [],
+      "unknownSizeFields": [],
+      "fields": [
+        {
+          "name": "Handle",
+          "type": "MacroDatabasePayloadHandle",
+          "offset": 0,
+          "sizeBytes": 40,
+          "alignmentOk": true
+        },
+        {
+          "name": "Pointer",
+          "type": "IntPtr",
+          "offset": 40,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        }
+      ]
+    },
+    {
+      "name": "BlockDescriptor",
+      "source": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "sizeBytes": 40,
+      "multipleOf8": true,
+      "declaredLargestToSmallest": true,
+      "misalignedFields": [],
+      "unknownSizeFields": [],
+      "fields": [
+        {
+          "name": "BasePointer",
+          "type": "IntPtr",
+          "offset": 0,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "OffsetBytes",
+          "type": "long",
+          "offset": 8,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "Bytes",
+          "type": "long",
+          "offset": 16,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "OwnerKey",
+          "type": "int",
+          "offset": 24,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Generation",
+          "type": "int",
+          "offset": 28,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Owner",
+          "type": "SystemID",
+          "offset": 32,
+          "sizeBytes": 2,
+          "alignmentOk": true
+        },
+        {
+          "name": "Flags",
+          "type": "ushort",
+          "offset": 34,
+          "sizeBytes": 2,
+          "alignmentOk": true
+        },
+        {
+          "name": "Reserved2",
+          "type": "ushort",
+          "offset": 38,
+          "sizeBytes": 2,
+          "alignmentOk": true
+        },
+        {
+          "name": "State",
+          "type": "byte",
+          "offset": 36,
+          "sizeBytes": 1,
+          "alignmentOk": true
+        },
+        {
+          "name": "Reserved",
+          "type": "byte",
+          "offset": 37,
+          "sizeBytes": 1,
+          "alignmentOk": true
+        }
+      ]
+    },
+    {
+      "name": "H8AllocationRecord",
+      "source": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "sizeBytes": 48,
+      "multipleOf8": true,
+      "declaredLargestToSmallest": true,
+      "misalignedFields": [],
+      "unknownSizeFields": [],
+      "fields": [
+        {
+          "name": "Pointer",
+          "type": "IntPtr",
+          "offset": 0,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "Bytes",
+          "type": "long",
+          "offset": 8,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "Length",
+          "type": "int",
+          "offset": 16,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Stride",
+          "type": "int",
+          "offset": 20,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Alignment",
+          "type": "int",
+          "offset": 24,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "AllocationIndex",
+          "type": "int",
+          "offset": 28,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Generation",
+          "type": "int",
+          "offset": 32,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Allocator",
+          "type": "Allocator",
+          "offset": 36,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Owner",
+          "type": "SystemID",
+          "offset": 40,
+          "sizeBytes": 2,
+          "alignmentOk": true
+        },
+        {
+          "name": "Flags",
+          "type": "ushort",
+          "offset": 42,
+          "sizeBytes": 2,
+          "alignmentOk": true
+        },
+        {
+          "name": "Reserved",
+          "type": "ushort",
+          "offset": 44,
+          "sizeBytes": 2,
+          "alignmentOk": true
+        },
+        {
+          "name": "Reserved2",
+          "type": "ushort",
+          "offset": 46,
+          "sizeBytes": 2,
+          "alignmentOk": true
+        }
+      ]
+    },
+    {
+      "name": "H8MemoryTelemetryEntry",
+      "source": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "sizeBytes": 64,
+      "multipleOf8": true,
+      "declaredLargestToSmallest": true,
+      "misalignedFields": [],
+      "unknownSizeFields": [],
+      "fields": [
+        {
+          "name": "TotalBytes",
+          "type": "long",
+          "offset": 0,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "TransitionBaselineBytes",
+          "type": "long",
+          "offset": 8,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "LastTransitionReleasedBytes",
+          "type": "long",
+          "offset": 16,
+          "sizeBytes": 8,
+          "alignmentOk": true
+        },
+        {
+          "name": "Sequence",
+          "type": "uint",
+          "offset": 24,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "ActiveAllocationCount",
+          "type": "int",
+          "offset": 28,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "BlockDescriptorCount",
+          "type": "int",
+          "offset": 32,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "AllocationGeneration",
+          "type": "int",
+          "offset": 36,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "TransitionCutoffGeneration",
+          "type": "int",
+          "offset": 40,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "TransitionSequence",
+          "type": "int",
+          "offset": 44,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "LastTransitionReleasedCount",
+          "type": "int",
+          "offset": 48,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "FatalLeakPreventedCount",
+          "type": "int",
+          "offset": 52,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Frame",
+          "type": "uint",
+          "offset": 60,
+          "sizeBytes": 4,
+          "alignmentOk": true
+        },
+        {
+          "name": "Owner",
+          "type": "ushort",
+          "offset": 56,
+          "sizeBytes": 2,
+          "alignmentOk": true
+        },
+        {
+          "name": "Flags",
+          "type": "ushort",
+          "offset": 58,
+          "sizeBytes": 2,
+          "alignmentOk": true
+        }
+      ]
+    }
+  ],
+  "hotManagedLogicScan": {
+    "status": "PASS",
+    "hitCount": 0,
+    "hits": []
+  },
+  "coldManagedSites": [
+    {
+      "file": "GlobalDataVault.cs",
+      "line": 3133,
+      "pattern": "cold_auto_reset_event",
+      "text": "_memorySentryDumpSignal = new AutoResetEvent(false);",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "GlobalDataVault.cs",
+      "line": 3134,
+      "pattern": "cold_thread_spawn",
+      "text": "_memorySentryDumpWorker = new Thread(MemorySentryDumpWorkerLoop);",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "GlobalDataVault.cs",
+      "line": 4127,
+      "pattern": "directory_file_io",
+      "text": "Directory.CreateDirectory(directory);",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "GlobalDataVault.cs",
+      "line": 4151,
+      "pattern": "directory_file_io",
+      "text": "Directory.CreateDirectory(directory);",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "GlobalDataVault.cs",
+      "line": 4175,
+      "pattern": "directory_file_io",
+      "text": "Directory.CreateDirectory(directory);",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "GlobalDataVault.cs",
+      "line": 4233,
+      "pattern": "cold_file_stream",
+      "text": "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "GlobalDataVault.cs",
+      "line": 4270,
+      "pattern": "directory_file_io",
+      "text": "Directory.CreateDirectory(directory);",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "GlobalDataVault.cs",
+      "line": 4272,
+      "pattern": "cold_file_stream",
+      "text": "using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read))",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "H8Memory.cs",
+      "line": 2139,
+      "pattern": "fatal_managed_exception",
+      "text": "throw new FatalMemoryException(\"H8Memory free owner is unknown.\");",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "H8Memory.cs",
+      "line": 2144,
+      "pattern": "fatal_managed_exception",
+      "text": "throw new FatalMemoryException(\"H8Memory allocation owner is unknown.\");",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "H8Memory.cs",
+      "line": 2149,
+      "pattern": "fatal_managed_exception",
+      "text": "throw new FatalMemoryException(\"H8Memory alias reader is unknown.\");",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "H8Memory.cs",
+      "line": 2154,
+      "pattern": "fatal_managed_exception",
+      "text": "throw new FatalMemoryException(\"H8Memory free owner mismatch.\");",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "H8Memory.cs",
+      "line": 2159,
+      "pattern": "fatal_managed_exception",
+      "text": "throw new FatalMemoryException(\"H8Memory free pointer is untracked.\");",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "H8Memory.cs",
+      "line": 2164,
+      "pattern": "fatal_managed_exception",
+      "text": "throw new FatalMemoryException(\"GlobalDataVault handle generation mismatch.\");",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "H8Memory.cs",
+      "line": 2169,
+      "pattern": "fatal_managed_exception",
+      "text": "throw new FatalMemoryException(\"GlobalDataVault buffer type mismatch.\");",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "H8Memory.cs",
+      "line": 2174,
+      "pattern": "fatal_managed_exception",
+      "text": "throw new FatalMemoryException(\"H8Memory reallocation size mismatch.\");",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "H8Memory.cs",
+      "line": 2179,
+      "pattern": "fatal_managed_exception",
+      "text": "throw new FatalMemoryException(\"H8Memory allocation tracking failed.\");",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "H8Memory.cs",
+      "line": 2184,
+      "pattern": "fatal_managed_exception",
+      "text": "throw new FatalMemoryException(\"H8Memory ABI layout mismatch.\");",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "H8Memory.cs",
+      "line": 2189,
+      "pattern": "fatal_managed_exception",
+      "text": "throw new FatalMemoryException(\"H8Memory allocation element type is not blittable.\");",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "H8Memory.cs",
+      "line": 2964,
+      "pattern": "cold_stream_writer",
+      "text": "using (StreamWriter writer = new StreamWriter(path, false))",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "H8Memory.cs",
+      "line": 3563,
+      "pattern": "directory_file_io",
+      "text": "Directory.CreateDirectory(directory);",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "H8Memory.cs",
+      "line": 3586,
+      "pattern": "cold_file_stream",
+      "text": "using (FileStream stream = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.Read))",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    },
+    {
+      "file": "H8Memory.cs",
+      "line": 3835,
+      "pattern": "directory_file_io",
+      "text": "string currentDirectory = Directory.GetCurrentDirectory();",
+      "classification": "cold_forensic_or_legacy_dump_path"
+    }
+  ],
+  "singleArgBufferPinAudit": {
+    "singleArgCount": 4,
+    "productionSingleArgCount": 0,
+    "singleArgCalls": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "line": 175,
+        "method": "TryLockBuffer",
+        "args": "BufferID bufferId",
+        "text": "bool TryLockBuffer(BufferID bufferId);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "line": 2091,
+        "method": "TryLockBuffer",
+        "args": "BufferID bufferId",
+        "text": "public bool TryLockBuffer(BufferID bufferId)"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "line": 182,
+        "method": "TryUnlockBuffer",
+        "args": "BufferID bufferId",
+        "text": "bool TryUnlockBuffer(BufferID bufferId);"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "line": 2216,
+        "method": "TryUnlockBuffer",
+        "args": "BufferID bufferId",
+        "text": "public bool TryUnlockBuffer(BufferID bufferId)"
+      }
+    ],
+    "productionSingleArgCalls": []
+  },
+  "persistentAliasAudit": {
+    "aliasCallCount": 1,
+    "productionAliasCallCount": 0,
+    "aliasCalls": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "line": 1915,
+        "method": "CreateAlias",
+        "args": "buffer, requester",
+        "text": "return H8Memory.CreateAlias(buffer, requester);"
+      }
+    ],
+    "productionAliasCalls": []
+  },
+  "rawCompactionFenceReads": [],
+  "aupScan": {
+    "directAbsoluteFloatCastCount": 0,
+    "directAbsoluteFloatCasts": [],
+    "tokenFindings": [
+      {
+        "file": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "line": 40,
+        "text": "/// <summary>True while allocations are blocked for an AUP shift.</summary>"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "line": 199,
+        "text": "/// <summary>Locks vault allocation while AUP positions are being rebased.</summary>"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "line": 202,
+        "text": "/// <summary>Unlocks vault allocation after an AUP shift barrier resolves.</summary>"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "line": 5161,
+        "text": "if (typeof(T) == typeof(float3))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "line": 5163,
+        "text": "float3* values = (float3*)pointer.ToPointer();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "line": 5166,
+        "text": "float3 value = values[i];"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "line": 5212,
+        "text": "if (typeof(T) == typeof(double3))"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "line": 5214,
+        "text": "double3* values = (double3*)pointer.ToPointer();"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+        "line": 5217,
+        "text": "double3 value = values[i];"
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+        "line": 2713,
+        "text": "/// Force-releases every allocation owned by one system after completing its registered job fence."
+      },
+      {
+        "file": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+        "line": 2949,
+        "text": "/// Force-frees all tracked memory for an unregistered owner."
+      },
+      {
+        "file": "Assets/_Project/Scripts/VFX/JacobianFoam/JacobianFoamGpuRuntime.cs",
+        "line": 993,
+        "text": "Vector3 runtimePosition = camera != null ? camera.transform.position : Vector3.zero;"
+      },
+      {
+        "file": "Assets/_Project/Scripts/VFX/JacobianFoam/JacobianFoamGpuRuntime.cs",
+        "line": 1000,
+        "text": "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));"
+      },
+      {
+        "file": "Assets/_Project/Scripts/VFX/JacobianFoam/JacobianFoamGpuRuntime.cs",
+        "line": 1001,
+        "text": "double3 absolute = cameraAup.ToAbsoluteDouble3();"
+      }
+    ],
+    "conclusion": "Core memory does not compute AUP deltas, distances, forces, or collisions. JacobianFoam visual scroll uses double AUP composition for tiling and contains no direct absolute double3->float3 cast."
+  },
+  "fatalExceptionAudit": {
+    "runtimeFatalCallSiteCount": 0,
+    "runtimeFatalCallSites": [],
+    "legacyFatalConstructorCount": 11,
+    "legacyFatalConstructors": [
+      {
+        "file": "H8Memory.cs",
+        "line": 2139,
+        "text": "throw new FatalMemoryException(\"H8Memory free owner is unknown.\");"
+      },
+      {
+        "file": "H8Memory.cs",
+        "line": 2144,
+        "text": "throw new FatalMemoryException(\"H8Memory allocation owner is unknown.\");"
+      },
+      {
+        "file": "H8Memory.cs",
+        "line": 2149,
+        "text": "throw new FatalMemoryException(\"H8Memory alias reader is unknown.\");"
+      },
+      {
+        "file": "H8Memory.cs",
+        "line": 2154,
+        "text": "throw new FatalMemoryException(\"H8Memory free owner mismatch.\");"
+      },
+      {
+        "file": "H8Memory.cs",
+        "line": 2159,
+        "text": "throw new FatalMemoryException(\"H8Memory free pointer is untracked.\");"
+      },
+      {
+        "file": "H8Memory.cs",
+        "line": 2164,
+        "text": "throw new FatalMemoryException(\"GlobalDataVault handle generation mismatch.\");"
+      },
+      {
+        "file": "H8Memory.cs",
+        "line": 2169,
+        "text": "throw new FatalMemoryException(\"GlobalDataVault buffer type mismatch.\");"
+      },
+      {
+        "file": "H8Memory.cs",
+        "line": 2174,
+        "text": "throw new FatalMemoryException(\"H8Memory reallocation size mismatch.\");"
+      },
+      {
+        "file": "H8Memory.cs",
+        "line": 2179,
+        "text": "throw new FatalMemoryException(\"H8Memory allocation tracking failed.\");"
+      },
+      {
+        "file": "H8Memory.cs",
+        "line": 2184,
+        "text": "throw new FatalMemoryException(\"H8Memory ABI layout mismatch.\");"
+      },
+      {
+        "file": "H8Memory.cs",
+        "line": 2189,
+        "text": "throw new FatalMemoryException(\"H8Memory allocation element type is not blittable.\");"
+      }
+    ],
+    "conclusion": "Target runtime call sites were converted to fail-closed returns/blackbox records. The legacy exception type remains for existing neighboring-domain callers outside 1310 authority."
+  },
+  "assemblyIsolation": {
+    "GlobalDataVault.cs": [
+      "using System;",
+      "using System.IO;",
+      "using System.Runtime.CompilerServices;",
+      "using System.Runtime.InteropServices;",
+      "using System.Threading;",
+      "using Hecton8.Core.Contracts;",
+      "using Unity.Burst;",
+      "using Unity.Burst.CompilerServices;",
+      "using Unity.Collections;",
+      "using Unity.Collections.LowLevel.Unsafe;",
+      "using Unity.Jobs;",
+      "using Unity.Mathematics;"
+    ],
+    "H8Memory.cs": [
+      "using System;",
+      "using System.IO;",
+      "using System.Runtime.CompilerServices;",
+      "using System.Runtime.InteropServices;",
+      "using Unity.Collections;",
+      "using Unity.Collections.LowLevel.Unsafe;",
+      "using Unity.Jobs;",
+      "using UnityEngine;",
+      "using UnityEngine.SceneManagement;"
+    ],
+    "OOP_MemorySentryConcurrentRelocationFuzzer.cs": [
+      "using System;",
+      "using System.Diagnostics;",
+      "using System.Globalization;",
+      "using System.IO;",
+      "using System.Text;",
+      "using System.Threading;",
+      "using Hecton8.Core.Memory;",
+      "using Unity.Collections;",
+      "using UnityEditor;",
+      "using UnityEngine;",
+      "using Debug = UnityEngine.Debug;"
+    ],
+    "nearestFuzzerAsmdef": "Assets/_Project/Scripts/Editor/Hecton8.Editor.asmdef"
+  },
+  "h8MemoryJobCompletion": {
+    "directCompleteLineCount": 1,
+    "dispatcherFenceTokenPresent": false,
+    "helperLine": 3266,
+    "callSites": [
+      3241,
+      3258
+    ]
+  },
+  "h8MemoryBufferIdDuplicates": [],
+  "fuzzerBufferIdAudit": {
+    "constants": {
+      "StableBufferBase": 99000,
+      "StableBufferCount": 16,
+      "ChurnBufferBase": 99032,
+      "ChurnBufferCount": 24
+    },
+    "maxGenerationHandleCapacity": 100000,
+    "fuzzerValuesMin": 99000,
+    "fuzzerValuesMax": 99055,
+    "collisionCount": 0,
+    "collisions": [],
+    "outOfRange": []
+  },
+  "crossDomainNativeArrayAudit": {
+    "jacobianFoamPath": "Assets/_Project/Scripts/VFX/JacobianFoam/JacobianFoamGpuRuntime.cs",
+    "directUnpinnedResolveHelperTokensRemoved": true,
+    "tryResolveHandleCallSites": [
+      898,
+      908,
+      955
+    ]
+  },
+  "failClosedSummary": {
+    "lockDuringCompaction": "TryAcquireWriteLock/TryLockBuffer return false on first volatile fence gate.",
+    "externalViewAdmission": "Writer locks and owner read pins reject BlockFlagExternalView so persistent read aliases cannot mix with mutable or releasable pin routes.",
+    "persistentAliasAdmission": "TryOpenAliasBuffer rejects any existing BlockFlagExternalView or LastAliasRequester because persistent aliases have no release token.",
+    "lockedBlockDuringCompaction": "Compaction skips and records LockedSkipCount plus AliasBlocked flag.",
+    "arenaGrowthDuringActiveAlias": "Growth returns false and queues _deferredArenaGrowthBytes when active locks or external views exist.",
+    "telemetryFault": "Fault paths request raw 1310 dump; hot ring writes stay unmanaged."
+  },
+  "overengineeringReview": {
+    "physicsSimulation": "none",
+    "mathIterations": "linear block scan only; no physical simulation or spatial solver added",
+    "dearLie": "skip-and-record, mask gates, and fixed telemetry ring instead of waiting or simulating allocator pressure"
+  },
+  "checks": [
+    {
+      "name": "TryAcquireWriteLock_first_line_compaction_fence",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "first executable statement after out-default must reject active compaction"
+    },
+    {
+      "name": "TryLockBuffer_first_line_compaction_fence",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "first executable statement must reject active compaction"
+    },
+    {
+      "name": "TryAcquireWriteLock_publishes_active_bit_inside_mutation_gate",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "active bit is published only after the block mutation gate is held and before writer id publication"
+    },
+    {
+      "name": "TryLockBuffer_publishes_active_bit_inside_mutation_gate",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "pin bit is published inside the mutation gate before the private block pin is incremented"
+    },
+    {
+      "name": "ReleaseWriteLock_uses_volatile_and_interlocked_release",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "writer release path must use volatile read and interlocked zeroing"
+    },
+    {
+      "name": "ReleaseWriteLock_clears_writer_and_active_bit_inside_mutation_gate",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "writer release must clear private block lock, writer id, and active bit while the same mutation gate is still held"
+    },
+    {
+      "name": "TryAcquireWriteLock_partial_rollback_is_under_existing_gate",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "unpublished writer lock rollback must occur while the caller still owns the mutation gate; no bounded second-gate failure path"
+    },
+    {
+      "name": "TryUnlockBuffer_clears_active_bit_under_mutation_gate",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "pin unlock clears active bit while the block gate is still held"
+    },
+    {
+      "name": "TryOpenAliasBuffer_marks_external_view_before_native_view",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "read-only alias must publish the external-view relocation pin and alias requester under one mutation gate before constructing a NativeArray view"
+    },
+    {
+      "name": "TryOpenAliasBuffer_rolls_back_unpublished_alias_pin_on_failure",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "alias open must not leave BlockFlagExternalView/LastAliasRequester pinned when no alias is returned"
+    },
+    {
+      "name": "TryOpenAliasBuffer_rejects_existing_persistent_alias",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "persistent read aliases have no release token, so a second alias must fail closed instead of overwriting LastAliasRequester"
+    },
+    {
+      "name": "MarkExternalView_uses_compaction_aware_mutation_gate",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "external-view pin publication must be serialized with compaction and block metadata mutation"
+    },
+    {
+      "name": "MarkAliasReader_uses_mutation_gate_and_requires_external_view",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "alias-reader metadata updates must be serialized with relocation metadata and only apply to already-pinned external views"
+    },
+    {
+      "name": "Pure_transient_read_views_recheck_fence_after_view_creation",
+      "passed": true,
+      "severity": "major",
+      "evidence": "pure read accessors must not pin relocation metadata, but they must reject if compaction/growth starts while a transient view is being created"
+    },
+    {
+      "name": "Read_alias_path_does_not_sanitize_or_mutate_payload",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "read and read-alias routes must not repair or rewrite payload data; finite sanitization belongs only to owner allocation/resize paths"
+    },
+    {
+      "name": "TryLockBuffer_partial_pin_rollback_is_under_existing_gate",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "unpublished buffer pin rollback must occur before releasing the mutation gate; no bounded second-gate failure path"
+    },
+    {
+      "name": "TryLockBuffer_owner_bound_pin_and_unlock",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "read pins must be owner-bound so one domain cannot unlock another domain's live NativeArray pin"
+    },
+    {
+      "name": "ExternalView_blocks_writer_and_read_pin_admission",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "persistent external alias views have no release token, so writer locks and owner read pins must fail closed while BlockFlagExternalView is published; unlock must not erase alias requester metadata while an external view remains"
+    },
+    {
+      "name": "No_production_single_arg_buffer_pin_calls",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "one-arg TryLockBuffer/TryUnlockBuffer overloads fail closed; production call count must stay zero"
+    },
+    {
+      "name": "No_production_persistent_read_alias_calls",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "PinReadOnlyAlias/CreateAlias have no release token and must stay unused outside Core.Memory; use owner-tagged TryLockBuffer/TryUnlockBuffer for releasable read pins"
+    },
+    {
+      "name": "TryRunLiveCompactionSlice_fail_closed_gate",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "compaction slice must own the block gate and reject active local/external lock masks"
+    },
+    {
+      "name": "TryReleaseOrphanedBuffer_frees_under_owned_fence_before_metadata_tombstone",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "orphan sweep owns the relocation fence, so reclamation must use the raw block gate and must not tombstone metadata before the block is actually freed"
+    },
+    {
+      "name": "TryMoveOccupiedBlockLeft_rechecks_before_memmove",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "move helper must recheck active masks and private block locks before MemMove"
+    },
+    {
+      "name": "TryGrowArenaForBytes_blocks_active_locks_before_growth",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "arena growth request must fail closed and queue deferred bytes under active locks"
+    },
+    {
+      "name": "TryGrowArena_blocks_active_locks_before_reallocate",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "raw arena relocation must be behind active-lock and block-gate checks"
+    },
+    {
+      "name": "ArenaGrowth_blocks_external_views_before_reallocate",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "arena growth must fail closed when any unmanaged external view can hold a stale pointer into the arena"
+    },
+    {
+      "name": "TryGrowArena_raises_compaction_fence_around_reallocate",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "arena growth must publish the relocation fence before raw realloc and clear it only in the finalizer after pointer/metadata publication"
+    },
+    {
+      "name": "No_ReallocateRaw_outside_TryGrowArena",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "H8Memory.ReallocateRaw line hits outside TryGrowArena: "
+    },
+    {
+      "name": "RecordDefragBlackBox_pointer_write",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "telemetry ring must use unmanaged pointer write and volatile cursor publication"
+    },
+    {
+      "name": "MemorySentry_background_dump_route",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "1310 dump route must use a cold-started background worker; hot request path only sets an atomic flag and signal"
+    },
+    {
+      "name": "MemorySentry_dispose_rechecks_dump_state_after_worker_stop",
+      "passed": true,
+      "severity": "major",
+      "evidence": "dispose must re-check dump in-flight state after stopping the worker before deciding to leak or release the telemetry ring"
+    },
+    {
+      "name": "Telemetry_reserved_cursor_removed",
+      "passed": true,
+      "severity": "major",
+      "evidence": "skip telemetry must use LockedSkipCount and no stale ReservedCursorBytes field"
+    },
+    {
+      "name": "TryFreeBlock_normal_release_respects_compaction_fence",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "normal release uses compaction-aware gate; rollback and owned-fence cleanup use the raw gate only when the caller already owns exclusion"
+    },
+    {
+      "name": "FreeBlockLocked_rejects_locked_or_external_view_blocks",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "free must fail closed for writer pins, buffer pins, and external alias views"
+    },
+    {
+      "name": "TryReallocateBlockLocked_rejects_external_views",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "per-buffer resize must not mutate storage while an external alias can hold the old pointer"
+    },
+    {
+      "name": "Release_paths_free_before_metadata_removal",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "normal release paths must prove block free before deleting metadata/routes"
+    },
+    {
+      "name": "Telemetry_snapshot_uses_volatile_cursor_reads",
+      "passed": true,
+      "severity": "major",
+      "evidence": "read accessor observes telemetry cursor/count with volatile reads"
+    },
+    {
+      "name": "GlobalDataVault_compaction_fence_reads_are_volatile",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "raw _compactionFence reads outside initialization/reset: 0"
+    },
+    {
+      "name": "H8Memory_no_BinaryWriter_dump_path",
+      "passed": true,
+      "severity": "major",
+      "evidence": "H8Memory fatal leak dump must use FileStream + stackalloc little-endian writes, not BinaryWriter"
+    },
+    {
+      "name": "Hot_runtime_zero_gc_scan",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "hot allocator/lock/compaction methods forbidden managed hits: 0"
+    },
+    {
+      "name": "Core_memory_runtime_fatal_call_sites_removed",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "GlobalDataVault/H8Memory normal runtime routes must fail closed instead of calling FatalMemoryException.Throw; call sites: 0"
+    },
+    {
+      "name": "GlobalDataVault_initialize_fail_closed_on_missing_native_storage",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "vault bootstrap must abort before metadata loops, dump worker start, arena publication, or latest-created publication when any critical native storage allocation failed"
+    },
+    {
+      "name": "Runtime_dto_arm64_layout_scan",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "explicit DTO maps must be multiple-of-8, aligned, and declared largest-to-smallest"
+    },
+    {
+      "name": "AUP_direct_float_cast_scan",
+      "passed": true,
+      "severity": "major",
+      "evidence": "memory sentry does not compute positions/distances/forces; no direct absolute double3->float3 casts found"
+    },
+    {
+      "name": "Assembly_isolation_scan",
+      "passed": true,
+      "severity": "major",
+      "evidence": "no new asmdef and no direct neighbor-domain using; editor fuzzer is in existing Hecton8.Editor assembly and depends on Core.Memory only"
+    },
+    {
+      "name": "H8Memory_no_core_dispatcher_fence_cycle",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "Core.Memory must not depend back on Hecton8.Core DispatcherJobFence because Hecton8.Core already references Core.Memory"
+    },
+    {
+      "name": "H8Memory_owner_job_complete_is_cold_teardown_only",
+      "passed": true,
+      "severity": "major",
+      "evidence": "direct JobHandle.Complete must remain only in the annotated owner teardown helper"
+    },
+    {
+      "name": "H8Memory_BufferID_has_no_duplicate_values",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "BufferID enum values must be globally unique; duplicate count: 0"
+    },
+    {
+      "name": "Fuzzer_buffer_ids_do_not_collide_with_runtime_BufferID",
+      "passed": true,
+      "severity": "major",
+      "evidence": "editor fuzzer IDs must use a reserved free range inside GlobalDataVault metadata capacity"
+    },
+    {
+      "name": "JacobianFoam_vault_nativearray_views_are_locked_or_pinned",
+      "passed": true,
+      "severity": "critical",
+      "evidence": "JacobianFoam was the local unpinned NativeArray consumer found during 1310 cross-domain audit; mutable views must use write locks and read/dump views must use buffer pins before resolving"
+    }
+  ]
+}

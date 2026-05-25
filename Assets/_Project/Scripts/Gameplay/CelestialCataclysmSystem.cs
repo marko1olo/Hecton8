@@ -3,7 +3,7 @@ using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Celestial;
 using Hecton8.Core;
-using Hecton8.Physics;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using NASAPunk.Visor;
 using Unity.Mathematics;
@@ -51,7 +51,7 @@ namespace Hecton8.Gameplay
         private float _solarEmpGlitchRemainingSeconds;
         private float _solarEmpGlitchDurationSeconds;
         private float _solarEmpGlitchIntensity01;
-        private HectonCelestialEngine _celestialEngine;
+        private ICelestialResonanceReadModel _celestialEngine;
 
         private static readonly int _MeteorFogShadowPositionsId = Shader.PropertyToID("_MeteorFogShadowPositions");
         private static readonly int _MeteorFogShadowParamsId = Shader.PropertyToID("_MeteorFogShadowParams");
@@ -59,10 +59,11 @@ namespace Hecton8.Gameplay
         private static readonly uint _CataclysmContextHash = unchecked((uint)LocHash.Compute("CelestialCataclysmSystem"));
         private static readonly uint _FloraDirectorMissingWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.FloraDirectorMissing"));
         private static readonly uint _SolarEmpNoVisorControllerWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.SolarEmpNoVisorController"));
+        private static int s_x001CelestialCataclysmSystemSignalPushDropCount;
 
         private void OnEnable()
         {
-            _celestialEngine = GlobalRegistry.CelestialEngine;
+            _celestialEngine = GlobalRegistry.CelestialResonance;
             TryRegisterHotSwapListener();
             TryRegister();
             RandomEventEvents.Register(this);
@@ -110,7 +111,7 @@ namespace Hecton8.Gameplay
                         TryRegisterLateFrame();
                     break;
                 case GlobalRegistryServiceSlot.CelestialEngineRuntime:
-                    _celestialEngine = currentService as HectonCelestialEngine;
+                    _celestialEngine = currentService as ICelestialResonanceReadModel;
                     break;
             }
         }
@@ -228,19 +229,29 @@ namespace Hecton8.Gameplay
         private void PublishSolarEmpFlare(float intensity)
         {
             Vector3 origin = ResolvePlayerPosition();
-            PhysicsEventBus.TryNotifyElectromagneticPulse(new ElectromagneticPulseEvent(
-                origin,
-                Mathf.Max(1f, solarEmpRadiusMeters),
-                Mathf.Max(0.1f, solarEmpDurationSeconds),
-                Mathf.Clamp01(solarEmpClaritySuppression01 * Mathf.Max(0.1f, intensity)),
-                (uint)DamageTypeMask.Emp,
-                SolarFlareSourceId));
+            PhysicsEventPayload payload = new PhysicsEventPayload
+            {
+                RuntimePosition = origin,
+                Direction = default,
+                ForceVector = default,
+                ImpulseVector = default,
+                RadiusMeters = Mathf.Max(1f, solarEmpRadiusMeters),
+                Scalar0 = Mathf.Max(0.1f, solarEmpDurationSeconds),
+                Scalar1 = Mathf.Clamp01(solarEmpClaritySuppression01 * Mathf.Max(0.1f, intensity)),
+                Scalar2 = 0f,
+                PrimaryId = 0,
+                DataHash = (uint)DamageTypeMask.Emp,
+                StatusBits = SolarFlareSourceId,
+                EventType = (ushort)PhysicsEventType.ElectromagneticPulse,
+                Reserved = 0
+            };
+            SignalBus<PhysicsEventPayload>.TryPushTracked(in payload, ref s_x001CelestialCataclysmSystemSignalPushDropCount);
             TriggerSolarEmpVisualGlitch(intensity);
         }
 
         private void ApplyLunarResonanceIfActive()
         {
-            HectonCelestialEngine celestialEngine = _celestialEngine;
+            ICelestialResonanceReadModel celestialEngine = _celestialEngine;
             if (celestialEngine == null || !celestialEngine.IsLunarResonanceActive)
                 return;
 

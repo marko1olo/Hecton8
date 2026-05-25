@@ -7,10 +7,10 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using UnityEngine;
-using Hecton8.AI;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Visor;
@@ -576,7 +576,7 @@ namespace Hecton8.Biolum
 
 #if UNITY_EDITOR
             _debugTickInvocations++;
-            _debugLastTickFrame = Time.frameCount;
+            _debugLastTickFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             _debugLastTickDelta = safeDeltaTime;
             _debugOceanZoneCount = _activeOceanZoneCount;
             _debugFloorZoneCount = _activeFloorZoneCount;
@@ -1127,7 +1127,9 @@ namespace Hecton8.Biolum
             for (int i = 0; i < contactCount && _predatorCandidateCount < MaxPredatorContacts; i++)
             {
                 SpatialQueryHit hit = _predatorContacts[i];
-                if (!(hit.Owner is FaunaBrain brain) || brain.IsDead || !brain.IsApexPredatorRuntime)
+                if (!(hit.Owner is IFaunaSpatialContact faunaContact) ||
+                    faunaContact.IsDead ||
+                    !faunaContact.IsApexPredatorContact)
                     continue;
 
                 Vector3 predatorPosition = hit.Position;
@@ -1648,14 +1650,15 @@ namespace Hecton8.Biolum
                 UnlockTelemetryRing(telemetryVault);
             }
 
-            if (_activeTouchRippleCount != _lastRippleTelemetryCount || Time.frameCount - _lastRippleTelemetryFrame >= 30)
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
+            if (_activeTouchRippleCount != _lastRippleTelemetryCount || currentFrame - _lastRippleTelemetryFrame >= 30)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(
                     ActiveBiolumRipplesHash,
                     BiolumDirectorContextHash,
                     _activeTouchRippleCount);
                 _lastRippleTelemetryCount = _activeTouchRippleCount;
-                _lastRippleTelemetryFrame = Time.frameCount;
+                _lastRippleTelemetryFrame = currentFrame;
             }
 
             if (!math.isfinite(_masterIntensity) || !math.isfinite(_globalBiolumPhase))
@@ -1672,7 +1675,7 @@ namespace Hecton8.Biolum
 
             try
             {
-                int frame = Time.frameCount;
+                int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
                 if (frame - _lastBiolumDumpFrame < BiolumDumpCooldownFrames)
                     return;
 
@@ -1733,7 +1736,7 @@ namespace Hecton8.Biolum
         private void RefreshCameraSnapshotForOwnerPhase(bool force)
         {
             TryCacheCameraReferenceFromOwnerRoute(force);
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (!force && _cachedCameraAupFrame == frame)
                 return;
 
@@ -1990,7 +1993,7 @@ namespace Hecton8.Biolum
             _dataVault = currentVault;
             _cachedTickDispatcher = GlobalRegistry.TickDispatcher;
             _cachedFluid = GlobalRegistry.AbyssalFlowGpu;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private void TryRegisterHotSwapListener()

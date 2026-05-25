@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using System;
 using System.IO;
 using System.Text;
@@ -29,9 +29,9 @@ namespace Hecton8.Audio.Editor
             bool passed = Run(out string jsonReport);
             WriteReport(jsonReport);
             if (passed)
-                Debug.Log(jsonReport);
+                Hecton8.Core.H8Debug.Log(jsonReport);
             else
-                Debug.LogError(jsonReport);
+                Hecton8.Core.H8Debug.LogError(jsonReport);
         }
 
         /// <summary>

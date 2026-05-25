@@ -1,0 +1,31 @@
+{
+    "schema":  "hecton8.vault_native_alias_recheck_1302.v1",
+    "generatedAt":  "2026-05-25",
+    "sourceRoot":  "C:\\hades\\Hecton8\\Assets\\_Project\\Scripts\\Physics",
+    "rawHash":  "27b8368cda3cc753bfd22dbb1de3b30609ae8069661d909f3a1e12c1921d59f2",
+    "rawScannedFiles":  78,
+    "rawForbiddenPersistentCandidates":  1,
+    "scopedNativeFieldDeclarations":  423,
+    "scopedForbiddenPersistentCandidates":  0,
+    "scopedForbiddenMonoBehaviourCandidates":  0,
+    "excludedForbiddenPersistentCandidates":  1,
+    "excludedFindings":  [
+                             {
+                                 "path":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                                 "line":  567,
+                                 "namespace":  "Hecton8.Physics",
+                                 "ownerType":  "VerletCableNodeBuffer",
+                                 "ownerKind":  "StructDeclaration",
+                                 "bases":  "",
+                                 "isMonoBehaviour":  false,
+                                 "isJobField":  false,
+                                 "isCoreMemoryAllowed":  false,
+                                 "collection":  "NativeArray",
+                                 "type":  "NativeArray\u003cVerletNodeDTO\u003e",
+                                 "name":  "Nodes",
+                                 "modifiers":  "public",
+                                 "attributes":  "",
+                                 "classification":  "forbidden_persistent_native_alias_candidate"
+                             }
+                         ]
+}

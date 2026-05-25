@@ -1153,7 +1153,7 @@ namespace Hecton8.Systems.AI
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             catch (Exception exception)
             {
-                Debug.LogError(exception);
+                Hecton8.Core.H8Debug.LogException(exception);
             }
 #else
             catch (Exception)

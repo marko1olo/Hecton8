@@ -1,15 +1,14 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
-using Hecton8.AI;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Crafting;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Narrative;
-using Hecton8.Physics;
 using Hecton8.Visor;
 using Hecton8.World;
 using NASAPunk.Visor;
@@ -19,6 +18,8 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Serialization;
+using PressureImpulseEvent = Hecton8.Core.Contracts.Physics.PressureImpulseEvent;
+using SubmarineFluidDynamics = Hecton8.Physics.SubmarineFluidDynamics;
 
 namespace Hecton8.Atmosphere
 {
@@ -391,7 +392,7 @@ namespace Hecton8.Atmosphere
 
         private static void ReportOverflowOncePerFrame()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastOverflowWarningFrame == frame)
                 return;
 
@@ -715,7 +716,7 @@ namespace Hecton8.Atmosphere
 
         private static void ReportOverflowOncePerFrame()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastOverflowWarningFrame == frame)
                 return;
 
@@ -1516,6 +1517,7 @@ namespace Hecton8.Atmosphere
         private AudioLogSystem _audioLogs;
         private IPlayerSensoryService _playerSensoryService;
         private IAudioService _audioService;
+        private IPhysicsService _physicsService;
         private bool _registered;
         private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
@@ -2569,7 +2571,7 @@ namespace Hecton8.Atmosphere
                                          math.max(0.05f, releaseFraction);
                 if (impulseMagnitude > Epsilon)
                 {
-                    PhysicsForceRouter.QueueForceAtPosition(
+                    _physicsService?.QueueForceAtPosition(
                         _submarineBody,
                         -ventDirection * impulseMagnitude,
                         ventPosition,
@@ -2638,7 +2640,7 @@ namespace Hecton8.Atmosphere
                 FiniteNonNegativeOrZero(pocketIntensity) * FiniteNonNegativeOrZero(explosionImpulsePerPocketUnit),
                 math.max(1f, FiniteOr(explosionMaximumImpulseNewtonSeconds, DefaultExplosionMaximumImpulseNewtonSeconds)));
 
-            PhysicsForceRouter.QueueForceAtPosition(
+            _physicsService?.QueueForceAtPosition(
                 _submarineBody,
                 forceDirection * impulseMagnitude,
                 runtimeHitPoint,
@@ -2903,7 +2905,8 @@ namespace Hecton8.Atmosphere
             _powerGridService = GlobalRegistry.PowerGrid;
             _audioLogs = GlobalRegistry.AudioLogs;
             _playerSensoryService = GlobalRegistry.PlayerSensory;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
+            _physicsService = GlobalRegistry.Physics;
             _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
             CacheReferencesFromCache();
         }
@@ -3078,7 +3081,7 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            UIStateStore.WriteValue(UIValueSlotId.RoomOxygen01, _pendingRoomOxygenHud01, Time.unscaledTime);
+            UIStateStore.WriteValue(UIValueSlotId.RoomOxygen01, _pendingRoomOxygenHud01, (float)Hecton8.Core.SystemDispatcher.CurrentUnscaledTimeSeconds);
         }
 
         private void ClearAtmosphereFakes()
@@ -3629,6 +3632,9 @@ namespace Hecton8.Atmosphere
                     break;
                 case GlobalRegistryServiceSlot.Audio:
                     _audioService = currentService as IAudioService;
+                    break;
+                case GlobalRegistryServiceSlot.Physics:
+                    _physicsService = currentService as IPhysicsService;
                     break;
                 case GlobalRegistryServiceSlot.ThermodynamicsService:
                     _thermodynamicsService = currentService as IThermodynamicsService;
@@ -4350,7 +4356,7 @@ namespace Hecton8.Atmosphere
                     minimumImpulse,
                     maximumImpulse);
 
-                PhysicsForceRouter.QueueForceAtPosition(
+                _physicsService?.QueueForceAtPosition(
                     _submarineBody,
                     forceDirection * impulseMagnitude,
                     reactorWorldPosition,
@@ -4451,9 +4457,29 @@ namespace Hecton8.Atmosphere
                 direction * forceMagnitudeNewtons,
                 direction * impulseMagnitude,
                 math.max(0.25f, FiniteOr(pressureImpulseRadiusMeters, DefaultPressureImpulseRadiusMeters)));
-            if (!PhysicsEventBus.TryNotifyPressureImpulse(in pressureImpulseEvent))
-                IncrementDroppedSignalCount();
+            PublishPressureImpulseSignal(in pressureImpulseEvent);
             ApplyPressureBlowoutImpulse(in pressureImpulseEvent);
+        }
+
+        private void PublishPressureImpulseSignal(in PressureImpulseEvent pressureImpulseEvent)
+        {
+            PhysicsEventPayload payload = new PhysicsEventPayload
+            {
+                RuntimePosition = pressureImpulseEvent.RuntimePosition,
+                Direction = pressureImpulseEvent.Direction,
+                ForceVector = pressureImpulseEvent.ForceVectorNewtons,
+                ImpulseVector = pressureImpulseEvent.ImpulseVectorNewtonSeconds,
+                RadiusMeters = pressureImpulseEvent.InfluenceRadiusMeters,
+                Scalar0 = pressureImpulseEvent.DoorAreaSquareMeters,
+                Scalar1 = pressureImpulseEvent.HighPressureKPa,
+                Scalar2 = pressureImpulseEvent.LowPressureKPa,
+                PrimaryId = pressureImpulseEvent.DoorIndex,
+                DataHash = 0u,
+                StatusBits = 0u,
+                EventType = (ushort)PhysicsEventType.PressureImpulse,
+                Reserved = 0
+            };
+            SignalBus<PhysicsEventPayload>.TryPushTracked(in payload, ref _droppedSignalCount);
         }
 
         private void IncrementDroppedSignalCount()
@@ -4553,7 +4579,7 @@ namespace Hecton8.Atmosphere
 
                 Vector3 direction = pressureImpulseEvent.Direction;
                 Vector3 impulse = direction * (impulseMagnitude * falloff);
-                PhysicsForceRouter.QueueForce(body, impulse, ForceMode.Impulse);
+                _physicsService?.QueueForce(body, impulse, ForceMode.Impulse);
             }
         }
 
@@ -5151,28 +5177,30 @@ namespace Hecton8.Atmosphere
             for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
             {
                 SpatialQueryHit hit = _boilingFaunaContacts[hitIndex];
-                if (hit.Owner is FaunaBrain faunaBrain &&
-                    !TryQueueBoilingFaunaDamage(faunaBrain, in hit, worldCenter, damageAmount))
+                if (hit.Owner is IDamageReceiver damageReceiver &&
+                    hit.Owner is Component damageOwner &&
+                    !TryQueueBoilingFaunaDamage(damageReceiver, damageOwner, in hit, worldCenter, damageAmount))
                 {
-                    ApplyBoilingFaunaOwnerFallbackDamage(faunaBrain, in hit, worldCenter, damageAmount);
+                    ApplyBoilingFaunaOwnerFallbackDamage(damageReceiver, damageOwner, in hit, worldCenter, damageAmount);
                 }
             }
         }
 
         private bool TryQueueBoilingFaunaDamage(
-            FaunaBrain faunaBrain,
+            IDamageReceiver damageReceiver,
+            Component damageOwner,
             in SpatialQueryHit hit,
             Vector3 hazardCenter,
             float damageAmount)
         {
-            if (faunaBrain == null || !(damageAmount > 0f) || !math.isfinite(damageAmount))
+            if (damageReceiver == null || damageOwner == null || !(damageAmount > 0f) || !math.isfinite(damageAmount))
                 return false;
 
-            int targetId = CombatDamageRuntime.ResolveTargetId(faunaBrain.gameObject);
+            int targetId = CombatDamageRuntime.ResolveTargetId(damageOwner.gameObject);
             if (targetId == 0 || !CombatDamageRuntime.IsTargetRegistered(targetId))
                 return false;
 
-            Transform faunaTransform = faunaBrain.transform;
+            Transform faunaTransform = damageOwner.transform;
             Vector3 impactPoint = ResolveFinitePoint(hit.Position, faunaTransform != null ? faunaTransform.position : hazardCenter);
             float3 direction = ResolveBoilingDamageDirection(hazardCenter, impactPoint);
             CombatDamageRequest signal = new CombatDamageRequest
@@ -5202,15 +5230,16 @@ namespace Hecton8.Atmosphere
         }
 
         private void ApplyBoilingFaunaOwnerFallbackDamage(
-            FaunaBrain faunaBrain,
+            IDamageReceiver damageReceiver,
+            Component damageOwner,
             in SpatialQueryHit hit,
             Vector3 hazardCenter,
             float damageAmount)
         {
-            if (faunaBrain == null || !(damageAmount > 0f) || !math.isfinite(damageAmount))
+            if (damageReceiver == null || damageOwner == null || !(damageAmount > 0f) || !math.isfinite(damageAmount))
                 return;
 
-            Transform faunaTransform = faunaBrain.transform;
+            Transform faunaTransform = damageOwner.transform;
             Vector3 impactPoint = ResolveFinitePoint(hit.Position, faunaTransform != null ? faunaTransform.position : hazardCenter);
             DamagePacket packet = new DamagePacket
             {
@@ -5225,7 +5254,7 @@ namespace Hecton8.Atmosphere
                 SourceId = DamageSourceIds.SubmarineAtmosphereBoiling,
                 TraumaLevel = 0
             };
-            faunaBrain.ReceiveDamage(in packet);
+            damageReceiver.ReceiveDamage(in packet);
         }
 
         private static Vector3 ResolveFinitePoint(Vector3 candidate, Vector3 fallback)

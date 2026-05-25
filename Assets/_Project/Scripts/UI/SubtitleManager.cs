@@ -1,11 +1,11 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Globalization;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Narrative;
-using Hecton8.Physics;
 using Hecton8.World;
 using TMPro;
 using Unity.Mathematics;
@@ -167,6 +167,7 @@ namespace Hecton8.UI
         private static readonly Color TextColor = new Color(0.86f, 0.96f, 1f, 0.96f);
         private static readonly Color WaveformColor = new Color(0.72f, 0.97f, 1f, 0.92f);
         private static readonly char[] EmptyCueBuffer = new char[1]; // COLD ALLOC: char[1] - non-null empty cue sentinel - owner: SubtitleManager
+        private static int s_x001SubtitleManagerSignalPushDropCount;
 
         private readonly SubtitleCommandDTO[] _subtitleCommandQueue = new SubtitleCommandDTO[MaxQueuedSubtitles]; // COLD ALLOC: SubtitleCommandDTO[8] - zero-string Babel subtitle command ring - owner: SubtitleManager
         private readonly BufferedSubtitleCue[] _bufferedQueue = new BufferedSubtitleCue[MaxQueuedSubtitles]; // COLD ALLOC: BufferedSubtitleCue[8] - zero-GC subtitle cue ring - owner: SubtitleManager
@@ -417,7 +418,7 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationStressPresentation;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
         }
 
         /// <summary>
@@ -469,14 +470,14 @@ namespace Hecton8.UI
 
             try
             {
-                float decodeStart = Time.realtimeSinceStartup;
+                long decodeStart = Stopwatch.GetTimestamp();
                 bool found = LocRegistry.TryWriteVisualSpanFromUtf8(
                     textHash,
                     lease.Span,
                     out int length,
                     formatArgs,
                     ShouldStripBabelRichTextForCurrentTier());
-                float decodeMs = math.max(0f, (Time.realtimeSinceStartup - decodeStart) * 1000f);
+                float decodeMs = ResolveStopwatchElapsedMilliseconds(decodeStart);
                 BabelSubtitleSyncRuntime.RecordDecode(textHash, length, !found, decodeMs);
                 length = lease.CopyToTmpBuffer(length);
                 if (length <= 0)
@@ -813,14 +814,14 @@ namespace Hecton8.UI
             try
             {
                 Span<char> destination = lease.Span;
-                float decodeStart = Time.realtimeSinceStartup;
+                long decodeStart = Stopwatch.GetTimestamp();
                 bool found = LocRegistry.TryWriteVisualSpanFromUtf8(
                     command.TextHash,
                     destination,
                     out int length,
                     ShouldStripBabelRichTextForCurrentTier());
                 AppendDirectionalArrow(command._pad0, destination, ref length);
-                float decodeMs = math.max(0f, (Time.realtimeSinceStartup - decodeStart) * 1000f);
+                float decodeMs = ResolveStopwatchElapsedMilliseconds(decodeStart);
                 BabelSubtitleSyncRuntime.RecordDecode(command.TextHash, length, !found, decodeMs);
                 length = lease.CopyToTmpBuffer(length);
                 if (length <= 0)
@@ -843,6 +844,15 @@ namespace Hecton8.UI
             {
                 CharBufferPool.Release(in lease);
             }
+        }
+
+        private static float ResolveStopwatchElapsedMilliseconds(long startTimestamp)
+        {
+            long elapsedTicks = Stopwatch.GetTimestamp() - startTimestamp;
+            if (elapsedTicks <= 0L)
+                return 0f;
+
+            return (float)(elapsedTicks * 1000.0 / Stopwatch.Frequency);
         }
 
         private bool EnqueueBuffered(ReadOnlySpan<char> message, float duration, SubtitleSource source, bool interrupt)
@@ -1181,7 +1191,7 @@ namespace Hecton8.UI
         private bool TryPrepareAudioLogBuffers(uint loreHash, float durationSeconds, out int initialRenderLength)
         {
             initialRenderLength = 0;
-            LoreDatabaseManager database = Hecton8.Core.GlobalRegistry.LoreDatabase;
+            ILoreDatabaseReadModel database = Hecton8.Core.GlobalRegistry.LoreDatabaseReadModel;
             if (database == null || loreHash == 0u)
                 return false;
 
@@ -1390,17 +1400,21 @@ namespace Hecton8.UI
                 AudioLogCueMaximumImpulseRadius,
                 intensity);
 
-            AcousticImpulseEvent impulseEvent = new AcousticImpulseEvent(
-                runtimePosition,
-                direction,
-                energyJoules,
-                volume01,
-                1f,
-                radiusMeters,
-                0,
-                0,
-                AcousticImpulseFlags.None);
-            PhysicsEventBus.TryNotifyAcousticImpulse(in impulseEvent);
+            PhysicsEventPayload payload = default;
+            payload.RuntimePosition = runtimePosition;
+            payload.Direction = direction;
+            payload.ForceVector = default;
+            payload.ImpulseVector = default;
+            payload.RadiusMeters = radiusMeters;
+            payload.Scalar0 = energyJoules;
+            payload.Scalar1 = volume01;
+            payload.Scalar2 = 1f;
+            payload.PrimaryId = 0;
+            payload.DataHash = 0u;
+            payload.StatusBits = 0u;
+            payload.EventType = (ushort)PhysicsEventType.AcousticImpulse;
+            payload.Reserved = 0;
+            SignalBus<PhysicsEventPayload>.TryPushTracked(in payload, ref s_x001SubtitleManagerSignalPushDropCount);
 
             CameraJuiceSignals.TryPublishImpact(
                 math.min(AudioLogCueMaximumCameraShake, intensity * 0.12f),
@@ -1507,7 +1521,8 @@ namespace Hecton8.UI
             int timeStart = start;
             int timeEnd = separatorIndex >= 0 ? separatorIndex : endExclusive;
             TrimRange(buffer, ref timeStart, ref timeEnd);
-            if (!TryParseCueFloat(new ReadOnlySpan<char>(buffer, timeStart, timeEnd - timeStart), out startTime))
+            ReadOnlySpan<char> timeSpan = buffer.AsSpan(timeStart, timeEnd - timeStart);
+            if (!TryParseCueFloat(timeSpan, out startTime))
                 return false;
 
             if (separatorIndex < 0)
@@ -1519,7 +1534,8 @@ namespace Hecton8.UI
             if (intensityEnd <= intensityStart)
                 return true;
 
-            if (!TryParseCueFloat(new ReadOnlySpan<char>(buffer, intensityStart, intensityEnd - intensityStart), out float parsedIntensity))
+            ReadOnlySpan<char> intensitySpan = buffer.AsSpan(intensityStart, intensityEnd - intensityStart);
+            if (!TryParseCueFloat(intensitySpan, out float parsedIntensity))
                 return true;
 
             speakerIntensity = Mathf.Clamp01(parsedIntensity);

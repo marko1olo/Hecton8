@@ -17,7 +17,9 @@ namespace Hecton8.Physiology
     {
         private const SystemID OwnerSystem = SystemID.GameplayPlayer;
         private const ulong InputMutationGuardMask = 1UL << 44;
+#if UNITY_EDITOR
         private const string CsvRelativePath = "sensory_impairment_profiles.csv";
+#endif
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_322.bin";
 
         [Header("Emergency Mock")]
@@ -28,7 +30,9 @@ namespace Hecton8.Physiology
         private VaultGenerationHandle<SensoryImpairmentTuningDTO> _tuningHandle;
         private VaultGenerationHandle<SensoryImpairmentTelemetryEntry> _telemetryHandle;
         private VaultGenerationHandle<SensoryImpairmentProfileDTO> _profilesHandle;
+#if UNITY_EDITOR
         private VaultGenerationHandle<byte> _csvScratchHandle;
+#endif
         private VaultGenerationHandle<SensoryInputDriftDebugDTO> _driftDebugHandle;
         private VaultGenerationHandle<GasPhysiologyStateDTO> _gasStateHandle;
         private VaultGenerationHandle<MockEnvironmentVitalsSignal> _environmentHandle;
@@ -40,9 +44,11 @@ namespace Hecton8.Physiology
         private IPlayerRuntimeContext _playerContext;
         private PreSimulationPhaseSystem _preSimulationPhase;
         private VisualSyncPhaseSystem _visualSyncPhase;
+#if UNITY_EDITOR
         private string _csvPath;
-        private string _dumpPath;
         private long _csvLastWriteTicks;
+#endif
+        private string _dumpPath;
         private uint _frameCounter;
         private int _telemetryCursor;
         private bool _registeredSlow;
@@ -55,7 +61,9 @@ namespace Hecton8.Physiology
 
         private void Awake()
         {
+#if UNITY_EDITOR
             _csvPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", CsvRelativePath));
+#endif
             _dumpPath = Path.GetFullPath(Path.Combine(Application.dataPath, "..", DumpRelativePath));
         }
 
@@ -113,7 +121,9 @@ namespace Hecton8.Physiology
             if (RunEvaluation(vault, ResolveGlobalQualityWeight()))
                 PatchLatestTelemetryGas(vault, -1f);
 
+#if UNITY_EDITOR
             TryLoadCsvProfilesCold(vault);
+#endif
         }
 
         public void LateFrameTick()
@@ -296,7 +306,7 @@ namespace Hecton8.Physiology
         private void RebindColdServices()
         {
             _dataVault = GlobalRegistry.DataVault;
-            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerContext = GlobalRegistry.Player;
         }
 
         private bool EnsureVaultState()
@@ -315,7 +325,9 @@ namespace Hecton8.Physiology
                 OpenOrAcquireOwnBuffer(ref _tuningHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer, 1, NativeArrayOptions.UninitializedMemory, out _) &&
                 OpenOrAcquireOwnBuffer(ref _telemetryHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentTelemetryBuffer, ShinobuSensoryImpairmentConstants.TelemetryFrameCount, NativeArrayOptions.UninitializedMemory, out _) &&
                 OpenOrAcquireOwnBuffer(ref _profilesHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentProfilesBuffer, ShinobuSensoryImpairmentConstants.ProfileCapacity, NativeArrayOptions.UninitializedMemory, out _) &&
+#if UNITY_EDITOR
                 OpenOrAcquireOwnBuffer(ref _csvScratchHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentCsvScratchBuffer, ShinobuSensoryImpairmentConstants.CsvMaxBytes, NativeArrayOptions.UninitializedMemory, out _) &&
+#endif
                 OpenOrAcquireOwnBuffer(ref _driftDebugHandle, ShinobuSensoryImpairmentConstants.SensoryInputDriftDebugBuffer, 1, NativeArrayOptions.UninitializedMemory, out _);
             if (!created || !HandlesReady())
                 return false;
@@ -330,7 +342,9 @@ namespace Hecton8.Physiology
                    TryResolveOwnBuffer(ref _tuningHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentTuningBuffer, 1, out _) &&
                    TryResolveOwnBuffer(ref _telemetryHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentTelemetryBuffer, ShinobuSensoryImpairmentConstants.TelemetryFrameCount, out _) &&
                    TryResolveOwnBuffer(ref _profilesHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentProfilesBuffer, ShinobuSensoryImpairmentConstants.ProfileCapacity, out _) &&
+#if UNITY_EDITOR
                    TryResolveOwnBuffer(ref _csvScratchHandle, ShinobuSensoryImpairmentConstants.SensoryImpairmentCsvScratchBuffer, ShinobuSensoryImpairmentConstants.CsvMaxBytes, out _) &&
+#endif
                    TryResolveOwnBuffer(ref _driftDebugHandle, ShinobuSensoryImpairmentConstants.SensoryInputDriftDebugBuffer, 1, out _);
         }
 
@@ -395,7 +409,9 @@ namespace Hecton8.Physiology
             }
 
             _defaultsInitialized = true;
+#if UNITY_EDITOR
             TryLoadCsvProfilesCold(vault);
+#endif
         }
 
         private bool RunEvaluation(IDataVault vault, float quality)
@@ -659,11 +675,9 @@ namespace Hecton8.Physiology
             }
         }
 
+#if UNITY_EDITOR
         private bool TryLoadCsvProfilesCold(IDataVault vault)
         {
-#if !UNITY_EDITOR
-            return false;
-#else
             if (string.IsNullOrEmpty(_csvPath) || !File.Exists(_csvPath))
                 return false;
 
@@ -731,8 +745,8 @@ namespace Hecton8.Physiology
             }
 
             return false;
-#endif
         }
+#endif
 
 #if UNITY_EDITOR
         private static bool ParseProfilesCsv(ReadOnlySpan<byte> bytes, NativeArray<SensoryImpairmentProfileDTO> profiles, NativeArray<SensoryImpairmentTuningDTO> tuningRows)
@@ -776,6 +790,7 @@ namespace Hecton8.Physiology
         }
 #endif
 
+#if UNITY_EDITOR
         private static bool TryParseProfileLine(ReadOnlySpan<byte> line, out SensoryImpairmentProfileDTO profile)
         {
             profile = default;
@@ -892,6 +907,7 @@ namespace Hecton8.Physiology
         {
             return value >= (byte)'A' && value <= (byte)'Z' ? (byte)(value + 32) : value;
         }
+#endif
 
         private bool OpenOrAcquireOwnBuffer<T>(
             ref VaultGenerationHandle<T> handle,
@@ -1081,6 +1097,7 @@ namespace Hecton8.Physiology
             return math.isfinite(microseconds) ? (float)math.min(microseconds, float.MaxValue) : 0f;
         }
 
+#if UNITY_EDITOR
         private static ReadOnlySpan<byte> TrimAscii(ReadOnlySpan<byte> bytes)
         {
             int start = 0;
@@ -1096,6 +1113,7 @@ namespace Hecton8.Physiology
         {
             return value == (byte)' ' || value == (byte)'\t' || value == (byte)'\n' || value == (byte)'\r';
         }
+#endif
 
         private void TryRegisterRuntimeRoutes()
         {
@@ -1182,7 +1200,9 @@ namespace Hecton8.Physiology
             _tuningHandle = default;
             _telemetryHandle = default;
             _profilesHandle = default;
+#if UNITY_EDITOR
             _csvScratchHandle = default;
+#endif
             _driftDebugHandle = default;
             _gasStateHandle = default;
             _environmentHandle = default;

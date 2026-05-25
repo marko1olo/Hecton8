@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Gameplay;
 using Hecton8.Visor;
 using Hecton8.World;
@@ -14,7 +15,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Sonar Holo Compass")]
-    public sealed class SonarHoloCompass : MonoBehaviour, ITickable, ILateFrameTickable, ISonarPingEventListener, IGlobalRegistryHotSwapListener
+    public sealed class SonarHoloCompass : MonoBehaviour, ILateFrameTickable, ISonarPingEventListener, IGlobalRegistryHotSwapListener
     {
         private const int MaxDots = 16;
         private const int ProjectionBatchSize = 4;
@@ -60,10 +61,9 @@ namespace Hecton8.UI
             [FieldOffset(16)]
             public int Visible;
             [FieldOffset(20)]
-            public uint _pad0;
+            private uint _pad0;
         }
 
-        private bool _registeredToTick;
         private bool _registeredLateFrame;
         private bool _uiBuilt;
         private bool _projectionScheduled;
@@ -130,7 +130,7 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float dt)
+        private void AdvanceCompassProjection(float dt)
         {
             ResolveOwners(allowHierarchySearch: false);
             if (!EnsureUiBuilt(allowCreate: false))
@@ -174,6 +174,8 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            AdvanceCompassProjection(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (TryCompleteProjectionIfScheduled() && _hideDotsQueued)
             {
                 _hideDotsQueued = false;
@@ -362,9 +364,10 @@ namespace Hecton8.UI
             for (int i = 0; i < safeCount; i++)
             {
                 SpatialAudioImpactEmitterSample sample = _impactEmitterSamples[i];
-                float3 listenerRelativePosition = AbsoluteUniversePosition.ToCameraRelativeFloat3(
-                    in sample.PositionAup,
-                    in listenerAup);
+                float3 listenerRelativePosition = AupPrecisionMath.LocalDeltaFloat3(
+                    sample.PositionAup.ToAbsoluteDouble3(),
+                    listenerAup.ToAbsoluteDouble3(),
+                    float3.zero);
                 _projectionInputs[i] = new AcousticRadarBlipInput
                 {
                     ListenerRelativePosition = listenerRelativePosition,
@@ -432,24 +435,14 @@ namespace Hecton8.UI
 
         private bool TryResolveViewAup(Vector3 viewPosition, out AbsoluteUniversePosition viewAup)
         {
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
-            {
-                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
-                {
-                    viewAup = OffsetAupLocal(
-                        in movementState.PredictedAup,
-                        (Vector3)((float3)viewPosition - movementState.PredictedWorldPosition));
-                    return true;
-                }
-            }
-
             IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             if (playerContext != null &&
                 playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState cachedMovementState) &&
                 (cachedMovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
             {
-                viewAup = cachedMovementState.PredictedAup;
+                viewAup = OffsetAupLocal(
+                    in cachedMovementState.PredictedAup,
+                    (Vector3)((float3)viewPosition - cachedMovementState.PredictedWorldPosition));
                 return true;
             }
 
@@ -649,12 +642,10 @@ namespace Hecton8.UI
 
         private void RegisterToTickManager()
         {
-            if (_registeredToTick || !Application.isPlaying)
+            if (_registeredLateFrame || !Application.isPlaying)
                 return;
 
-            _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
-            if (!_registeredLateFrame)
-                _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -665,11 +656,6 @@ namespace Hecton8.UI
                 _registeredLateFrame = false;
             }
 
-            if (_registeredToTick)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registeredToTick = false;
-            }
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -690,7 +676,6 @@ namespace Hecton8.UI
             {
                 if (currentService == null)
                 {
-                    _registeredToTick = false;
                     _registeredLateFrame = false;
                     return;
                 }
@@ -719,8 +704,8 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            _cachedAudioManager = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance as ISpatialAudioImpactEmitterReadModel;
+            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedAudioManager = GlobalRegistry.Audio as ISpatialAudioImpactEmitterReadModel;
         }
 
         private static Canvas ResolveTargetCanvas(bool allowComponentFallback)

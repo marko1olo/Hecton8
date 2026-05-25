@@ -1,0 +1,389 @@
+﻿{
+    "agent":  "1301",
+    "domain":  "Assets/_Project/Scripts/AI/Ecosystem; cross-checks: AI/Ambient, Animation/FaunaProcedural, Scripts/Ecosystem, focused boid files",
+    "prompt":  {
+                   "path":  "Docs/Tasks/CURRENT_BATCH.md",
+                   "extracted":  true,
+                   "bytes":  22166,
+                   "taskCount":  20,
+                   "sha256":  "D88457FB18F36CEBC137DC6A6C187B8D45AFA81BE4181FC727E20303CF89D3E0"
+               },
+    "status":  "STATIC_PASS_ROSLYN_PASS_BUILD_BLOCKED_BY_EXISTING_UI_VISOR_FIXED_UI_EVENT_QUEUE_COMPILE_WALL",
+    "apexPatch":  {
+                      "sourceFiles":  [
+                                          "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
+                                          "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs"
+                                      ],
+                      "changes":  [
+                                      "CollectEntitiesInRadius validates result buffer, centerAup, radiusMeters, and CellSizeMeters before quantization.",
+                                      "CollectEntitiesInRadius uses safeCellSize for QuantizeCell and ResolvePublicQueryCellRadius.",
+                                      "CollectRange clamps bucket range start/count before end computation to avoid signed overflow and corrupt range overrun.",
+                                      "SpatialGridForensics moved out of UNITY_EDITOR so release/player code keeps the spatial dump route.",
+                                      "SpatialGridForensics now exposes TryWriteTelemetryDump; caller no longer catches Exception around dump routing.",
+                                      "TryWriteTelemetryDump writes both Dump_SHINOBU_301.bin and Dump_1301_AIEcology.bin and fail-closes to false on specific IO/path exceptions."
+                                  ]
+                  },
+    "zeroGcScan":  {
+                       "modifiedHotPathRange":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs:339-693",
+                       "modifiedHotPathForbiddenPattern":  "new|string.Format|.ToString|LINQ Select/Where/ToList|foreach|string interpolation|string concat|catch(Exception)",
+                       "modifiedHotPathForbiddenHitCount":  0,
+                       "diffAddedForbiddenHits":  [
+                                                      "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs:1369 new FileStream - fault-only binary dump writer, not query/tick hot path"
+                                                  ],
+                       "faultDumpRange":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs:1346-1409",
+                       "faultDumpManagedBoundary":  "Managed FileStream remains in catastrophic dump I/O path. It is not per-frame; no managed exception catch remains at caller. Full native file I/O would require an engine/native crash reporter bridge outside 1301 scope."
+                   },
+    "nativeAliasScan":  {
+                            "scanner":  "Tools/VaultNativeAliasRoslynAudit/bin/Debug/net10.0/VaultNativeAliasRoslynAudit.exe",
+                            "passFor1301Scope":  true,
+                            "audits":  [
+                                           {
+                                               "root":  "Assets/_Project/Scripts/AI/Ecosystem",
+                                               "report":  "Docs/Reports/VAULT_NATIVE_ALIAS_ROSLYN_1301_ECOSYSTEM.json",
+                                               "scannedFiles":  5,
+                                               "parseFailures":  0,
+                                               "totalNativeFieldDeclarations":  97,
+                                               "forbiddenPersistentCandidates":  0,
+                                               "forbiddenMonoBehaviourCandidates":  0,
+                                               "jobTransientFields":  97,
+                                               "rawPointerFields":  0,
+                                               "auditHashSha256":  "f282cc08b2c4075ae047f33ce03919e86956351073151fe3f2bf5d15c2448a87",
+                                               "note":  ""
+                                           },
+                                           {
+                                               "root":  "Assets/_Project/Scripts/AI/Ambient",
+                                               "report":  "Docs/Reports/VAULT_NATIVE_ALIAS_ROSLYN_1301_AMBIENT.json",
+                                               "scannedFiles":  1,
+                                               "parseFailures":  0,
+                                               "totalNativeFieldDeclarations":  15,
+                                               "forbiddenPersistentCandidates":  0,
+                                               "forbiddenMonoBehaviourCandidates":  0,
+                                               "jobTransientFields":  15,
+                                               "rawPointerFields":  0,
+                                               "auditHashSha256":  "5e21e2789a731e9e7f272b60ced9832535d85dbcae119c36fb3f76557c658743",
+                                               "note":  ""
+                                           },
+                                           {
+                                               "root":  "Assets/_Project/Scripts/Animation/FaunaProcedural",
+                                               "report":  "Docs/Reports/VAULT_NATIVE_ALIAS_ROSLYN_1301_FAUNA_PROCEDURAL.json",
+                                               "scannedFiles":  4,
+                                               "parseFailures":  0,
+                                               "totalNativeFieldDeclarations":  13,
+                                               "forbiddenPersistentCandidates":  0,
+                                               "forbiddenMonoBehaviourCandidates":  0,
+                                               "jobTransientFields":  13,
+                                               "rawPointerFields":  0,
+                                               "auditHashSha256":  "02da1401e5f0cc53967b65997ca3463fbebeb36d42744533a6e523114f63c564",
+                                               "note":  ""
+                                           },
+                                           {
+                                               "root":  "Assets/_Project/Scripts/Ecosystem",
+                                               "report":  "Docs/Reports/VAULT_NATIVE_ALIAS_ROSLYN_1301_MACRO_ECOSYSTEM.json",
+                                               "scannedFiles":  23,
+                                               "parseFailures":  0,
+                                               "totalNativeFieldDeclarations":  102,
+                                               "forbiddenPersistentCandidates":  0,
+                                               "forbiddenMonoBehaviourCandidates":  0,
+                                               "jobTransientFields":  102,
+                                               "rawPointerFields":  75,
+                                               "auditHashSha256":  "cb6f7d34cdef65e1a51b608c60d65701f1eca27a16999c126a5c5e94211fe9ff",
+                                               "note":  "Macro ecology cross-check; forbidden persistent candidates 0; raw pointer fields are classified as transient job fields by scanner."
+                                           },
+                                           {
+                                               "root":  "Assets/_Project/Scripts/World",
+                                               "report":  "Docs/Reports/VAULT_NATIVE_ALIAS_ROSLYN_1301_WORLD_BOIDS.json",
+                                               "scannedFiles":  270,
+                                               "parseFailures":  0,
+                                               "totalNativeFieldDeclarations":  1401,
+                                               "forbiddenPersistentCandidates":  449,
+                                               "forbiddenMonoBehaviourCandidates":  162,
+                                               "jobTransientFields":  952,
+                                               "rawPointerFields":  83,
+                                               "auditHashSha256":  "a4c25058950611c84763edd741df1c0ac46562a53704624fab388e0afabc5dfe",
+                                               "note":  "Broad world diagnostic is not 1301 domain; focused boid file filter found only transient job NativeArray fields in SargassumMicroFaunaBoids.cs and no persistent boid candidates."
+                                           }
+                                       ],
+                            "focusedBoidFiles":  [
+                                                     {
+                                                         "path":  "Assets/_Project/Scripts/HectonBoidController.cs",
+                                                         "result":  "No native collection field declaration; one NativeArray mention is a comment at line 40."
+                                                     },
+                                                     {
+                                                         "path":  "Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs",
+                                                         "result":  "Roslyn findings for NativeArray are job fields at lines 227,228,229,317,318,473,475,476; classification allowed_transient_job_parameter."
+                                                     },
+                                                     {
+                                                         "path":  "Assets/_Project/Scripts/World/BoidStructValidator.cs",
+                                                         "result":  "No NativeArray/NativeList/NativeHashMap/NativeQueue field hits."
+                                                     }
+                                                 ]
+                        },
+    "byteOffsetMap":  [
+                          {
+                              "dto":  "VaultGenerationHandle\u003cT\u003e",
+                              "file":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                              "line":  223,
+                              "size":  16,
+                              "multipleOf8":  true,
+                              "fields":  [
+                                             "0 BufferID uint",
+                                             "4 SystemID uint",
+                                             "8 Generation uint",
+                                             "12 Flags uint"
+                                         ]
+                          },
+                          {
+                              "dto":  "SpatialGridEntryDTO",
+                              "file":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
+                              "line":  44,
+                              "size":  16,
+                              "multipleOf8":  true,
+                              "fields":  [
+                                             "0 EntityHashID uint / EntityRowIndex uint overlay",
+                                             "4 CellHash uint",
+                                             "8 LocalCellOffset float2 / CellFingerprint uint2 overlay"
+                                         ]
+                          },
+                          {
+                              "dto":  "SpatialGridBucketRangeDTO",
+                              "file":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
+                              "line":  54,
+                              "size":  32,
+                              "multipleOf8":  true,
+                              "fields":  [
+                                             "0 CellHash uint",
+                                             "4 CellFingerprintX uint",
+                                             "8 CellFingerprintY uint",
+                                             "12 StartIndex int",
+                                             "16 Count int",
+                                             "20 Flags uint",
+                                             "24 Pad0 uint",
+                                             "28 Pad1 uint"
+                                         ]
+                          },
+                          {
+                              "dto":  "SpatialGridTelemetryEntry",
+                              "file":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
+                              "line":  67,
+                              "size":  64,
+                              "multipleOf8":  true,
+                              "fields":  [
+                                             "0 Frame uint",
+                                             "4 EntityCount int",
+                                             "8 MaxBucketOccupancy int",
+                                             "12 QueryCount int",
+                                             "16 QuantizeMicroseconds float",
+                                             "20 SortMicroseconds float",
+                                             "24 GlobalQualityWeight float",
+                                             "28 CellSizeMeters float",
+                                             "32 OverflowCount uint",
+                                             "36 Flags uint",
+                                             "40 StateHash uint",
+                                             "44 MaxProbeCount int",
+                                             "48 MaxQueryResults int",
+                                             "52 BucketRangeCount int",
+                                             "56 InvalidInputCount int",
+                                             "60 Pad1 uint"
+                                         ]
+                          },
+                          {
+                              "dto":  "SpatialGridTuningDTO",
+                              "file":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
+                              "line":  88,
+                              "size":  32,
+                              "multipleOf8":  true,
+                              "fields":  [
+                                             "0 BaseGridCellSize float",
+                                             "4 MinGridCellSize float",
+                                             "8 MaxGridCellSize float",
+                                             "12 MaxQueryResultsLimit int",
+                                             "16 HashMultiplierX uint",
+                                             "20 HashMultiplierY uint",
+                                             "24 HashMultiplierZ uint",
+                                             "28 Flags uint"
+                                         ]
+                          },
+                          {
+                              "dto":  "SpatialGridProfileDTO",
+                              "file":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
+                              "line":  101,
+                              "size":  32,
+                              "multipleOf8":  true,
+                              "fields":  [
+                                             "0 LayerHash uint",
+                                             "4 BaseGridCellSize float",
+                                             "8 MinGridCellSize float",
+                                             "12 MaxGridCellSize float",
+                                             "16 MaxQueryResultsLimit int",
+                                             "20 MaxProbeCount int",
+                                             "24 Flags uint",
+                                             "28 Pad0 uint"
+                                         ]
+                          },
+                          {
+                              "dto":  "SpatialGridCell64",
+                              "file":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
+                              "line":  114,
+                              "size":  24,
+                              "multipleOf8":  true,
+                              "fields":  [
+                                             "0 X long",
+                                             "8 Y long",
+                                             "16 Z long"
+                                         ]
+                          },
+                          {
+                              "dto":  "AbsoluteUniversePosition",
+                              "file":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                              "line":  28,
+                              "size":  48,
+                              "multipleOf8":  true,
+                              "fields":  [
+                                             "0 GridX long",
+                                             "8 GridY long",
+                                             "16 GridZ long",
+                                             "24 LocalX float",
+                                             "28 LocalY float",
+                                             "32 LocalZ float",
+                                             "36 _pad0 float",
+                                             "40 _pad1 ulong"
+                                         ]
+                          },
+                          {
+                              "dto":  "AmbientEntityAupDTO",
+                              "file":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+                              "line":  3759,
+                              "size":  64,
+                              "multipleOf8":  true,
+                              "fields":  [
+                                             "0 PositionAup AbsoluteUniversePosition",
+                                             "48 Flags uint",
+                                             "52 SectorHash uint",
+                                             "56 SpatialCellHash int",
+                                             "60 StableSeed uint"
+                                         ]
+                          },
+                          {
+                              "dto":  "BoidStateDTO",
+                              "file":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+                              "line":  3679,
+                              "size":  32,
+                              "multipleOf8":  true,
+                              "fields":  [
+                                             "0 LocalPosition float3",
+                                             "12 Velocity float3",
+                                             "24 FlockHashID uint",
+                                             "28 PanicScalar float"
+                                         ]
+                          },
+                          {
+                              "dto":  "BoidMatrixDTO",
+                              "file":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+                              "line":  3697,
+                              "size":  64,
+                              "multipleOf8":  true,
+                              "fields":  [
+                                             "0 C0 float4",
+                                             "16 C1 float4",
+                                             "32 C2 float4",
+                                             "48 C3 float4"
+                                         ]
+                          },
+                          {
+                              "dto":  "BoidCustomDataDTO",
+                              "file":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+                              "line":  3718,
+                              "size":  16,
+                              "multipleOf8":  true,
+                              "fields":  [
+                                             "0 GeneticLow uint",
+                                             "4 GeneticHigh uint",
+                                             "8 PanicOrSkip float",
+                                             "12 QualityWeight float"
+                                         ]
+                          },
+                          {
+                              "dto":  "BoidIndirectArgsDTO",
+                              "file":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+                              "line":  3727,
+                              "size":  16,
+                              "multipleOf8":  true,
+                              "fields":  [
+                                             "0 VertexCountPerInstance uint",
+                                             "4 InstanceCount uint",
+                                             "8 StartVertex uint",
+                                             "12 StartInstance uint"
+                                         ]
+                          }
+                      ],
+    "aupDeterminism":  {
+                           "formula":  "deltaAup(double3) = ToAbsoluteDouble3(meta.PositionAup) - centerAup; localDelta(float3) = (float3)deltaAup; distanceSq = math.lengthsq(localDelta)",
+                           "evidence":  [
+                                            "ShinobuSpatialGridSolver.cs:490",
+                                            "ShinobuSpatialGridSolver.cs:491",
+                                            "ShinobuSpatialGridSolver.cs:492-494"
+                                        ],
+                           "directAbsoluteAupToFloatCastInModifiedQuery":  false
+                       },
+    "failClosed":  {
+                       "handleValidation":  "ValidateVaultHandle checks BufferID, SystemID.AIEcology, Generation != 0 before TryReadOnlyHandle at lines 560-633.",
+                       "invalidInput":  "Invalid result buffer or non-finite center/radius/cell size returns 0 before QuantizeCell at lines 352-365.",
+                       "corruptRange":  "range.StartIndex and Count are clamped before end calculation at lines 471-474.",
+                       "telemetry":  "RecordQueryFailure writes unmanaged SpatialGridTelemetryEntry through telemetry/cursor write locks and releases in finally at lines 636-692.",
+                       "dump":  "Spatial fault gate calls TryWriteTelemetryDump at Balancer line 1837; writer is release-visible at Solver lines 1336-1409."
+                   },
+    "isolation":  {
+                      "usingAdded":  "Hecton8.Core.Memory only",
+                      "asmdef":  "Hecton8.Core already references Hecton8.Core.Memory, Unity.Mathematics, Unity.Burst, Unity.Collections, Unity.Jobs",
+                      "newHorizontalDomainReferences":  0,
+                      "newGlobalRegistryHotPolling":  0,
+                      "newEventBusRoutes":  0
+                  },
+    "dearLie":  {
+                    "status":  "No heavier simulator added",
+                    "bounds":  "MaxResults, MaxProbeCount, center-cell-first traversal, safeCellSize, finite checks",
+                    "quality":  "Continuous GlobalQualityWeight paths preserved; no low/high binary switch introduced."
+                },
+    "build":  {
+                  "command":  "dotnet build Assembly-CSharp.csproj --no-restore -v:minimal",
+                  "result":  "FAILED",
+                  "errorCount":  24,
+                  "blocker":  "Existing FixedUiEventQueue\u003c\u003e missing type errors in UI/Visor under Hecton8.Core.csproj before ecology can be verified green.",
+                  "files":  [
+                                "Assets/_Project/Scripts/UI/BaseIntegrityHUD.cs",
+                                "Assets/_Project/Scripts/UI/PDAIntrusionManager.cs",
+                                "Assets/_Project/Scripts/UI/NotificationEvents.cs",
+                                "Assets/_Project/Scripts/Visor/SpectrumSystem.cs"
+                            ]
+              },
+    "fileHashes":  [
+                       {
+                           "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuSpatialGridSolver.cs",
+                           "sha256":  "4AFA0FE7C28A199901D96F5E66926D6A2FD5A851BCBC60AAC776580109B84D10"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/AI/Ecosystem/ShinobuEcosystemBalancer.cs",
+                           "sha256":  "03E02B3426AA14A7D176CF46A71DF25908C37ACB60D1593FE4AB8C89FB001FE0"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+                           "sha256":  "8BB094D006306EC2AD4A78EB75F965CCA83E4C873D9A3364EDB0B85739C50EBF"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/World/PersistentWorldRegistry.cs",
+                           "sha256":  "AFFD015412939735F3B451AB4EF454D0EC695D153C5F7F85C595170A9D85DBE1"
+                       }
+                   ],
+    "blockedTasks":  [
+                         {
+                             "task":  "16 MOCK_SWARM_STRESS_HARNESS",
+                             "status":  "BLOCKED_BY_COMPILE_WALL",
+                             "reason":  "Executable stress proof cannot be compiled while Hecton8.Core fails on unrelated UI/Visor FixedUiEventQueue\u003c\u003e."
+                         },
+                         {
+                             "task":  "17 DEFRAGMENTATION_RACE_CONDITION_FUZZER",
+                             "status":  "BLOCKED_BY_COMPILE_WALL",
+                             "reason":  "Executable fuzzer proof cannot be compiled while Hecton8.Core fails on unrelated UI/Visor FixedUiEventQueue\u003c\u003e."
+                         }
+                     ]
+}

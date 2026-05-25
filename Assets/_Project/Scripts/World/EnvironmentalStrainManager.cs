@@ -13,7 +13,7 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6240)]
     [AddComponentMenu("Hecton8/World/Environmental Strain Manager")]
-    public sealed class EnvironmentalStrainManager : MonoBehaviour, ISaveable, IUpdatable, ILateFrameTickable, IEnvironmentalStrainReadModel, IGlobalRegistryHotSwapListener
+    public sealed class EnvironmentalStrainManager : MonoBehaviour, ISaveable, IUpdatable, ILateFrameTickable, IEnvironmentalStrainReadModel, IEnvironmentalStrainIndustrialSink, IGlobalRegistryHotSwapListener
     {
         private const float BasePlasticRecycleStrain = 1.2f;
         private const float BaseDiscardPollution = 1.0f;
@@ -230,7 +230,7 @@ namespace Hecton8.World
 
         private void CacheSaveServiceCold()
         {
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
         }
 
         private void TryRegisterHotSwapListener()
@@ -350,6 +350,11 @@ namespace Hecton8.World
 
             if (microplasticDelta > 0f)
                 _microplasticStrain += ApplyGreenTechReduction(microplasticDelta);
+        }
+
+        void IEnvironmentalStrainIndustrialSink.AccumulateIndustrialStrain(float generalPollutionDelta, float microplasticDelta)
+        {
+            AccumulateIndustrialStrain(generalPollutionDelta, microplasticDelta);
         }
 
         internal void AccumulatePredationStrain(Vector3 worldPosition, int preyRemoved)

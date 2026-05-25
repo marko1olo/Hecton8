@@ -146,6 +146,11 @@ namespace Hecton8.World
 
         internal static WorldGenerativeGeologyVoxelBridgeDirector ActiveRuntimeInstance => GlobalRegistry.GeologyVoxelBridge;
 
+        private static float RuntimeNowSeconds()
+        {
+            return Application.isPlaying ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
+        }
+
         private sealed class PendingRequestState : System.IDisposable
         {
             public int Signature;
@@ -491,7 +496,7 @@ namespace Hecton8.World
 
             RemoveStaleActiveVolumes();
             IReadOnlyList<WorldGenerativeGeologyVoxelBlendRequest> requests = seamExecutionDirector.ActiveVoxelRequests;
-            float now = Application.isPlaying ? Time.unscaledTime : 0f;
+            float now = RuntimeNowSeconds();
             CaptureRetainedDesiredRuntimeKeyOrder();
             _sortedRequests.Clear();
             _desiredSignatures.Clear();
@@ -652,7 +657,7 @@ namespace Hecton8.World
             ref int spawnBudgetUsed)
         {
             AddDesiredRuntimeKey(request.runtimeKey);
-            _lastSeenTimes[request.runtimeKey] = Application.isPlaying ? Time.unscaledTime : 0f;
+            _lastSeenTimes[request.runtimeKey] = RuntimeNowSeconds();
             int signature = ComputeRequestSignature(request);
             _desiredSignatures[request.runtimeKey] = signature;
             if (IsTrackedVolumeAlive(request.runtimeKey) &&
@@ -699,7 +704,7 @@ namespace Hecton8.World
             if (_queuedLaunchKeys.Add(request.runtimeKey))
             {
                 _queuedLaunchOrder.Add(request.runtimeKey);
-                _queuedLaunchTimes[request.runtimeKey] = Application.isPlaying ? Time.unscaledTime : 0f;
+                _queuedLaunchTimes[request.runtimeKey] = RuntimeNowSeconds();
             }
 
             _debugQueuedLaunches = _queuedLaunchOrder.Count;
@@ -737,7 +742,7 @@ namespace Hecton8.World
                 _queuedLaunchTimes.Remove(runtimeKey);
 
                 float queuedMs = Application.isPlaying
-                    ? Mathf.Max(0f, (Time.unscaledTime - queuedAt) * 1000f)
+                    ? Mathf.Max(0f, (RuntimeNowSeconds() - queuedAt) * 1000f)
                     : 0f;
                 TraceLaunchStart(
                     runtimeKey,
@@ -881,7 +886,7 @@ namespace Hecton8.World
                     _activeVolumes[request.runtimeKey] = volume;
                     _activeRuntimes[request.runtimeKey] = runtime;
                     _activeSignatures[request.runtimeKey] = signature;
-                    _lastSeenTimes[request.runtimeKey] = Application.isPlaying ? Time.unscaledTime : 0f;
+                    _lastSeenTimes[request.runtimeKey] = RuntimeNowSeconds();
                     if (string.IsNullOrEmpty(_debugTopVolume))
                         _debugTopVolume = request.familyId ?? string.Empty;
 

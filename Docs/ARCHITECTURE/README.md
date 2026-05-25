@@ -1,6 +1,6 @@
 ﻿# Architecture Index
 
-Date: 2026-05-24
+Date: 2026-05-26
 Status: PENDING VERIFICATION
 Owner: X_012 DOCUMENTATION_CLEANUP_AND_ACTUALIZATION_ENGINE
 Evidence class: STATIC_DOC / STATIC_SOURCE / CLI_COMPILE where artifact cited
@@ -44,17 +44,12 @@ This folder stores stable architecture contracts. Dated reports are evidence onl
 
 ## Current Evidence Boundary
 
-- 2026-05-24 EXTERNAL_CODEX:
-  - Last zero-warning local dirty-workspace CLI PASS: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup122_tick_registration.log`.
-  - Latest compile attempt: `Docs/AgentLogs/Build_EXTERNAL_CODEX_hotpath_cleanup158_world_dispatcher_rebind.log`; fails before C# with missing project.assets, 0 warnings, no `CS*`; latest retry blocked by `BUILD_GUARD cpu=100 compiler_count=0`.
-  - Historical loop132 state: editor DLL output reached; 1 `MSB3101` Temp/obj cache warning; 0 errors; no `CS*`; no final summary/exit line.
-- Loops66-151 fixed warning causes, registry fallbacks, SaveRuntime tails, owner-cache leaks, dispatcher/save/DataVault rebind gaps, interaction scene scan, Atlas read-model tails.
-- Same span also fixed duplicate source inputs, tick-list probes, static-driver residues, release log callsites, sonar polls, and context getter mutation.
-- It also covers loop151 rebind gaps, loop153 owner-cache ownership, loop154-156 Dispatcher tails, and loop157 UI/Construction singleton tail removal.
-- Later scope: loop158 world/environment/AI Dispatcher tails; loop159 singleton/fallback cleanup; loop160 Dispatcher stale-registration tails.
-- Loop161 fixed remaining Dispatcher/TickManager tails; loop162 covered frame-authority/biolum owner-cache cleanup, duplicate include tail, and FaunaBrain namespace wall.
-- Targeted hot-swap greps pass in touched scopes; broad file-level scan still includes split-line/static-driver/legacy-stub false positives.
-  - Runtime proof remains pending.
+- 2026-05-26 UNKNOWN:
+  - Full solution CLI PASS: `Docs/Reports/BUILD_UNKNOWN_RECHECK_20260526_020504.log`.
+  - Command: `dotnet build .\Hecton8.slnx -v:minimal /m:1 /nr:false /p:UseSharedCompilation=false`.
+  - Result: exit `0`, `0 Warning(s)`, `0 Error(s)`.
+  - Evidence class: CLI_COMPILE only.
+- Older EXTERNAL_CODEX build-wall entries are historical source-gate context, not the current compile boundary.
 - 2026-05-23 X_012: `Docs/Reports/DOCUMENTATION_CORPUS_INVENTORY_X_012.json`, `Docs/Reports/DOCUMENTATION_OPTIMIZATION_REPORT_X_012.json`, and `Docs/Reports/DOC_STRUCTURE_VALIDATION_X_012.json` are offline documentation scan artifacts.
 - This is CLI_COMPILE evidence only.
 - Runtime architecture remains `PENDING VERIFICATION` until Unity import, Console, Play Mode, profiler, GCMonitor, Memory Profiler, player build, save/load, scene wiring, and visual proof exist.
@@ -98,6 +93,6 @@ World and presentation:
 
 ## Non-Claims
 
-This index is not compile proof, Unity import proof, Play Mode proof, profiler proof, GC proof, player-build proof, or visual proof.
+This index links the current CLI compile artifact. It is not Unity import proof, Play Mode proof, profiler proof, GC proof, player-build proof, or visual proof.
 
 Use `PENDING VERIFICATION` unless the document links a current artifact path.

@@ -728,7 +728,7 @@ namespace Hecton8.Quest
         [NoAlias] public NativeArray<int> Counters;
         [ReadOnly] [NoAlias] public NativeArray<int> NoTriggerNodeIndices;
         [ReadOnly] [NoAlias] public NativeParallelMultiHashMap<int, int> SpatialHash;
-        [NoAlias] public NativeQueue<StateChangedSignal>.ParallelWriter StateChangedWriter;
+        [NoAlias] public global::Hecton8.Core.MpscSignalRingBuffer<StateChangedSignal>.ParallelWriter StateChangedWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> StateChangedWriterBudget;
         public double3 PlayerAUP;
         public ulong CurrentTimestamp;

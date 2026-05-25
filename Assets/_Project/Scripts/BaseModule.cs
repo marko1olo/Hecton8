@@ -58,11 +58,11 @@ using Hecton8.Caves;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Physics;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Interaction;
-using Hecton8.Physics;
 using Hecton8.Power;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
@@ -92,7 +92,7 @@ namespace Hecton8.Gameplay
     }
 
     [DisallowMultipleComponent]
-    public sealed class BaseModule : MonoBehaviour, IPowerComponent, IContinuousPowerComponent, IPoolable, ISlowTickable, IFixedTickable, IUpdatable, ILateFrameTickable, ICuttable, Hecton8.Physics.IPhysicsImpactMaterialProvider, IElectromagneticPulseEventListener, Hecton8.Interaction.IKinematicRepairTarget, Hecton8.Interaction.IRepairableModuleTarget, IGlobalRegistryHotSwapListener
+    public sealed class BaseModule : MonoBehaviour, IPowerComponent, IContinuousPowerComponent, IPoolable, ISlowTickable, IFixedTickable, IUpdatable, ILateFrameTickable, ICuttable, Hecton8.Core.Contracts.IPhysicsImpactMaterialProvider, IElectromagneticPulseEventListener, Hecton8.Interaction.IKinematicRepairTarget, Hecton8.Interaction.IRepairableModuleTarget, IGlobalRegistryHotSwapListener
     {
         private static int s_x001BaseModuleSignalPushDropCount;
         // COLD ALLOC: List<BaseModule>[64] - active runtime habitat module registry for cold-path environment scans - owner: BaseModule
@@ -216,9 +216,15 @@ namespace Hecton8.Gameplay
         private static void UploadModuleWaterLevelArray(GraphicsBuffer buffer, Vector4[] source)
         {
             NativeArray<Vector4> mapped = buffer.LockBufferForWrite<Vector4>(0, ModuleWaterLevelShaderCapacity);
-            for (int i = 0; i < ModuleWaterLevelShaderCapacity; i++)
-                mapped[i] = source[i];
-            buffer.UnlockBufferAfterWrite<Vector4>(ModuleWaterLevelShaderCapacity);
+            try
+            {
+                for (int i = 0; i < ModuleWaterLevelShaderCapacity; i++)
+                    mapped[i] = source[i];
+            }
+            finally
+            {
+                buffer.UnlockBufferAfterWrite<Vector4>(ModuleWaterLevelShaderCapacity);
+            }
         }
 
         private static void QueueActiveModuleWaterLevelsShaderUpload(bool force = false)
@@ -703,13 +709,15 @@ namespace Hecton8.Gameplay
 
         private ModuleMarker _moduleMarker;
         private HabitatIntegrityManager _habitatIntegrityManager;
-        private SubmarineAtmosphereSystem _submarineAtmosphereSystem;
+        private ISubmarineAtmosphereRoomMutationSink _submarineAtmosphereSystem;
         private IAtmosphereReadModel _atmosphereRuntime;
         private IPlayerInventoryService _cachedPlayerInventoryService;
         private Hecton8.Core.IAudioService _cachedAudioService;
         private ISpatialAudioSfxMixerRouteReadModel _cachedSpatialAudioSfxRoute;
         private IObjectPoolService _cachedObjectPool;
         private IPlayerRuntimeContext _cachedPlayerRuntime;
+        private IPhysicsService _cachedPhysicsService;
+        private bool _empListenerRegistered;
         private PowerNode _powerNode;
         private HectonVoxelVolume _voxelVolume;
         private bool _breachLatched;
@@ -775,7 +783,7 @@ namespace Hecton8.Gameplay
         private IPlayerHypoxiaPresentationSink _trackedPlayerHypoxiaPresentation;
         private readonly ModuleIntegrityComponent _integrityComponent = new ModuleIntegrityComponent();
         private readonly ModuleLifeSupportComponent _lifeSupportComponent = new ModuleLifeSupportComponent();
-        private readonly FixedCharBuffer _fieldOperationSummaryBuffer = new FixedCharBuffer(320);
+        private FixedCharBuffer _fieldOperationSummaryBuffer = new FixedCharBuffer(320);
         // SHINOBU_330: interior trigger remains life-support occupancy only.
         // Flood water and dry-zone physics truth is routed through HabitatFluidIncursionDirector and SignalBus.
         // COLD ALLOC: List<BaseAirlock>[2] - cached owned airlock controllers for emergency lockdown fan-out - owner: BaseModule
@@ -1277,7 +1285,7 @@ namespace Hecton8.Gameplay
             netAccelerationY = math.clamp(netAccelerationY, -maximumAcceleration, maximumAcceleration);
             if (math.abs(netAccelerationY) > 0.0001f)
             {
-                PhysicsForceRouter.QueueForceAtPosition(
+                _cachedPhysicsService?.QueueForceAtPosition(
                     _moduleRigidbody,
                     Vector3.up * netAccelerationY,
                     ResolveModuleFallbackWorldPosition(),
@@ -1356,7 +1364,7 @@ namespace Hecton8.Gameplay
             TryRouteAudioSourceToSfxGroup(oxygenScrubberHumSource);
             TryRegisterHotSwapListener();
             LaserCutterTargetRegistry.RegisterModuleTree(this);
-            PhysicsEventBus.Register(this);
+            TryRegisterElectromagneticPulseListener();
             TryRegister();
             TryRegisterLateFrameTick();
             ResyncInteriorOccupants(true);
@@ -1380,13 +1388,13 @@ namespace Hecton8.Gameplay
         {
             LaserCutterTargetRegistry.UnregisterModuleTree(this);
             TryUnregisterHotSwapListener();
+            TryUnregisterElectromagneticPulseListener();
             ClearCachedRegistryServices();
             TryUnregisterUpdatable();
             TryUnregisterLateFrameTick();
             ResetBrownoutShaderState();
             ResetOxygenScrubberHumRuntime(false);
             s_activeModules.Remove(this);
-            PhysicsEventBus.Unregister(this);
             TryUnregister();
             TryUnregisterFixedTick();
             BaseDegradationSystem.ClearIntegrityState(this);
@@ -1405,13 +1413,13 @@ namespace Hecton8.Gameplay
         {
             LaserCutterTargetRegistry.UnregisterModuleTree(this);
             TryUnregisterHotSwapListener();
+            TryUnregisterElectromagneticPulseListener();
             ClearCachedRegistryServices();
             TryUnregisterUpdatable();
             TryUnregisterLateFrameTick();
             ResetBrownoutShaderState();
             ResetOxygenScrubberHumRuntime(true);
             s_activeModules.Remove(this);
-            PhysicsEventBus.Unregister(this);
             TryUnregister();
             TryUnregisterFixedTick();
             BaseDegradationSystem.ClearIntegrityState(this);
@@ -2554,7 +2562,7 @@ namespace Hecton8.Gameplay
             if (worldItemPrefab == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     $"[BaseModule] worldItemPrefab not assigned on '{gameObject.name}'. " +
                     $"Resource hash '{itemHashId}' dropped on the ground but has no world prefab. Lost.",
                     this);
@@ -2565,7 +2573,7 @@ namespace Hecton8.Gameplay
             if (pool == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     "[BaseModule] ObjectPoolManager not available. " +
                     $"Resource hash '{itemHashId}' lost.");
 #endif
@@ -3510,7 +3518,7 @@ namespace Hecton8.Gameplay
 
             if (_integrityComponent.IsFlooded)
             {
-                if (TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) &&
+                if (TryResolveSubmarineAtmosphereSystem(out ISubmarineAtmosphereRoomMutationSink atmosphereSystem) &&
                     atmosphereSystem != null)
                 {
                     if (TryResolveCachedAtmosphereRoomIndex(atmosphereSystem, out int cachedRoomIndex))
@@ -3893,7 +3901,7 @@ namespace Hecton8.Gameplay
             }
 
             if (_submarineAtmosphereSystem == null)
-                _submarineAtmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
+                _submarineAtmosphereSystem = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomMutationSink>(this);
 
             if (_powerNode == null)
                 TryGetComponent(out _powerNode);
@@ -4024,7 +4032,7 @@ namespace Hecton8.Gameplay
                 : ResolveInteriorHazardWorldPosition();
         }
 
-        private int ResolveAtmosphereRoomIndex(SubmarineAtmosphereSystem atmosphereSystem)
+        private int ResolveAtmosphereRoomIndex(ISubmarineAtmosphereRoomReadModel atmosphereSystem)
         {
             if (atmosphereSystem == null)
                 return -1;
@@ -4040,7 +4048,7 @@ namespace Hecton8.Gameplay
             return roomIndex;
         }
 
-        private bool TryResolveCachedAtmosphereRoomIndex(SubmarineAtmosphereSystem atmosphereSystem, out int roomIndex)
+        private bool TryResolveCachedAtmosphereRoomIndex(ISubmarineAtmosphereRoomReadModel atmosphereSystem, out int roomIndex)
         {
             roomIndex = _cachedAtmosphereRoomIndex;
             if (_isUnmoored || atmosphereSystem == null || roomIndex < 0 || roomIndex >= atmosphereSystem.RoomCount)
@@ -4101,7 +4109,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveUnmooredFloodFillNormalized()
         {
-            if (TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) && atmosphereSystem != null)
+            if (TryResolveSubmarineAtmosphereSystem(out ISubmarineAtmosphereRoomMutationSink atmosphereSystem) && atmosphereSystem != null)
             {
                 if (TryResolveCachedAtmosphereRoomIndex(atmosphereSystem, out int cachedRoomIndex))
                     return atmosphereSystem.ResolveRoomFloodFillNormalized(cachedRoomIndex);
@@ -4120,7 +4128,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveExternalDepthMeters()
         {
-            if (TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) && atmosphereSystem != null)
+            if (TryResolveSubmarineAtmosphereSystem(out ISubmarineAtmosphereRoomMutationSink atmosphereSystem) && atmosphereSystem != null)
                 return atmosphereSystem.ResolveExternalDepthMeters();
 
             IAtmosphereReadModel atmosphereManager = _atmosphereRuntime;
@@ -4228,7 +4236,7 @@ namespace Hecton8.Gameplay
             float forceNewtons = Mathf.Min(ResolveMaximumHydroStructuralLoadNewtons(), _queuedHydroStructuralLoadNewtons);
             if (forceNewtons > 0f && float.IsFinite(forceNewtons))
             {
-                PhysicsForceRouter.QueueForceAtPosition(
+                _cachedPhysicsService?.QueueForceAtPosition(
                     _moduleRigidbody,
                     Vector3.down * forceNewtons,
                     _queuedHydroStructuralLoadPointWorld,
@@ -4545,7 +4553,7 @@ namespace Hecton8.Gameplay
                 {
                     interiorTrigger.isTrigger = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning(
+                    Hecton8.Core.H8Debug.LogWarning(
                         $"[BaseModule] interiorTrigger on '{gameObject.name}' was not set as Trigger. " +
                         "Fixed automatically.", this);
 #endif
@@ -4554,7 +4562,7 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             else
             {
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     $"[BaseModule] '{gameObject.name}' has no interiorTrigger assigned. " +
                     "Interior Zone (Dry Zone) will not function.", this);
             }
@@ -4663,7 +4671,8 @@ namespace Hecton8.Gameplay
             }
 
             CaptureModuleRigidbodyDefaults();
-            if (!PhysicsForceRouter.ApplyKinematicWeldSnap(_moduleRigidbody, targetPosition, targetRotation))
+            IPhysicsService physicsService = _cachedPhysicsService ?? Hecton8.Core.GlobalRegistry.Physics;
+            if (physicsService == null || !physicsService.ApplyKinematicWeldSnap(_moduleRigidbody, targetPosition, targetRotation))
                 transform.SetPositionAndRotation(targetPosition, targetRotation);
 
             _defaultBodyIsKinematic = true;
@@ -4880,10 +4889,11 @@ namespace Hecton8.Gameplay
         {
             _atmosphereRuntime = Hecton8.Core.GlobalRegistry.AtmosphereReadModel;
             _cachedPlayerInventoryService = Hecton8.Core.GlobalRegistry.PlayerInventory;
-            _cachedAudioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _cachedAudioService = Hecton8.Core.GlobalRegistry.Audio;
             _cachedSpatialAudioSfxRoute = _cachedAudioService as ISpatialAudioSfxMixerRouteReadModel;
             _cachedObjectPool = Hecton8.Core.GlobalRegistry.ObjectPoolService;
-            _cachedPlayerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerRuntime = Hecton8.Core.GlobalRegistry.Player;
+            _cachedPhysicsService = Hecton8.Core.GlobalRegistry.Physics;
         }
 
         private void ClearCachedRegistryServices()
@@ -4894,6 +4904,7 @@ namespace Hecton8.Gameplay
             _cachedSpatialAudioSfxRoute = null;
             _cachedObjectPool = null;
             _cachedPlayerRuntime = null;
+            _cachedPhysicsService = null;
         }
 
         private void TryRegisterHotSwapListener()
@@ -4902,6 +4913,28 @@ namespace Hecton8.Gameplay
                 return;
 
             _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryRegisterElectromagneticPulseListener()
+        {
+            if (_empListenerRegistered)
+                return;
+
+            IPhysicsService physicsService = _cachedPhysicsService;
+            if (physicsService == null)
+                return;
+
+            physicsService.RegisterElectromagneticPulseListener(this);
+            _empListenerRegistered = true;
+        }
+
+        private void TryUnregisterElectromagneticPulseListener()
+        {
+            if (!_empListenerRegistered)
+                return;
+
+            _cachedPhysicsService?.UnregisterElectromagneticPulseListener(this);
+            _empListenerRegistered = false;
         }
 
         private void TryUnregisterHotSwapListener()
@@ -4937,6 +4970,16 @@ namespace Hecton8.Gameplay
             {
                 _cachedPlayerRuntime = currentService as IPlayerRuntimeContext;
             }
+            else if (serviceSlot == GlobalRegistryServiceSlot.Physics)
+            {
+                if (_empListenerRegistered && previousService is IPhysicsService previousPhysicsService)
+                    previousPhysicsService.UnregisterElectromagneticPulseListener(this);
+
+                _empListenerRegistered = false;
+                _cachedPhysicsService = currentService as IPhysicsService;
+                if (isActiveAndEnabled)
+                    TryRegisterElectromagneticPulseListener();
+            }
         }
 
         private void TryUnregisterFixedTick()
@@ -4961,7 +5004,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void ApplyCultivationOxygen(float oxygenUnits)
         {
-            if (oxygenUnits <= 0f || !TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) || atmosphereSystem == null)
+            if (oxygenUnits <= 0f || !TryResolveSubmarineAtmosphereSystem(out ISubmarineAtmosphereRoomMutationSink atmosphereSystem) || atmosphereSystem == null)
                 return;
 
             int roomIndex = ResolveAtmosphereRoomIndex(atmosphereSystem);
@@ -5140,7 +5183,7 @@ namespace Hecton8.Gameplay
 
         internal float ResolveHostRoomTemperatureCelsius()
         {
-            if (!TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) ||
+            if (!TryResolveSubmarineAtmosphereSystem(out ISubmarineAtmosphereRoomMutationSink atmosphereSystem) ||
                 atmosphereSystem == null)
             {
                 return 0f;
@@ -5155,7 +5198,7 @@ namespace Hecton8.Gameplay
         internal bool TryResolveHostAtmosphereRoomIndex(out int roomIndex)
         {
             roomIndex = -1;
-            if (!TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) ||
+            if (!TryResolveSubmarineAtmosphereSystem(out ISubmarineAtmosphereRoomMutationSink atmosphereSystem) ||
                 atmosphereSystem == null)
             {
                 return false;
@@ -5170,7 +5213,7 @@ namespace Hecton8.Gameplay
             if (!(deltaCelsius > 0f) || !float.IsFinite(deltaCelsius))
                 return false;
 
-            if (!TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) || atmosphereSystem == null)
+            if (!TryResolveSubmarineAtmosphereSystem(out ISubmarineAtmosphereRoomMutationSink atmosphereSystem) || atmosphereSystem == null)
                 return false;
 
             int roomIndex = ResolveAtmosphereRoomIndex(atmosphereSystem);
@@ -5402,7 +5445,7 @@ namespace Hecton8.Gameplay
 
         private void RegisterInstancedPressureSpray(Vector3 localPoint, float intensity01)
         {
-            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            IFluidDecalPresentationSink fluidDecals = GlobalRegistry.FluidDecalPresentation;
             if (fluidDecals == null)
                 return;
 
@@ -5536,7 +5579,7 @@ namespace Hecton8.Gameplay
             float rawImpulse = ResolveCinematicImplosionImpulseNewtonSeconds();
             if (rawImpulse > 0f && float.IsFinite(rawImpulse))
             {
-                PhysicsApplySystem.TriggerImplosionImpulse(
+                _cachedPhysicsService?.QueueImplosionImpulse(
                     roomCenter,
                     influenceRadius,
                     rawImpulse,
@@ -5561,7 +5604,7 @@ namespace Hecton8.Gameplay
             if (ResolveExternalPressureDeltaKPa() >= Mathf.Max(0f, explosiveFloodPressureDeltaKPa))
                 ForceFlood();
             TriggerBreachDepressurizationVortex(localBreachPoint);
-            if (!TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) || atmosphereSystem == null)
+            if (!TryResolveSubmarineAtmosphereSystem(out ISubmarineAtmosphereRoomMutationSink atmosphereSystem) || atmosphereSystem == null)
             {
                 NotifyEmergencyLockdownStateChanged();
                 return;
@@ -5603,7 +5646,7 @@ namespace Hecton8.Gameplay
             if (baseAcceleration <= 0.0001f || !float.IsFinite(baseAcceleration))
                 return;
 
-            PhysicsApplySystem.TriggerDepressurizationVortex(
+            _cachedPhysicsService?.QueueDepressurizationVortex(
                 roomCenter,
                 breachWorldPosition,
                 influenceRadius,
@@ -5640,13 +5683,13 @@ namespace Hecton8.Gameplay
             return depth01 * depth01 * (3f - (2f * depth01));
         }
 
-        private bool TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem)
+        private bool TryResolveSubmarineAtmosphereSystem(out ISubmarineAtmosphereRoomMutationSink atmosphereSystem)
         {
-            if (_submarineAtmosphereSystem == null || !_submarineAtmosphereSystem.isActiveAndEnabled)
-                _submarineAtmosphereSystem = GetComponentInParent<SubmarineAtmosphereSystem>();
+            if (_submarineAtmosphereSystem == null || !_submarineAtmosphereSystem.IsAtmosphereRuntimeActive)
+                _submarineAtmosphereSystem = ComponentReferenceUtility.ResolveParentService<ISubmarineAtmosphereRoomMutationSink>(this);
 
             atmosphereSystem = _submarineAtmosphereSystem;
-            return atmosphereSystem != null && atmosphereSystem.isActiveAndEnabled;
+            return atmosphereSystem != null && atmosphereSystem.IsAtmosphereRuntimeActive;
         }
 
         private float ResolveBreachAreaSquareMeters()

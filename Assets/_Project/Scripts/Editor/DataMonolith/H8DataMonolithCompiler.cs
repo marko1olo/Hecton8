@@ -700,7 +700,7 @@ namespace Hecton8.EditorValidation
 
             if ((info.Length & (H8DataLayoutConstants.SectionAlignmentBytes - 1)) != 0)
             {
-                error = "Data Monolith file length is not 16-byte aligned: " + info.Length + " bytes.";
+                error = "Data Monolith file length is not 64-byte aligned: " + info.Length + " bytes.";
                 return false;
             }
 
@@ -737,6 +737,9 @@ namespace Hecton8.EditorValidation
             uint headerWorldSeed = ReadUInt32(bytes, 40);
             uint headerAppVersionHash = ReadUInt32(bytes, 44);
             uint headerSchemaHash = ReadUInt32(bytes, 48);
+            uint headerReserved0 = ReadUInt32(bytes, 52);
+            uint headerReserved1 = ReadUInt32(bytes, 56);
+            uint headerReserved2 = ReadUInt32(bytes, 60);
             if (headerMagic != H8DataLayoutConstants.BlobMagic)
             {
                 error = "Header magic mismatch: 0x" + headerMagic.ToString("X8");
@@ -764,8 +767,11 @@ namespace Hecton8.EditorValidation
                 headerDirectoryBytes != expectedDirectoryBytes ||
                 headerSectionTableOffset != expectedSectionTableOffset ||
                 headerSectionCount != SectionOrder.Length ||
-                (headerFlags & H8DataLayoutConstants.BlobFlagLittleEndian) == 0u ||
-                headerSchemaHash != H8DataLayoutConstants.SchemaHash)
+                headerFlags != H8DataLayoutConstants.BlobFlagLittleEndian ||
+                headerSchemaHash != H8DataLayoutConstants.SchemaHash ||
+                headerReserved0 != 0u ||
+                headerReserved1 != 0u ||
+                headerReserved2 != 0u)
             {
                 error = "Header schema range mismatch: blob=" + headerBlobBytes +
                         " dirOffset=" + headerDirectoryOffset +
@@ -773,7 +779,8 @@ namespace Hecton8.EditorValidation
                         " tableOffset=" + headerSectionTableOffset +
                         " sections=" + headerSectionCount +
                         " flags=0x" + headerFlags.ToString("X8") +
-                        " schema=0x" + headerSchemaHash.ToString("X8");
+                        " schema=0x" + headerSchemaHash.ToString("X8") +
+                        " reserved=" + headerReserved0 + "/" + headerReserved1 + "/" + headerReserved2;
                 return false;
             }
 
@@ -797,6 +804,11 @@ namespace Hecton8.EditorValidation
             uint directoryFlags = ReadUInt32(bytes, directoryOffset + 32);
             uint directoryWorldSeed = ReadUInt32(bytes, directoryOffset + 36);
             uint directoryAppVersionHash = ReadUInt32(bytes, directoryOffset + 40);
+            uint directoryReserved0 = ReadUInt32(bytes, directoryOffset + 44);
+            uint directoryReserved1 = ReadUInt32(bytes, directoryOffset + 48);
+            uint directoryReserved2 = ReadUInt32(bytes, directoryOffset + 52);
+            uint directoryReserved3 = ReadUInt32(bytes, directoryOffset + 56);
+            uint directoryReserved4 = ReadUInt32(bytes, directoryOffset + 60);
             if (directoryMagic != H8DataLayoutConstants.BlobMagic)
             {
                 error = "Directory magic mismatch: 0x" + directoryMagic.ToString("X8");
@@ -823,11 +835,17 @@ namespace Hecton8.EditorValidation
 
             if (directoryFlags != headerFlags ||
                 directoryWorldSeed != headerWorldSeed ||
-                directoryAppVersionHash != headerAppVersionHash)
+                directoryAppVersionHash != headerAppVersionHash ||
+                directoryReserved0 != 0u ||
+                directoryReserved1 != 0u ||
+                directoryReserved2 != 0u ||
+                directoryReserved3 != 0u ||
+                directoryReserved4 != 0u)
             {
                 error = "Header/directory identity mismatch: flags=0x" + directoryFlags.ToString("X8") +
                         " worldSeed=" + directoryWorldSeed +
-                        " appHash=0x" + directoryAppVersionHash.ToString("X8");
+                        " appHash=0x" + directoryAppVersionHash.ToString("X8") +
+                        " reserved=" + directoryReserved0 + "/" + directoryReserved1 + "/" + directoryReserved2 + "/" + directoryReserved3 + "/" + directoryReserved4;
                 return false;
             }
 

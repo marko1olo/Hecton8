@@ -1,0 +1,116 @@
+{
+  "schema": "data_monolith_blob_v2_migration_1313.v1",
+  "agentId": "1313",
+  "date": "2026-05-25",
+  "evidenceClass": [
+    "STATIC_BINARY",
+    "STATIC_SOURCE",
+    "TOOL_VALIDATOR"
+  ],
+  "buildPolicy": {
+    "dotnetRun": false,
+    "unityBuildRun": false,
+    "unityImportRun": false
+  },
+  "blob": {
+    "path": "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin",
+    "bytes": 1064384,
+    "magic": "0x4D443848",
+    "formatVersion": 2,
+    "headerBytes": 64,
+    "schemaHash": "0x33313331",
+    "flags": "0x00000001",
+    "checksum64Stored": "0x19D880780D6E1B46",
+    "checksum64Computed": "0x19D880780D6E1B46",
+    "checksumRegion": "bytes[64..end)",
+    "checksumMatch": true
+  },
+  "directory": {
+    "formatVersion": 2,
+    "sectionTableOffset": 128,
+    "sectionTableBytes": 416,
+    "tableEnd": 544,
+    "dataStartOffset": 576,
+    "alignmentBytes": 64,
+    "expectedDataStartOffset": 576,
+    "sectionCount": 26,
+    "localizationOffset": 1063104,
+    "localizationBytes": 831,
+    "flags": "0x00000001",
+    "flagMeaning": "BlobFlagLittleEndian"
+  },
+  "itemSection": {
+    "sectionId": 1,
+    "recordSize": 80,
+    "count": 4,
+    "offsetBytes": 576,
+    "sizeMultipleOf8": true
+  },
+  "h8ItemRecordV2OffsetMap": [
+    { "offset": 0, "bytes": 8, "field": "RecipeMask0" },
+    { "offset": 8, "bytes": 8, "field": "RecipeMask1" },
+    { "offset": 16, "bytes": 4, "field": "HashId" },
+    { "offset": 20, "bytes": 4, "field": "RecordIndex" },
+    { "offset": 24, "bytes": 4, "field": "CategoryHash" },
+    { "offset": 28, "bytes": 4, "field": "Flags" },
+    { "offset": 32, "bytes": 4, "field": "MassKg" },
+    { "offset": 36, "bytes": 4, "field": "VolumeM3" },
+    { "offset": 40, "bytes": 4, "field": "BaseQuality" },
+    { "offset": 44, "bytes": 4, "field": "RarityWeight" },
+    { "offset": 48, "bytes": 4, "field": "CraftTimeSeconds" },
+    { "offset": 52, "bytes": 4, "field": "NameUtf8Offset" },
+    { "offset": 56, "bytes": 4, "field": "DescriptionUtf8Offset" },
+    { "offset": 60, "bytes": 4, "field": "NameUtf8ByteLength" },
+    { "offset": 64, "bytes": 4, "field": "DescriptionUtf8ByteLength" },
+    { "offset": 68, "bytes": 4, "field": "Cost" },
+    { "offset": 72, "bytes": 4, "field": "AccessFrequency" },
+    { "offset": 76, "bytes": 2, "field": "MaxStack" },
+    { "offset": 78, "bytes": 2, "field": "RecipeIngredientCount" }
+  ],
+  "recordMigrationMap": [
+    "new[0..7]=old[16..23]",
+    "new[8..15]=old[24..31]",
+    "new[16..19]=old[0..3]",
+    "new[20..23]=old[4..7]",
+    "new[24..27]=old[8..11]",
+    "new[28..31]=old[12..15]",
+    "new[32..67]=old[32..67]",
+    "new[68..71]=old[72..75]",
+    "new[72..75]=old[76..79]",
+    "new[76..77]=old[68..69]",
+    "new[78..79]=old[70..71]"
+  ],
+  "previousBlob": {
+    "formatVersion": 1,
+    "schemaHash": "0x58303032",
+    "checksum64": "0x0D49885F30E5DF35",
+    "temporaryBackup": "%TEMP%/static_data_h8bin_pre_v2_1313.bak"
+  },
+  "validator": {
+    "command": "python Tools/h8bin_validator.py --target-dir Assets/StreamingAssets/Hecton8/DataMonolith --cs-source-dir Assets/_Project/Scripts/Data/Monolith --allow-runtime-text-loaders --allow-unbaked-artifacts --report-json Docs/Reports/DATA_MONOLITH_H8BIN_VALIDATOR_1313.json --no-require-static-data",
+    "exitCode": 0,
+    "status": "PASS",
+    "filesChecked": 1,
+    "structsParsed": 32,
+    "sections": 26,
+    "sampledRecords": 3339,
+    "seconds": 0.140687
+  },
+  "validatorPatch": {
+    "file": "Tools/h8bin_validator.py",
+    "alignUpLine": 2212,
+    "dataStartContractLines": "3188-3195",
+    "directoryFlagContractLines": "3325-3327",
+    "sourceContract": [
+      "H8DataMonolithCompiler.cs:858-860",
+      "H8DataMonolithCompiler.cs:1074-1075",
+      "H8DataMonolithCompiler.cs:1110",
+      "H8DataMonolithTypes.cs:36"
+    ]
+  },
+  "remainingBlockers": [
+    "Android/Quest/non-Windows production hydrator remains fail-closed because no native/PAL static_data.h8bin loader exists.",
+    "Global production parser purge remains incomplete: 262 strict blockers are outside this binary migration.",
+    "Unity import, player boot, profiler, and GC proof were not executed under the user's build restriction."
+  ]
+}

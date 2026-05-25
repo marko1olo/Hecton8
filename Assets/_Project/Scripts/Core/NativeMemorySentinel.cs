@@ -537,7 +537,7 @@ namespace Hecton8.Core
                     _nativeMemoryContextHash,
                     MaxTrackedAllocations);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError(CriticalMemoryViolationRegistryCapacityMessage);
+                Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationRegistryCapacityMessage);
 #endif
                 return 0;
             }
@@ -700,7 +700,7 @@ namespace Hecton8.Core
                 record.LeakReported = true;
                 _records[i] = record;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
+                Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
 #endif
             }
 
@@ -714,7 +714,7 @@ namespace Hecton8.Core
                     _nativeMemoryContextHash,
                     unsafeLeakCount);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError(CriticalMemoryViolationUnsafeLeakMessage);
+                Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationUnsafeLeakMessage);
 #endif
             }
 #endif
@@ -745,7 +745,7 @@ namespace Hecton8.Core
                     record.LeakReported = true;
                     _records[i] = record;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
+                    Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
 #endif
                     continue;
                 }
@@ -768,7 +768,7 @@ namespace Hecton8.Core
                     ComputeStableHash(record.Label),
                     record.Bytes);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError(
+                Hecton8.Core.H8Debug.LogError(
                     NativeLeakReapedMessage +
                     " context=" + context +
                     " owner=" + record.Owner +
@@ -789,7 +789,7 @@ namespace Hecton8.Core
                     _nativeMemoryContextHash,
                     unsafeLeakCount);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError(CriticalMemoryViolationUnsafeLeakMessage);
+                Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationUnsafeLeakMessage);
 #endif
             }
 #endif
@@ -810,7 +810,7 @@ namespace Hecton8.Core
                 _nativeMemoryContextHash,
                 activeCount);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError(CriticalMemoryViolationServiceShutdownLeakMessage);
+            Hecton8.Core.H8Debug.LogError(CriticalMemoryViolationServiceShutdownLeakMessage);
 #endif
             return false;
         }
@@ -868,7 +868,7 @@ namespace Hecton8.Core
                     CrashTelemetryBuffer.ReportNativeTransientLeak(allocationHash, retentionFrames, record.Bytes);
                 }
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError(
+                Hecton8.Core.H8Debug.LogError(
                     record.Lifetime == NativeAllocationLifetime.TempJob
                         ? StaleBufferCrimeRetentionMessage
                         : MemoryLeakDetectedRetentionMessage);
@@ -961,7 +961,7 @@ namespace Hecton8.Core
             if (Thread.CurrentThread.ManagedThreadId != _mainThreadId)
                 return fallbackFrame;
 
-            return Application.isPlaying ? Time.frameCount : fallbackFrame;
+            return Application.isPlaying ? SystemDispatcher.CurrentFrameIndex : fallbackFrame;
         }
 
         private static float ResolveCurrentUnscaledTime()
@@ -969,7 +969,7 @@ namespace Hecton8.Core
             if (Thread.CurrentThread.ManagedThreadId != _mainThreadId)
                 return 0f;
 
-            return Application.isPlaying ? Time.unscaledTime : 0f;
+            return Application.isPlaying ? (float)SystemDispatcher.CurrentUnscaledTimeSeconds : 0f;
         }
 
         private static void TrackPersistentReallocation(
@@ -1026,7 +1026,7 @@ namespace Hecton8.Core
                     record.ReallocationCount);
                 CrashTelemetryBuffer.ReportNativeFragmentationRisk(allocationHash, record.ReallocationCount, bytes);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError(PersistentFragmentationRiskMessage);
+                Hecton8.Core.H8Debug.LogError(PersistentFragmentationRiskMessage);
 #endif
             }
 
@@ -1092,7 +1092,7 @@ namespace Hecton8.Core
             catch (Exception exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogException(exception);
+                Hecton8.Core.H8Debug.LogException(exception);
 #endif
             }
             finally

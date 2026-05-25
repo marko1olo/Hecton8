@@ -6,7 +6,6 @@ using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Hecton8.Visor;
 using Hecton8.World;
 using Unity.Burst;
@@ -516,7 +515,7 @@ namespace Hecton8.Systems.AI
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4500)]
-    public sealed class HectonDirectorAI : MonoBehaviour, IUpdatable, ILateFrameTickable, IEncounterDirectorService, ISonarPingEventListener, IAcousticPingEventListener, IElectromagneticPulseEventListener, IPhysicsAcousticImpulseEventListener, IGlobalRegistryHotSwapListener
+    public sealed class HectonDirectorAI : MonoBehaviour, IUpdatable, ILateFrameTickable, IEncounterDirectorService, ISonarPingEventListener, IGlobalRegistryHotSwapListener
     {
         internal static HectonDirectorAI ActiveRuntimeInstance => GlobalRegistry.EncounterDirector as HectonDirectorAI;
 
@@ -575,6 +574,11 @@ namespace Hecton8.Systems.AI
         private const float ActiveSonarBoidScatterDurationSeconds = 0.85f;
         private const float PredatorAcousticDeafenedDurationSeconds = 8f;
         private const float PredatorAcousticDeafeningImpulseEnergyJoules = 6400f;
+        private const ushort PhysicsEventTypeElectromagneticPulse = 2;
+        private const ushort PhysicsEventTypeAcousticPing = 3;
+        private const ushort PhysicsEventTypeAcousticImpulse = 4;
+        private const uint AcousticImpulseFlagCritical = 1u;
+        private const uint AcousticImpulseFlagLarge = 1u << 3;
         private const int AcousticPingPredatorContactCapacity = 64;
         private const int PredatorSpatialHashContactCapacity = 64;
         private const BufferID PredatorSpatialAbsolutePositionsBufferId = (BufferID)73238;
@@ -624,7 +628,7 @@ namespace Hecton8.Systems.AI
         private bool _dispatcherRegistered;
         private bool _lateFrameRegistered;
         private bool _hotSwapRegistered;
-        private bool _acousticPingSubscribed;
+        private bool _physicsEventPayloadReaderActive;
         private bool _predatorSpatialHashVaultLocked;
         private bool _predatorSpatialHashJobScheduled;
         private bool _predatorSpatialHashReady;
@@ -638,6 +642,7 @@ namespace Hecton8.Systems.AI
         private int _frameTimeHistoryCount;
         private int _frameTimeHistoryIndex;
         private int _predatorSpatialContactCount;
+        private int _lastPhysicsEventSnapshotGeneration;
         private int _lastEntityDeathSignalSnapshotGeneration;
         private Vector3 _lastResolvedPlayerForward = Vector3.forward;
         private bool _frustumPlanesInitialized;
@@ -714,7 +719,7 @@ namespace Hecton8.Systems.AI
             _predatorSpatialContactCount = 0;
             EnsurePredatorSpatialHashBuffersAllocated(out _, out _);
             SpectrumEvents.RegisterSonarPingListener(this);
-            SubscribeAcousticPingEvents();
+            EnablePhysicsEventPayloadReader();
             PublishPredatorPressure(true);
         }
 
@@ -783,7 +788,7 @@ namespace Hecton8.Systems.AI
             TryUnregisterDispatcherLanes();
 
             SpectrumEvents.UnregisterSonarPingListener(this);
-            UnsubscribeAcousticPingEvents();
+            DisablePhysicsEventPayloadReader();
             CompletePredatorSightBatch(forceComplete: true);
             CompletePredatorSpatialHashBuild(forceComplete: true);
             _encounterDirector.ForceStopAndReset();
@@ -812,7 +817,7 @@ namespace Hecton8.Systems.AI
         private void OnDestroy()
         {
             SpectrumEvents.UnregisterSonarPingListener(this);
-            UnsubscribeAcousticPingEvents();
+            DisablePhysicsEventPayloadReader();
             _metaCampaignService = null;
             _encounterDirector.SetMetaCampaignService(null);
             _playerRuntimeContext = null;
@@ -936,36 +941,57 @@ namespace Hecton8.Systems.AI
 
         public void LateFrameTick()
         {
+            DrainPhysicsEventPayloads();
             _encounterDirector.CompleteReadyOutput(faunaDirector, this, forceComplete: false);
             _encounterDirector.FlushPredatorAupVisualSync();
             CompletePredatorSightBatch(forceComplete: false);
         }
 
-        public void OnAcousticPing(in AcousticPingEvent pingEvent)
+        private void DrainPhysicsEventPayloads()
         {
-            HandleAcousticPing(in pingEvent);
+            if (!_physicsEventPayloadReaderActive)
+                return;
+
+            int snapshotGeneration = SignalBus<PhysicsEventPayload>.SnapshotGeneration;
+            if (snapshotGeneration == _lastPhysicsEventSnapshotGeneration)
+                return;
+
+            _lastPhysicsEventSnapshotGeneration = snapshotGeneration;
+            ReadOnlySpan<PhysicsEventPayload> signals = SignalBus<PhysicsEventPayload>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PhysicsEventPayload payload = signals[i];
+                ushort eventType = payload.EventType;
+                if (eventType == PhysicsEventTypeAcousticPing)
+                {
+                    HandleAcousticPingPayload(in payload);
+                }
+                else if (eventType == PhysicsEventTypeElectromagneticPulse)
+                {
+                    HandlePredatorAcousticDeafening(
+                        payload.RuntimePosition,
+                        payload.RadiusMeters,
+                        math.max(PredatorAcousticDeafenedDurationSeconds, payload.Scalar0));
+                }
+                else if (eventType == PhysicsEventTypeAcousticImpulse)
+                {
+                    HandleAcousticImpulsePayload(in payload);
+                }
+            }
         }
 
-        public void OnElectromagneticPulse(in ElectromagneticPulseEvent pulseEvent)
+        private void HandleAcousticImpulsePayload(in PhysicsEventPayload impulseEvent)
         {
-            HandlePredatorAcousticDeafening(
-                pulseEvent.RuntimePosition,
-                pulseEvent.RadiusMeters,
-                math.max(PredatorAcousticDeafenedDurationSeconds, pulseEvent.DurationSeconds));
-        }
-
-        public void OnAcousticImpulse(in AcousticImpulseEvent impulseEvent)
-        {
-            bool isLargeAcousticImpulse = (impulseEvent.Flags & AcousticImpulseFlags.Large) != 0;
+            bool isLargeAcousticImpulse = (impulseEvent.StatusBits & AcousticImpulseFlagLarge) != 0u;
             if (isLargeAcousticImpulse)
             {
                 float rangeVisibility01 = math.saturate(impulseEvent.RadiusMeters * ActiveSonarLeviathanAggroInvRadiusMeters);
-                HandleSonarPingSent(math.max(impulseEvent.Volume01, rangeVisibility01));
-                if ((impulseEvent.Flags & AcousticImpulseFlags.Critical) == 0)
+                HandleSonarPingSent(math.max(impulseEvent.Scalar1, rangeVisibility01));
+                if ((impulseEvent.StatusBits & AcousticImpulseFlagCritical) == 0u)
                     return;
             }
 
-            if (impulseEvent.KineticEnergyJoules < PredatorAcousticDeafeningImpulseEnergyJoules)
+            if (impulseEvent.Scalar0 < PredatorAcousticDeafeningImpulseEnergyJoules)
                 return;
 
             HandlePredatorAcousticDeafening(
@@ -974,31 +1000,26 @@ namespace Hecton8.Systems.AI
                 PredatorAcousticDeafenedDurationSeconds);
         }
 
-        private void SubscribeAcousticPingEvents()
+        private void EnablePhysicsEventPayloadReader()
         {
-            if (_acousticPingSubscribed || !Application.isPlaying)
+            if (_physicsEventPayloadReaderActive || !Application.isPlaying)
                 return;
 
-            PhysicsEventBus.Register((IAcousticPingEventListener)this);
-            PhysicsEventBus.Register((IElectromagneticPulseEventListener)this);
-            PhysicsEventBus.Register((IPhysicsAcousticImpulseEventListener)this);
-            _acousticPingSubscribed = true;
+            _physicsEventPayloadReaderActive = true;
         }
 
-        private void UnsubscribeAcousticPingEvents()
+        private void DisablePhysicsEventPayloadReader()
         {
-            if (!_acousticPingSubscribed)
+            if (!_physicsEventPayloadReaderActive)
                 return;
 
-            PhysicsEventBus.Unregister((IAcousticPingEventListener)this);
-            PhysicsEventBus.Unregister((IElectromagneticPulseEventListener)this);
-            PhysicsEventBus.Unregister((IPhysicsAcousticImpulseEventListener)this);
-            _acousticPingSubscribed = false;
+            _physicsEventPayloadReaderActive = false;
+            _lastPhysicsEventSnapshotGeneration = 0;
         }
 
-        private void HandleAcousticPing(in AcousticPingEvent pingEvent)
+        private void HandleAcousticPingPayload(in PhysicsEventPayload pingEvent)
         {
-            if (pingEvent.RadiusMeters <= 0f || pingEvent.Intensity01 <= 0f)
+            if (pingEvent.RadiusMeters <= 0f || pingEvent.Scalar0 <= 0f)
                 return;
 
             if (_activeSonarPingDebounceTimer > 0f)
@@ -1017,10 +1038,10 @@ namespace Hecton8.Systems.AI
             bool raisedThreatSpike = false;
             for (int i = 0; i < contactCount; i++)
             {
-                FaunaBrain brain = _acousticPingPredatorContacts[i].Owner as FaunaBrain;
-                if (brain == null ||
-                    brain.IsDead ||
-                    !brain.IsApexPredatorRuntime)
+                IFaunaDirectorCueSink faunaCue = _acousticPingPredatorContacts[i].Owner as IFaunaDirectorCueSink;
+                if (faunaCue == null ||
+                    faunaCue.IsDead ||
+                    !faunaCue.IsApexPredatorContact)
                 {
                     continue;
                 }
@@ -1029,12 +1050,12 @@ namespace Hecton8.Systems.AI
                 if (AbsoluteUniversePosition.DistanceSq(in brainAup, in pingAup) > ActiveSonarLeviathanAggroRadiusMetersSqr)
                     continue;
 
-                if (brain.ShouldIgnoreAcousticPing(pingEvent.EnergyJoules, pingEvent.Intensity01))
+                if (faunaCue.ShouldIgnoreAcousticPing(pingEvent.Scalar2, pingEvent.Scalar0))
                     continue;
 
-                brain.ApplyAcousticPingAggro(
+                faunaCue.ApplyAcousticPingAggro(
                     pingEvent.RuntimePosition,
-                    pingEvent.Intensity01,
+                    pingEvent.Scalar0,
                     ActiveSonarLeviathanAggroDurationSeconds);
 
                 SargassumMicroFaunaBoids boidSystem = _sargassumMicroFauna;
@@ -1042,7 +1063,7 @@ namespace Hecton8.Systems.AI
                 {
                     Vector3 direction = _acousticPingPredatorContacts[i].Position - pingEvent.RuntimePosition;
                     if (direction.sqrMagnitude <= 0.0001f)
-                        direction = ResolveDeterministicOffsetDirection(unchecked((uint)brain.SpeciesId));
+                        direction = ResolveDeterministicOffsetDirection(unchecked((uint)faunaCue.SpeciesId));
                     else
                         direction = ResolveDominantAxisDirection(direction);
 
@@ -1055,7 +1076,7 @@ namespace Hecton8.Systems.AI
 
                 if (!raisedThreatSpike)
                 {
-                    DirectorAIEvents.TryRaiseThreatSpike(_acousticPingPredatorContacts[i].Position, pingEvent.Intensity01);
+                    DirectorAIEvents.TryRaiseThreatSpike(_acousticPingPredatorContacts[i].Position, pingEvent.Scalar0);
                     raisedThreatSpike = true;
                 }
             }
@@ -1078,10 +1099,10 @@ namespace Hecton8.Systems.AI
             double radiusSq = (double)radiusMeters * radiusMeters;
             for (int i = 0; i < contactCount; i++)
             {
-                FaunaBrain brain = _acousticPingPredatorContacts[i].Owner as FaunaBrain;
-                if (brain == null ||
-                    brain.IsDead ||
-                    !brain.IsApexPredatorRuntime)
+                IFaunaDirectorCueSink faunaCue = _acousticPingPredatorContacts[i].Owner as IFaunaDirectorCueSink;
+                if (faunaCue == null ||
+                    faunaCue.IsDead ||
+                    !faunaCue.IsApexPredatorContact)
                 {
                     continue;
                 }
@@ -1090,7 +1111,7 @@ namespace Hecton8.Systems.AI
                 if (AbsoluteUniversePosition.DistanceSq(in brainAup, in pulseAup) > radiusSq)
                     continue;
 
-                brain.ApplyPredatorDeafening(runtimePosition, durationSeconds);
+                faunaCue.ApplyPredatorDeafening(runtimePosition, durationSeconds);
             }
         }
 
@@ -1166,10 +1187,10 @@ namespace Hecton8.Systems.AI
             ref int processedCount)
         {
             SpatialQueryHit contact = _predatorSpatialContacts[contactIndex];
-            FaunaBrain brain = contact.Owner as FaunaBrain;
-            if (brain == null ||
-                brain.IsDead ||
-                (!brain.isAggressive && !brain.IsApexPredatorRuntime && !brain.UsesPackHuntBehavior))
+            IFaunaDirectorCueSink faunaCue = contact.Owner as IFaunaDirectorCueSink;
+            if (faunaCue == null ||
+                faunaCue.IsDead ||
+                (!faunaCue.IsAggressiveContact && !faunaCue.IsApexPredatorContact && !faunaCue.UsesPackHuntBehaviorContact))
             {
                 return;
             }
@@ -1179,11 +1200,11 @@ namespace Hecton8.Systems.AI
             bool outsideFrustum = IsPredatorBehindPlayerViewByAup(in playerAup, in predatorAup, safePlayerForward);
             if (predatorDistanceSqr > PredatorDeadZoneCullDistanceMetersSqr && outsideFrustum)
             {
-                brain.ApplyDirectorColdTickCull(true);
+                faunaCue.ApplyDirectorColdTickCull(true);
                 return;
             }
 
-            brain.ApplyDirectorColdTickCull(false);
+            faunaCue.ApplyDirectorColdTickCull(false);
             if (predatorDistanceSqr > (double)PredatorSightScanRadiusMeters * PredatorSightScanRadiusMeters)
                 return;
 
@@ -1196,24 +1217,24 @@ namespace Hecton8.Systems.AI
             Vector3 predatorForward = contact.Transform != null ? contact.Transform.forward : Vector3.forward;
             if (!IsInsidePredatorSightCone(predatorForward, toPlayer, distanceSqr))
             {
-                brain.ApplyDirectorLineOfSight(false, playerPosition, safePlayerForward, playerVelocity);
+                faunaCue.ApplyDirectorLineOfSight(false, playerPosition, safePlayerForward, playerVelocity);
                 return;
             }
 
             if (predatorDistanceSqr <= PredatorSightImmediateRevealRadiusMetersSqr)
             {
-                brain.ApplyDirectorLineOfSight(true, playerPosition, safePlayerForward, playerVelocity);
+                faunaCue.ApplyDirectorLineOfSight(true, playerPosition, safePlayerForward, playerVelocity);
                 return;
             }
 
             if (predatorDistanceSqr >= PredatorSightRearViewFakeMinDistanceMetersSqr && outsideFrustum)
             {
-                brain.ApplyDirectorLineOfSight(false, playerPosition, safePlayerForward, playerVelocity);
+                faunaCue.ApplyDirectorLineOfSight(false, playerPosition, safePlayerForward, playerVelocity);
                 return;
             }
 
             bool hasLineOfSight = !IsPredatorSightTerrainBlocked(predatorProbe, playerProbe);
-            brain.ApplyDirectorLineOfSight(hasLineOfSight, playerPosition, safePlayerForward, playerVelocity);
+            faunaCue.ApplyDirectorLineOfSight(hasLineOfSight, playerPosition, safePlayerForward, playerVelocity);
             processedCount++;
         }
 

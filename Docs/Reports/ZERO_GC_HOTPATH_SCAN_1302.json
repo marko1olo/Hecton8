@@ -1,0 +1,11 @@
+{
+    "schema":  "hecton8.zero_gc_hotpath_scan_1302.v2",
+    "generatedAt":  "2026-05-25",
+    "scope":  "Runtime .cs under Physics excluding Editor/.Editor/Tether/Cable/HarpoonTension paths",
+    "fileCount":  46,
+    "hotMethodCount":  33,
+    "forbiddenHitCount":  0,
+    "hits":  [
+
+             ]
+}

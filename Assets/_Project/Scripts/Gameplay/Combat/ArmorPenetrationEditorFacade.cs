@@ -52,7 +52,7 @@ namespace Hecton8.Gameplay
 
             if (!valid)
             {
-                Debug.LogError("[ArmorPenetrationLayoutVerifier] Armor LUT DTO layout mismatch. SHINOBU_318 output rejected until fixed.");
+                Hecton8.Core.H8Debug.LogError("[ArmorPenetrationLayoutVerifier] Armor LUT DTO layout mismatch. SHINOBU_318 output rejected until fixed.");
                 return false;
             }
 
@@ -205,7 +205,7 @@ namespace Hecton8.Gameplay
         {
             if (!CombatDamageRuntime.RunArmorPenetrationTortureProof(10000, out ArmorPenetrationTelemetryEntry entry))
             {
-                Debug.LogWarning("[ArmorPenetrationTorture] Runtime not ready; register at least one combat target before running 10k LUT torture.");
+                Hecton8.Core.H8Debug.LogWarning("[ArmorPenetrationTorture] Runtime not ready; register at least one combat target before running 10k LUT torture.");
                 return;
             }
 
@@ -216,7 +216,7 @@ namespace Hecton8.Gameplay
         {
             if (!CombatDamageRuntime.RunAtomicHealthCasTortureProof(100, out int successes, out float finalHealth))
             {
-                Debug.LogWarning($"[ArmorPenetrationCasTorture] FAILED successes={successes}/100 finalHealth={finalHealth}");
+                Hecton8.Core.H8Debug.LogWarning($"[ArmorPenetrationCasTorture] FAILED successes={successes}/100 finalHealth={finalHealth}");
                 return;
             }
 
@@ -410,7 +410,7 @@ namespace Hecton8.Gameplay
             catch (Exception exception)
             {
                 failure = exception.GetType().Name + ": " + exception.Message;
-                Debug.LogException(exception);
+                Hecton8.Core.H8Debug.LogException(exception);
             }
             finally
             {
@@ -442,7 +442,7 @@ namespace Hecton8.Gameplay
             if (pass)
                 Hecton8.Core.H8Debug.Log("[ArmorPenetrationBatchProofRunner] PASS. Wrote " + ReportPath);
             else
-                Debug.LogError("[ArmorPenetrationBatchProofRunner] FAILED: " + failure + " Wrote " + ReportPath);
+                Hecton8.Core.H8Debug.LogError("[ArmorPenetrationBatchProofRunner] FAILED: " + failure + " Wrote " + ReportPath);
 
             if (Application.isBatchMode)
                 EditorApplication.Exit(pass ? 0 : 1);

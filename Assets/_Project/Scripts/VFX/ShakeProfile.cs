@@ -49,7 +49,7 @@ namespace Hecton8.VFX
             // Validate duration
             if (Duration <= 0f)
             {
-                Debug.LogWarning("[ShakeProfile] Invalid Duration. Clamping to 0.5s.");
+                Hecton8.Core.H8Debug.LogWarning("[ShakeProfile] Invalid Duration. Clamping to 0.5s.");
                 Duration = 0.5f;
             }
         }

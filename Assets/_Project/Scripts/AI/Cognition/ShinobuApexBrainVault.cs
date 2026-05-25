@@ -140,6 +140,7 @@ namespace Hecton8.AI.Cognition
         private const int DumpVersion = 1;
         private const string DumpFileName = "Dump_SHINOBU_61.bin";
         private const string LegacyDumpFileName = "Dump_LEVIATHAN_CORTEX.bin";
+        private const string Agent1300DumpFileName = "Dump_1300_AICognition.bin";
 #if UNITY_EDITOR
         private const string CsvFileName = "apex_predator_stats.csv";
         private static readonly uint _aggressionMultiplierHash = HashAscii("aggression_multiplier");
@@ -180,11 +181,8 @@ namespace Hecton8.AI.Cognition
                 if (!TryReadExistingHandles(vault, out handles))
                     return false;
 
-                if (!TryResolveViews(vault, ref handles, out ApexBrainVaultBuffers lockedBuffers))
-                    return false;
-
-                GenerateEmergencyMockApexStats(lockedBuffers);
-                return true;
+                ApexBrainVaultBuffers lockedBuffers;
+                return TryResolveViews(vault, ref handles, out lockedBuffers);
             }
 
             handles.States = vault.EnsureGenerationHandle<ApexStateDTO>(
@@ -317,13 +315,16 @@ namespace Hecton8.AI.Cognition
         public static bool TryReadState(IDataVault vault, ref ApexBrainVaultHandles handles, int index, out ApexStateDTO state)
         {
             state = default;
-            if (!TryResolveViews(vault, ref handles, out ApexBrainVaultBuffers buffers) ||
-                (uint)index >= (uint)buffers.States.Length)
+            if (vault == null ||
+                handles.States.BufferID == 0u ||
+                handles.States.Generation == 0u ||
+                !vault.TryReadOnlyHandle(in handles.States, out NativeArray<ApexStateDTO>.ReadOnly states) ||
+                (uint)index >= (uint)states.Length)
             {
                 return false;
             }
 
-            state = buffers.States[index];
+            state = states[index];
             return true;
         }
 
@@ -332,26 +333,37 @@ namespace Hecton8.AI.Cognition
         /// </summary>
         public static bool TryWriteState(IDataVault vault, ref ApexBrainVaultHandles handles, int index, in ApexStateDTO state)
         {
-            if (!TryResolveViews(vault, ref handles, out ApexBrainVaultBuffers buffers) ||
-                (uint)index >= (uint)buffers.States.Length)
+            if (vault == null ||
+                handles.States.BufferID == 0u ||
+                handles.States.Generation == 0u ||
+                !vault.TryAcquireWriteLock(in handles.States, SystemID.AICognition, out NativeArray<ApexStateDTO> states))
             {
                 return false;
             }
 
-            buffers.States[index] = state;
-            return true;
+            try
+            {
+                if (!states.IsCreated || (uint)index >= (uint)states.Length)
+                    return false;
+
+                states[index] = state;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handles.States, SystemID.AICognition);
+            }
         }
 
         /// <summary>
-        /// Resets one spawned apex slot with UnsafeUtility.MemClear.
+        /// Resets one spawned apex slot.
         /// </summary>
-        public static unsafe bool TryClearSpawnSlot(NativeArray<ApexStateDTO> states, int index)
+        public static bool TryClearSpawnSlot(NativeArray<ApexStateDTO> states, int index)
         {
             if (!states.IsCreated || (uint)index >= (uint)states.Length)
                 return false;
 
-            void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(states);
-            UnsafeUtility.MemClear((byte*)ptr + (index * UnsafeUtility.SizeOf<ApexStateDTO>()), UnsafeUtility.SizeOf<ApexStateDTO>());
+            states[index] = default;
             return true;
         }
 
@@ -409,17 +421,17 @@ namespace Hecton8.AI.Cognition
         }
 
         /// <summary>
-        /// Creates a dependency-preserving schedule with external SignalBus/NativeQueue writers attached by the owning core bridge.
+        /// Creates a dependency-preserving schedule with external bounded SignalBus MPSC writers attached by the owning core bridge.
         /// </summary>
         public static bool TryScheduleWithSignalWriters(
             in ApexBrainVaultBuffers buffers,
             uint frame,
             JobHandle inputDependency,
-            NativeQueue<ApexProximitySignal>.ParallelWriter proximityWriter,
+            global::Hecton8.Core.MpscSignalRingBuffer<ApexProximitySignal>.ParallelWriter proximityWriter,
             NativeArray<int> proximityWriterBudget,
-            NativeQueue<MockCombatDamageSignal>.ParallelWriter combatWriter,
+            global::Hecton8.Core.MpscSignalRingBuffer<MockCombatDamageSignal>.ParallelWriter combatWriter,
             NativeArray<int> combatWriterBudget,
-            NativeQueue<ApexPanicSignal>.ParallelWriter panicWriter,
+            global::Hecton8.Core.MpscSignalRingBuffer<ApexPanicSignal>.ParallelWriter panicWriter,
             NativeArray<int> panicWriterBudget,
             out JobHandle outputDependency)
         {
@@ -482,15 +494,15 @@ namespace Hecton8.AI.Cognition
         }
 
         /// <summary>
-        /// Attaches external NativeQueue/SignalBus writers without adding a runtime dependency on the Core SignalBus assembly.
+        /// Attaches external bounded MPSC writers without adding concrete sibling-domain callbacks.
         /// </summary>
         public static void AttachSignalWriters(
             ref ApexBrainJob job,
-            NativeQueue<ApexProximitySignal>.ParallelWriter proximityWriter,
+            global::Hecton8.Core.MpscSignalRingBuffer<ApexProximitySignal>.ParallelWriter proximityWriter,
             NativeArray<int> proximityWriterBudget,
-            NativeQueue<MockCombatDamageSignal>.ParallelWriter combatWriter,
+            global::Hecton8.Core.MpscSignalRingBuffer<MockCombatDamageSignal>.ParallelWriter combatWriter,
             NativeArray<int> combatWriterBudget,
-            NativeQueue<ApexPanicSignal>.ParallelWriter panicWriter,
+            global::Hecton8.Core.MpscSignalRingBuffer<ApexPanicSignal>.ParallelWriter panicWriter,
             NativeArray<int> panicWriterBudget)
         {
             job.ProximitySignalWriter = proximityWriter;
@@ -508,14 +520,16 @@ namespace Hecton8.AI.Cognition
         public static bool TryGetTuning(IDataVault vault, ref ApexBrainVaultHandles handles, out ApexBrainTuning tuning)
         {
             tuning = default;
-            if (!TryResolveViews(vault, ref handles, out ApexBrainVaultBuffers buffers) ||
-                !buffers.Tuning.IsCreated ||
-                buffers.Tuning.Length <= 0)
+            if (vault == null ||
+                handles.Tuning.BufferID == 0u ||
+                handles.Tuning.Generation == 0u ||
+                !vault.TryReadOnlyHandle(in handles.Tuning, out NativeArray<ApexBrainTuning>.ReadOnly tuningBuffer) ||
+                tuningBuffer.Length <= 0)
             {
                 return false;
             }
 
-            tuning = buffers.Tuning[0];
+            tuning = tuningBuffer[0];
             return true;
         }
 
@@ -524,15 +538,26 @@ namespace Hecton8.AI.Cognition
         /// </summary>
         public static bool TrySetTuning(IDataVault vault, ref ApexBrainVaultHandles handles, in ApexBrainTuning tuning)
         {
-            if (!TryResolveViews(vault, ref handles, out ApexBrainVaultBuffers buffers) ||
-                !buffers.Tuning.IsCreated ||
-                buffers.Tuning.Length <= 0)
+            if (vault == null ||
+                handles.Tuning.BufferID == 0u ||
+                handles.Tuning.Generation == 0u ||
+                !vault.TryAcquireWriteLock(in handles.Tuning, SystemID.AICognition, out NativeArray<ApexBrainTuning> tuningBuffer))
             {
                 return false;
             }
 
-            buffers.Tuning[0] = SanitizeTuning(in tuning);
-            return true;
+            try
+            {
+                if (!tuningBuffer.IsCreated || tuningBuffer.Length <= 0)
+                    return false;
+
+                tuningBuffer[0] = SanitizeTuning(in tuning);
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handles.Tuning, SystemID.AICognition);
+            }
         }
 
 #if UNITY_EDITOR
@@ -653,11 +678,31 @@ namespace Hecton8.AI.Cognition
             if (!buffers.TelemetryRing.IsCreated || buffers.TelemetryRing.Length <= 0)
                 return false;
 
-            string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
-            string directory = Path.Combine(root, "Docs", "AgentLogs");
-            string primary = Path.Combine(directory, DumpFileName);
-            string legacy = Path.Combine(directory, LegacyDumpFileName);
-            return TryWriteDump(primary, in buffers) & TryWriteDump(legacy, in buffers);
+            try
+            {
+                string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
+                string directory = Path.Combine(root, "Docs", "AgentLogs");
+                string primary = Path.Combine(directory, DumpFileName);
+                string legacy = Path.Combine(directory, LegacyDumpFileName);
+                string agent = Path.Combine(directory, Agent1300DumpFileName);
+                return TryWriteDump(primary, in buffers) & TryWriteDump(legacy, in buffers) & TryWriteDump(agent, in buffers);
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (NotSupportedException)
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -825,7 +870,7 @@ namespace Hecton8.AI.Cognition
                 buffers.WorldSampler[0] = BuildEmergencyMockWorldSampler();
         }
 
-        private static unsafe void ClearRuntimeRows(in ApexBrainVaultBuffers buffers)
+        private static void ClearRuntimeRows(in ApexBrainVaultBuffers buffers)
         {
             MemClearArray(buffers.States);
             MemClearArray(buffers.MockTargets);
@@ -843,15 +888,14 @@ namespace Hecton8.AI.Cognition
 #endif
         }
 
-        private static unsafe void MemClearArray<T>(NativeArray<T> array)
+        private static void MemClearArray<T>(NativeArray<T> array)
             where T : unmanaged
         {
             if (!array.IsCreated || array.Length <= 0)
                 return;
 
-            void* ptr = NativeArrayUnsafeUtility.GetUnsafePtr(array);
-            long byteCount = (long)UnsafeUtility.SizeOf<T>() * array.Length;
-            UnsafeUtility.MemClear(ptr, byteCount);
+            for (int i = 0; i < array.Length; i++)
+                array[i] = default;
         }
 
         private static ApexBrainTuning SanitizeTuning(in ApexBrainTuning input)
@@ -945,18 +989,38 @@ namespace Hecton8.AI.Cognition
 
         private static string ResolveCsvPath(string projectRoot)
         {
-            string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
-            string sourceDataPath = Path.Combine(root, "Assets", "_SourceData", "AI", CsvFileName);
-            if (File.Exists(sourceDataPath))
-                return sourceDataPath;
+            try
+            {
+                string root = string.IsNullOrEmpty(projectRoot) ? Directory.GetCurrentDirectory() : projectRoot;
+                string sourceDataPath = Path.Combine(root, "Assets", "_SourceData", "AI", CsvFileName);
+                if (File.Exists(sourceDataPath))
+                    return sourceDataPath;
 
-            string dataPath = Path.Combine(root, "Data", "AI", CsvFileName);
-            if (File.Exists(dataPath))
-                return dataPath;
+                string dataPath = Path.Combine(root, "Data", "AI", CsvFileName);
+                if (File.Exists(dataPath))
+                    return dataPath;
 
-            string rootPath = Path.Combine(root, CsvFileName);
-            if (File.Exists(rootPath))
-                return rootPath;
+                string rootPath = Path.Combine(root, CsvFileName);
+                if (File.Exists(rootPath))
+                    return rootPath;
+            }
+            catch (IOException)
+            {
+                return null;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return null;
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
+            catch (NotSupportedException)
+            {
+                return null;
+            }
+
             return null;
         }
 
@@ -1127,9 +1191,10 @@ namespace Hecton8.AI.Cognition
 
         private static bool TryWriteDump(string path, in ApexBrainVaultBuffers buffers)
         {
-            string tempPath = path + ".tmp";
+            string tempPath = null;
             try
             {
+                tempPath = BuildApexDumpTempPath(path);
                 string directory = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(directory))
                     Directory.CreateDirectory(directory);
@@ -1230,6 +1295,11 @@ namespace Hecton8.AI.Cognition
             catch (NotSupportedException)
             {
             }
+        }
+
+        private static string BuildApexDumpTempPath(string path)
+        {
+            return Path.ChangeExtension(path, ".bin.tmp");
         }
 
         private static uint ToLittleEndianMarker(uint value)

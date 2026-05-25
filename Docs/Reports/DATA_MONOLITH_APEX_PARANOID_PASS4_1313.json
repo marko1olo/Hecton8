@@ -1,0 +1,50 @@
+{
+  "schema": "HECTON8_DATA_MONOLITH_APEX_PARANOID_PASS4_V1",
+  "agent": "1313",
+  "date": "2026-05-25",
+  "domain": "Echelon 1 Core Infrastructure / Data Monolith Static Data Pipeline",
+  "evidence": "STATIC_SOURCE_NO_DOTNET_NO_UNITY",
+  "prompt": {
+    "source": "Docs/Tasks/CURRENT_BATCH.md",
+    "tag": "AGENT_PROMPT id=\"1313\"",
+    "taskCount": 10,
+    "extractedByCliRegex": true
+  },
+  "pointerSurface": {
+    "publicGetSectionDataPointer": false,
+    "privateGetSectionDataPointerLine": 623,
+    "externalGetSectionDataPointerCallCount": 0,
+    "internalOnly": true
+  },
+  "externalSpanConsumers": [
+    {"file": "Assets/_Project/Scripts/HectonVoxelEngine.cs", "line": 8255},
+    {"file": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs", "line": 3604},
+    {"file": "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs", "line": 3627},
+    {"file": "Assets/_Project/Scripts/World/Biomes/BiomeBoundarySdfRuntime.cs", "line": 786},
+    {"file": "Assets/_Project/Scripts/World/GPUScatterDirector.cs", "line": 1094}
+  ],
+  "singleReadOnlyArenaResolution": {
+    "tryGetSectionLines": "531-537",
+    "tryGetSectionFromArenaLines": "540-575",
+    "tryGetSectionSpanLines": "595-615",
+    "privateGetSectionDataPointerLines": "623-642"
+  },
+  "activeReleaseTokenScan": {
+    "windowsRelease": {"activeLines": 2047, "forbiddenHits": 0},
+    "nonWindowsRelease": {"activeLines": 1653, "forbiddenHits": 0}
+  },
+  "preprocessorBalance": {
+    "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs": {"if": 20, "endif": 20},
+    "Assets/_Project/Scripts/HectonVoxelEngine.cs": {"if": 23, "endif": 23},
+    "Assets/_Project/Scripts/World/WorldChunkResidencyManager.cs": {"if": 16, "endif": 16},
+    "Assets/_Project/Scripts/World/Biomes/BiomeBoundarySdfRuntime.cs": {"if": 1, "endif": 1},
+    "Assets/_Project/Scripts/World/GPUScatterDirector.cs": {"if": 5, "endif": 5}
+  },
+  "validation": {
+    "dotnetRun": false,
+    "unityBuildRun": false,
+    "unityImportRun": false,
+    "diffCheck": "CRLF warning only"
+  },
+  "verdict": "PUBLIC_POINTER_SURFACE_CLOSED_DUPLICATE_HANDLE_RESOLUTION_REMOVED_RELEASE_READY_STILL_REJECTED"
+}

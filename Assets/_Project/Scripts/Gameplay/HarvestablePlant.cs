@@ -21,7 +21,6 @@
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -144,6 +143,7 @@ namespace Hecton8.Gameplay
         private uint _lootScatterSeed;
         private IAudioService _audioService;
         private IObjectPoolService _objectPool;
+        private IPhysicsService _physicsService;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC ACCESSORS
@@ -340,7 +340,7 @@ namespace Hecton8.Gameplay
                 if (!_poolMissingLogged)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning("[HarvestablePlant] ObjectPoolManager unavailable. Loot spawn skipped to avoid runtime Instantiate.", this);
+                    Hecton8.Core.H8Debug.LogWarning("[HarvestablePlant] ObjectPoolManager unavailable. Loot spawn skipped to avoid runtime Instantiate.", this);
 #endif
                     _poolMissingLogged = true;
                 }
@@ -354,7 +354,7 @@ namespace Hecton8.Gameplay
             // Apply upward force
             if (loot.TryGetComponent(out Rigidbody rb))
             {
-                PhysicsForceRouter.QueueForce(rb, Vector3.up * lootUpwardForce, ForceMode.Impulse);
+                _physicsService?.QueueForce(rb, Vector3.up * lootUpwardForce, ForceMode.Impulse);
             }
         }
 
@@ -614,8 +614,9 @@ namespace Hecton8.Gameplay
 
         private void CacheRegistryServicesCold()
         {
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _objectPool = GlobalRegistry.ObjectPoolService;
+            _physicsService = GlobalRegistry.Physics;
         }
 
         public void OnGlobalRegistryServiceReplaced(
@@ -630,6 +631,9 @@ namespace Hecton8.Gameplay
                     break;
                 case GlobalRegistryServiceSlot.ObjectPool:
                     _objectPool = currentService as IObjectPoolService;
+                    break;
+                case GlobalRegistryServiceSlot.Physics:
+                    _physicsService = currentService as IPhysicsService;
                     break;
             }
         }
@@ -647,7 +651,7 @@ namespace Hecton8.Gameplay
             {
                 if (segments[i].meshRenderer == null)
                 {
-                    Debug.LogWarning($"[HarvestablePlant] Segment {i} has no mesh renderer assigned.", this);
+                    Hecton8.Core.H8Debug.LogWarning($"[HarvestablePlant] Segment {i} has no mesh renderer assigned.", this);
                 }
             }
         }

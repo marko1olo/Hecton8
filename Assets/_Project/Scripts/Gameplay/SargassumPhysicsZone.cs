@@ -6,7 +6,6 @@
 namespace Hecton8.Gameplay
 {
     using Hecton8.Core;
-    using Hecton8.Physics;
     using Unity.Mathematics;
     using UnityEngine;
 
@@ -193,7 +192,7 @@ namespace Hecton8.Gameplay
             if (_playerInside)
                 ExitPlayerInfluence();
 
-            _playerRuntime = playerContext ?? (useRegistryFallback ? Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext : null);
+            _playerRuntime = playerContext ?? (useRegistryFallback ? GlobalRegistry.Player : null);
             IPlayerRuntimeContext runtime = _playerRuntime;
             _playerTransform = runtime != null ? runtime.PlayerTransform : null;
             HectonPlayerMovement movement = runtime != null ? runtime.PlayerMovement : null;
@@ -240,7 +239,7 @@ namespace Hecton8.Gameplay
             if (_lastCutFrame != 0u && frame - _lastCutFrame < CutRegistrationFrameStride)
                 return;
 
-            if (!PhysicsDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocitySargassumMaxAgeFrames, out Vector3 velocity))
+            if (!CoreDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocitySargassumMaxAgeFrames, out Vector3 velocity))
                 return;
 
             float speedSq = velocity.sqrMagnitude;

@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using Hecton.Localization;
 using Hecton8.Core;
-using Hecton8.Physics;
+using Hecton8.Core.Contracts;
 using Unity.Mathematics;
 
 namespace Hecton8.Gameplay
@@ -161,6 +161,7 @@ namespace Hecton8.Gameplay
         private bool _primaryHeldLastTick;
         private bool _secondaryHeldLastTick;
         private ILocalizationTextReadModel _localization;
+        private IPhysicsService _physicsService;
         private FixedCharBuffer _assessmentHudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — propulsion assessment HUD staging buffer — owner: PropulsionTool
         private FixedCharBuffer _operationLogBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - propulsion operation log staging buffer - owner: PropulsionTool
 
@@ -168,6 +169,7 @@ namespace Hecton8.Gameplay
         {
             base.OnSpawn();
             RefreshLocalization(GlobalRegistry.LocalizationText);
+            RefreshPhysicsService(GlobalRegistry.Physics);
             _feedbackCooldownRemaining = 0f;
             ForceReleaseWithoutFeedback();
         }
@@ -176,6 +178,7 @@ namespace Hecton8.Gameplay
         {
             base.OnEquip();
             RefreshLocalization(GlobalRegistry.LocalizationText);
+            RefreshPhysicsService(GlobalRegistry.Physics);
             InvalidateAssessmentCache();
         }
 
@@ -233,6 +236,7 @@ namespace Hecton8.Gameplay
             base.OnDespawn();
             ForceReleaseWithoutFeedback();
             _localization = null;
+            _physicsService = null;
             _feedbackCooldownRemaining = 0f;
         }
 
@@ -242,6 +246,9 @@ namespace Hecton8.Gameplay
         {
             if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
                 RefreshLocalization(currentService as ILocalizationTextReadModel);
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Physics)
+                RefreshPhysicsService(currentService as IPhysicsService);
         }
 
         protected override void OnToolRegistryServiceReplaced(
@@ -251,6 +258,9 @@ namespace Hecton8.Gameplay
         {
             if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
                 RefreshLocalization(currentService as ILocalizationTextReadModel);
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Physics)
+                RefreshPhysicsService(currentService as IPhysicsService);
         }
 
         private void RefreshLocalization(ILocalizationTextReadModel localization)
@@ -260,6 +270,11 @@ namespace Hecton8.Gameplay
 
             _localization = localization;
             InvalidateAssessmentCache();
+        }
+
+        private void RefreshPhysicsService(IPhysicsService physicsService)
+        {
+            _physicsService = physicsService;
         }
 
         public override void ToolTick(float deltaTime)
@@ -382,7 +397,7 @@ namespace Hecton8.Gameplay
             if (!IsFiniteVector(direction) || !math.isfinite(directionLengthSq) || directionLengthSq < 0.0001f)
                 return;
 
-            PhysicsForceRouter.QueueForce(body, NormalizeOrForward(direction) * force, ForceMode.Force);
+            _physicsService?.QueueForce(body, NormalizeOrForward(direction) * force, ForceMode.Force);
             if (IsFeedbackReady())
             {
                 string title = pushAway
@@ -538,18 +553,15 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            Rigidbody anchorBody = TryGetPlayerRuntimeContext(out IPlayerRuntimeContext playerContext)
-                ? playerContext.PlayerRigidbody
-                : null;
-            PhysicsForceRouter.QueueTractorBeamPd(
-                anchorBody,
+            _physicsService?.QueueTractorBeamPd(
+                null,
                 _lockedBody,
                 holdPoint,
                 _lockedBody.worldCenterOfMass,
                 holdSpringForce * math.max(0.25f, GetEfficiency()),
                 math.max(1f, holdDamping),
                 math.max(1f, holdSpringForce * math.max(1f, _lockedBody.mass)),
-                true,
+                false,
                 true);
 
             if (IsFeedbackReady())
@@ -584,7 +596,7 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrWhiteSpace(lockedNameUpper))
                 lockedNameUpper = StableText(LocalizationKeys.PROPULSION_CARGO, "CARGO");
             float appliedImpulse = launchImpulse * math.max(0.5f, GetEfficiency());
-            PhysicsForceRouter.QueueForce(
+            _physicsService?.QueueForce(
                 body,
                 toolForward * appliedImpulse,
                 ForceMode.Impulse);

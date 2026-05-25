@@ -165,7 +165,7 @@ namespace Hecton8.Interaction
                 if (playerCamera == null)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError("[PlayerInteraction] No player camera assigned or found in the local player hierarchy.", this);
+                    Hecton8.Core.H8Debug.LogError("[PlayerInteraction] No player camera assigned or found in the local player hierarchy.", this);
 #endif
                     enabled = false;
                     return;
@@ -185,11 +185,11 @@ namespace Hecton8.Interaction
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (interactableMask.value == 0)
             {
-                Debug.LogWarning("[PlayerInteraction] interactableMask is set to Nothing.", this);
+                Hecton8.Core.H8Debug.LogWarning("[PlayerInteraction] interactableMask is set to Nothing.", this);
             }
             else if (HectonLayerMasks.IsEverythingLayerMask(interactableMask.value))
             {
-                Debug.LogWarning("[PlayerInteraction] interactableMask is set to Everything.", this);
+                Hecton8.Core.H8Debug.LogWarning("[PlayerInteraction] interactableMask is set to Everything.", this);
             }
 #endif
         }
@@ -361,7 +361,7 @@ namespace Hecton8.Interaction
 
         private void RefreshCachedRegistryServices()
         {
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _audioService = GlobalRegistry.Audio;
             _playerInventoryService = GlobalRegistry.PlayerInventory;
         }
 

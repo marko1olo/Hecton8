@@ -141,7 +141,7 @@ namespace Hecton8.World
                     if (cfg.prefabReference == null)
                     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                        Debug.LogError($"[HectonRockManager] Rock layer {i} (layerId={cfg.layerId}) " +
+                        Hecton8.Core.H8Debug.LogError($"[HectonRockManager] Rock layer {i} (layerId={cfg.layerId}) " +
                                        "has null prefabReference!", this);
 #endif
                         continue;
@@ -151,7 +151,7 @@ namespace Hecton8.World
                     if (proto == null)
                     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                        Debug.LogError($"[HectonRockManager] Rock layer {i} (layerId={cfg.layerId}) " +
+                        Hecton8.Core.H8Debug.LogError($"[HectonRockManager] Rock layer {i} (layerId={cfg.layerId}) " +
                                        "prefab has no prefabPrototype! Is it registered in GPUI Manager?", this);
 #endif
                         continue;
@@ -170,7 +170,7 @@ namespace Hecton8.World
                     else
                     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                        Debug.LogWarning($"[HectonRockManager] Duplicate layerId={cfg.layerId} " +
+                        Hecton8.Core.H8Debug.LogWarning($"[HectonRockManager] Duplicate layerId={cfg.layerId} " +
                                           "in rock layers config. Skipping.", this);
 #endif
                     }
@@ -183,7 +183,7 @@ namespace Hecton8.World
                 if (gpuiManager == null)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError("[HectonRockManager] GPUInstancerPrefabManager not found!", this);
+                    Hecton8.Core.H8Debug.LogError("[HectonRockManager] GPUInstancerPrefabManager not found!", this);
 #endif
                 }
             }
@@ -194,7 +194,7 @@ namespace Hecton8.World
                 if (proximityColliderSystem == null)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning("[HectonRockManager] ProximityColliderSystem not found. " +
+                    Hecton8.Core.H8Debug.LogWarning("[HectonRockManager] ProximityColliderSystem not found. " +
                                      "Rocks will render but have no physics.", this);
 #endif
                 }
@@ -523,7 +523,7 @@ namespace Hecton8.World
 
             _layerCapacityOverflowLogged = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning(
+            Hecton8.Core.H8Debug.LogWarning(
                 $"[HectonRockManager] Rock layer aggregation exceeded capacity. layerId={layerId} requested={requestedCount} capacity={capacity}. Excess instances were dropped for this rebuild.",
                 this);
 #endif
@@ -537,7 +537,7 @@ namespace Hecton8.World
 
             _proximityCapacityOverflowLogged = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning(
+            Hecton8.Core.H8Debug.LogWarning(
                 $"[HectonRockManager] Proximity aggregation exceeded capacity. requested={requestedCount} capacity={capacity}. Excess collider points were dropped for this rebuild.",
                 this);
 #endif
@@ -551,7 +551,7 @@ namespace Hecton8.World
 
             _missingLayerBufferLogged = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning(
+            Hecton8.Core.H8Debug.LogWarning(
                 $"[HectonRockManager] Missing aggregation buffer for layerId={layerId}. Layer rebuild skipped.",
                 this);
 #endif

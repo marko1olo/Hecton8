@@ -159,7 +159,7 @@ namespace Hecton8.UI.Navigation
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Navigation/Diegetic Gyro Compass Runtime")]
-    public sealed class DiegeticGyroCompassRuntime : MonoBehaviour, IInertialNavigationService, IFastTickable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class DiegeticGyroCompassRuntime : MonoBehaviour, IInertialNavigationService, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int StateLength = 1;
         private const int BlackBoxCapacity = 300;
@@ -254,7 +254,6 @@ namespace Hecton8.UI.Navigation
         private IPlayerRuntimeContext _playerContext;
         private JobHandle _jobHandle;
         private bool _jobPending;
-        private bool _registeredFastTick;
         private bool _registeredSlowTick;
         private bool _registeredLateFrame;
         private bool _registeredService;
@@ -274,11 +273,14 @@ namespace Hecton8.UI.Navigation
 
         private readonly char[] _cardinalBuffer = new char[2]; // COLD ALLOC: char[2] - diegetic compass cardinal text buffer - owner: DiegeticGyroCompassRuntime
         private readonly uint[] _indirectArgs = new uint[5]; // COLD ALLOC: uint[5] - compass indirect draw args - owner: DiegeticGyroCompassRuntime
-        private GraphicsBuffer _indirectArgsBuffer;
+        private GraphicsBuffer _indirectArgsBufferA;
+        private GraphicsBuffer _indirectArgsBufferB;
+        private GraphicsBuffer _activeIndirectArgsBuffer;
         private GraphicsBuffer _dialMatrixBufferA;
         private GraphicsBuffer _dialMatrixBufferB;
         private GraphicsBuffer _publishedDialMatrixBuffer;
         private GraphicsBuffer _boundDialMatrixBuffer;
+        private int _indirectArgsUploadBufferIndex;
 
         /// <inheritdoc />
         public InertialNavigationSnapshot Snapshot => TryGetSnapshot(out InertialNavigationSnapshot snapshot) ? snapshot : default;
@@ -289,7 +291,7 @@ namespace Hecton8.UI.Navigation
         /// <inheritdoc />
         public float GyroDriftError => TryGetSnapshot(out InertialNavigationSnapshot snapshot) ? snapshot.GyroDriftError : 0f;
 
-        private struct VaultLane<T> where T : struct
+        private struct VaultLane<T> where T : unmanaged
         {
             public VaultGenerationHandle<T> Handle;
             public uint ExpectedBufferID;
@@ -452,7 +454,7 @@ namespace Hecton8.UI.Navigation
         }
 
         /// <inheritdoc />
-        public void FastTick(float deltaTime)
+        private void AdvanceFastCompassPresentation(float deltaTime)
         {
             float safeDeltaTime = SanitizeDeltaTime(deltaTime);
             _fastCadenceAccumulatedDelta = math.min(
@@ -495,6 +497,8 @@ namespace Hecton8.UI.Navigation
         /// <inheritdoc />
         public void LateFrameTick()
         {
+            AdvanceFastCompassPresentation(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (_indirectBuffersDirty)
             {
                 _indirectBuffersDirty = false;
@@ -519,7 +523,7 @@ namespace Hecton8.UI.Navigation
             RefreshQualityPolicy();
 
             if (_playerContext == null)
-                _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+                _playerContext = GlobalRegistry.Player;
 
             if (_vault == null)
                 _vault = GlobalRegistry.DataVault;
@@ -553,7 +557,7 @@ namespace Hecton8.UI.Navigation
                     out NativeArray<CompassStateDTO> buffer))
                 return false;
 
-            stateBuffer = new NativeSlice<CompassStateDTO>(buffer);
+            stateBuffer = buffer.Slice();
             return true;
         }
 
@@ -567,7 +571,7 @@ namespace Hecton8.UI.Navigation
                     out NativeArray<CompassPresentationStateDTO> buffer))
                 return false;
 
-            presentationBuffer = new NativeSlice<CompassPresentationStateDTO>(buffer);
+            presentationBuffer = buffer.Slice();
             return true;
         }
 
@@ -582,7 +586,7 @@ namespace Hecton8.UI.Navigation
                     out NativeArray<CompassPresentationStateDTO> buffer))
                 return false;
 
-            presentationBuffer = new NativeSlice<CompassPresentationStateDTO>(buffer);
+            presentationBuffer = buffer.Slice();
             return true;
         }
 
@@ -692,9 +696,9 @@ namespace Hecton8.UI.Navigation
                 return false;
             }
 
-            stateBuffer = new NativeSlice<CompassStateDTO>(state);
-            outputBuffer = new NativeSlice<float>(output);
-            blackBox = new NativeSlice<CompassBlackBoxEntry>(telemetry);
+            stateBuffer = state.Slice();
+            outputBuffer = output.Slice();
+            blackBox = telemetry.Slice();
             return true;
         }
 
@@ -702,7 +706,7 @@ namespace Hecton8.UI.Navigation
             ref VaultLane<T> lane,
             BufferID bufferId,
             int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
             IDataVault vault = _vault;
@@ -724,7 +728,7 @@ namespace Hecton8.UI.Navigation
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T> buffer) where T : unmanaged
         {
             if (TryOpenExistingLane(ref lane, bufferId, requiredLength, out buffer))
                 return true;
@@ -744,7 +748,7 @@ namespace Hecton8.UI.Navigation
             IDataVault vault,
             BufferID bufferId,
             int requiredLength,
-            NativeArrayOptions options) where T : struct
+            NativeArrayOptions options) where T : unmanaged
         {
             if (vault == null || requiredLength <= 0)
                 return default;
@@ -760,7 +764,7 @@ namespace Hecton8.UI.Navigation
         private static VaultLane<T> CreateLane<T>(
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
-            int requiredLength) where T : struct
+            int requiredLength) where T : unmanaged
         {
             uint expectedBufferId = unchecked((uint)(int)bufferId);
             if (handle.BufferID != expectedBufferId || handle.Generation == 0u || requiredLength <= 0)
@@ -774,7 +778,7 @@ namespace Hecton8.UI.Navigation
             };
         }
 
-        private static bool IsLaneBound<T>(in VaultLane<T> lane) where T : struct
+        private static bool IsLaneBound<T>(in VaultLane<T> lane) where T : unmanaged
         {
             return lane.ExpectedBufferID != 0u &&
                    lane.Handle.BufferID == lane.ExpectedBufferID &&
@@ -785,7 +789,7 @@ namespace Hecton8.UI.Navigation
         private static bool OpenLane<T>(
             IDataVault vault,
             in VaultLane<T> lane,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
             if (vault == null || !IsLaneBound(in lane))
@@ -872,8 +876,6 @@ namespace Hecton8.UI.Navigation
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_registeredFastTick)
-                _registeredFastTick = GlobalRegistry.TryRegisterFastTickable(this, PriorityLayer.UI);
             if (!_registeredSlowTick)
                 _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
             if (!_registeredLateFrame)
@@ -882,12 +884,6 @@ namespace Hecton8.UI.Navigation
 
         private void TryUnregisterTickables()
         {
-            if (_registeredFastTick)
-            {
-                GlobalRegistry.UnregisterFastTickable(this, PriorityLayer.UI);
-                _registeredFastTick = false;
-            }
-
             if (_registeredSlowTick)
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
@@ -1181,7 +1177,9 @@ namespace Hecton8.UI.Navigation
         private bool ShouldDrawIndirectDial(in CompassStateDTO state)
         {
             return enableIndirectHighTier &&
-                   IsValidBuffer(_indirectArgsBuffer) &&
+                   IsValidBuffer(_activeIndirectArgsBuffer) &&
+                   IsValidBuffer(_indirectArgsBufferA) &&
+                   IsValidBuffer(_indirectArgsBufferB) &&
                    IsValidBuffer(_dialMatrixBufferA) &&
                    IsValidBuffer(_dialMatrixBufferB) &&
                    dialMesh != null &&
@@ -1222,7 +1220,7 @@ namespace Hecton8.UI.Navigation
                 0,
                 dialIndirectMaterial,
                 bounds,
-                _indirectArgsBuffer,
+                _activeIndirectArgsBuffer,
                 0,
                 null,
                 ShadowCastingMode.Off,
@@ -1257,8 +1255,14 @@ namespace Hecton8.UI.Navigation
 
             Matrix4x4 matrix = Matrix4x4.TRS(position, rotation, scale);
             var mapped = writeBuffer.LockBufferForWrite<Matrix4x4>(0, 1);
-            UnsafeUtility.MemCpy(mapped.GetUnsafePtr(), UnsafeUtility.AddressOf(ref matrix), DialMatrixStrideBytes);
-            writeBuffer.UnlockBufferAfterWrite<Matrix4x4>(1);
+            try
+            {
+                UnsafeUtility.MemCpy(mapped.GetUnsafePtr(), UnsafeUtility.AddressOf(ref matrix), DialMatrixStrideBytes);
+            }
+            finally
+            {
+                writeBuffer.UnlockBufferAfterWrite<Matrix4x4>(1);
+            }
 
             presentation.DialMatrixWriteIndex = writeIndex ^ 1;
             _publishedDialMatrixBuffer = writeBuffer;
@@ -1427,7 +1431,9 @@ namespace Hecton8.UI.Navigation
                 return;
             }
 
-            if (IsValidBuffer(_indirectArgsBuffer) &&
+            if (IsValidBuffer(_indirectArgsBufferA) &&
+                IsValidBuffer(_indirectArgsBufferB) &&
+                IsValidBuffer(_activeIndirectArgsBuffer) &&
                 IsValidBuffer(_dialMatrixBufferA) &&
                 IsValidBuffer(_dialMatrixBufferB))
             {
@@ -1440,16 +1446,21 @@ namespace Hecton8.UI.Navigation
             _indirectArgs[2] = dialMesh.GetIndexStart(0);
             _indirectArgs[3] = dialMesh.GetBaseVertex(0);
             _indirectArgs[4] = 0u;
-            _indirectArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, sizeof(uint) * _indirectArgs.Length); // COLD ALLOC: GraphicsBuffer[1] - compass indirect args - owner: DiegeticGyroCompassRuntime
+            _indirectArgsBufferA = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, sizeof(uint) * _indirectArgs.Length); // COLD ALLOC: GraphicsBuffer[1] - compass indirect args A - owner: DiegeticGyroCompassRuntime
+            _indirectArgsBufferB = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, sizeof(uint) * _indirectArgs.Length); // COLD ALLOC: GraphicsBuffer[1] - compass indirect args B - owner: DiegeticGyroCompassRuntime
             _dialMatrixBufferA = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, DialMatrixStrideBytes); // COLD ALLOC: GraphicsBuffer[1] - compass dial matrix buffer A - owner: DiegeticGyroCompassRuntime
             _dialMatrixBufferB = new GraphicsBuffer(GraphicsBuffer.Target.Structured, GraphicsBuffer.UsageFlags.LockBufferForWrite, 1, DialMatrixStrideBytes); // COLD ALLOC: GraphicsBuffer[1] - compass dial matrix buffer B - owner: DiegeticGyroCompassRuntime
+            _indirectArgsUploadBufferIndex = 0;
             UploadIndirectArgs();
             MarkDialMatrixPresentationDirty();
         }
 
         private void ReleaseIndirectBuffers()
         {
-            ReleaseGraphicsBuffer(ref _indirectArgsBuffer);
+            ReleaseGraphicsBuffer(ref _indirectArgsBufferA);
+            ReleaseGraphicsBuffer(ref _indirectArgsBufferB);
+            _activeIndirectArgsBuffer = null;
+            _indirectArgsUploadBufferIndex = 0;
             ReleaseGraphicsBuffer(ref _dialMatrixBufferA);
             ReleaseGraphicsBuffer(ref _dialMatrixBufferB);
             _publishedDialMatrixBuffer = null;
@@ -1459,16 +1470,27 @@ namespace Hecton8.UI.Navigation
 
         private unsafe void UploadIndirectArgs()
         {
-            if (!IsValidBuffer(_indirectArgsBuffer))
+            GraphicsBuffer writeBuffer = (_indirectArgsUploadBufferIndex & 1) == 0
+                ? _indirectArgsBufferA
+                : _indirectArgsBufferB;
+            if (!IsValidBuffer(writeBuffer))
                 return;
 
-            var mapped = _indirectArgsBuffer.LockBufferForWrite<uint>(0, _indirectArgs.Length);
-            fixed (uint* source = _indirectArgs)
+            var mapped = writeBuffer.LockBufferForWrite<uint>(0, _indirectArgs.Length);
+            try
             {
-                UnsafeUtility.MemCpy(mapped.GetUnsafePtr(), source, sizeof(uint) * _indirectArgs.Length);
+                fixed (uint* source = _indirectArgs)
+                {
+                    UnsafeUtility.MemCpy(mapped.GetUnsafePtr(), source, sizeof(uint) * _indirectArgs.Length);
+                }
+            }
+            finally
+            {
+                writeBuffer.UnlockBufferAfterWrite<uint>(_indirectArgs.Length);
             }
 
-            _indirectArgsBuffer.UnlockBufferAfterWrite<uint>(_indirectArgs.Length);
+            _activeIndirectArgsBuffer = writeBuffer;
+            _indirectArgsUploadBufferIndex ^= 1;
         }
 
         private static void ReleaseGraphicsBuffer(ref GraphicsBuffer buffer)

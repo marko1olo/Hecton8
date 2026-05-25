@@ -603,7 +603,7 @@ namespace Hecton8.Gameplay
         [NoAlias] public NativeArray<AupNarrativeTriggerTelemetryEntry> TelemetryRing;
         [NoAlias] public NativeArray<int> TelemetryCursor;
         [NoAlias] public NativeArray<int> Counters;
-        [NoAlias] public NativeQueue<ProgressionEventSignal>.ParallelWriter ProgressionWriter;
+        [NoAlias] public global::Hecton8.Core.MpscSignalRingBuffer<ProgressionEventSignal>.ParallelWriter ProgressionWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> ProgressionWriterBudget;
         public double3 PlayerAUP;
         public ulong GlobalNarrativeStateMask;

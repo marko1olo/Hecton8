@@ -216,8 +216,12 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(8, OffsetOf(blockDescriptorType, "OffsetBytes"));
             Assert.AreEqual(16, OffsetOf(blockDescriptorType, "Bytes"));
             Assert.AreEqual(24, OffsetOf(blockDescriptorType, "OwnerKey"));
+            Assert.AreEqual(28, OffsetOf(blockDescriptorType, "Generation"));
             Assert.AreEqual(32, OffsetOf(blockDescriptorType, "Owner"));
-            Assert.AreEqual(36, OffsetOf(blockDescriptorType, "State"));
+            Assert.AreEqual(34, OffsetOf(blockDescriptorType, "Flags"));
+            Assert.AreEqual(36, OffsetOf(blockDescriptorType, "Reserved2"));
+            Assert.AreEqual(38, OffsetOf(blockDescriptorType, "State"));
+            Assert.AreEqual(39, OffsetOf(blockDescriptorType, "Reserved"));
             Assert.AreEqual(0, OffsetOf(allocationRecordType, "Pointer"));
             Assert.AreEqual(8, OffsetOf(allocationRecordType, "Bytes"));
             Assert.AreEqual(16, OffsetOf(allocationRecordType, "Length"));
@@ -226,8 +230,9 @@ namespace Hecton8.Tests.Editor
             Assert.AreEqual(0, OffsetOf<H8MemoryTelemetryEntry>(nameof(H8MemoryTelemetryEntry.TotalBytes)));
             Assert.AreEqual(24, OffsetOf<H8MemoryTelemetryEntry>(nameof(H8MemoryTelemetryEntry.Sequence)));
             Assert.AreEqual(52, OffsetOf<H8MemoryTelemetryEntry>(nameof(H8MemoryTelemetryEntry.FatalLeakPreventedCount)));
-            Assert.AreEqual(56, OffsetOf<H8MemoryTelemetryEntry>(nameof(H8MemoryTelemetryEntry.Owner)));
-            Assert.AreEqual(60, OffsetOf<H8MemoryTelemetryEntry>(nameof(H8MemoryTelemetryEntry.Frame)));
+            Assert.AreEqual(56, OffsetOf<H8MemoryTelemetryEntry>(nameof(H8MemoryTelemetryEntry.Frame)));
+            Assert.AreEqual(60, OffsetOf<H8MemoryTelemetryEntry>(nameof(H8MemoryTelemetryEntry.Owner)));
+            Assert.AreEqual(62, OffsetOf<H8MemoryTelemetryEntry>(nameof(H8MemoryTelemetryEntry.Flags)));
         }
 
         [Test]

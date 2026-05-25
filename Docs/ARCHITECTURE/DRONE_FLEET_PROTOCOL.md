@@ -23,10 +23,10 @@ Status: PENDING VERIFICATION
 - CSV tuner:
   - default: `drone_chassis_specs.csv`;
   - fallback: `drone_specs.csv`;
-  - read target: Vault scratch `(BufferID)12870277`;
+  - read target: Vault scratch `(BufferID)72044`;
   - parser: `ReadOnlySpan<byte>`;
   - staged rows: hashed `64 B` `DroneChassisSpecDTO`;
-  - commit target: `(BufferID)12870276`;
+  - commit target: `(BufferID)72043`;
   - malformed reload cannot clear the live chassis table;
   - absent CSV uses deterministic fallback chassis specs from Vault-backed tuning DTO.
 
@@ -35,7 +35,9 @@ Status: PENDING VERIFICATION
 - Indirect args upload uses `LockBufferForWrite`/vault-native staging instead of managed `SetData` arrays.
 - Unity import and Frame Debugger proof remain pending.
 
-- Fleet snapshot event deferral is now vault-array-backed: pending and next-frame payload lanes use local BufferIDs 70271 and 70272 instead of persistent `NativeQueue` fields.
+- Fleet snapshot event deferral is vault-array-backed.
+- Pending and next-frame payload lanes use local BufferIDs `(BufferID)72041` and `(BufferID)72042`.
+- This replaces persistent `NativeQueue` fields and stays below `GlobalDataVault` flat metadata capacity.
 
 - Boid spatial lookup is now a flat vault-backed bucket/head/next/key lane: BufferIDs 70273, 70274, and 70275 replace the former `NativeParallelMultiHashMap<int,int>`.
 
@@ -300,13 +302,14 @@ Current source boundary:
   - `70268`: `DroneProceduralIndirectArgsDTO[1]`;
   - `70269`: `DroneServiceCommand[1536]`;
   - `70270`: `DroneServiceCommandCursor[1]`;
-  - `70271`: `HectonDroneFleetSnapshotPayload[64]` pending lane;
-  - `70272`: `HectonDroneFleetSnapshotPayload[64]` next-frame lane;
+  - `(BufferID)72041`: `HectonDroneFleetSnapshotPayload[64]` pending lane;
+  - `(BufferID)72042`: `HectonDroneFleetSnapshotPayload[64]` next-frame lane;
   - `70273`: `int[2048]` spatial bucket heads;
   - `70274`: `int[512]` spatial next indices;
   - `70275`: `int[512]` spatial cell keys;
-  - `(BufferID)12870276`: `DroneChassisSpecDTO[8]`;
-  - `(BufferID)12870277`: `byte[16384]` CSV scratch.
+  - `(BufferID)72043`: `DroneChassisSpecDTO[8]`;
+  - `(BufferID)72044`: `byte[16384]` CSV scratch;
+  - `(BufferID)72045`: `DroneAStarPersistentState[DroneFleetNavigationKernel.MaxAStarStateCount]`.
 
 - `DroneChassisSpecDTO`: explicit `64 B`.
   - `TypeHash`: offset `0`;

@@ -915,3 +915,586 @@ DataVault buffers: `HectonWorldGeneratorWestSlopeLut`, `HectonWorldGeneratorEast
 Padding map: primitive float LUTs have no DTO padding.
 Size proof: each LUT payload and the 12288-byte combined payload are divisible by 8.
 8-byte field proof: no `double`, `long`, or `ulong` field exists in these payloads.
+
+## HectonIndirectVegetationRenderer FloraGrowthTelemetryEntry
+
+Source: `Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs`
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 40)]`.
+DataVault buffer: `IndirectVegetationFloraGrowthTelemetryRing`, capacity 300.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 4 | FrameIndex | int | ok |
+| 4 | 4 | InstanceCount | int | ok |
+| 8 | 4 | SampleCount | int | ok |
+| 12 | 4 | NegativeAgeCount | int | ok |
+| 16 | 4 | NanAgeCount | int | ok |
+| 20 | 4 | DirtyUpload | int | ok |
+| 24 | 4 | MinAge01 | float | ok |
+| 28 | 4 | MaxAge01 | float | ok |
+| 32 | 4 | AgeHash | uint | ok |
+| 36 | 4 | Reserved0 | int | ok |
+
+Padding map: no named padding; fields exactly cover bytes 0..39.
+Size proof: 40 % 8 = 0, ring payload is 12000 bytes and 12000 % 8 = 0.
+8-byte field proof: no `double`, `long`, or `ulong` field exists.
+
+## HectonIndirectVegetationRenderer ScatterCullTelemetryEntry
+
+Source: `Assets/_Project/Scripts/World/HectonIndirectVegetationRenderer.cs`
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 40)]`.
+DataVault buffer: `IndirectVegetationScatterCullTelemetryRing`, capacity 300.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 4 | FrameIndex | int | ok |
+| 4 | 4 | TotalInstances | int | ok |
+| 8 | 4 | FrustumCulledCount | int | ok |
+| 12 | 4 | OcclusionCulledCount | int | ok |
+| 16 | 4 | VisibleCount | int | ok |
+| 20 | 4 | DensityDecimationStep | int | ok |
+| 24 | 4 | OverdrawWarning | int | ok |
+| 28 | 4 | SystemStress01 | float | ok |
+| 32 | 4 | MaxDensity01 | float | ok |
+| 36 | 4 | Reserved0 | int | ok |
+
+Padding map: no named padding; fields exactly cover bytes 0..39.
+Size proof: 40 % 8 = 0, ring payload is 12000 bytes and 12000 % 8 = 0.
+8-byte field proof: no `double`, `long`, or `ulong` field exists.
+
+## SargassumGlobalDragManager EntanglementStrainSignal
+
+Source: `Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs`
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 64)]`.
+Storage after latest slice: fixed managed array lane, capacity 16; no `NativeQueue` field remains.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 4 | SourceInstanceId | int | ok |
+| 4 | 12 | PositionWS | Vector3 | ok, three 4-byte lanes |
+| 16 | 12 | AnchorWS | Vector3 | ok, three 4-byte lanes |
+| 28 | 4 | Tension01 | float | ok |
+| 32 | 4 | EscapeIntent01 | float | ok |
+| 36 | 4 | Shake01 | float | ok |
+| 40 | 8 | _pad0 | ulong | aligned, 40 % 8 = 0 |
+| 48 | 8 | _pad1 | ulong | aligned, 48 % 8 = 0 |
+| 56 | 8 | _pad2 | ulong | aligned, 56 % 8 = 0 |
+
+Padding map: explicit padding is `_pad0.._pad2`, 24 bytes total.
+Size proof: 64 % 8 = 0.
+8-byte field proof: no `double` or `long` fields. All `ulong` padding lanes are 8-byte aligned.
+
+## SargassumGlobalDragManager MassiveDisplacementSignal
+
+Source: `Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs`
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 32)]`.
+Storage after latest slice: fixed managed array lane, capacity 16; no `NativeQueue` field remains.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 12 | PositionWS | Vector3 | ok, three 4-byte lanes |
+| 12 | 4 | RadiusWS | float | ok |
+| 16 | 4 | Duration | float | ok |
+| 20 | 4 | ExtremePanicRadiusWS | float | ok |
+| 24 | 8 | _pad0 | ulong | aligned, 24 % 8 = 0 |
+
+Padding map: explicit padding is `_pad0`, 8 bytes total.
+Size proof: 32 % 8 = 0.
+8-byte field proof: no `double` or `long` fields. The only `ulong` lane starts at offset 24.
+
+## SargassumGlobalDragManager DebrisTimer
+
+Source: `Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs`
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 16)]`.
+Storage after latest slice: fixed managed array lane, capacity 128; no `NativeQueue` field remains.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 4 | Slot | int | ok |
+| 4 | 4 | RemainingSeconds | float | ok |
+| 8 | 8 | _pad0 | ulong | aligned, 8 % 8 = 0 |
+
+Padding map: explicit padding is `_pad0`, 8 bytes total.
+Size proof: 16 % 8 = 0.
+8-byte field proof: no `double` or `long` fields. The only `ulong` lane starts at offset 8.
+
+## SpatialAudioManager DelayedAudioEvent
+
+Source: `Assets/_Project/Scripts/SpatialAudioManager.cs`
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 128)]`.
+Storage after latest slice: fixed managed ingress/pending arrays, capacity 16; no `NativeQueue<DelayedAudioEvent>` or `NativeList<DelayedAudioEvent>` field remains.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 48 | Aup | AbsoluteUniversePosition | nested row already proven 8-aligned |
+| 48 | 4 | EventTimeSeconds | float | ok |
+| 52 | 4 | DelaySeconds | float | ok |
+| 56 | 4 | Volume | float | ok |
+| 60 | 4 | Pitch | float | ok |
+| 64 | 4 | AcousticTransmission01 | float | ok |
+| 68 | 4 | LowPassCutoffHz | float | ok |
+| 72 | 4 | ThermalShimmer01 | float | ok |
+| 76 | 4 | TraumaRangeMeters | float | ok |
+| 80 | 4 | TraumaImpulse | float | ok |
+| 84 | 4 | TraumaWeight | float | ok |
+| 88 | 1 | Kind | DelayedAudioEventKind | ok |
+| 89 | 1 | _pad0 | byte | explicit pad |
+| 90 | 2 | _pad1 | ushort | explicit pad |
+| 92 | 4 | _pad2 | uint | explicit pad |
+| 96 | 8 | _pad3 | ulong | aligned, 96 % 8 = 0 |
+| 104 | 8 | _pad4 | ulong | aligned, 104 % 8 = 0 |
+| 112 | 8 | _pad5 | ulong | aligned, 112 % 8 = 0 |
+| 120 | 8 | _pad6 | ulong | aligned, 120 % 8 = 0 |
+
+Padding map: explicit padding is `_pad0.._pad6`, 39 bytes total plus nested AUP internal padding already documented.
+Size proof: 128 % 8 = 0.
+8-byte field proof: no `double` or `long` field exists in this DTO. All `ulong` padding lanes start on offsets divisible by 8. The nested `AbsoluteUniversePosition` starts at offset 0 and its 8-byte lanes remain aligned.
+
+## Core AudioEvent
+
+Source: `Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs`
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 32)]`.
+Storage after latest slice: fixed managed `CoreAudioEvent[32]` ring in `SpatialAudioManager`; no `NativeQueue<CoreAudioEvent>` field remains.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 4 | EventID | uint | ok |
+| 4 | 12 | Position | Vector3 | ok, three 4-byte lanes |
+| 16 | 4 | Volume | float | ok |
+| 20 | 4 | Pitch | float | ok |
+| 24 | 4 | _reserved0 | uint | ok |
+| 28 | 4 | _reserved1 | uint | ok |
+
+Padding map: no 8-byte padding lanes; reserved fields cover bytes 24..31.
+Size proof: 32 % 8 = 0.
+8-byte field proof: no `double`, `long`, or `ulong` field exists.
+
+## AudioCaptionPayload
+
+Source: `Assets/_Project/Scripts/SpatialAudioManager.cs`
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 128)]`.
+Storage after latest slice: fixed managed static caption rings, capacity 64 per lane; no `NativeQueue<AudioCaptionPayload>` field remains.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 48 | WorldAup | AbsoluteUniversePosition | nested row already proven 8-aligned |
+| 48 | 12 | WorldPosition | Vector3 | ok, three 4-byte lanes |
+| 60 | 4 | DurationSeconds | float | ok |
+| 64 | 4 | Intensity | float | ok |
+| 68 | 4 | CaptionHashId | uint | ok |
+| 72 | 4 | ReferenceSlot | int | ok |
+| 76 | 2 | EventType | ushort | ok |
+| 78 | 2 | Reserved | ushort | ok |
+| 80 | 1 | HasWorldAup | byte | ok |
+| 81 | 1 | ReservedByte0 | byte | ok |
+| 82 | 2 | ReservedShort0 | ushort | ok |
+| 84 | 4 | _pad0 | uint | explicit pad |
+| 88 | 8 | _pad1 | ulong | aligned, 88 % 8 = 0 |
+| 96 | 8 | _pad2 | ulong | aligned, 96 % 8 = 0 |
+| 104 | 8 | _pad3 | ulong | aligned, 104 % 8 = 0 |
+| 112 | 8 | _pad4 | ulong | aligned, 112 % 8 = 0 |
+| 120 | 8 | _pad5 | ulong | aligned, 120 % 8 = 0 |
+
+Padding map: explicit padding/reserve is bytes 78..87 plus `_pad1.._pad5`; semantic reserve fields are retained for ABI growth.
+Size proof: 128 % 8 = 0.
+8-byte field proof: no `double` or `long` field exists. All `ulong` padding lanes start on offsets divisible by 8. The nested `AbsoluteUniversePosition` starts at offset 0 and its 8-byte lanes remain aligned.
+
+## Spatial Acoustic Portal Scratch Sets
+
+Source: `Assets/_Project/Scripts/SpatialAudioManager.cs` and `Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs`.
+Storage after latest slice: `_acousticPortalOpenSet` and `_acousticPortalClosedSet` `NativeList<int>` fields were removed from `SpatialAudioManager`. The scratch sets are now `GlobalDataVault`-owned `int` buffers resolved through `VaultGenerationHandle<int>` descriptors and passed into `AcousticPathJob` as method-local `NativeArray<int>` views.
+
+| Buffer | Element type | Element size | Alignment proof |
+| --- | --- | ---: | --- |
+| `SpatialAudioPortalOpenSetBufferId` | `int` | 4 | no 8-byte scalar lane |
+| `SpatialAudioPortalClosedSetBufferId` | `int` | 4 | no 8-byte scalar lane |
+
+Padding map: none. These buffers are primitive `int` lanes and have no DTO padding.
+Size proof: element size is 4 bytes. The DataVault allocation is a fixed array payload; there is no custom 8-byte DTO stride to validate in this slice.
+8-byte field proof: no `double`, `long`, or `ulong` fields exist in the acoustic portal scratch rows. No 8-byte lane can start at an odd or unaligned offset.
+
+## Loop 37 Spatial Audio DTO Layouts
+
+Source: `Assets/_Project/Scripts/Audio/AcousticPortalPropagation.cs` and `Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs`.
+Storage after latest slice: retained `NativeArray` fields for these rows were removed from `SpatialAudioManager` where applicable and replaced by `VaultGenerationHandle` descriptors plus method-local `NativeArray` views. The rows below are the custom DTOs that now matter for DataVault stride/alignment proof.
+
+### AcousticPortalNode
+
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 56)]`.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 40 | Position | AcousticAup | nested row starts at 0; 8-byte lanes remain aligned |
+| 40 | 4 | FirstEdge | int | ok |
+| 44 | 4 | EdgeCount | int | ok |
+| 48 | 4 | RoomVolumeCubicMeters | float | ok |
+| 52 | 1 | Flags | AcousticPortalFlags | ok |
+| 53 | 1 | _reserved0 | byte | explicit pad |
+| 54 | 2 | _reserved1 | ushort | explicit pad |
+
+Padding map: explicit padding is bytes 53..55; nested `AcousticAup` padding belongs to its own contract.
+Size proof: 56 % 8 = 0.
+8-byte field proof: no local `double`, `long`, or `ulong` field exists. The nested `AcousticAup` starts at offset 0.
+
+### AcousticPortalEdge
+
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 16)]`.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 4 | ToNode | int | ok |
+| 4 | 4 | DistanceMeters | float | ok |
+| 8 | 1 | Flags | AcousticPortalFlags | ok |
+| 9 | 1 | _reserved0 | byte | explicit pad |
+| 10 | 2 | _reserved1 | ushort | explicit pad |
+| 12 | 4 | _reserved2 | uint | explicit pad |
+
+Padding map: bytes 9..15 are explicit reserve/padding.
+Size proof: 16 % 8 = 0.
+8-byte field proof: no `double`, `long`, or `ulong` field exists.
+
+### AcousticPathResult
+
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 104)]`.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 40 | LastPortalAup | AcousticAup | nested row starts at 0; 8-byte lanes remain aligned |
+| 40 | 4 | TrueDistanceMeters | float | ok |
+| 44 | 4 | DelaySeconds | float | ok |
+| 48 | 4 | Transmission01 | float | ok |
+| 52 | 4 | LowPassCutoffHz | float | ok |
+| 56 | 4 | ItdSeconds | float | ok |
+| 60 | 4 | RoomVolumeCubicMeters | float | ok |
+| 64 | 4 | PathfindingMs | float | ok |
+| 68 | 4 | NodeCount | int | ok |
+| 72 | 4 | CornerCount | int | ok |
+| 76 | 4 | ExpandedNodeCount | int | ok |
+| 80 | 4 | SourceNodeIndex | int | ok |
+| 84 | 4 | ListenerNodeIndex | int | ok |
+| 88 | 4 | StateHash | uint | ok |
+| 92 | 1 | Status | AcousticPathStatus | ok |
+| 93 | 1 | UsedPortalPath | byte | ok |
+| 94 | 1 | UsedSealedBulkhead | byte | ok |
+| 95 | 1 | UsedReprojectionCache | byte | ok |
+| 96 | 4 | _reserved0 | uint | explicit pad |
+| 100 | 4 | tail reserve | implicit unused bytes | explicit struct size reserve |
+
+Padding map: bytes 96..103 are reserved tail space.
+Size proof: 104 % 8 = 0.
+8-byte field proof: no local `double`, `long`, or `ulong` field exists. Nested `AcousticAup` starts at offset 0.
+
+### Acoustic Portal TelemetryEntry
+
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 40)]` as `Hecton8.Audio.Propagation.AcousticTelemetryEntry`.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 4 | Frame | int | ok |
+| 4 | 4 | NodeCount | int | ok |
+| 8 | 4 | CornerCount | int | ok |
+| 12 | 4 | ExpandedNodeCount | int | ok |
+| 16 | 4 | PathfindingMs | float | ok |
+| 20 | 4 | TrueDistanceMeters | float | ok |
+| 24 | 4 | DelaySeconds | float | ok |
+| 28 | 4 | LowPassCutoffHz | float | ok |
+| 32 | 4 | Flags | uint | ok |
+| 36 | 4 | StateHash | uint | ok |
+
+Padding map: none.
+Size proof: 40 % 8 = 0.
+8-byte field proof: no `double`, `long`, or `ulong` field exists.
+
+### Acoustic Occlusion TelemetryEntry
+
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 64)]` as `Hecton8.Audio.Virtualization.AcousticTelemetryEntry`.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 4 | Frame | int | ok |
+| 4 | 4 | StateHash | uint | ok |
+| 8 | 4 | LoudestWeight | float | ok |
+| 12 | 4 | SortTimeMs | float | ok |
+| 16 | 4 | AverageRt60Seconds | float | ok |
+| 20 | 4 | AverageLowPassHertz | float | ok |
+| 24 | 4 | MaximumDelaySeconds | float | ok |
+| 28 | 4 | AcousticOcclusionTimeMs | float | ok |
+| 32 | 2 | TotalVoices | ushort | ok |
+| 34 | 2 | AudibleVoices | ushort | ok |
+| 36 | 2 | CulledVoices | ushort | ok |
+| 38 | 2 | ActiveVoices | ushort | ok |
+| 40 | 2 | PhysicalVoiceLimit | ushort | ok |
+| 42 | 2 | StolenVoices | ushort | ok |
+| 44 | 2 | DroppedVoices | ushort | ok |
+| 46 | 2 | Flags | ushort | ok |
+| 48 | 2 | OccludedVoices | ushort | ok |
+| 50 | 2 | DelayedVoices | ushort | ok |
+| 52 | 4 | _reserved1 | uint | explicit pad |
+| 56 | 4 | _reserved2 | uint | explicit pad |
+| 60 | 4 | _reserved3 | uint | explicit pad |
+
+Padding map: bytes 52..63 are explicit reserve/padding.
+Size proof: 64 % 8 = 0.
+8-byte field proof: no `double`, `long`, or `ulong` field exists.
+
+### VirtualVoiceDTO
+
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 48)]`.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 24 | AupMeters | double3 | aligned, 0 % 8 = 0 |
+| 24 | 4 | Volume | float | ok |
+| 28 | 4 | Pitch | float | ok |
+| 32 | 4 | ClipHash | uint | ok |
+| 36 | 4 | SourceEntityID | uint | ok |
+| 40 | 4 | Importance | float | ok |
+| 44 | 4 | Padding | uint | explicit pad |
+
+Padding map: explicit `Padding` covers bytes 44..47.
+Size proof: 48 % 8 = 0.
+8-byte field proof: `double3` starts at offset 0, so all three 8-byte lanes are aligned.
+
+### VirtualVoiceStatistics
+
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 64)]`.
+
+| Offset | Size | Field group | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 40 | Frame through DelayedVoices | ten int lanes | ok |
+| 40 | 24 | SortTimeMs through AcousticOcclusionTimeMs | six float lanes | ok |
+
+Padding map: none.
+Size proof: 64 % 8 = 0.
+8-byte field proof: no `double`, `long`, or `ulong` field exists.
+
+### VirtualVoiceTuningSnapshot
+
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 32)]`.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 4 | SoundSpeedMetersPerSecond | float | ok |
+| 4 | 4 | GlobalOcclusionPenalty | float | ok |
+| 8 | 4 | OccludedLowPassHertz | float | ok |
+| 12 | 4 | SabineDecayScale | float | ok |
+| 16 | 4 | MaxHydratedVoices | int | ok |
+| 20 | 1 | DisableSdfOcclusion | byte | ok |
+| 21 | 1 | _reserved0 | byte | explicit pad |
+| 22 | 2 | _reserved1 | ushort | explicit pad |
+| 24 | 4 | _reserved2 | uint | explicit pad |
+| 28 | 4 | tail reserve | implicit unused bytes | explicit struct size reserve |
+
+Padding map: bytes 21..31 are reserve/padding.
+Size proof: 32 % 8 = 0.
+8-byte field proof: no `double`, `long`, or `ulong` field exists.
+
+### AcousticMaterialCoefficientDTO
+
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 32)]`.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 4 | MaterialHash | uint | ok |
+| 4 | 4 | Absorption01 | float | ok |
+| 8 | 4 | Scatter01 | float | ok |
+| 12 | 4 | Density01 | float | ok |
+| 16 | 4 | LowPassHertz | float | ok |
+| 20 | 4 | Flags | uint | ok |
+| 24 | 4 | _pad0 | uint | explicit pad |
+| 28 | 4 | _pad1 | uint | explicit pad |
+
+Padding map: bytes 24..31 are explicit padding.
+Size proof: 32 % 8 = 0.
+8-byte field proof: no `double`, `long`, or `ulong` field exists.
+
+## Loop 38 Spatial Acoustic Radar Primitive Buffers
+
+Source: `Assets/_Project/Scripts/SpatialAudioManager.cs`.
+Storage after latest slice: `_acousticRadarIntensityBins` and `_acousticRadarGrid` direct `NativeArray<float>` fields were removed. The payloads are now Audio-owned `GlobalDataVault` primitive `float` buffers resolved through `VaultGenerationHandle<float>` descriptors.
+
+| Buffer | Element type | Capacity | Byte proof | 8-byte scalar risk |
+| --- | --- | ---: | --- | --- |
+| `BufferID.SpatialAudioRadarIntensityBins` | `float` | 360 | 1440 bytes; 1440 % 8 = 0 | none; 4-byte float lanes |
+| `BufferID.SpatialAudioRadarGrid` | `float` | 32 | 128 bytes; 128 % 8 = 0 | none; 4-byte float lanes |
+
+Padding map: no DTO padding. These are primitive float lanes and have no field-offset table.
+Size proof: both total payload byte counts are divisible by 8.
+8-byte field proof: no `double`, `long`, or `ulong` field exists in either radar payload.
+
+## Loop 39 Spatial Final Pool DTO Layouts
+
+Source: `Assets/_Project/Scripts/Audio/Virtualization/Contracts/AudioVirtualizationContracts.cs` and `Assets/_Project/Scripts/Core/Contracts/HectonSignalLaneContract.cs`.
+Storage after latest slice: the final `SpatialAudioManager` virtual voice/acoustic source pool `NativeArray` fields were removed. These rows are now DataVault-owned and resolved only as method-local native views.
+
+### AcousticAup Nested Contract
+
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 40)]`.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 8 | GridX | long | aligned, 0 % 8 = 0 |
+| 8 | 8 | GridY | long | aligned, 8 % 8 = 0 |
+| 16 | 8 | GridZ | long | aligned, 16 % 8 = 0 |
+| 24 | 12 | Local | float3 | ok |
+| 36 | 4 | _pad0 | uint | explicit pad |
+
+Padding map: explicit `_pad0`, 4 bytes. Size proof: 40 % 8 = 0. 8-byte field proof: all `long` lanes are 8-byte aligned.
+
+### VirtualVoice
+
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 160)]`.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 40 | SourceAup | AcousticAup | nested 8-byte lanes aligned |
+| 40 | 12 | SourceVelocityMetersPerSecond | float3 | ok |
+| 52 | 4 | Volume | float | ok |
+| 56 | 4 | Priority | float | ok |
+| 60 | 4 | Pitch | float | ok |
+| 64 | 4 | DopplerRatio | float | ok |
+| 68 | 4 | Attenuation | float | ok |
+| 72 | 4 | Weight | float | ok |
+| 76 | 4 | DistanceSq | float | ok |
+| 80 | 4 | EffectiveVolume | float | ok |
+| 84 | 4 | SabineRt60Seconds | float | ok |
+| 88 | 4 | SabineRoomVolumeCubicMeters | float | ok |
+| 92 | 4 | LowPassCutoffHz | float | ok |
+| 96 | 4 | DelaySeconds | float | ok |
+| 100 | 4 | EventID | uint | ok |
+| 104 | 4 | ClipHash | uint | ok |
+| 108 | 4 | StableKey | uint | ok |
+| 112 | 4 | SourceEntityID | uint | ok |
+| 116 | 4 | StationaryCacheKey | int | ok |
+| 120 | 1 | PortalFlags | byte enum | ok |
+| 121 | 1 | FoveatedTier | byte | ok |
+| 122 | 1 | AcousticEnvironment | byte | ok |
+| 123 | 1 | DspFlags | byte enum | ok |
+| 124 | 1 | _reserved0 | byte | explicit reserve |
+| 125 | 35 | tail reserve | explicit struct size reserve | no 8-byte scalar |
+
+Padding map: explicit byte reserve plus tail reserve bytes 125..159. Size proof: 160 % 8 = 0. 8-byte field proof: only nested `AcousticAup` has 8-byte lanes and it starts at offset 0.
+
+### VirtualVoiceSortKey
+
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 16)]`.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 4 | Weight | float | ok |
+| 4 | 4 | VoiceIndex | int | ok |
+| 8 | 4 | StableKey | uint | ok |
+| 12 | 4 | Padding | uint | explicit pad |
+
+Padding map: explicit `Padding`, 4 bytes. Size proof: 16 % 8 = 0. 8-byte field proof: no double, long, or ulong fields.
+
+### VirtualVoiceSelection
+
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 144)]`.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 40 | SourceAup | AcousticAup | nested 8-byte lanes aligned |
+| 40 | 12 | SourceVelocityMetersPerSecond | float3 | ok |
+| 52 | 4 | Volume | float | ok |
+| 56 | 4 | Pitch | float | ok |
+| 60 | 4 | DopplerRatio | float | ok |
+| 64 | 4 | Attenuation | float | ok |
+| 68 | 4 | Weight | float | ok |
+| 72 | 4 | DistanceSq | float | ok |
+| 76 | 4 | EffectiveVolume | float | ok |
+| 80 | 4 | SabineRt60Seconds | float | ok |
+| 84 | 4 | LowPassCutoffHz | float | ok |
+| 88 | 4 | DelaySeconds | float | ok |
+| 92 | 4 | EventID | uint | ok |
+| 96 | 4 | ClipHash | uint | ok |
+| 100 | 4 | StableKey | uint | ok |
+| 104 | 4 | SourceEntityID | uint | ok |
+| 108 | 4 | StationaryCacheKey | int | ok |
+| 112 | 1 | PortalFlags | byte enum | ok |
+| 113 | 1 | FoveatedTier | byte | ok |
+| 114 | 1 | AcousticEnvironment | byte | ok |
+| 115 | 1 | DspFlags | byte enum | ok |
+| 116 | 1 | _reserved0 | byte | explicit reserve |
+| 117 | 27 | tail reserve | explicit struct size reserve | no 8-byte scalar |
+
+Padding map: explicit byte reserve plus tail reserve bytes 117..143. Size proof: 144 % 8 = 0. 8-byte field proof: only nested `AcousticAup` has 8-byte lanes and it starts at offset 0.
+
+### AcousticSourceDTO
+
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 64)]`.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 4 | SourceHash | uint | ok |
+| 4 | 4 | BaseVolume | float | ok |
+| 8 | 4 | BasePitch | float | ok |
+| 12 | 4 | Flags | uint | ok |
+| 16 | 24 | AUP_Position | double3 | aligned, 16 % 8 = 0 |
+| 40 | 4 | ComputedOcclusion | float | ok |
+| 44 | 4 | ComputedReverb | float | ok |
+| 48 | 4 | _pad0 | uint | explicit pad |
+| 52 | 4 | _pad1 | uint | explicit pad |
+| 56 | 4 | _pad2 | uint | explicit pad |
+| 60 | 4 | _pad3 | uint | explicit pad |
+
+Padding map: explicit `_pad0.._pad3`, 16 bytes. Size proof: 64 % 8 = 0. 8-byte field proof: `double3` lanes start at 16, 24, and 32; all are 8-byte aligned.
+
+### AcousticDspOutputDTO
+
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 64)]`.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 4 | SourceHash | uint | ok |
+| 4 | 4 | Volume | float | ok |
+| 8 | 4 | Pitch | float | ok |
+| 12 | 4 | Occlusion01 | float | ok |
+| 16 | 4 | ReverbRt60Seconds | float | ok |
+| 20 | 4 | LowPassHertz | float | ok |
+| 24 | 4 | DelaySeconds | float | ok |
+| 28 | 4 | DopplerRatio | float | ok |
+| 32 | 4 | ItdSeconds | float | ok |
+| 36 | 4 | Ild01 | float | ok |
+| 40 | 4 | DistanceSq | float | ok |
+| 44 | 4 | Flags | uint | ok |
+| 48 | 4 | _pad0 | uint | explicit pad |
+| 52 | 4 | _pad1 | uint | explicit pad |
+| 56 | 4 | _pad2 | uint | explicit pad |
+| 60 | 4 | _pad3 | uint | explicit pad |
+
+Padding map: explicit `_pad0.._pad3`, 16 bytes. Size proof: 64 % 8 = 0. 8-byte field proof: no double, long, or ulong fields.
+
+### Spatial double3 Previous-AUP Primitive Lanes
+
+Buffers: acoustic previous-AUP write/sort/selected pools. Element type: `double3`, element size 24 bytes.
+
+| Element local offset | Size | Lane | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 8 | x | double | aligned |
+| 8 | 8 | y | double | aligned |
+| 16 | 8 | z | double | aligned |
+
+Padding map: no DTO padding. Size proof: 24 % 8 = 0. 8-byte field proof: all double lanes are 8-byte aligned inside each element; DataVault allocation alignment preserves element zero alignment.
+
+## Loop 40 - SargassumGlobalDragManager Direct Array Cut
+
+Scope: `Assets/_Project/Scripts/World/SargassumGlobalDragManager.cs` final direct `NativeArray` fields moved to DataVault descriptors.
+
+### DensitySourceData
+
+Declaration: `[StructLayout(LayoutKind.Explicit, Size = 16)]`.
+
+| Offset | Size | Field | Type | ARM64 alignment |
+| ---: | ---: | --- | --- | --- |
+| 0 | 12 | OriginWS | float3 | ok, 4-byte lanes |
+| 12 | 4 | Scale | float | ok |
+
+Padding map: no explicit padding required; total row is already 16 bytes. Size proof: 16 % 8 = 0. 8-byte field proof: no `double`, `long`, or `ulong` fields.
+
+### Scavenger Matrix And BRG Metadata Rows
+
+- `Matrix4x4` is Unity-owned ABI value data used only as DataVault-backed BRG upload staging. It is not an X_000 custom DTO and no fake custom field-offset map is claimed here.
+- `MetadataValue` is Unity Rendering-owned BRG metadata input. It is not an X_000 custom DTO and is only resolved as a one-row method-local view for `BatchRendererGroup.AddBatch`.
+
+Defragmentation proof: no retained `NativeArray<Matrix4x4>`, `NativeArray<MetadataValue>`, or `NativeArray<DensitySourceData>` field remains in `SargassumGlobalDragManager.cs`; live native views are method-local or job-window locked.

@@ -33,7 +33,7 @@ namespace Hecton8.AI.Cognition
             target.Forward = NormalizeSafe(target.Forward, NormalizeSafe(velocity, new float3(0f, 0f, 1f)));
             target.SimulationTickDelta = dt;
             target.Flags |= MockPlayerAupFlags.Active | MockPlayerAupFlags.HasForward;
-            target._pad0 = (ulong)Frame;
+            target.LastAdvanceFrame = Frame;
             Targets[index] = target;
         }
 
@@ -109,7 +109,7 @@ namespace Hecton8.AI.Cognition
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
         // This optional writer is default-initialized on the vault-row schedule path and is accessed only when
         // EnableSignalQueueWrites is non-zero. Unity's safety validation cannot express that external schedule
-        // contract for NativeQueue<T>.ParallelWriter fields carried in the same Burst job.
+        // contract for bounded MPSC writer fields carried in the same Burst job.
         //
         // SAFETY_JUSTIFICATION_PARAGRAPH_2:
         // A second signal-emitting job was rejected because it would duplicate the apex kernel and risk divergent
@@ -118,9 +118,11 @@ namespace Hecton8.AI.Cognition
         //
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // Invariant: only ApexBrainVault.AttachSignalWriters/TryScheduleWithSignalWriters set
-        // EnableSignalQueueWrites=1, and those methods receive externally owned queue writers plus lane-owned
+        // EnableSignalQueueWrites=1, and those methods receive externally owned bounded MPSC writers plus lane-owned
         // budget arrays from the Core SignalBus boundary. When the flag is 0, this field is never read or enqueued.
-        [NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<ApexProximitySignal>.ParallelWriter ProximitySignalWriter;
+        [NoAlias, NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<ApexProximitySignal>.ParallelWriter ProximitySignalWriter;
+        // SAFETY: Two-slot writer budget is an externally reset lane-owned counter. Parallel workers mutate it only
+        // through Interlocked in TryEnqueueBounded; slot 0 is remaining claims, slot 1 is dropped count.
         [NativeDisableParallelForRestriction] public NativeArray<int> ProximitySignalWriterBudget;
 
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
@@ -137,7 +139,9 @@ namespace Hecton8.AI.Cognition
         // Invariant: when EnableSignalQueueWrites=1, the owning Core/SignalBus bridge has already provided a valid
         // ParallelWriter plus lane-owned budget and owns lifetime beyond the returned JobHandle. When the flag is 0,
         // this writer is inert and only the DataVault MockCombatDamageSignal row is written.
-        [NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<MockCombatDamageSignal>.ParallelWriter CombatDamageSignalWriter;
+        [NoAlias, NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<MockCombatDamageSignal>.ParallelWriter CombatDamageSignalWriter;
+        // SAFETY: Two-slot writer budget is an externally reset lane-owned counter. Parallel workers mutate it only
+        // through Interlocked in TryEnqueueBounded; slot 0 is remaining claims, slot 1 is dropped count.
         [NativeDisableParallelForRestriction] public NativeArray<int> CombatDamageSignalWriterBudget;
 
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
@@ -151,10 +155,12 @@ namespace Hecton8.AI.Cognition
         // a pure unmanaged signal lane with no sibling runtime reference.
         //
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
-        // Invariant: the queue writer is used only inside WriteSignals after the vault panic row is populated, and
-        // only when EnableSignalQueueWrites!=0. The caller owns the NativeQueue and budget and must chain the
+        // Invariant: the MPSC writer is used only inside WriteSignals after the vault panic row is populated, and
+        // only when EnableSignalQueueWrites!=0. The caller owns the SignalBus lane and budget and must chain the
         // returned JobHandle before draining or disposing it.
-        [NoAlias, NativeDisableContainerSafetyRestriction] public NativeQueue<ApexPanicSignal>.ParallelWriter PanicSignalWriter;
+        [NoAlias, NativeDisableContainerSafetyRestriction] public global::Hecton8.Core.MpscSignalRingBuffer<ApexPanicSignal>.ParallelWriter PanicSignalWriter;
+        // SAFETY: Two-slot writer budget is an externally reset lane-owned counter. Parallel workers mutate it only
+        // through Interlocked in TryEnqueueBounded; slot 0 is remaining claims, slot 1 is dropped count.
         [NativeDisableParallelForRestriction] public NativeArray<int> PanicSignalWriterBudget;
         public int TargetCount;
         public int AcousticTapCount;
@@ -718,7 +724,7 @@ namespace Hecton8.AI.Cognition
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static unsafe bool TryEnqueueBounded<TSignal>(
-            NativeQueue<TSignal>.ParallelWriter writer,
+            global::Hecton8.Core.MpscSignalRingBuffer<TSignal>.ParallelWriter writer,
             NativeArray<int> writerBudget,
             TSignal signal)
             where TSignal : unmanaged
@@ -733,12 +739,16 @@ namespace Hecton8.AI.Cognition
             int remainingAfterClaim = Interlocked.Decrement(ref budget[remainingIndex]);
             if (remainingAfterClaim < 0)
             {
+                Interlocked.Increment(ref budget[remainingIndex]);
                 Interlocked.Increment(ref budget[droppedIndex]);
                 return false;
             }
 
-            writer.Enqueue(signal);
-            return true;
+            if (writer.TryEnqueue(in signal))
+                return true;
+
+            Interlocked.Increment(ref budget[droppedIndex]);
+            return false;
         }
 
         private void WriteTelemetry(

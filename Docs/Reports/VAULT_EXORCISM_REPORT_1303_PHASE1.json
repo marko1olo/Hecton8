@@ -1,0 +1,224 @@
+﻿{
+    "schema":  "hecton8.vault_exorcism_report_1303.v4_apex_static",
+    "generatedAtUtc":  "2026-05-25T16:47:35.7654073Z",
+    "agentId":  "1303",
+    "role":  "MEMORY_SOVEREIGN_TETHERS_EXORCIST",
+    "prompt":  {
+                   "source":  "Docs/Tasks/CURRENT_BATCH.md",
+                   "extractedCopy":  "Docs/Tasks/_1303_extracted_prompt.tmp.md",
+                   "taskCount":  20,
+                   "sha256":  "9a3528042794113df9c5d3c4840d010ac34b37f3eff28dacd9a611dff5917309"
+               },
+    "domain":  {
+                   "requested":  "Assets/Project/Scripts/Physics/Tethers",
+                   "actual":  "Assets/_Project/Scripts/Physics/Tethers",
+                   "runtimeBoundaryFile":  "Assets/_Project/Scripts/TetherInstance.cs",
+                   "note":  "Repo-root current_batch.md is absent; authoritative current batch is Docs/Tasks/CURRENT_BATCH.md."
+               },
+    "nativeAliasProof":  {
+                             "strictRoot":  {
+                                                "scannedFiles":  1,
+                                                "parseFailures":  0,
+                                                "forbiddenPersistentCandidates":  0,
+                                                "auditHashSha256":  "254906112e60fba00917c34dafe995f2cc66cd70ff89c10a0df3faa68edf7087"
+                                            },
+                             "wholeScripts":  {
+                                                  "scannedFiles":  2418,
+                                                  "parseFailures":  0,
+                                                  "forbiddenPersistentCandidates":  1867,
+                                                  "auditHashSha256":  "a8920ccb4bc926880c51855d4d97b30bc8bfc0aeb1fe507bc5f5c1e9e2c29531",
+                                                  "note":  "whole-project candidates are foreign-domain findings; owned findings are counted separately"
+                                              },
+                             "ownedNativeFieldFindings":  53,
+                             "ownedForbiddenPersistentFindings":  0,
+                             "stackOnlyRefStructViews":  [
+                                                             "VerletCableNodeBuffer.Nodes"
+                                                         ],
+                             "persistentNativeAliasesRemoved":  25
+                         },
+    "managedAllocationProof":  {
+                                   "report":  "Docs/Reports/ZERO_GC_HOTPATH_SCAN_1303.json",
+                                   "forbiddenTextPatternsWithHits":  0,
+                                   "rawNewKeywordTotal":  13,
+                                   "diffAddedNewKeywordCount":  0,
+                                   "managedHeapNewInAuditedHotRanges":  0,
+                                   "valueTypeNewInAuditedHotRanges":  0,
+                                   "roslynHash":  "2d75b3135cd202dbf95cad4012857c141fec51528911d7b8eba3896c10210f66",
+                                   "roslynObjectCreations":  3,
+                                   "roslynValueTypeCreations":  0,
+                                   "roslynManagedRiskCreations":  3,
+                                   "conclusion":  "Raw new count is 13 after replacing static bool[64] slot reservations with a ulong mask: 10 fixed per-instance cold arrays, 1 GraphicsBuffer cold/capacity path, 2 FileStream fault-path writers. Forbidden string/LINQ/foreach/search/Complete patterns remain 0."
+                               },
+    "dtoProof":  {
+                     "report":  "Docs/Reports/TETHER_DTO_ARM64_BYTE_OFFSET_MAP_1303.json",
+                     "explicitStructCount":  24,
+                     "numericSizeStructCount":  24,
+                     "numericSizeMultipleOf8Failures":  [
+
+                                                        ],
+                     "highToLowFieldOrderFailures":  [
+                                                         "TetherAupTelemetryEntry",
+                                                         "TetherTelemetryEntry"
+                                                     ],
+                     "legacyAbiOrderExceptions":  [
+                                                      "TetherAupTelemetryEntry",
+                                                      "TetherTelemetryEntry"
+                                                  ],
+                     "runtimeValidator":  "VerletCableLayout.ValidateTetherVerletTelemetryLayout",
+                     "telemetryEntrySizeBytes":  64,
+                     "telemetryEntryOffsets":  [
+                                                   {
+                                                       "offset":  0,
+                                                       "type":  "uint",
+                                                       "name":  "FrameIndex",
+                                                       "access":  "public",
+                                                       "line":  29
+                                                   },
+                                                   {
+                                                       "offset":  4,
+                                                       "type":  "int",
+                                                       "name":  "NodeCount",
+                                                       "access":  "public",
+                                                       "line":  30
+                                                   },
+                                                   {
+                                                       "offset":  8,
+                                                       "type":  "int",
+                                                       "name":  "IterationCount",
+                                                       "access":  "public",
+                                                       "line":  31
+                                                   },
+                                                   {
+                                                       "offset":  12,
+                                                       "type":  "float",
+                                                       "name":  "PeakConstraintDelta",
+                                                       "access":  "public",
+                                                       "line":  32
+                                                   },
+                                                   {
+                                                       "offset":  16,
+                                                       "type":  "float",
+                                                       "name":  "PeakCableTension",
+                                                       "access":  "public",
+                                                       "line":  33
+                                                   },
+                                                   {
+                                                       "offset":  20,
+                                                       "type":  "float3",
+                                                       "name":  "AnchorPosition",
+                                                       "access":  "public",
+                                                       "line":  34
+                                                   },
+                                                   {
+                                                       "offset":  32,
+                                                       "type":  "float3",
+                                                       "name":  "PayloadPosition",
+                                                       "access":  "public",
+                                                       "line":  35
+                                                   },
+                                                   {
+                                                       "offset":  44,
+                                                       "type":  "uint",
+                                                       "name":  "Flags",
+                                                       "access":  "public",
+                                                       "line":  36
+                                                   },
+                                                   {
+                                                       "offset":  48,
+                                                       "type":  "uint",
+                                                       "name":  "BufferId",
+                                                       "access":  "public",
+                                                       "line":  37
+                                                   },
+                                                   {
+                                                       "offset":  52,
+                                                       "type":  "uint",
+                                                       "name":  "Generation",
+                                                       "access":  "public",
+                                                       "line":  38
+                                                   },
+                                                   {
+                                                       "offset":  56,
+                                                       "type":  "uint",
+                                                       "name":  "FailureCode",
+                                                       "access":  "public",
+                                                       "line":  39
+                                                   },
+                                                   {
+                                                       "offset":  60,
+                                                       "type":  "uint",
+                                                       "name":  "Reserved0",
+                                                       "access":  "public",
+                                                       "line":  40
+                                                   }
+                                               ]
+                 },
+    "aupProof":  {
+                     "formula":  "origin64=originAup.ToAbsoluteDouble3(); anchorAup=OffsetMeters(originAup, anchorRuntimeVector).ToAbsoluteDouble3(); payloadAup=OffsetMeters(originAup, payloadRuntimeVector).ToAbsoluteDouble3(); anchorLocal64=anchorAup-origin64; payloadLocal64=payloadAup-origin64; deltaLocal64=payloadLocal64-anchorLocal64; direction=(float normalized deltaLocal64)",
+                     "lines":  [
+                                   "Assets/_Project/Scripts/TetherInstance.cs:3477",
+                                   "Assets/_Project/Scripts/TetherInstance.cs:3478",
+                                   "Assets/_Project/Scripts/TetherInstance.cs:3479",
+                                   "Assets/_Project/Scripts/TetherInstance.cs:3486"
+                               ]
+                 },
+    "isolationProof":  {
+                           "asmdef":  "Assets/_Project/Scripts/Physics/Tethers/Contracts/Hecton8.Physics.Tethers.Contracts.asmdef",
+                           "asmdefReferences":  0,
+                           "noEngineReferences":  true,
+                           "newAsmdefDependenciesIntroduced":  0,
+                           "newUsingDirectDomainDependencies":  [
+                                                                    "Hecton8.Core.Contracts.Physics"
+                                                                ],
+                           "note":  "Core.Contracts.Physics is a core unmanaged contract route, not a neighboring gameplay/domain concrete class."
+                       },
+    "failClosedProof":  {
+                            "lockFailures":  "RecordVaultAccessFailure/RecordSolverVaultAccessFailure write one fixed telemetry row and skip mutation.",
+                            "metadataFailures":  "TryResolve/TryAcquire validates handle, expected length, slice range, created state, and telemetryOffset+capacity before jobs or GetSubArray receive arrays.",
+                            "dumpRoute":  "Docs/AgentLogs/Dump_1303_Tethers.bin and .h8dump via TetherBlackBoxDumpWriter.TryWritePrimaryAndLegacy",
+                            "lineProof":  [
+                                              "Assets/_Project/Scripts/TetherInstance.cs:3249",
+                                              "Assets/_Project/Scripts/TetherInstance.cs:3256",
+                                              "Assets/_Project/Scripts/TetherInstance.cs:3265",
+                                              "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs:31",
+                                              "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs:201"
+                                          ],
+                            "caveat":  "Fault dump serialization still uses managed System.IO on crash/fatal path only. The route catches handleable managed exceptions and returns false instead of propagating them; hot telemetry rows remain unmanaged DTO writes. A mathematically exception-free OS file write is not claimed."
+                        },
+    "overengineeringReview":  {
+                                  "lowTier":  "ShouldUseLowTierTautLineVisualFake keeps straight-line visual fake under low quality/stress.",
+                                  "midHighUltra":  "Continuous GlobalQualityWeight scales segment/iteration density; no binary quality switch was introduced.",
+                                  "stressHarness":  "GenerateMockTetherLoadJob is data-local Burst math over caller-owned arrays, not scene-spawned test objects."
+                              },
+    "jobCompletionProof":  {
+                               "tetherInstanceFindingCount":  1,
+                               "tetherInstanceFramePathBlockers":  0,
+                               "tetherJobsFindingCount":  0,
+                               "dtoFindingCount":  0,
+                               "dumpWriterFindingCount":  0
+                           },
+    "verification":  {
+                         "dotnetBuild":  "not launched in this APEX replay per user instruction",
+                         "diffCheck":  "passed; only LF-to-CRLF warnings on C# files",
+                         "runtimeUnityFuzzer":  "not executed; Unity MCP/Editor runtime context unavailable",
+                         "buildGate":  "not sampled for build start because no build was needed after static parse/audit success"
+                     },
+    "fileHashes":  [
+                       {
+                           "path":  "Assets/_Project/Scripts/TetherInstance.cs",
+                           "sha256":  "f37d2165d57f793a9e5bd8ddd06aa4349f0f96c5f0be7325a42420a214953f62"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                           "sha256":  "7edb89ecb671fdb5f7c8f9de5e0c65d3b532ec707d2e5774f3a3df56ec6796f3"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs",
+                           "sha256":  "c5e62a4eb75ece72ef4d82859c59e480b13af4c550fcbed401946a3a63829bbf"
+                       },
+                       {
+                           "path":  "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                           "sha256":  "5566b69b1c564c10e0390bd72b73862b2947947aa4bc382e01b20ef3d3abf3c1"
+                       }
+                   ]
+}

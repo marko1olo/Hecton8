@@ -18,7 +18,6 @@ namespace Hecton8.VFX.Materials
     [DefaultExecutionOrder(-86)]
     [AddComponentMenu("Hecton8/VFX/Material Decay Runtime")]
     public sealed class MaterialDecayRuntime : MonoBehaviour,
-        IUpdatable,
         ILateFrameTickable,
         IGlobalRegistryHotSwapListener,
         IGlobalRegistryHotSwapRefListener
@@ -73,7 +72,6 @@ namespace Hecton8.VFX.Materials
         private ushort _lastSlotIndex;
         private byte _lastReason;
         private byte _qualityWeightByte = 255;
-        private bool _registered;
         private bool _registeredLateFrame;
         private bool _hotSwapRegistered;
         private bool _dispatcherReady;
@@ -170,7 +168,7 @@ namespace Hecton8.VFX.Materials
             }
         }
 
-        public void Tick(float deltaTime)
+        private void AdvanceMaterialDecayState(float deltaTime)
         {
             if (!math.isfinite(deltaTime) || deltaTime < 0f)
             {
@@ -191,6 +189,8 @@ namespace Hecton8.VFX.Materials
 
         public void LateFrameTick()
         {
+            AdvanceMaterialDecayState(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (!_shaderGlobalsDirty)
                 return;
 
@@ -203,8 +203,6 @@ namespace Hecton8.VFX.Materials
             if (!Application.isPlaying || !_dispatcherReady)
                 return;
 
-            if (!_registered)
-                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
@@ -217,11 +215,6 @@ namespace Hecton8.VFX.Materials
                 _registeredLateFrame = false;
             }
 
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _registered = false;
-            }
         }
 
         private void TryRegisterHotSwapListener()
@@ -332,7 +325,7 @@ namespace Hecton8.VFX.Materials
 
         private void PublishRustAcoustic(in ItemDurabilityChangedSignal signal, float rust01)
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (rust01 <= RustPomGate || signal.ItemHash == 0u || frame == _lastAcousticFrame)
                 return;
 
@@ -344,7 +337,7 @@ namespace Hecton8.VFX.Materials
                 Progress01 = rust01,
                 PitchScale = math.lerp(1f, 0.70f, rust01),
                 Intensity01 = math.saturate(rust01 * rustAcousticIntensity),
-                Frame = (uint)math.max(0, frame),
+                Frame = Hecton8.Core.SystemDispatcher.CurrentFrameId,
                 State = signal.Reason,
                 Flags = signal.Flags
             };

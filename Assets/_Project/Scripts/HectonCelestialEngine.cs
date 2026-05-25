@@ -61,11 +61,11 @@ using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Hecton.Localization;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -507,7 +507,7 @@ namespace Hecton8.Celestial
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-3000)]  // v5.1: MUST tick AFTER UnderwaterVisuals(-4000)
-    public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, ILateFrameTickable, IBiomeMatrixEventListener, IWeatherEventListener, IGlobalRegistryHotSwapListener, ICelestialSkyDirectionReadModel
+    public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, ILateFrameTickable, IBiomeMatrixEventListener, IWeatherEventListener, IGlobalRegistryHotSwapListener, ICelestialSkyDirectionReadModel, ICelestialResonanceReadModel
     {
         private static int s_x001HectonCelestialEngineSignalPushDropCount;
         private const string MandatedSkyMaterialName = "Mat_HectonSky";
@@ -1627,7 +1627,7 @@ namespace Hecton8.Celestial
             _cachedRandomEvents = GlobalRegistry.RandomEvents;
             _cachedDynamicResolution = GlobalRegistry.DynamicResolution;
             _cachedWorldSeedGenerator = GlobalRegistry.WorldSeedProvider as global::HectonWorldGenerator;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
 
         }
 
@@ -2064,8 +2064,9 @@ namespace Hecton8.Celestial
         {
             long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - timelineStartTicks;
             double elapsedMilliseconds = elapsedTicks * StopwatchTickToMilliseconds;
+            int currentFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (elapsedMilliseconds <= CelestialTimelineBudgetMilliseconds ||
-                Time.frameCount < _nextCelestialTimelineWarningFrame)
+                currentFrame < _nextCelestialTimelineWarningFrame)
             {
                 return;
             }
@@ -2074,7 +2075,7 @@ namespace Hecton8.Celestial
                 _CelestialTimelineBudgetWarningHash,
                 _CelestialTimelineContextHash,
                 (float)elapsedMilliseconds);
-            _nextCelestialTimelineWarningFrame = Time.frameCount + CelestialTimelineWarningCooldownFrames;
+            _nextCelestialTimelineWarningFrame = currentFrame + CelestialTimelineWarningCooldownFrames;
         }
 
         private bool ShouldCullCelestialForAbyss(out float depthMeters)
@@ -2265,10 +2266,10 @@ namespace Hecton8.Celestial
                 sunLight = RenderSettings.sun;
 
             if (sunLight == null)
-                Debug.LogError("[HectonCelestialEngine] Sun Light is not assigned!", this);
+                Hecton8.Core.H8Debug.LogError("[HectonCelestialEngine] Sun Light is not assigned!", this);
 
             if (aegirTransform == null)
-                Debug.LogError("[HectonCelestialEngine] Aegir Transform is not assigned!", this);
+                Hecton8.Core.H8Debug.LogError("[HectonCelestialEngine] Aegir Transform is not assigned!", this);
             else if (aegirObserverRelativeBody == null)
                 aegirTransform.TryGetComponent(out aegirObserverRelativeBody);
 
@@ -2279,7 +2280,7 @@ namespace Hecton8.Celestial
                 if (GameBootstrapper.TryGetCurrentPlayerTransform(out Transform currentPlayer) && currentPlayer != null)
                 {
                     playerTransform = currentPlayer;
-                    Debug.LogWarning("[HectonCelestialEngine] Player not assigned, using GameBootstrapper player transform.");
+                    Hecton8.Core.H8Debug.LogWarning("[HectonCelestialEngine] Player not assigned, using GameBootstrapper player transform.");
                 }
             }
 
@@ -2288,7 +2289,7 @@ namespace Hecton8.Celestial
                 blendedSkyboxMaterial = activeSkybox;
 
             if (_skyMaterial == null)
-                Debug.LogWarning("[HectonCelestialEngine] Sky Material is not assigned!", this);
+                Hecton8.Core.H8Debug.LogWarning("[HectonCelestialEngine] Sky Material is not assigned!", this);
         }
 
         private void EnforceAegirFixedDirectionLock()
@@ -4658,7 +4659,7 @@ namespace Hecton8.Celestial
             if (!Application.isPlaying)
                 return true;
 
-            return Time.frameCount >= _nextCelestialSnapshotFrame;
+            return Hecton8.Core.SystemDispatcher.CurrentFrameIndex >= _nextCelestialSnapshotFrame;
         }
 
         private void ScheduleNextCelestialSnapshotFrame()
@@ -4671,7 +4672,7 @@ namespace Hecton8.Celestial
 
             float quality = math.saturate(math.isfinite(HomeostasisBrain.GlobalQualityWeight) ? HomeostasisBrain.GlobalQualityWeight : 0f);
             int interval = math.max(1, (int)math.round(math.lerp(CelestialSnapshotFrameIntervalLow, CelestialSnapshotFrameIntervalHigh, quality)));
-            _nextCelestialSnapshotFrame = Time.frameCount + interval;
+            _nextCelestialSnapshotFrame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex + interval;
         }
 
         private static float ResolveOrbitPeriodReciprocal(in CinematicOrbitDefinition orbit)
@@ -6866,7 +6867,7 @@ namespace Hecton8.Celestial
             }
             catch (Exception exception)
             {
-                Debug.LogError(exception);
+                Hecton8.Core.H8Debug.LogException(exception);
             }
         }
 

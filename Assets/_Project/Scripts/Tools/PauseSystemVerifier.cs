@@ -213,7 +213,7 @@ namespace Hecton8.Tools
                 _testsFailed++;
                 LogVerification($"FAIL pause menu navigation flow: exception {exception.Message}");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogException(exception);
+                Hecton8.Core.H8Debug.LogException(exception);
 #endif
             }
         }

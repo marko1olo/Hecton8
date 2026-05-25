@@ -99,7 +99,7 @@ namespace Hecton8.Gameplay
         private bool _isInitialized;
         private bool _debrisSolveWarningArmed;
         private float _lastTickDeltaTime;
-        private AbyssalThermalManager _thermalRuntime;
+        private IThermodynamicsService _thermalRuntime;
 
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
@@ -848,7 +848,7 @@ namespace Hecton8.Gameplay
 
             try
             {
-                AbyssalThermalManager thermalManager = _thermalRuntime;
+                IThermodynamicsService thermalManager = _thermalRuntime;
                 if (thermalManager == null)
                     return;
 
@@ -879,7 +879,7 @@ namespace Hecton8.Gameplay
                         bool hasThermalFlow = thermalManager.SampleThermalFlow(
                             runtimePosition,
                             ThermalPetrificationProbeRadius,
-                            out AbyssalThermalManager.ThermalFlowSample sample) &&
+                            out ThermodynamicFlowSampleDTO sample) &&
                             sample.Heat01 > 0.1f;
                         _thermalPetrificationHotFlags[slotIndex] = hasThermalFlow ? (byte)1 : (byte)0;
                     }
@@ -949,7 +949,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshColdRegistryReferences()
         {
-            _thermalRuntime = GlobalRegistry.Thermodynamics;
+            _thermalRuntime = GlobalRegistry.ThermodynamicsService;
         }
 
         private IDataVault CacheDataVaultCold()
@@ -1138,7 +1138,7 @@ namespace Hecton8.Gameplay
         {
             if (serviceSlot == GlobalRegistryServiceSlot.ThermodynamicsRuntime)
             {
-                _thermalRuntime = currentService as AbyssalThermalManager;
+                _thermalRuntime = currentService as IThermodynamicsService;
                 return;
             }
 

@@ -86,10 +86,14 @@ namespace Hecton8.Visor
         [FieldOffset(20)] public uint DrainedTotal;
         [FieldOffset(24)] public uint DroppedTotal;
         [FieldOffset(28)] public uint LastFrame;
-        [FieldOffset(32)] public ulong _pad0;
-        [FieldOffset(40)] public ulong _pad1;
-        [FieldOffset(48)] public ulong _pad2;
-        [FieldOffset(56)] public ulong _pad3;
+        [FieldOffset(32)] private uint _pad0;
+        [FieldOffset(36)] private uint _pad1;
+        [FieldOffset(40)] private uint _pad2;
+        [FieldOffset(44)] private uint _pad3;
+        [FieldOffset(48)] private uint _pad4;
+        [FieldOffset(52)] private uint _pad5;
+        [FieldOffset(56)] private uint _pad6;
+        [FieldOffset(60)] private uint _pad7;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -143,7 +147,8 @@ namespace Hecton8.Visor
         [FieldOffset(44)] public uint TotalWritten;
         [FieldOffset(48)] public uint MaxActiveThisFrame;
         [FieldOffset(52)] public uint LastBallisticFrame;
-        [FieldOffset(56)] public ulong _pad0;
+        [FieldOffset(56)] private uint _pad0;
+        [FieldOffset(60)] private uint _pad1;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -155,20 +160,34 @@ namespace Hecton8.Visor
         [FieldOffset(12)] public float RadiusMeters;
         [FieldOffset(16)] public float ProjectionDepthMeters;
         [FieldOffset(20)] public uint Flags;
-        [FieldOffset(24)] public ulong _pad0;
+        [FieldOffset(24)] private uint _pad0;
+        [FieldOffset(28)] private uint _pad1;
     }
 
+    [StructLayout(LayoutKind.Explicit, Size = 56)]
     public struct DynamicDecalFrameStats
     {
-        public NativeArray<TraumaDecalDTO> UploadBuffer;
+        [FieldOffset(0)]
+        public VaultGenerationHandle<TraumaDecalDTO> UploadHandle;
+        [FieldOffset(16)]
+        public int UploadCapacity;
+        [FieldOffset(20)]
         public int UploadCount;
+        [FieldOffset(24)]
         public int ActiveCount;
+        [FieldOffset(28)]
         public int NewCount;
+        [FieldOffset(32)]
         public int MaxActiveCount;
+        [FieldOffset(36)]
         public float CpuMicroseconds;
+        [FieldOffset(40)]
         public float UploadMicroseconds;
+        [FieldOffset(44)]
         public float GlobalQualityWeight;
+        [FieldOffset(48)]
         public float ThermalPressure01;
+        [FieldOffset(52)]
         public float NormalRefractionIntensity;
     }
 
@@ -195,7 +214,7 @@ namespace Hecton8.Visor
         private const uint RuntimeNonFiniteFaultFlag = 1u << 2;
         private const uint RuntimeUploadStallFlag = 1u << 3;
         private const uint DumpMagic = 0x4445434Cu; // DECL
-        private const string DumpFileName = "Dump_SHINOBU_325.bin";
+        private const string DumpFileName = "Dump_1309_UIPresentation.bin";
         private const string LogOwner = "SHINOBU_325";
         private const SystemID OwnerSystem = SystemID.Vfx;
 
@@ -307,7 +326,7 @@ namespace Hecton8.Visor
                 return false;
 
             _vault = vault;
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
             _coldRoutesCached = true;
             return true;
         }
@@ -324,7 +343,7 @@ namespace Hecton8.Visor
 
         public static void RefreshColdPlayerContext()
         {
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         public static void ResetColdStorageForRebind()
@@ -372,7 +391,8 @@ namespace Hecton8.Visor
 
             _layoutValid = UnsafeUtility.SizeOf<TraumaDecalDTO>() == 80 &&
                            UnsafeUtility.SizeOf<DecalRequestSignal>() == 64 &&
-                           UnsafeUtility.SizeOf<DecalRequestQueueStateDTO>() == 64;
+                           UnsafeUtility.SizeOf<DecalRequestQueueStateDTO>() == 64 &&
+                           UnsafeUtility.SizeOf<DynamicDecalFrameStats>() == 56;
 #if UNITY_EDITOR
             _layoutValid = _layoutValid &&
                            OffsetOf<TraumaDecalDTO>(nameof(TraumaDecalDTO.LocalToWorld)) == 0 &&
@@ -385,7 +405,11 @@ namespace Hecton8.Visor
                            OffsetOf<DecalRequestSignal>(nameof(DecalRequestSignal.SourceFrame)) == 60 &&
                            OffsetOf<DecalRequestQueueStateDTO>(nameof(DecalRequestQueueStateDTO.WriteIndex)) == 0 &&
                            OffsetOf<DecalRequestQueueStateDTO>(nameof(DecalRequestQueueStateDTO.PendingCount)) == 8 &&
-                           OffsetOf<DecalRequestQueueStateDTO>(nameof(DecalRequestQueueStateDTO._pad3)) == 56;
+                           OffsetOf<DecalRequestQueueStateDTO>("_pad6") == 56 &&
+                           OffsetOf<DecalRequestQueueStateDTO>("_pad7") == 60 &&
+                           OffsetOf<DynamicDecalFrameStats>(nameof(DynamicDecalFrameStats.UploadHandle)) == 0 &&
+                           OffsetOf<DynamicDecalFrameStats>(nameof(DynamicDecalFrameStats.UploadCapacity)) == 16 &&
+                           OffsetOf<DynamicDecalFrameStats>(nameof(DynamicDecalFrameStats.NormalRefractionIntensity)) == 52;
 #endif
             _layoutValidated = true;
             return _layoutValid;
@@ -431,7 +455,7 @@ namespace Hecton8.Visor
                     return false;
 
                 DecalTuningDTO tuning = ResolveLiveTuning();
-                float3 normal = new float3(surfaceNormal.x, surfaceNormal.y, surfaceNormal.z);
+                float3 normal = MakeFloat3(surfaceNormal.x, surfaceNormal.y, surfaceNormal.z);
                 uint seed = Mix(HashFloat3(runtimePosition) ^ materialHash);
                 return TryEnqueueAupImpact(
                     aup,
@@ -468,7 +492,7 @@ namespace Hecton8.Visor
                 DecalTuningDTO defaults = ResolveLiveTuning();
                 DecalRequestSignal request = default;
                 request.ImpactAup = impactAup;
-                request.Normal = SanitizeNormal(surfaceNormal, new float3(0f, 1f, 0f));
+                request.Normal = SanitizeNormal(surfaceNormal, MakeFloat3(0f, 1f, 0f));
                 request.RadiusMeters = math.clamp(math.isfinite(radiusMeters) ? radiusMeters : defaults.BaseRadiusMeters, 0.025f, 8f);
                 request.ProjectionDepthMeters = math.clamp(math.isfinite(projectionDepthMeters) ? projectionDepthMeters : defaults.ProjectionDepthMeters, 0.025f, 2f);
                 request.LifetimeSeconds = math.clamp(math.isfinite(lifetimeSeconds) ? lifetimeSeconds : defaults.BaseFadeTimeSeconds, 0.1f, 60f);
@@ -796,7 +820,8 @@ namespace Hecton8.Visor
             _hasRuntimeStateSnapshot = true;
 
             PushTelemetry(telemetry, in state, quality, thermalPressure);
-            stats.UploadBuffer = upload;
+            stats.UploadHandle = _uploadHandle;
+            stats.UploadCapacity = math.min(upload.Length, MaxCapacity);
             stats.UploadCount = math.clamp(state.LastUploadCount, 0, math.min(upload.Length, MaxCapacity));
             stats.ActiveCount = math.max(0, state.ActiveCount);
             stats.NewCount = math.max(0, state.NewThisFrame);
@@ -977,15 +1002,17 @@ namespace Hecton8.Visor
                 int expectedBytes = (int)streamLength;
                 while (bytesRead < expectedBytes)
                 {
-                    int read = stream.Read(new Span<byte>(scratchPtr + bytesRead, expectedBytes - bytesRead));
+                    Span<byte> readSpan = MemoryMarshal.CreateSpan(ref UnsafeUtility.AsRef<byte>(scratchPtr + bytesRead), expectedBytes - bytesRead);
+                    int read = stream.Read(readSpan);
                     if (read <= 0)
                         return false;
 
                     bytesRead += read;
                 }
 
+                ReadOnlySpan<byte> csvBytes = MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(scratchPtr), bytesRead);
                 profilesWritten = ParseMaterialProfilesCsv(
-                    new ReadOnlySpan<byte>(scratchPtr, bytesRead),
+                    csvBytes,
                     profiles);
                 _materialProfileCount = profilesWritten;
                 return profilesWritten > 0;
@@ -1188,7 +1215,7 @@ namespace Hecton8.Visor
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
             if (_vault == null || _vault.IsCompactionFenceActive || requiredLength <= 0)
@@ -1222,7 +1249,7 @@ namespace Hecton8.Visor
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredLength,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
             if (_vault == null || _vault.IsCompactionFenceActive || requiredLength <= 0)
@@ -1238,7 +1265,7 @@ namespace Hecton8.Visor
             IDataVault vault,
             in VaultGenerationHandle<T> handle,
             BufferID bufferId,
-            int requiredLength) where T : struct
+            int requiredLength) where T : unmanaged
         {
             return vault != null &&
                    !vault.IsCompactionFenceActive &&
@@ -1251,14 +1278,14 @@ namespace Hecton8.Visor
 
         private static bool IsDynamicDecalVaultHandle<T>(
             in VaultGenerationHandle<T> handle,
-            BufferID bufferId) where T : struct
+            BufferID bufferId) where T : unmanaged
         {
             return handle.BufferID == unchecked((uint)(int)bufferId) &&
                    handle.SystemID == (uint)OwnerSystem &&
                    handle.Generation != 0u;
         }
 
-        private static bool TryGetDynamicDecalElementPtr<T>(NativeArray<T> buffer, int index, out void* elementPtr) where T : struct
+        private static bool TryGetDynamicDecalElementPtr<T>(NativeArray<T> buffer, int index, out void* elementPtr) where T : unmanaged
         {
             elementPtr = null;
             if (!buffer.IsCreated || (uint)index >= (uint)buffer.Length)
@@ -1285,7 +1312,7 @@ namespace Hecton8.Visor
         private static void ReleaseDynamicDecalVaultHandle<T>(
             IDataVault vault,
             ref VaultGenerationHandle<T> handle,
-            BufferID bufferId) where T : struct
+            BufferID bufferId) where T : unmanaged
         {
             if (vault != null && IsDynamicDecalVaultHandle(in handle, bufferId))
                 vault.ReleaseBuffer(in handle);
@@ -1380,7 +1407,7 @@ namespace Hecton8.Visor
         private static void ClearColdVaultBuffer<T>(
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
-            int requiredLength) where T : struct
+            int requiredLength) where T : unmanaged
         {
             if (!TryResolveDynamicDecalVaultBuffer(ref handle, bufferId, requiredLength, out NativeArray<T> buffer))
                 return;
@@ -1561,6 +1588,21 @@ namespace Hecton8.Visor
             _vault.TryUnlockBuffer(DynamicDecalVaultBufferIds.RequestState, OwnerSystem);
         }
 
+        public static bool TryResolveUploadBuffer(
+            in DynamicDecalFrameStats stats,
+            out NativeArray<TraumaDecalDTO> upload)
+        {
+            upload = default;
+            int requiredLength = math.clamp(stats.UploadCount, 0, math.min(stats.UploadCapacity, MaxCapacity));
+            return requiredLength > 0 &&
+                   _vault != null &&
+                   !_vault.IsCompactionFenceActive &&
+                   IsDynamicDecalVaultHandle(in stats.UploadHandle, DynamicDecalVaultBufferIds.UploadScratch) &&
+                   _vault.TryReadHandle(in stats.UploadHandle, out upload) &&
+                   upload.IsCreated &&
+                   upload.Length >= requiredLength;
+        }
+
         private static bool TryLockUploadTelemetryBuffers()
         {
             if (_vault == null)
@@ -1736,7 +1778,7 @@ namespace Hecton8.Visor
                 if ((_hasIngestedCombatDamageFrame && frame <= _lastIngestedCombatDamageFrame) || !math.all(math.isfinite(signal.ImpactAup)))
                     continue;
 
-                float3 normal = -SanitizeNormal(signal.Direction, new float3(0f, 1f, 0f));
+                float3 normal = -SanitizeNormal(signal.Direction, MakeFloat3(0f, 1f, 0f));
                 uint materialHash = signal.DamageType != 0u ? signal.DamageType : signal.SourceHash;
                 uint flags = materialHash == DynamicDecalMaterialHashes.HullDent
                     ? DynamicDecalFlags.HullImpact
@@ -1789,7 +1831,7 @@ namespace Hecton8.Visor
         {
             DecalRequestSignal request = default;
             request.ImpactAup = impactAup;
-            request.Normal = SanitizeNormal(normal, new float3(0f, 1f, 0f));
+            request.Normal = SanitizeNormal(normal, MakeFloat3(0f, 1f, 0f));
             if (TryResolveMaterialProfile(
                     profileHash != 0u ? profileHash : materialHash,
                     materialProfiles,
@@ -1891,7 +1933,7 @@ namespace Hecton8.Visor
             float localZ)
         {
             const double cellSizeMeters = HectonPhysicsContract.AupSectorSizeMetersDouble;
-            return new double3(
+            return MakeDouble3(
                 (gridX * cellSizeMeters) + localX,
                 (gridY * cellSizeMeters) + localY,
                 (gridZ * cellSizeMeters) + localZ);
@@ -2435,6 +2477,48 @@ namespace Hecton8.Visor
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float3 MakeFloat3(float x, float y, float z)
+        {
+            float3 result = default;
+            result.x = x;
+            result.y = y;
+            result.z = z;
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static double3 MakeDouble3(double x, double y, double z)
+        {
+            double3 result = default;
+            result.x = x;
+            result.y = y;
+            result.z = z;
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float4 MakeFloat4(float x, float y, float z, float w)
+        {
+            float4 result = default;
+            result.x = x;
+            result.y = y;
+            result.z = z;
+            result.w = w;
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float4 MakeFloat4(float3 xyz, float w)
+        {
+            float4 result = default;
+            result.x = xyz.x;
+            result.y = xyz.y;
+            result.z = xyz.z;
+            result.w = w;
+            return result;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float3 SanitizeNormal(float3 normal, float3 fallback)
         {
             if (!math.all(math.isfinite(normal)))
@@ -2579,7 +2663,11 @@ namespace Hecton8.Visor
 #if UNITY_EDITOR
         private static int OffsetOf<T>(string fieldName)
         {
-            System.Reflection.FieldInfo field = typeof(T).GetField(fieldName);
+            System.Reflection.FieldInfo field = typeof(T).GetField(
+                fieldName,
+                System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.Public |
+                System.Reflection.BindingFlags.NonPublic);
             return field != null ? UnsafeUtility.GetFieldOffset(field) : -1;
         }
 #endif
@@ -2622,17 +2710,17 @@ namespace Hecton8.Visor
             float radius = 2.0f + ((seed >> 10) & 31u) * 0.22f;
             float xAxis = TriangleWaveSigned(phase);
             float zAxis = TriangleWaveSigned(phase + 0.25f);
-            float3 rawNormal = new float3(xAxis * 0.35f, 1f, zAxis * 0.35f);
+            float3 rawNormal = DynamicDecalVaultRuntime.MakeFloat3(xAxis * 0.35f, 1f, zAxis * 0.35f);
             float normalLengthSq = math.max(math.lengthsq(rawNormal), 0.0001f);
             float3 normal = math.all(math.isfinite(rawNormal))
                 ? rawNormal * math.rsqrt(normalLengthSq)
-                : new float3(0f, 1f, 0f);
+                : DynamicDecalVaultRuntime.MakeFloat3(0f, 1f, 0f);
             int targetIndex = StartIndex + index;
             if (targetIndex >= Capacity)
                 targetIndex -= Capacity;
 
             DecalRequestSignal request = default;
-            request.ImpactAup = OriginAup + new double3(zAxis * radius, ((index & 15) - 8) * 0.12f, xAxis * radius);
+            request.ImpactAup = OriginAup + DynamicDecalVaultRuntime.MakeDouble3(zAxis * radius, ((index & 15) - 8) * 0.12f, xAxis * radius);
             request.Normal = normal;
             request.RadiusMeters = 0.22f + ((seed >> 16) & 15u) * 0.035f;
             request.ProjectionDepthMeters = 0.18f;
@@ -2733,11 +2821,13 @@ namespace Hecton8.Visor
             if (!math.all(math.isfinite(position)))
                 return false;
 
-            float3 surfaceNormal = NormalizeOrDefault(request.Normal, new float3(0f, 1f, 0f));
+            float3 surfaceNormal = NormalizeOrDefault(request.Normal, DynamicDecalVaultRuntime.MakeFloat3(0f, 1f, 0f));
             float3 zAxis = -surfaceNormal;
-            float3 basis = math.abs(surfaceNormal.y) < 0.92f ? new float3(0f, 1f, 0f) : new float3(1f, 0f, 0f);
-            float3 xAxis = NormalizeOrDefault(math.cross(basis, zAxis), new float3(1f, 0f, 0f));
-            float3 yAxis = NormalizeOrDefault(math.cross(zAxis, xAxis), new float3(0f, 1f, 0f));
+            float3 basis = math.abs(surfaceNormal.y) < 0.92f
+                ? DynamicDecalVaultRuntime.MakeFloat3(0f, 1f, 0f)
+                : DynamicDecalVaultRuntime.MakeFloat3(1f, 0f, 0f);
+            float3 xAxis = NormalizeOrDefault(math.cross(basis, zAxis), DynamicDecalVaultRuntime.MakeFloat3(1f, 0f, 0f));
+            float3 yAxis = NormalizeOrDefault(math.cross(zAxis, xAxis), DynamicDecalVaultRuntime.MakeFloat3(0f, 1f, 0f));
 
             uint seed = request.StableSeed != 0u
                 ? request.StableSeed
@@ -2749,11 +2839,11 @@ namespace Hecton8.Visor
             float3 rolledY = NormalizeOrDefault(math.cross(zAxis, rolledX), yAxis);
             float radius = math.max(0.025f, math.isfinite(request.RadiusMeters) && request.RadiusMeters > 0f ? request.RadiusMeters : DefaultRadiusMeters);
             float depth = math.max(0.01f, math.isfinite(request.ProjectionDepthMeters) && request.ProjectionDepthMeters > 0f ? request.ProjectionDepthMeters : DefaultProjectionDepthMeters);
-            matrix = new float4x4(
-                new float4(rolledX * radius, 0f),
-                new float4(rolledY * radius, 0f),
-                new float4(zAxis * depth, 0f),
-                new float4(position, 1f));
+            matrix = default;
+            matrix.c0 = DynamicDecalVaultRuntime.MakeFloat4(rolledX * radius, 0f);
+            matrix.c1 = DynamicDecalVaultRuntime.MakeFloat4(rolledY * radius, 0f);
+            matrix.c2 = DynamicDecalVaultRuntime.MakeFloat4(zAxis * depth, 0f);
+            matrix.c3 = DynamicDecalVaultRuntime.MakeFloat4(position, 1f);
             return math.all(math.isfinite(matrix.c0)) &&
                    math.all(math.isfinite(matrix.c1)) &&
                    math.all(math.isfinite(matrix.c2)) &&
@@ -2893,7 +2983,7 @@ namespace Hecton8.Visor
         private static void ValidateOnLoad()
         {
             if (!DynamicDecalVaultRuntime.ValidateDecalInstanceLayout())
-                Debug.LogError("SHINOBU_325 visor trauma ABI layout mismatch: expected TraumaDecalDTO=80B and request ingress DTOs=64B with explicit shader/Vault offsets.");
+                Hecton8.Core.H8Debug.LogError("SHINOBU_325 visor trauma ABI layout mismatch: expected TraumaDecalDTO=80B and request ingress DTOs=64B with explicit shader/Vault offsets.");
         }
 
         [UnityEditor.MenuItem("HECTON-8/Rendering/Validate Visor Trauma Layout")]
@@ -2902,7 +2992,7 @@ namespace Hecton8.Visor
             if (DynamicDecalVaultRuntime.ValidateDecalInstanceLayout())
                 Hecton8.Core.H8Debug.Log("SHINOBU_325 visor trauma ABI layout valid: TraumaDecalDTO=80B, DecalRequestSignal=64B, DecalRequestQueueStateDTO=64B.");
             else
-                Debug.LogError("SHINOBU_325 visor trauma ABI layout mismatch: shader/Vault ABI is unsafe.");
+                Hecton8.Core.H8Debug.LogError("SHINOBU_325 visor trauma ABI layout mismatch: shader/Vault ABI is unsafe.");
         }
     }
 #endif

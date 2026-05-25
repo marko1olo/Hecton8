@@ -6,7 +6,6 @@ using Hecton8.Core;
 using Hecton8.Core.Memory;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -1617,7 +1616,6 @@ namespace Hecton8.World
         private byte _sandMaskThresholdByte;
         private byte _rockMaskThresholdByte;
         private Vector2 _floatingFlowDirectionNormalized;
-        private Rigidbody _playerRigidbody;
         private IWeatherService _weatherService;
         private Vector3 _playerVelocity;
         private Vector3 _lastPlayerPosition;
@@ -4469,7 +4467,7 @@ namespace Hecton8.World
         private static void LogLoopGuardHit(string loopName, int maxIterations)
         {
 #if UNITY_EDITOR
-            Debug.LogError($"[HectonMapMagicVegetationBridge] Loop guard hit: {loopName} after {maxIterations} iterations.");
+            Hecton8.Core.H8Debug.LogError($"[HectonMapMagicVegetationBridge] Loop guard hit: {loopName} after {maxIterations} iterations.");
 #endif
         }
 
@@ -6538,8 +6536,6 @@ namespace Hecton8.World
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
 
-            if (playerTransform != null && (_playerRigidbody == null || _playerRigidbody.transform != playerTransform))
-                playerTransform.TryGetComponent(out _playerRigidbody);
         }
 
         private void UpdatePlayerMotionState(float dt)
@@ -6551,7 +6547,7 @@ namespace Hecton8.World
                 return;
             }
 
-            if (PhysicsDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityVegetationMaxAgeFrames, out Vector3 kccVelocity))
+            if (CoreDeterminismSignals.TryGetLatestKccVelocityVector(KccVelocityVegetationMaxAgeFrames, out Vector3 kccVelocity))
             {
                 _playerVelocity = kccVelocity;
                 _lastPlayerPosition = currentPosition;

@@ -11,7 +11,7 @@ namespace Hecton8.Visor
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Visor/VR Diegetic Focus Controller")]
-    public sealed class HectonVRDiegeticFocusController : MonoBehaviour, ITickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class HectonVRDiegeticFocusController : MonoBehaviour, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float GlobalWriteEpsilon = 0.001f;
         private const float FocusSleepEpsilon = 0.002f;
@@ -43,15 +43,18 @@ namespace Hecton8.Visor
         private float _pendingHudTarget;
         private float _pendingFocusDeltaTime;
         private bool _focusVisualDirty;
+        private IPlayerRuntimeContext _cachedPlayerContext;
 
         private void OnEnable()
         {
+            CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             TryRegisterTick();
         }
 
         private void Start()
         {
+            CacheRegistryServicesCold();
             TryRegisterHotSwapListener();
             TryRegisterTick();
         }
@@ -76,6 +79,12 @@ namespace Hecton8.Visor
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.Player)
+            {
+                _cachedPlayerContext = currentService as IPlayerRuntimeContext;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher)
                 return;
 
@@ -85,8 +94,7 @@ namespace Hecton8.Visor
                 TryRegisterTick();
         }
 
-        /// <inheritdoc />
-        public void Tick(float deltaTime)
+        private void AdvanceFocusVisualState(float deltaTime)
         {
             if (!TryResolveEyeSelectionPose(out Vector3 rayOriginPosition, out Vector3 rayForward))
             {
@@ -110,6 +118,8 @@ namespace Hecton8.Visor
 
         public void LateFrameTick()
         {
+            AdvanceFocusVisualState(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (!_focusVisualDirty)
                 return;
 
@@ -156,14 +166,8 @@ namespace Hecton8.Visor
             Camera camera = fallbackEyeCamera;
             if (camera == null)
             {
-                if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
-                    camera = runtimeContext.PlayerCamera;
-
-                if (camera == null)
-                {
-                    IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-                    camera = playerContext != null ? playerContext.PlayerCamera : null;
-                }
+                IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+                camera = playerContext != null ? playerContext.PlayerCamera : null;
             }
 
             return camera != null ? camera.transform : null;
@@ -265,8 +269,6 @@ namespace Hecton8.Visor
             if (!Application.isPlaying)
                 return;
 
-            if (!_registeredToTick)
-                _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             if (!_registeredToLateFrame)
                 _registeredToLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
@@ -279,11 +281,12 @@ namespace Hecton8.Visor
                 _registeredToLateFrame = false;
             }
 
-            if (_registeredToTick)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registeredToTick = false;
-            }
+            _registeredToTick = false;
+        }
+
+        private void CacheRegistryServicesCold()
+        {
+            _cachedPlayerContext = GlobalRegistry.Player;
         }
 
         private void TryRegisterHotSwapListener()

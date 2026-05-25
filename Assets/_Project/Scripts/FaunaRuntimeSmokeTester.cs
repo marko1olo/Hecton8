@@ -127,7 +127,7 @@ namespace Hecton8.Dev
             if (_lastAupShiftMathPassed)
                 Hecton8.Core.H8Debug.Log("FaunaRuntimeSmokeTester AUP shift math passed.");
             else
-                Debug.LogError("FaunaRuntimeSmokeTester AUP shift math failed.");
+                Hecton8.Core.H8Debug.LogError("FaunaRuntimeSmokeTester AUP shift math failed.");
 #endif
         }
 

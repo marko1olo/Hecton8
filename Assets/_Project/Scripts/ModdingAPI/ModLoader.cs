@@ -90,7 +90,7 @@ namespace Hecton8.Modding
             }
             catch (Exception ex)
             {
-                Debug.LogWarning(string.Concat("[ModLoader] LoadMods failed: ", ex.Message));
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] LoadMods failed: ", ex.Message));
             }
         }
 
@@ -182,7 +182,7 @@ namespace Hecton8.Modding
         private static void DiscoverAndLoadMods()
         {
 #if ENABLE_IL2CPP
-            Debug.LogWarning("[ModLoader] WARNING: External managed code mods require a Mono scripting backend. IL2CPP builds cannot load runtime assemblies dynamically.");
+            Hecton8.Core.H8Debug.LogWarning("[ModLoader] WARNING: External managed code mods require a Mono scripting backend. IL2CPP builds cannot load runtime assemblies dynamically.");
             return;
 #else
             string modsRoot = ResolveModsRoot();
@@ -243,7 +243,7 @@ namespace Hecton8.Modding
 
                 if (string.IsNullOrWhiteSpace(manifest.Id))
                 {
-                    Debug.LogWarning(string.Concat("[ModLoader] Skipped manifest '", manifestPath, "': missing Id."));
+                    Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Skipped manifest '", manifestPath, "': missing Id."));
                     return false;
                 }
 
@@ -276,7 +276,7 @@ namespace Hecton8.Modding
             }
             catch (Exception ex)
             {
-                Debug.LogWarning(string.Concat("[ModLoader] Failed to read manifest '", manifestPath, "': ", ex.Message));
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Failed to read manifest '", manifestPath, "': ", ex.Message));
                 return false;
             }
         }
@@ -441,7 +441,7 @@ namespace Hecton8.Modding
                     candidate.IsProcessed = true;
                     candidate.DisabledReason = "Dependency cycle or unresolved ordering deadlock.";
                     unresolvedCount--;
-                    Debug.LogWarning(string.Concat("[ModLoader] Disabled mod '", candidate.Metadata.Id, "': dependency cycle or unresolved ordering deadlock."));
+                    Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Disabled mod '", candidate.Metadata.Id, "': dependency cycle or unresolved ordering deadlock."));
                 }
             }
         }
@@ -464,7 +464,7 @@ namespace Hecton8.Modding
 
                 candidate.IsDisabled = true;
                 candidate.DisabledReason = string.Concat("Missing dependency '", dependencyId, "'.");
-                Debug.LogWarning(string.Concat("[ModLoader] Disabled mod '", candidate.Metadata.Id, "': missing dependency '", dependencyId, "'."));
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Disabled mod '", candidate.Metadata.Id, "': missing dependency '", dependencyId, "'."));
                 return true;
             }
 
@@ -605,7 +605,7 @@ namespace Hecton8.Modding
         {
             candidate.IsDisabled = true;
             candidate.DisabledReason = reason;
-            Debug.LogWarning(string.Concat("[ModLoader] Disabled mod '", candidate.Metadata.Id, "': ", reason));
+            Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Disabled mod '", candidate.Metadata.Id, "': ", reason));
 
             RecordRuntimeInfo(new ModRuntimeInfo
             {
@@ -649,7 +649,7 @@ namespace Hecton8.Modding
                     }
                     catch (Exception unloadException)
                     {
-                        Debug.LogWarning(string.Concat("[ModLoader] Disabled mod '", modId, "' threw during isolation unload: ", unloadException));
+                        Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Disabled mod '", modId, "' threw during isolation unload: ", unloadException));
                     }
                 }
 
@@ -666,7 +666,7 @@ namespace Hecton8.Modding
                     HasLocalizationFiles = false
                 };
                 RecordRuntimeInfo(info);
-                Debug.LogWarning(string.Concat("[ModLoader] Disabled mod '", modId, "': ", info.StatusMessage));
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Disabled mod '", modId, "': ", info.StatusMessage));
                 return;
             }
         }
@@ -810,7 +810,7 @@ namespace Hecton8.Modding
             }
             catch (Exception ex)
             {
-                Debug.LogWarning(string.Concat("[ModLoader] Mod '", modId, "' failed during ", callbackName, ": ", ex));
+                Hecton8.Core.H8Debug.LogWarning(string.Concat("[ModLoader] Mod '", modId, "' failed during ", callbackName, ": ", ex));
                 DisableManagedMod(modId, string.Concat(callbackName, " threw '", ex.Message, "'."), false);
                 return false;
             }

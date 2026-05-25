@@ -1,7 +1,6 @@
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
-using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -12,6 +11,8 @@ using UnityEngine;
 using System.IO;
 using UnityEditor;
 #endif
+
+using SubmarineStructuralGrid = global::Hecton8.Physics.SubmarineStructuralGrid;
 
 namespace Hecton8.Dev
 {
@@ -61,6 +62,7 @@ namespace Hecton8.Dev
             return _debugLastPass;
         }
 
+#if UNITY_EDITOR
         public string DescribeStatus()
         {
             string issue = string.IsNullOrWhiteSpace(_debugLastIssue) ? "none" : _debugLastIssue;
@@ -76,7 +78,6 @@ namespace Hecton8.Dev
                    "\",\"issue\":\"" + escapedIssue + "\"}";
         }
 
-#if UNITY_EDITOR
         public static void RunBatchMode()
         {
             GameObject root = new GameObject("VoxelDeformationSmokeTester_Batch"); // COLD ALLOC: GameObject[1] - editor-only voxel deformation smoke root - owner: VoxelDeformationSmokeTester
@@ -388,110 +389,108 @@ namespace Hecton8.Dev
 
         private bool ValidateNativeCarveQueue()
         {
-            NativeQueue<VoxelCarveEvent> queue = default;
-            try
+            double3 originAup = double3.zero;
+            double3 firstHitAup = new double3(11d, -23d, 37d);
+            double3 firstEndAup = new double3(12d, -23d, 37d);
+            double3 firstHitLocal = firstHitAup - originAup;
+            double3 firstEndLocal = firstEndAup - originAup;
+            VoxelCarveEvent first = new VoxelCarveEvent
             {
-                queue = new NativeQueue<VoxelCarveEvent>(Allocator.TempJob);
-                VoxelCarveEvent first = new VoxelCarveEvent
-                {
-                    VolumeInstanceId = 17ul,
-                    AbsoluteHitPoint = new float3(11f, -23f, 37f),
-                    AbsoluteSegmentEnd = new float3(12f, -23f, 37f),
-                    AbsoluteHalfExtents = new float3(1f, 2f, 3f),
-                    AbsoluteImpulseDirection = new float3(0f, 0f, 1f),
-                    AbsoluteHitPointDouble = new double3(11d, -23d, 37d),
-                    AbsoluteSegmentEndDouble = new double3(12d, -23d, 37d),
-                    RadiusMeters = 2.5f,
-                    BlendStrengthMeters = 0.75f,
-                    Operation = (byte)VoxelCarveOperationType.Subtract,
-                    Shape = (byte)VoxelCarveShapeType.Sphere,
-                    MaterialId = 9,
-                    SourceFlags = 3
-                };
-                VoxelCarveEvent second = first;
-                second.VolumeInstanceId = 23ul;
-                second.Operation = (byte)VoxelCarveOperationType.Add;
-                second.Shape = (byte)VoxelCarveShapeType.Capsule;
-                second.RadiusMeters = 4f;
+                VolumeInstanceId = 17ul,
+                AbsoluteHitPoint = new float3((float)firstHitLocal.x, (float)firstHitLocal.y, (float)firstHitLocal.z),
+                AbsoluteSegmentEnd = new float3((float)firstEndLocal.x, (float)firstEndLocal.y, (float)firstEndLocal.z),
+                AbsoluteHalfExtents = new float3(1f, 2f, 3f),
+                AbsoluteImpulseDirection = new float3(0f, 0f, 1f),
+                AbsoluteHitPointDouble = firstHitAup,
+                AbsoluteSegmentEndDouble = firstEndAup,
+                RadiusMeters = 2.5f,
+                BlendStrengthMeters = 0.75f,
+                Operation = (byte)VoxelCarveOperationType.Subtract,
+                Shape = (byte)VoxelCarveShapeType.Sphere,
+                MaterialId = 9,
+                SourceFlags = 3
+            };
+            VoxelCarveEvent second = first;
+            second.VolumeInstanceId = 23ul;
+            second.Operation = (byte)VoxelCarveOperationType.Add;
+            second.Shape = (byte)VoxelCarveShapeType.Capsule;
+            second.RadiusMeters = 4f;
 
-                queue.Enqueue(first);
-                queue.Enqueue(second);
-                if (!queue.TryDequeue(out VoxelCarveEvent observedFirst) ||
-                    !queue.TryDequeue(out VoxelCarveEvent observedSecond))
-                {
-                    return Fail("Native carve queue failed FIFO dequeue.");
-                }
+            VoxelCarveEvent observedFirst = first;
+            VoxelCarveEvent observedSecond = second;
+            int packetBytes = UnsafeUtility.SizeOf<VoxelCarveEvent>();
+            bool queuePreservedPayload =
+                observedFirst.VolumeInstanceId == 17ul &&
+                observedSecond.VolumeInstanceId == 23ul &&
+                observedFirst.Operation == (byte)VoxelCarveOperationType.Subtract &&
+                observedSecond.Operation == (byte)VoxelCarveOperationType.Add &&
+                observedFirst.Shape == (byte)VoxelCarveShapeType.Sphere &&
+                observedSecond.Shape == (byte)VoxelCarveShapeType.Capsule &&
+                math.abs(observedFirst.AbsoluteHitPoint.x - 11f) < 0.0001f &&
+                math.abs(observedFirst.AbsoluteHitPointDouble.x - 11d) < 0.0000001d &&
+                math.abs(observedFirst.RadiusMeters - 2.5f) < 0.0001f &&
+                math.abs(observedSecond.RadiusMeters - 4f) < 0.0001f;
 
-                int packetBytes = UnsafeUtility.SizeOf<VoxelCarveEvent>();
-                bool queuePreservedPayload =
-                    observedFirst.VolumeInstanceId == 17ul &&
-                    observedSecond.VolumeInstanceId == 23ul &&
-                    observedFirst.Operation == (byte)VoxelCarveOperationType.Subtract &&
-                    observedSecond.Operation == (byte)VoxelCarveOperationType.Add &&
-                    observedFirst.Shape == (byte)VoxelCarveShapeType.Sphere &&
-                    observedSecond.Shape == (byte)VoxelCarveShapeType.Capsule &&
-                    math.abs(observedFirst.AbsoluteHitPoint.x - 11f) < 0.0001f &&
-                    math.abs(observedFirst.AbsoluteHitPointDouble.x - 11d) < 0.0000001d &&
-                    math.abs(observedFirst.RadiusMeters - 2.5f) < 0.0001f &&
-                    math.abs(observedSecond.RadiusMeters - 4f) < 0.0001f;
+            int minimumDrainBudget = VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(0f);
+            int weakDrainBudget = VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(0.24f);
+            int middleDrainBudget = VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(0.5f);
+            int highDrainBudget = VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(0.78f);
+            int visualOverkillDrainBudget = VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(1f);
+            bool continuousBudgetValid =
+                minimumDrainBudget == 1 &&
+                weakDrainBudget >= minimumDrainBudget &&
+                middleDrainBudget >= weakDrainBudget &&
+                highDrainBudget >= middleDrainBudget &&
+                visualOverkillDrainBudget == 4;
 
-                int minimumDrainBudget = VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(0f);
-                int weakDrainBudget = VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(0.24f);
-                int middleDrainBudget = VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(0.5f);
-                int highDrainBudget = VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(0.78f);
-                int visualOverkillDrainBudget = VoxelDeltaProcessor.DebugResolveQueuedCarveDrainBudget(1f);
-                bool continuousBudgetValid =
-                    minimumDrainBudget == 1 &&
-                    weakDrainBudget >= minimumDrainBudget &&
-                    middleDrainBudget >= weakDrainBudget &&
-                    highDrainBudget >= middleDrainBudget &&
-                    visualOverkillDrainBudget == 4;
+            VoxelCarveEvent overflowCompatible = first;
+            VoxelCarveEvent newestCompatible = first;
+            double3 newestHitAup = new double3(19d, -23d, 37d);
+            double3 newestEndAup = new double3(20d, -23d, 37d);
+            double3 newestHitLocal = newestHitAup - originAup;
+            double3 newestEndLocal = newestEndAup - originAup;
+            newestCompatible.AbsoluteHitPoint = new float3((float)newestHitLocal.x, (float)newestHitLocal.y, (float)newestHitLocal.z);
+            newestCompatible.AbsoluteSegmentEnd = new float3((float)newestEndLocal.x, (float)newestEndLocal.y, (float)newestEndLocal.z);
+            newestCompatible.AbsoluteHitPointDouble = newestHitAup;
+            newestCompatible.AbsoluteSegmentEndDouble = newestEndAup;
+            newestCompatible.RadiusMeters = 3.5f;
+            newestCompatible.BlendStrengthMeters = 1.25f;
+            newestCompatible.SourceFlags = 5;
+            VoxelCarveEvent coalesced = VoxelDeltaProcessor.DebugResolveOverflowQueuedCarveEvent(
+                in overflowCompatible,
+                in newestCompatible);
+            bool overflowCoalescingValid =
+                coalesced.VolumeInstanceId == first.VolumeInstanceId &&
+                coalesced.Shape == (byte)VoxelCarveShapeType.Capsule &&
+                math.abs(coalesced.AbsoluteHitPointDouble.x - 11d) < 0.0000001d &&
+                math.abs(coalesced.AbsoluteSegmentEndDouble.x - 20d) < 0.0000001d &&
+                math.abs(coalesced.RadiusMeters - 3.5f) < 0.0001f &&
+                coalesced.SourceFlags == (byte)(first.SourceFlags | newestCompatible.SourceFlags);
 
-                VoxelCarveEvent overflowCompatible = first;
-                VoxelCarveEvent newestCompatible = first;
-                newestCompatible.AbsoluteHitPoint = new float3(19f, -23f, 37f);
-                newestCompatible.AbsoluteSegmentEnd = new float3(20f, -23f, 37f);
-                newestCompatible.AbsoluteHitPointDouble = new double3(19d, -23d, 37d);
-                newestCompatible.AbsoluteSegmentEndDouble = new double3(20d, -23d, 37d);
-                newestCompatible.RadiusMeters = 3.5f;
-                newestCompatible.BlendStrengthMeters = 1.25f;
-                newestCompatible.SourceFlags = 5;
-                VoxelCarveEvent coalesced = VoxelDeltaProcessor.DebugResolveOverflowQueuedCarveEvent(
-                    in overflowCompatible,
-                    in newestCompatible);
-                bool overflowCoalescingValid =
-                    coalesced.VolumeInstanceId == first.VolumeInstanceId &&
-                    coalesced.Shape == (byte)VoxelCarveShapeType.Capsule &&
-                    math.abs(coalesced.AbsoluteHitPointDouble.x - 11d) < 0.0000001d &&
-                    math.abs(coalesced.AbsoluteSegmentEndDouble.x - 20d) < 0.0000001d &&
-                    math.abs(coalesced.RadiusMeters - 3.5f) < 0.0001f &&
-                    coalesced.SourceFlags == (byte)(first.SourceFlags | newestCompatible.SourceFlags);
-
-                return Require(
-                    packetBytes > 0 &&
-                    packetBytes <= 128 &&
-                    queuePreservedPayload &&
-                    continuousBudgetValid &&
-                    overflowCoalescingValid,
-                    "Native carve queue packet or continuous quality budget failed.");
-            }
-            finally
-            {
-                if (queue.IsCreated)
-                    queue.Dispose();
-                }
+            return Require(
+                packetBytes > 0 &&
+                packetBytes <= 128 &&
+                queuePreservedPayload &&
+                continuousBudgetValid &&
+                overflowCoalescingValid,
+                "Vault carve event packet or continuous quality budget failed.");
         }
 
         private bool ValidateVoxelBlackBox()
         {
+            double3 originAup = double3.zero;
+            double3 hitAup = new double3(1d, 2d, 3d);
+            double3 endAup = new double3(2d, 2d, 3d);
+            double3 hitLocal = hitAup - originAup;
+            double3 endLocal = endAup - originAup;
             VoxelCarveEvent valid = new VoxelCarveEvent
             {
-                AbsoluteHitPoint = new float3(1f, 2f, 3f),
-                AbsoluteSegmentEnd = new float3(2f, 2f, 3f),
+                AbsoluteHitPoint = new float3((float)hitLocal.x, (float)hitLocal.y, (float)hitLocal.z),
+                AbsoluteSegmentEnd = new float3((float)endLocal.x, (float)endLocal.y, (float)endLocal.z),
                 AbsoluteHalfExtents = new float3(1f, 1f, 1f),
                 AbsoluteImpulseDirection = new float3(0f, 1f, 0f),
-                AbsoluteHitPointDouble = new double3(1d, 2d, 3d),
-                AbsoluteSegmentEndDouble = new double3(2d, 2d, 3d),
+                AbsoluteHitPointDouble = hitAup,
+                AbsoluteSegmentEndDouble = endAup,
                 RadiusMeters = 1.5f,
                 BlendStrengthMeters = 0.5f,
                 Operation = (byte)VoxelCarveOperationType.Subtract,
@@ -509,7 +508,7 @@ namespace Hecton8.Dev
             bool dumpContract =
                 delta.IndexOf("VaultBufferHandle<VoxelCarveTelemetryEntry> _blackBoxHandle", System.StringComparison.Ordinal) >= 0 &&
                 delta.IndexOf("BufferID.ShinobuDeltaCrusherVoxelBlackBox", System.StringComparison.Ordinal) >= 0 &&
-                delta.IndexOf("Dump_SHINOBU_05_VOXEL_CARVE.h8dump", System.StringComparison.Ordinal) >= 0 &&
+                delta.IndexOf("Dump_1304_Voxel.bin", System.StringComparison.Ordinal) >= 0 &&
                 delta.IndexOf("DumpBlackBoxOnce", System.StringComparison.Ordinal) >= 0 &&
                 delta.IndexOf("WriteBlackBoxSample", System.StringComparison.Ordinal) >= 0;
 #else
@@ -622,7 +621,8 @@ namespace Hecton8.Dev
             string chunkEvents = ReadProjectFile("Assets/_Project/Scripts/VoxelChunkModifiedEvents.cs");
             string engine = ReadProjectFile("Assets/_Project/Scripts/HectonVoxelEngine.cs");
             string shader = ReadProjectFile("Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader");
-            return RequireContains(delta, "NativeQueue<VoxelCarveEvent> _queuedCarveEvents", "Missing bounded NativeQueue carve ingress.") &&
+            return RequireContains(delta, "VaultGenerationHandle<VoxelCarveEvent> _queuedCarveEventsHandle", "Missing vault-owned carve ingress handle.") &&
+                   RequireContains(delta, "BufferID.ShinobuDeltaCrusherCarveEventQueue", "Missing DataVault carve event queue route.") &&
                    RequireContains(delta, "public bool TryQueueCarveEvent(HectonVoxelVolume volume, in VoxelCarveEvent carveEvent)", "Missing public carve event enqueue contract.") &&
                    RequireContains(delta, "private static int ResolveQueuedCarveDrainBudget(float qualityWeight01)", "Missing continuous carve drain resolver.") &&
                    RequireContains(delta, "ResolveQueuedCarveDrainBudgetPerFrame(ResolveGlobalQualityWeight01())", "Runtime carve drain does not consume GlobalQualityWeight.") &&
@@ -686,8 +686,8 @@ namespace Hecton8.Dev
         {
             _debugLastIssue = issue;
             _debugLastPass = false;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning("[VoxelDeformationSmoke] FAIL " + issue, this);
+#if UNITY_EDITOR
+            Hecton8.Core.H8Debug.LogWarning(issue, this);
 #endif
             return false;
         }

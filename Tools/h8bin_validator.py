@@ -11,10 +11,12 @@ from __future__ import annotations
 import argparse
 import concurrent.futures
 import csv
+import itertools
 import json
 import math
 import mmap
 import os
+import re
 import struct
 import sys
 import time
@@ -2209,6 +2211,12 @@ def effective_section_alignment(schema: SchemaModel) -> int:
     return max(DEFAULT_SECTION_ALIGNMENT, schema.constant("SectionAlignmentBytes", DEFAULT_SECTION_ALIGNMENT))
 
 
+def align_up(value: int, alignment: int) -> int:
+    if alignment <= 1:
+        return value
+    return (value + alignment - 1) & ~(alignment - 1)
+
+
 def format_hexdump(mm_obj: mmap.mmap, center: int, radius: int = 16) -> str:
     start = max(0, center - radius)
     end = min(len(mm_obj), center + radius)
@@ -2258,6 +2266,83 @@ def build_artifact_remediation(path: Path) -> tuple[str, list[str]]:
             "that emits binary payload bytes before build."
         )
     return remediation, []
+
+
+def release_expression_can_be_true(expression: str) -> bool:
+    """Return True when a C# preprocessor expression can be active in a player release."""
+    expression = re.sub(r"\bdefined\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)", r"\1", expression)
+    symbols = sorted(set(re.findall(r"\b[A-Za-z_][A-Za-z0-9_]*\b", expression)))
+    fixed = {
+        "UNITY_EDITOR": False,
+        "DEVELOPMENT_BUILD": False,
+    }
+    variable_symbols = [symbol for symbol in symbols if symbol not in fixed]
+    if len(variable_symbols) > 12:
+        # Keep the validator conservative for platform-heavy expressions.
+        variable_symbols = variable_symbols[:12]
+
+    python_expr = expression
+    python_expr = python_expr.replace("&&", " and ")
+    python_expr = python_expr.replace("||", " or ")
+    python_expr = re.sub(r"!(?!=)", " not ", python_expr)
+
+    for values in itertools.product((False, True), repeat=len(variable_symbols)):
+        env = dict(fixed)
+        env.update(zip(variable_symbols, values))
+        try:
+            if bool(eval(python_expr, {"__builtins__": {}}, env)):
+                return True
+        except Exception:
+            return True
+    return False
+
+
+def release_active_line_mask(lines: list[str]) -> list[bool]:
+    """Approximate C# preprocessor activity for any non-editor, non-development player target."""
+    mask: list[bool] = []
+    stack: list[dict[str, bool]] = []
+
+    def current_active() -> bool:
+        return all(frame["active"] for frame in stack)
+
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("#if "):
+            parent_active = current_active()
+            active = release_expression_can_be_true(stripped[4:].strip())
+            stack.append(
+                {
+                    "parent": parent_active,
+                    "active": parent_active and active,
+                    "taken": active,
+                }
+            )
+            mask.append(False)
+            continue
+
+        if stripped.startswith("#elif ") and stack:
+            frame = stack[-1]
+            branch_active = release_expression_can_be_true(stripped[6:].strip())
+            frame["active"] = frame["parent"] and not frame["taken"] and branch_active
+            frame["taken"] = frame["taken"] or branch_active
+            mask.append(False)
+            continue
+
+        if stripped == "#else" and stack:
+            frame = stack[-1]
+            frame["active"] = frame["parent"] and not frame["taken"]
+            frame["taken"] = True
+            mask.append(False)
+            continue
+
+        if stripped == "#endif" and stack:
+            stack.pop()
+            mask.append(False)
+            continue
+
+        mask.append(current_active())
+
+    return mask
 
 
 def get_reference_text_cache() -> list[tuple[str, list[str]]]:
@@ -2385,8 +2470,11 @@ def scan_runtime_text_loaders(source_roots: list[Path], state: ValidationState) 
             if not any(suffix.encode("ascii") in raw_lower for suffix in TEXT_RUNTIME_SUFFIXES):
                 continue
             lines = raw.decode("utf-8-sig", errors="ignore").splitlines()
+            active_lines = release_active_line_mask(lines)
             text_symbols = collect_text_artifact_symbols(lines)
             for index, line in enumerate(lines, 1):
+                if index - 1 >= len(active_lines) or not active_lines[index - 1]:
+                    continue
                 lower = line.lower()
                 if "streamingassets" not in lower:
                     continue
@@ -3179,8 +3267,14 @@ def validate_h8bin_file(file_path: Path, state: ValidationState, known_hashes: s
                 state.add_error("SECTION_TABLE_OFFSET", f"SectionTableOffset {section_table_offset} expected {expected_table_offset}", str(file_path), header_size + 8)
             if section_table_bytes != expected_table_bytes:
                 state.add_error("SECTION_TABLE_BYTES", f"SectionTableBytes {section_table_bytes} expected {expected_table_bytes}", str(file_path), header_size + 12)
-            if data_start_offset != section_table_offset + section_table_bytes or data_start_offset % section_alignment != 0:
-                state.add_error("DATA_START", f"DataStartOffset {data_start_offset} is not table-end aligned", str(file_path), header_size + 20)
+            expected_data_start_offset = align_up(section_table_offset + section_table_bytes, section_alignment)
+            if data_start_offset != expected_data_start_offset or data_start_offset % section_alignment != 0:
+                state.add_error(
+                    "DATA_START",
+                    f"DataStartOffset {data_start_offset} expected aligned table end {expected_data_start_offset}",
+                    str(file_path),
+                    header_size + 20,
+                )
             if section_table_offset + section_table_bytes > len(mm_obj):
                 state.add_error("SECTION_TABLE_RANGE", "Section table exceeds blob length", str(file_path), section_table_offset)
 
@@ -3310,7 +3404,9 @@ def validate_h8bin_file(file_path: Path, state: ValidationState, known_hashes: s
                 state.add_error("LOCALIZATION_ORPHAN", "Directory declares localization bytes but section is empty", str(file_path), header_size + 24)
 
             rle_flag = state.schema.constants.get("RleDirectoryFlag", 0)
-            unsupported_flags = directory_flags & ~rle_flag
+            little_endian_flag = state.schema.constants.get("BlobFlagLittleEndian", 0)
+            supported_flags = rle_flag | little_endian_flag
+            unsupported_flags = directory_flags & ~supported_flags
             if unsupported_flags:
                 state.add_error(
                     "DIRECTORY_FLAGS_UNSUPPORTED",
@@ -3502,6 +3598,7 @@ def csv_to_bin_diff(csv_path: Path, h8bin_path: Path, state: ValidationState) ->
 
 def build_report(state: ValidationState) -> dict[str, Any]:
     elapsed = time.perf_counter() - state.start_time
+    agent_id = getattr(state.args, "agent_id", "SHINOBU_358")
     primary_structs = {
         name: {
             "size": layout.size,
@@ -3523,14 +3620,15 @@ def build_report(state: ValidationState) -> dict[str, Any]:
         if name in {"H8DataBlobHeader", "H8DataBlobDirectory", "H8DataSectionEntry"}
     }
     self_audit = {
-        "agent_id": "SHINOBU_358",
+        "agent_id": agent_id,
+        "tool_origin_agent_id": "SHINOBU_358",
         "legacy_tool_owner": "SHINOBU_258",
         "task_count": 20,
         "standalone_python": True,
         "unity_runtime_dependency": False,
         "mmap_file_access": True,
         "watchdog_seconds": WATCHDOG_SECONDS,
-        "checksum": "Unity.Collections.xxHash3.Hash64 pure-Python oracle over bytes[16..end)",
+        "checksum": "Unity.Collections.xxHash3.Hash64 pure-Python oracle over bytes[headerBytes..end)",
         "csharp_parser": {
             "mode": "deterministic mmap token stream; no regex in StructLayout/FieldOffset AST path",
             "struct": "attribute token blocks -> StructLayout token call -> LayoutKind.Explicit token -> Size token expression -> struct body brace span",
@@ -3547,7 +3645,7 @@ def build_report(state: ValidationState) -> dict[str, Any]:
         "dear_lie": "Payload validation samples deterministic 5% by default after full header/table proof; --thorough validates all records.",
         "section_alignment_floor": "C# SectionAlignmentBytes must be >=16; effective section/file/data-start alignment never drops below 16 bytes.",
         "record_stride_gate": "Non-empty sections must declare a non-zero stride large enough to contain the parsed C# explicit-layout struct before hash extraction or sampling.",
-        "rle_flag_contract": "RLE probe runs only when C# defines RleDirectoryFlag and the directory sets that bit; unknown directory flags fail as DIRECTORY_FLAGS_UNSUPPORTED.",
+        "directory_flag_contract": "Supported H8DM directory flags are BlobFlagLittleEndian and RleDirectoryFlag when defined by C#; unknown bits fail as DIRECTORY_FLAGS_UNSUPPORTED.",
         "csv_diff_field_gate": "--csv-diff compares known numeric H8ItemRecord fields such as Cost/MassKg/VolumeM3 when present in the source CSV, not only Items.HashId.",
         "integer_aup_gate": "Integer AUP fields named Aup*/AUP* are checked against +/-100000 just like floating AUP coordinates.",
         "reference_master_gate": "Recipe/Loot references fail as REFERENCE_MASTER_EMPTY when Items.HashId cannot be proven, avoiding false BROKEN_FOREIGN_KEY proof.",
@@ -3560,7 +3658,8 @@ def build_report(state: ValidationState) -> dict[str, Any]:
     }
     return {
         "schema": "h8bin_validator.report.v2",
-        "agent_id": "SHINOBU_358",
+        "agent_id": agent_id,
+        "tool_origin_agent_id": "SHINOBU_358",
         "legacy_tool_owner": "SHINOBU_258",
         "status": "PASS" if state.ok else "FAIL",
         "elapsed_seconds": round(elapsed, 6),
@@ -3713,7 +3812,7 @@ def append_metrics(path: Path, report: dict[str, Any]) -> None:
     warning = " PERF_WARN" if report["elapsed_seconds"] > 0.5 else ""
     stamp = time.strftime("%Y-%m-%d")
     line = (
-        f"{stamp} SHINOBU_358 status={report['status']} "
+        f"{stamp} {report['agent_id']} status={report['status']} "
         f"mb={report['mb_processed']} files={report['files_checked']} "
         f"structs={report['structs_parsed']} seconds={report['elapsed_seconds']}{warning}\n"
     )
@@ -3724,7 +3823,7 @@ def append_metrics(path: Path, report: dict[str, Any]) -> None:
 def append_metric_phi_data_truth_row(path: Path, report: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     row = {
-        "agentId": "SHINOBU_358",
+        "agentId": report["agent_id"],
         "tool": "h8bin_validator",
         "status": report["status"],
         "filesScanned": report["files_checked"],
@@ -3876,6 +3975,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="C# source root to parse; can be supplied multiple times",
     )
     parser.add_argument("--report-json", default=BINARY_SCHEMA_AUDIT_REPORT)
+    parser.add_argument("--agent-id", default="SHINOBU_358", help="agent id to stamp into the generated report")
     parser.add_argument("--report-junit", default="")
     parser.add_argument("--metrics-log", default="Docs/Reports/CI_BINARY_VALIDATION.log")
     parser.add_argument("--metric-phi-json", default=METRIC_PHI_BINARY_SCHEMA_ROWS)

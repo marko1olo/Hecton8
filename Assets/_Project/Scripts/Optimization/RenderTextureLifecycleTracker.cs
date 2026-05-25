@@ -149,7 +149,7 @@ namespace Hecton8.Optimization
             if (rt == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[LifecycleTracker] RegisterAllocation called with null RenderTexture");
+                Hecton8.Core.H8Debug.LogError("[LifecycleTracker] RegisterAllocation called with null RenderTexture");
 #endif
                 return;
             }
@@ -157,7 +157,7 @@ namespace Hecton8.Optimization
             if (owner == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[LifecycleTracker] RegisterAllocation called with null owner");
+                Hecton8.Core.H8Debug.LogError("[LifecycleTracker] RegisterAllocation called with null owner");
 #endif
                 return;
             }
@@ -167,7 +167,7 @@ namespace Hecton8.Optimization
             if (_allocations.ContainsKey(instanceID))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning(
+                Hecton8.Core.H8Debug.LogWarning(
                     "[LifecycleTracker] Duplicate registration for RT " +
                     rt.name +
                     " (ID: " +
@@ -410,7 +410,7 @@ namespace Hecton8.Optimization
                 for (int i = 0; i < _leakQueryResults.Count; i++)
                 {
                     RenderTextureAllocationRecord leak = _leakQueryResults[i];
-                    Debug.LogError(
+                    Hecton8.Core.H8Debug.LogError(
                         "[LifecycleTracker] RT LEAK DETECTED: " +
                         leak.RenderTexture.name +
                         " (" +

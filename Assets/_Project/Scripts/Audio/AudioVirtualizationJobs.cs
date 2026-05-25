@@ -452,7 +452,7 @@ namespace Hecton8.Audio.Virtualization
         [WriteOnly, NoAlias] public NativeArray<AcousticDspOutputDTO> Outputs;
         [ReadOnly, NoAlias] public NativeArray<double3> PreviousSourceAup;
         [ReadOnly, NoAlias] public NativeArray<byte>.ReadOnly SdfVoxels;
-        [ReadOnly, NoAlias] public NativeArray<AcousticMaterialCoefficientDTO> Materials;
+        [ReadOnly, NoAlias] public NativeArray<AcousticMaterialCoefficientDTO>.ReadOnly Materials;
         public MockSDFSampler FallbackSdf;
         public double3 ListenerAup;
         public double3 PreviousListenerAup;

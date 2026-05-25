@@ -1245,7 +1245,7 @@ namespace Hecton8.Tools.ToolKinematics
                 UnsafeUtility.SizeOf<MockSdfSample>() == 8;
 
             if (!valid)
-                Debug.LogError("[ToolKinematicsRuntime] ARM64 DTO layout mismatch. Runtime disabled.");
+                Hecton8.Core.H8Debug.LogError("[ToolKinematicsRuntime] ARM64 DTO layout mismatch. Runtime disabled.");
 
             return valid;
         }

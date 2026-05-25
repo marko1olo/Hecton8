@@ -278,7 +278,7 @@ namespace Hecton8.Gameplay
         private void RefreshColdRegistryReferences()
         {
             _thermodynamicsService = GlobalRegistry.ThermodynamicsService;
-            _playerRuntime = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
+            _playerRuntime = GlobalRegistry.Player;
             _playerActionInterrupts = GlobalRegistry.PlayerActionInterrupts;
             _playerHealth = _playerRuntime != null ? _playerRuntime.PlayerHealth : null;
         }

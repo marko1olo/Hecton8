@@ -20,7 +20,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Decryption Spectrogram Panel")]
-    public sealed class PDADecryptionSpectrogramPanel : MonoBehaviour, IUpdatable, ILateFrameTickable, IDisposable, IGlobalRegistryHotSwapListener
+    public sealed class PDADecryptionSpectrogramPanel : MonoBehaviour, ILateFrameTickable, IDisposable, IGlobalRegistryHotSwapListener
     {
         private static int s_x001PDADecryptionSpectrogramPanelSignalPushDropCount;
         internal const string WaveShaderPath = "Assets/_Project/Art/Shaders/Hecton_PDA_FrequencyTuningWave.shader";
@@ -107,7 +107,6 @@ namespace Hecton8.UI
         private uint _lastTickFrame;
         private bool _scannerActive;
         private bool _unlocked;
-        private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _nativeReady;
         private bool _graphicsReady;
@@ -166,7 +165,7 @@ namespace Hecton8.UI
             DisposeGraphicsResources();
         }
 
-        public void Tick(float deltaTime)
+        private void AdvanceDecryptionPresentationState(float deltaTime)
         {
             RefreshCachedQualityPolicy(rebuildResourcesOnPointChange: true);
 
@@ -190,7 +189,7 @@ namespace Hecton8.UI
 
             float safeDeltaTime = SanitizePositive(deltaTime, 0f);
             _lastTickDeltaTime = safeDeltaTime;
-            _lastTickUnscaledTime = Time.unscaledTime;
+            _lastTickUnscaledTime = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             _lastTickFrame = Hecton8.Core.SystemDispatcher.CurrentFrameId;
             SampleInputState(safeDeltaTime);
             ResolveTargetForCurrentStage(out _targetFrequency, out _targetAmplitude);
@@ -199,6 +198,8 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            AdvanceDecryptionPresentationState(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (_nativeResourcesDirty || !_nativeReady)
             {
                 _nativeResourcesDirty = false;
@@ -282,7 +283,7 @@ namespace Hecton8.UI
             BufferID bufferId,
             int requiredLength,
             NativeArrayOptions options,
-            out NativeArray<T> buffer) where T : struct
+            out NativeArray<T> buffer) where T : unmanaged
         {
             buffer = default;
             IDataVault vault = _cachedDataVault;
@@ -312,13 +313,13 @@ namespace Hecton8.UI
             return true;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
         {
             return handle.BufferID != 0u && handle.Generation != 0u;
         }
 
         private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
-            where T : struct
+            where T : unmanaged
         {
             if (vault != null && handle.BufferID != 0u)
                 vault.ReleaseBuffer(in handle);
@@ -529,15 +530,14 @@ namespace Hecton8.UI
                 return;
 
             _unlocked = true;
-            SignalBus<BlueprintUnlockedSignal>.TryPushTracked(new BlueprintUnlockedSignal
-            {
-                EntityHash = _artifactHash,
-                BlueprintHash = _blueprintHash != 0u ? _blueprintHash : DefaultBlueprintHash,
-                SourceId = ToolHash,
-                Frame = _lastTickFrame,
-                Category = 1,
-                Flags = 1
-            }, ref s_x001PDADecryptionSpectrogramPanelSignalPushDropCount);
+            BlueprintUnlockedSignal signal = default;
+            signal.EntityHash = _artifactHash;
+            signal.BlueprintHash = _blueprintHash != 0u ? _blueprintHash : DefaultBlueprintHash;
+            signal.SourceId = ToolHash;
+            signal.Frame = _lastTickFrame;
+            signal.Category = 1;
+            signal.Flags = 1;
+            SignalBus<BlueprintUnlockedSignal>.TryPushTracked(in signal, ref s_x001PDADecryptionSpectrogramPanelSignalPushDropCount);
         }
 
         private void RenderWaveMesh()
@@ -552,15 +552,24 @@ namespace Hecton8.UI
             Vector3 worldCenter = new Vector3(origin.x, origin.y, origin.z);
             _runtimeMaterial.SetMatrix(LocalToWorldId, localToWorld);
             _runtimeMaterial.SetFloat(TubeRadiusId, math.max(0.0005f, tubeRadius));
-            _runtimeMaterial.SetVector(
-                WaveScalarsId,
-                new Vector4(_targetFrequency, _targetAmplitude, _playerFrequency, _playerAmplitude));
-            _runtimeMaterial.SetVector(
-                WaveLayoutId,
-                new Vector4(math.max(1, _waveSegmentCount), math.max(0.01f, localSurfaceSize.x), math.max(0.01f, localSurfaceSize.y), _pointCount));
-            _runtimeMaterial.SetVector(
-                TimeErrorStageId,
-                new Vector4(_lastTickUnscaledTime, _currentError01, _stageIndex, _holdTimerSeconds * math.rcp(UnlockHoldSeconds)));
+            Vector4 waveScalars = default;
+            waveScalars.x = _targetFrequency;
+            waveScalars.y = _targetAmplitude;
+            waveScalars.z = _playerFrequency;
+            waveScalars.w = _playerAmplitude;
+            _runtimeMaterial.SetVector(WaveScalarsId, waveScalars);
+            Vector4 waveLayout = default;
+            waveLayout.x = math.max(1, _waveSegmentCount);
+            waveLayout.y = math.max(0.01f, localSurfaceSize.x);
+            waveLayout.z = math.max(0.01f, localSurfaceSize.y);
+            waveLayout.w = _pointCount;
+            _runtimeMaterial.SetVector(WaveLayoutId, waveLayout);
+            Vector4 timeErrorStage = default;
+            timeErrorStage.x = _lastTickUnscaledTime;
+            timeErrorStage.y = _currentError01;
+            timeErrorStage.z = _stageIndex;
+            timeErrorStage.w = _holdTimerSeconds * math.rcp(UnlockHoldSeconds);
+            _runtimeMaterial.SetVector(TimeErrorStageId, timeErrorStage);
             UpdateDrawArgs(_gpuSegmentCapacity);
 
             Bounds bounds = new Bounds(worldCenter, Vector3.one * math.max(localSurfaceSize.x, localSurfaceSize.y) * 2f);
@@ -590,15 +599,20 @@ namespace Hecton8.UI
 
             NativeArray<GraphicsBuffer.IndirectDrawIndexedArgs> argsWrite =
                 target.LockBufferForWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(0, 1);
-            argsWrite[0] = new GraphicsBuffer.IndirectDrawIndexedArgs
+            try
             {
-                indexCountPerInstance = _resolvedMesh.GetIndexCount(0),
-                instanceCount = (uint)safeInstanceCount,
-                startIndex = _resolvedMesh.GetIndexStart(0),
-                baseVertexIndex = (uint)Mathf.Max(0, _resolvedMesh.GetBaseVertex(0)),
-                startInstance = 0u
-            };
-            target.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+                GraphicsBuffer.IndirectDrawIndexedArgs drawArgs = default;
+                drawArgs.indexCountPerInstance = _resolvedMesh.GetIndexCount(0);
+                drawArgs.instanceCount = (uint)safeInstanceCount;
+                drawArgs.startIndex = _resolvedMesh.GetIndexStart(0);
+                drawArgs.baseVertexIndex = (uint)Mathf.Max(0, _resolvedMesh.GetBaseVertex(0));
+                drawArgs.startInstance = 0u;
+                argsWrite[0] = drawArgs;
+            }
+            finally
+            {
+                target.UnlockBufferAfterWrite<GraphicsBuffer.IndirectDrawIndexedArgs>(1);
+            }
             _argsBuffer = target;
             _argsBufferWriteIndex ^= 1;
             _lastArgsInstanceCount = safeInstanceCount;
@@ -618,17 +632,16 @@ namespace Hecton8.UI
                 return;
 
             float match01 = math.saturate(1f - safeError);
-            SignalBus<ToolAcousticSignal>.TryPushTracked(new ToolAcousticSignal
-            {
-                ToolHash = ToolHash,
-                TargetHash = _artifactHash,
-                Progress01 = match01,
-                PitchScale = math.lerp(0.62f, 1.12f, match01),
-                Intensity01 = safeError,
-                Frame = _lastTickFrame,
-                State = 2,
-                Flags = 0
-            }, ref s_x001PDADecryptionSpectrogramPanelSignalPushDropCount);
+            ToolAcousticSignal signal = default;
+            signal.ToolHash = ToolHash;
+            signal.TargetHash = _artifactHash;
+            signal.Progress01 = match01;
+            signal.PitchScale = math.lerp(0.62f, 1.12f, match01);
+            signal.Intensity01 = safeError;
+            signal.Frame = _lastTickFrame;
+            signal.State = 2;
+            signal.Flags = 0;
+            SignalBus<ToolAcousticSignal>.TryPushTracked(in signal, ref s_x001PDADecryptionSpectrogramPanelSignalPushDropCount);
             PlayerSignalEvents.TryRaiseInteractionSignal(new PlayerInteractionStressSignal(
                 safeError * 0.15f,
                 math.saturate(0.25f + safeError * 0.65f),
@@ -668,26 +681,30 @@ namespace Hecton8.UI
             if (!TryResolveTelemetryRing(out NativeArray<FrequencyTuningTelemetryEntry> telemetryRing))
                 return;
 
-            if (!math.all(math.isfinite(new float4(_targetFrequency, _targetAmplitude, _playerFrequency, _playerAmplitude))) ||
+            float4 finiteProbe = default;
+            finiteProbe.x = _targetFrequency;
+            finiteProbe.y = _targetAmplitude;
+            finiteProbe.z = _playerFrequency;
+            finiteProbe.w = _playerAmplitude;
+            if (!math.all(math.isfinite(finiteProbe)) ||
                 !math.isfinite(_currentError01))
             {
                 DumpTelemetryCold();
                 return;
             }
 
-            telemetryRing[_telemetryCursor] = new FrequencyTuningTelemetryEntry
-            {
-                Frame = _lastTickFrame,
-                ArtifactHash = _artifactHash,
-                TargetFrequency = _targetFrequency,
-                TargetAmplitude = _targetAmplitude,
-                PlayerFrequency = _playerFrequency,
-                PlayerAmplitude = _playerAmplitude,
-                Error01 = _currentError01,
-                HoldPermille = (ushort)math.clamp((int)math.round(_holdTimerSeconds * math.rcp(UnlockHoldSeconds) * 1000f), 0, 1000),
-                Stage = (byte)_stageIndex,
-                Flags = (byte)_lockedStageMask
-            };
+            FrequencyTuningTelemetryEntry telemetry = default;
+            telemetry.Frame = _lastTickFrame;
+            telemetry.ArtifactHash = _artifactHash;
+            telemetry.TargetFrequency = _targetFrequency;
+            telemetry.TargetAmplitude = _targetAmplitude;
+            telemetry.PlayerFrequency = _playerFrequency;
+            telemetry.PlayerAmplitude = _playerAmplitude;
+            telemetry.Error01 = _currentError01;
+            telemetry.HoldPermille = (ushort)math.clamp((int)math.round(_holdTimerSeconds * math.rcp(UnlockHoldSeconds) * 1000f), 0, 1000);
+            telemetry.Stage = (byte)_stageIndex;
+            telemetry.Flags = (byte)_lockedStageMask;
+            telemetryRing[_telemetryCursor] = telemetry;
             _telemetryCursor++;
             if (_telemetryCursor >= TelemetryCapacity)
                 _telemetryCursor = 0;
@@ -741,11 +758,10 @@ namespace Hecton8.UI
             {
                 float r0 = Next01(ref state);
                 float r1 = Next01(ref state);
-                stageTargets[i] = new FrequencyTuningStageTarget
-                {
-                    Frequency = math.clamp(1.05f + i * 0.8f + r0 * 0.35f, playerFrequencyMin, playerFrequencyMax),
-                    Amplitude = math.clamp(0.32f + i * 0.12f + r1 * 0.32f, playerAmplitudeMin, playerAmplitudeMax)
-                };
+                FrequencyTuningStageTarget target = default;
+                target.Frequency = math.clamp(1.05f + i * 0.8f + r0 * 0.35f, playerFrequencyMin, playerFrequencyMax);
+                target.Amplitude = math.clamp(0.32f + i * 0.12f + r1 * 0.32f, playerAmplitudeMin, playerAmplitudeMax);
+                stageTargets[i] = target;
             }
         }
 
@@ -877,20 +893,12 @@ namespace Hecton8.UI
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_registeredUpdate)
-                _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregisterTickHandlers()
         {
-            if (_registeredUpdate)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registeredUpdate = false;
-            }
-
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);

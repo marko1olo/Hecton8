@@ -124,6 +124,7 @@ namespace Hecton8.Prologue.Space
         private float3 _capsuleLeadingEdgeLocalNormalized = new float3(0f, -1f, 0f);
         private IDataVault _dataVault;
         private IInputService _inputService;
+        private IPhysicsService _physicsService;
         private OrbitalDirectorSnapshot _snapshot;
         private AbsoluteUniversePosition _originAup;
 
@@ -204,6 +205,7 @@ namespace Hecton8.Prologue.Space
             GlobalRegistry.RegisterOrbitalDirectorRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.OrbitalDirector, this);
             _inputService = GlobalRegistry.Input;
+            _physicsService = GlobalRegistry.Physics;
 
             TryRegisterHotSwapListener();
             TryRegisterUpdateLane();
@@ -870,6 +872,9 @@ namespace Hecton8.Prologue.Space
 
             if (serviceSlot == GlobalRegistryServiceSlot.Input)
                 _inputService = currentService as IInputService;
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Physics)
+                _physicsService = currentService as IPhysicsService;
         }
 
         private float UniverseSpeed01()
@@ -1020,8 +1025,8 @@ namespace Hecton8.Prologue.Space
 
             capsuleRigidbody.position = Vector3.zero;
             capsuleRigidbody.rotation = _capsuleLockedRotation;
-            Hecton8.Physics.PhysicsForceRouter.QueueLinearVelocitySet(capsuleRigidbody, Vector3.zero, wake: false);
-            Hecton8.Physics.PhysicsForceRouter.QueueAngularVelocitySet(capsuleRigidbody, Vector3.zero, wake: false);
+            _physicsService?.QueueLinearVelocitySet(capsuleRigidbody, Vector3.zero, wake: false);
+            _physicsService?.QueueAngularVelocitySet(capsuleRigidbody, Vector3.zero, wake: false);
         }
 
         private void QueueCapsuleAuthorityLock()

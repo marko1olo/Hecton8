@@ -377,7 +377,7 @@ namespace Hecton8.Modding
         private static void ReportRecursiveCascadeCritical(uint eventHash)
         {
             CrashTelemetryBuffer.ReportRecursiveCascadeCritical();
-            int frame = Time.frameCount;
+            int frame = SystemDispatcher.CurrentFrameIndex;
             if (_lastCascadeTelemetryFrame != frame)
             {
                 _lastCascadeTelemetryFrame = frame;

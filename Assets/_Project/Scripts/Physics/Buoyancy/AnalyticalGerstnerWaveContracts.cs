@@ -18,7 +18,9 @@ namespace Hecton8.Physics
         public const int MacroGridMaxCells = MacroGridMaxResolution * MacroGridMaxResolution;
         public const int TelemetryCapacity = 300;
         public const int ProfileCapacity = 32;
+#if UNITY_EDITOR
         public const int CsvScratchBytes = 65536;
+#endif
         public const int CounterCapacity = 4;
 
         public const int GerstnerWaveParamsBytes = 64;
@@ -38,8 +40,9 @@ namespace Hecton8.Physics
         public const float DefaultMacroGridCellSizeMeters = 4f;
         public const float DefaultAmplitudeMultiplier = 0.04f;
         public const float DefaultDumpThresholdMicros = 1500f;
+#if UNITY_EDITOR
         public const string CsvRelativePath = "Data/Physics/ocean_wave_spectra.csv";
-        public const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_263.bin";
+#endif
 
         public const uint FlagActive = 1u << 0;
         public const uint FlagMock = 1u << 1;
@@ -61,7 +64,9 @@ namespace Hecton8.Physics
         public const BufferID MacroGrid = BufferID.Shinobu263WaveMacroGrid;
         public const BufferID TelemetryRing = BufferID.Shinobu263WaveTelemetryRing;
         public const BufferID TelemetryCursor = BufferID.Shinobu263WaveTelemetryCursor;
+#if UNITY_EDITOR
         public const BufferID CsvScratch = BufferID.Shinobu263WaveCsvScratch;
+#endif
         public const BufferID Profiles = BufferID.Shinobu263WaveProfiles;
         public const BufferID Counters = BufferID.Shinobu263WaveCounters;
     }

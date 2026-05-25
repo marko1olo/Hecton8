@@ -143,7 +143,7 @@ namespace Hecton8.UI.VR
             AllocateNativeState();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!VerifyProjectionMath())
-                Debug.LogError("[OpenXRManualOverrideLever] Projection dot/cross verification failed.", this);
+                Hecton8.Core.H8Debug.LogError("[OpenXRManualOverrideLever] Projection dot/cross verification failed.", this);
 #endif
             _closedLocalRotation = IsFiniteQuaternion(_resolvedVisual.localRotation)
                 ? _resolvedVisual.localRotation
@@ -225,7 +225,7 @@ namespace Hecton8.UI.VR
 
         public void LateFrameTick()
         {
-            float dt = Time.unscaledDeltaTime;
+            float dt = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             if (_leverVisualDirty)
             {
                 _leverVisualDirty = false;

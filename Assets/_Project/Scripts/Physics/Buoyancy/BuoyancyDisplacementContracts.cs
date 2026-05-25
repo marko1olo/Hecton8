@@ -16,7 +16,9 @@ namespace Hecton8.Physics
         public const int MaterialVolumeCapacity = 2048;
         public const int MaterialSettlingProfileCapacity = 512;
         public const int SleepSdfCellCapacity = 65536;
+#if UNITY_EDITOR
         public const int CsvScratchBytes = 65536;
+#endif
         public const int ForceQueueSoftCapacity = 8192;
         public const int TelemetryCapacity = 300;
         public const int TuningCapacity = 1;
@@ -46,12 +48,11 @@ namespace Hecton8.Physics
         public const float DefaultQuadraticDragCoefficient = 0.92f;
         public const float DefaultSurfaceDampening = 0.78f;
         public const float DefaultFlowForceCoefficient = 0.35f;
-        public const string DumpRelativePath = "Docs/AgentLogs/Dump_FLUID_DYNAMICS.bin";
-        public const string AgentDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_201_Buoyancy.bin";
-        public const string SleepStateDumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_249.bin";
+#if UNITY_EDITOR
         public const string CsvRelativePath = "Data/Physics/item_volume_specs.csv";
         public const string MaterialSettlingProfilesCsvRelativePath = "Data/Physics/material_settling_profiles.csv";
         public const string SimdToleranceCsvRelativePath = "Data/Physics/simd_math_tolerances.csv";
+#endif
 
         public const uint FlagActive = 1u << 0;
         public const uint FlagSleeping = 1u << 1;
@@ -82,7 +83,9 @@ namespace Hecton8.Physics
         public const BufferID TelemetryRing = BufferID.ShinobuBuoyancyTelemetryRing;
         public const BufferID TelemetryCursor = BufferID.ShinobuBuoyancyTelemetryCursor;
         public const BufferID MaterialVolumes = BufferID.ShinobuBuoyancyMaterialVolumes;
+#if UNITY_EDITOR
         public const BufferID CsvScratch = BufferID.ShinobuBuoyancyCsvScratch;
+#endif
         public const BufferID DebugForces = BufferID.ShinobuBuoyancyDebugForces;
         public const BufferID Counters = BufferID.ShinobuBuoyancyCounters;
         public const BufferID BodyBindings = BufferID.ShinobuBuoyancyBodyBindings;

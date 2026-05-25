@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using Hecton8.Core.Contracts;
+using Hecton8.Core.Contracts.Physics;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.World;
 using Unity.Burst;
@@ -246,7 +247,7 @@ namespace Hecton8.Physics
         // before mutating Vault lanes. TryLockJobBuffers keeps front/back buffers locked until the
         // chained handle is fenced, so no second writer mutates the SignalBus lane or backing buffers.
         [NoAlias, NativeDisableContainerSafetyRestriction]
-        public NativeQueue<FluidIncursionSignal>.ParallelWriter IncursionWriter;
+        public global::Hecton8.Core.MpscSignalRingBuffer<FluidIncursionSignal>.ParallelWriter IncursionWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> IncursionWriterBudget;
         public int CompartmentCount;
         public float DeltaTime;

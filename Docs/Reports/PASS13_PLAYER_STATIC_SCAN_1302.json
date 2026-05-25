@@ -1,0 +1,514 @@
+﻿{
+    "schema":  5,
+    "agent":  1302,
+    "pass":  13,
+    "generatedUtc":  "2026-05-25T19:50:41.2213883Z",
+    "scannerNote":  "release-player preprocessor model, line comments stripped for managed-risk tokens",
+    "changedCsCount":  41,
+    "inScopeChangedCsCount":  36,
+    "excludedChangedCs":  [
+                              "Assets/_Project/Scripts/Physics/Cable132/CablePhysicsSolver132.cs",
+                              "Assets/_Project/Scripts/Physics/TetherAupVerletJobs.cs",
+                              "Assets/_Project/Scripts/Physics/TetherBlackBoxDumpWriter.cs",
+                              "Assets/_Project/Scripts/Physics/TetherVerletJobs.cs",
+                              "Assets/_Project/Scripts/Physics/VerletCableDTOs.cs"
+                          ],
+    "rootBridgeForbiddenPlayerHits":  0,
+    "playerManagedRiskHitCount":  0,
+    "playerManagedAllocationNewHitCount":  16,
+    "playerRawNewTextHitCount":  700,
+    "addedForbiddenTokenHitCount":  0,
+    "rootBridgeForbiddenSamples":  [
+
+                                   ],
+    "managedRiskSamples":  [
+
+                           ],
+    "managedAllocationNewSamples":  [
+                                        {
+                                            "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                                            "line":  113,
+                                            "text":  "private static readonly ListenerSlot[] _impactListeners = new ListenerSlot[ListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - deferred physics impact listeners - owner: PhysicsEvents"
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                                            "line":  613,
+                                            "text":  "private Rigidbody[] _trackedBodies = new Rigidbody[MaxTrackedBodies];"
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                                            "line":  615,
+                                            "text":  "private RigidbodyState[] _bodyStates = new RigidbodyState[MaxTrackedBodies];"
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                                            "line":  617,
+                                            "text":  "private readonly PhysicsConnection[] _connections = new PhysicsConnection[MaxTrackedConnections];"
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                                            "line":  619,
+                                            "text":  "private readonly Dictionary\u003culong, int\u003e _trackedBodyIndexByEntityId = new Dictionary\u003culong, int\u003e(MaxTrackedBodies);"
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                                            "line":  621,
+                                            "text":  "private readonly List\u003cGameObject\u003e _sceneRootScratch = new List\u003cGameObject\u003e(SceneRootScanCapacity);"
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                                            "line":  623,
+                                            "text":  "private readonly List\u003cRigidbody\u003e _sceneRigidbodyScratch = new List\u003cRigidbody\u003e(SceneRigidbodyScanCapacity);"
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                                            "line":  625,
+                                            "text":  "private readonly MeshCollider[] _trackedMeshColliders = new MeshCollider[MaxTrackedMeshColliderRefs];"
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                                            "line":  627,
+                                            "text":  "private readonly byte[] _trackedMeshColliderEnabledBeforeStrip = new byte[MaxTrackedMeshColliderRefs];"
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                                            "line":  629,
+                                            "text":  "private readonly List\u003cMeshCollider\u003e _meshColliderScratch = new List\u003cMeshCollider\u003e(MeshColliderScratchCapacity);"
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                                            "line":  631,
+                                            "text":  "private readonly Collider[] _trackedSleepColliders = new Collider[MaxTrackedSleepColliderRefs];"
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                                            "line":  633,
+                                            "text":  "private readonly byte[] _trackedSleepColliderEnabledBeforeSleep = new byte[MaxTrackedSleepColliderRefs];"
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                                            "line":  635,
+                                            "text":  "private readonly List\u003cCollider\u003e _sleepColliderScratch = new List\u003cCollider\u003e(SleepColliderScratchCapacity);"
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                                            "line":  637,
+                                            "text":  "private readonly Dictionary\u003cint, int\u003e _trackedBodyIndexByInstanceId = new Dictionary\u003cint, int\u003e(MaxTrackedBodies);"
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Physics/FluidFeedbackListener.cs",
+                                            "line":  48,
+                                            "text":  "private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];"
+                                        },
+                                        {
+                                            "file":  "Assets/_Project/Scripts/Physics/GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                                            "line":  189,
+                                            "text":  "private readonly Plane[] _physicsFrustumPlaneScratch = new Plane[6]; // COLD ALLOC: Plane[6] - Unity frustum API scratch for GeometryUtility.CalculateFrustumPlanes(Camera, Plane[]) - owner: GlobalPhysicsStateManager"
+                                        }
+                                    ],
+    "rawNewSamples":  [
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  113,
+                              "text":  "private static readonly ListenerSlot[] _impactListeners = new ListenerSlot[ListenerCapacity]; // COLD ALLOC: ListenerSlot[16] - deferred physics impact listeners - owner: PhysicsEvents"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  449,
+                              "text":  "float3 safeCameraForward = NormalizeWithRsqrtGuard(CameraForward, new float3(0f, 0f, 1f));"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  613,
+                              "text":  "private Rigidbody[] _trackedBodies = new Rigidbody[MaxTrackedBodies];"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  615,
+                              "text":  "private RigidbodyState[] _bodyStates = new RigidbodyState[MaxTrackedBodies];"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  617,
+                              "text":  "private readonly PhysicsConnection[] _connections = new PhysicsConnection[MaxTrackedConnections];"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  619,
+                              "text":  "private readonly Dictionary\u003culong, int\u003e _trackedBodyIndexByEntityId = new Dictionary\u003culong, int\u003e(MaxTrackedBodies);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  621,
+                              "text":  "private readonly List\u003cGameObject\u003e _sceneRootScratch = new List\u003cGameObject\u003e(SceneRootScanCapacity);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  623,
+                              "text":  "private readonly List\u003cRigidbody\u003e _sceneRigidbodyScratch = new List\u003cRigidbody\u003e(SceneRigidbodyScanCapacity);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  625,
+                              "text":  "private readonly MeshCollider[] _trackedMeshColliders = new MeshCollider[MaxTrackedMeshColliderRefs];"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  627,
+                              "text":  "private readonly byte[] _trackedMeshColliderEnabledBeforeStrip = new byte[MaxTrackedMeshColliderRefs];"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  629,
+                              "text":  "private readonly List\u003cMeshCollider\u003e _meshColliderScratch = new List\u003cMeshCollider\u003e(MeshColliderScratchCapacity);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  631,
+                              "text":  "private readonly Collider[] _trackedSleepColliders = new Collider[MaxTrackedSleepColliderRefs];"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  633,
+                              "text":  "private readonly byte[] _trackedSleepColliderEnabledBeforeSleep = new byte[MaxTrackedSleepColliderRefs];"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  635,
+                              "text":  "private readonly List\u003cCollider\u003e _sleepColliderScratch = new List\u003cCollider\u003e(SleepColliderScratchCapacity);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  637,
+                              "text":  "private readonly Dictionary\u003cint, int\u003e _trackedBodyIndexByInstanceId = new Dictionary\u003cint, int\u003e(MaxTrackedBodies);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  639,
+                              "text":  "private VaultBufferBinding\u003cfloat3\u003e _lastValidPositions = new VaultBufferBinding\u003cfloat3\u003e(BufferID.RigidbodyLastValidPositions, MaxTrackedBodies, OwnerSystemId);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  640,
+                              "text":  "private VaultBufferBinding\u003cdouble3\u003e _rigidbodyAUPs = new VaultBufferBinding\u003cdouble3\u003e(BufferID.RigidbodyAUPs, MaxTrackedBodies, OwnerSystemId);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  641,
+                              "text":  "private VaultBufferBinding\u003cbyte\u003e _rigidbodyCullingStateSnapshot = new VaultBufferBinding\u003cbyte\u003e(BufferID.RigidbodyCullingState, MaxTrackedBodies, OwnerSystemId);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  642,
+                              "text":  "private VaultBufferBinding\u003cbyte\u003e _rigidbodyAwakeResults = new VaultBufferBinding\u003cbyte\u003e(BufferID.RigidbodyAwakeResults, MaxTrackedBodies, OwnerSystemId);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  643,
+                              "text":  "private VaultBufferBinding\u003cbyte\u003e _rigidbodyCullingCommandResults = new VaultBufferBinding\u003cbyte\u003e(BufferID.RigidbodyCullingCommands, MaxTrackedBodies, OwnerSystemId);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  644,
+                              "text":  "private VaultBufferBinding\u003cfloat\u003e _rigidbodyDistanceSqResults = new VaultBufferBinding\u003cfloat\u003e(BufferID.RigidbodyDistanceSq, MaxTrackedBodies, OwnerSystemId);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  645,
+                              "text":  "private VaultBufferBinding\u003cPhysicsCullingTelemetryEntry\u003e _physicsCullingTelemetry = new VaultBufferBinding\u003cPhysicsCullingTelemetryEntry\u003e(BufferID.PhysicsCullingTelemetry, PhysicsCullingTelemetryCapacity, OwnerSystemId);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  646,
+                              "text":  "private VaultBufferBinding\u003cPhysicsImpactEventData\u003e _impactEvents = new VaultBufferBinding\u003cPhysicsImpactEventData\u003e(BufferID.PhysicsImpactEvents, MaxQueuedImpactEvents, OwnerSystemId);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  1605,
+                              "text":  "_lastValidPositions[i] = new float3(position.x, position.y, position.z);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  1615,
+                              "text":  "? new Vector3(_lastValidPositions[i].x, _lastValidPositions[i].y, _lastValidPositions[i].z)"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  1690,
+                              "text":  "_lastValidPositions[i] = new float3(targetPosition.x, targetPosition.y, targetPosition.z);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  1692,
+                              "text":  "_rigidbodyAUPs[i] = new double3(targetPosition.x, targetPosition.y, targetPosition.z);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  1781,
+                              "text":  "_lastValidPositions[i] = new float3(position.x, position.y, position.z);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2053,
+                              "text":  "_bodyStates[bodyIndex] = new RigidbodyState"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2089,
+                              "text":  "? new float3(bodyPosition.x, bodyPosition.y, bodyPosition.z)"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2147,
+                              "text":  "float3 point3 = new float3(point.x, point.y, point.z);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2148,
+                              "text":  "float3 normal3 = new float3(normal.x, normal.y, normal.z);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2152,
+                              "text":  "point3 = new float3(centerOfMass.x, centerOfMass.y, centerOfMass.z);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2156,
+                              "text":  "normal3 = new float3(0f, 1f, 0f);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2159,
+                              "text":  "if (!TryResolveAupFromRuntimeOrigin(new Vector3(point3.x, point3.y, point3.z), out AbsoluteUniversePosition pointAup))"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2166,
+                              "text":  "EnqueueImpactEvent(new PhysicsImpactEventData"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2219,
+                              "text":  "Vector3 impactPoint = new Vector3(impactEvent.Point.x, impactEvent.Point.y, impactEvent.Point.z);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2220,
+                              "text":  "Vector3 impactNormal = new Vector3(impactEvent.Normal.x, impactEvent.Normal.y, impactEvent.Normal.z);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2221,
+                              "text":  "ImpactSignal corridorSignal = new ImpactSignal"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2233,
+                              "text":  "PhysicsEvents.TryNotifyImpact(new PhysicsImpactSignal("
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2307,
+                              "text":  "_connections[connectionIndex] = new PhysicsConnection"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2484,
+                              "text":  "_lastValidPositions[i] = new float3(bodyPosition.x, bodyPosition.y, bodyPosition.z);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2552,
+                              "text":  "Vector3 aupRuntimePosition = new Vector3("
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2602,
+                              "text":  "float3 position = new float3(bodyPosition.x, bodyPosition.y, bodyPosition.z);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2603,
+                              "text":  "float4 rotation = new float4(bodyRotation.x, bodyRotation.y, bodyRotation.z, bodyRotation.w);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2604,
+                              "text":  "float3 linearVelocity = new float3(bodyLinearVelocity.x, bodyLinearVelocity.y, bodyLinearVelocity.z);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2605,
+                              "text":  "float3 angularVelocity = new float3(bodyAngularVelocity.x, bodyAngularVelocity.y, bodyAngularVelocity.z);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2621,
+                              "text":  "Vector3 invalidRuntimePosition = new Vector3(position.x, position.y, position.z);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2625,
+                              "text":  "new Vector3(lastValidPosition.x, lastValidPosition.y, lastValidPosition.z));"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2626,
+                              "text":  "lastValidPosition = new float3("
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  2794,
+                              "text":  "PhysicsDistanceCullingJobShinobu37 job = new PhysicsDistanceCullingJobShinobu37"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  3119,
+                              "text":  "cameraForward = new float3(0f, 0f, 1f);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  3133,
+                              "text":  "cameraForward = NormalizeWithRsqrtGuard(movementState.CameraForward, new float3(0f, 0f, 1f));"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  3265,
+                              "text":  "_physicsCullingTelemetry[writeIndex] = new PhysicsCullingTelemetryEntry"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  3467,
+                              "text":  "RigidbodySleepSignal signal = new RigidbodySleepSignal"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  4041,
+                              "text":  "float3 value3 = new float3(value.x, value.y, value.z);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  4047,
+                              "text":  "float4 value4 = new float4(value.x, value.y, value.z, value.w);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/GlobalPhysicsStateManager.cs",
+                              "line":  4071,
+                              "text":  "new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z));"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                              "line":  226,
+                              "text":  "GenerateMockWaveRequestsJob requestJob = new GenerateMockWaveRequestsJob"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                              "line":  241,
+                              "text":  "BuildMacroSwellGridJob gridJob = new BuildMacroSwellGridJob"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                              "line":  250,
+                              "text":  "EvaluateAnalyticalWavesJob evaluateJob = new EvaluateAnalyticalWavesJob"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                              "line":  298,
+                              "text":  "var telemetryJob = new RecordWaveMathTelemetryJob"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                              "line":  430,
+                              "text":  "var mockSpectrumJob = new GenerateMockWaveSpectrumJob"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                              "line":  830,
+                              "text":  "return new float4(angle, steepness, wavelength, speed);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                              "line":  228,
+                              "text":  "request.LocalXZ = new float2((float)delta.x, (float)delta.z);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                              "line":  411,
+                              "text":  "handle = new GenerateMockAsyncReadbackJob"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                              "line":  455,
+                              "text":  "handle = new ApplyDelayedBuoyancyReadbackJob"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                              "line":  570,
+                              "text":  "waveHeightSamplerCompute.SetVector(OceanLocalProjectionId, ToVector4(new float4(cameraProjection.x, cameraProjection.y, maxWavelength, wakeWorldSize)));"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                              "line":  573,
+                              "text":  "waveHeightSamplerCompute.SetVector(WaveSampleLodId, new Vector4(maxWavelength, activeWaveCount, _globalQualityWeight, _timeSeconds));"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                              "line":  674,
+                              "text":  "request.LocalXZ = new float2((x01 - 0.5f) * usableLength, (z01 - 0.5f) * usableBeam);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                              "line":  781,
+                              "text":  "primary.Wave1 = new float4(0.12f, 0.42f, 28f, 0.28f);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                              "line":  782,
+                              "text":  "primary.Wave2 = new float4(1.64f, 0.32f, 16f, -0.18f);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                              "line":  783,
+                              "text":  "primary.Wave3 = new float4(2.71f, 0.18f, 9f, 0.11f);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                              "line":  784,
+                              "text":  "primary.GlobalWindAndStorm = new float4(0.8f, 0.25f, 0.15f, 0f);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                              "line":  786,
+                              "text":  "secondary.Wave1 = new float4(0.76f, 0.12f, 6f, 0.21f);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                              "line":  787,
+                              "text":  "secondary.Wave2 = new float4(2.32f, 0.10f, 4f, -0.17f);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                              "line":  788,
+                              "text":  "secondary.Wave3 = new float4(3.04f, 0.08f, 2.6f, 0.09f);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                              "line":  789,
+                              "text":  "secondary.GlobalWindAndStorm = new float4(0.8f, 0.25f, 0.15f, 0f);"
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                              "line":  839,
+                              "text":  "return new GraphicsBuffer("
+                          },
+                          {
+                              "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                              "line":  1515,
+                              "text":  "_preSimulationSystem = new PreSimulationPhaseSystem(this);"
+                          }
+                      ],
+    "addedForbiddenSamples":  [
+
+                              ]
+}

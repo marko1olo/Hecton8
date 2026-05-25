@@ -6,7 +6,6 @@ using System.Threading;
 using Hecton8.Bootstrap;
 using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Hecton8.Systems.AI;
 using Hecton8.World;
 using Unity.Collections;
@@ -331,7 +330,6 @@ namespace Hecton8.Core
         private VaultArray<TelemetryEntry> _ringBuffer;
         private VaultArray<TelemetryEntry> _exportSnapshot;
         private Transform _playerTransform;
-        private Rigidbody _playerRigidbody;
         private HectonPlayerMovement _playerMovement;
         private HectonSurvivalSystem _survivalSystem;
         private float _playerResolveCooldown;
@@ -2611,7 +2609,7 @@ namespace Hecton8.Core
         private void CacheRegistryPresenceCold()
         {
             Volatile.Write(ref _fluidRuntimePresent, GlobalRegistry.FluidSurfaceCurrent != null ? 1 : 0);
-            Volatile.Write(ref _saveServicePresent, Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance != null ? 1 : 0);
+            Volatile.Write(ref _saveServicePresent, GlobalRegistry.Save != null ? 1 : 0);
             Volatile.Write(ref _thermodynamicsRuntimePresent, GlobalRegistry.Thermodynamics != null ? 1 : 0);
         }
 
@@ -2716,13 +2714,9 @@ namespace Hecton8.Core
                 if (_survivalSystem == null && _playerTransform != null)
                     _playerTransform.TryGetComponent(out _survivalSystem);
 
-                _playerRigidbody = null;
                 _playerMovement = null;
                 if (_playerTransform != null)
-                {
-                    _playerTransform.TryGetComponent(out _playerRigidbody);
                     _playerTransform.TryGetComponent(out _playerMovement);
-                }
             }
         }
 
@@ -2766,7 +2760,7 @@ namespace Hecton8.Core
 
         private uint SamplePlayerVelocityPacked()
         {
-            if (!PhysicsDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityTelemetryMaxAgeFrames, out float3 velocity3))
+            if (!CoreDeterminismSignals.TryGetLatestKccVelocityFloat3(KccVelocityTelemetryMaxAgeFrames, out float3 velocity3))
                 return 0u;
 
             return PackSignedVectorComponent(velocity3.x) |
@@ -2776,6 +2770,17 @@ namespace Hecton8.Core
 
         private float3 SamplePlayerPosition(out bool hasPlayer)
         {
+            if (TryReadPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose))
+            {
+                double3 poseAup = pose.Aup.ToAbsoluteDouble3();
+                float3 playerAup = new float3((float)poseAup.x, (float)poseAup.y, (float)poseAup.z);
+                if (math.all(math.isfinite(playerAup)))
+                {
+                    hasPlayer = true;
+                    return playerAup;
+                }
+            }
+
             if (_playerTransform == null)
             {
                 hasPlayer = false;
@@ -2793,6 +2798,15 @@ namespace Hecton8.Core
 
             Vector3 runtimePosition = _playerTransform.position;
             return ToAbsoluteUniversePosition(runtimePosition);
+        }
+
+        private static bool TryReadPlayerPoseSnapshot(out PlayerRuntimePoseSnapshot pose)
+        {
+            pose = default;
+            IPlayerRuntimeContext runtimeContext = PlayerRuntimeContextService.ActiveRuntimeContext;
+            return runtimeContext != null &&
+                   runtimeContext.TryGetPlayerPoseSnapshot(out pose) &&
+                   pose.Aup.IsFinite();
         }
 
         private static float3 ToAbsoluteUniversePosition(Vector3 runtimePosition)

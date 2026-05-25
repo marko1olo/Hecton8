@@ -132,6 +132,11 @@ namespace Hecton8.World
     /// </summary>
     internal static class WorldSpatialHashGrid
     {
+        private static double RuntimeNowSeconds()
+        {
+            return SystemDispatcher.CurrentUnscaledTimeSeconds;
+        }
+
         private struct Entry
         {
             public Transform Transform;
@@ -611,7 +616,7 @@ namespace Hecton8.World
                 if (!MatchesLayer(entry.Layer, layerMask))
                     continue;
 
-                if (!(entry.Owner is FaunaBrain brain) || !brain.isAggressive)
+                if (!(entry.Owner is IFaunaSpatialContact faunaContact) || !faunaContact.IsAggressiveContact)
                     continue;
 
                 Vector3 position = entry.RuntimePosition;
@@ -753,7 +758,7 @@ namespace Hecton8.World
                 }
             }
 
-            double currentTimestamp = Time.unscaledTimeAsDouble;
+            double currentTimestamp = RuntimeNowSeconds();
             for (int i = 0; i < _transientSignals.Length; i++)
             {
                 TransientSignalEntry signalEntry = _transientSignals[i];
@@ -962,7 +967,7 @@ namespace Hecton8.World
                 return;
 
             EnsureInitialized();
-            double currentTimestamp = Time.unscaledTimeAsDouble;
+            double currentTimestamp = RuntimeNowSeconds();
             if (!IsFiniteDouble(currentTimestamp))
                 return;
 
@@ -1009,7 +1014,7 @@ namespace Hecton8.World
         public static void ClearTransientSignal(FieldTargetRole signalRole, int sourceSpeciesId)
         {
             uint sourceKey = ComposeTransientSignalSourceKey(signalRole, sourceSpeciesId);
-            double currentTimestamp = Time.unscaledTimeAsDouble;
+            double currentTimestamp = RuntimeNowSeconds();
             if (!IsFiniteDouble(currentTimestamp))
                 return;
 
@@ -1106,7 +1111,7 @@ namespace Hecton8.World
             bool hasGradient = _nativeHash.QueryTemperatureGradient(
                 in originAup,
                 radiusMeters,
-                Time.unscaledTimeAsDouble,
+                RuntimeNowSeconds(),
                 out temperatureDeltaCelsius,
                 out double3 gradientAup);
             float3 gradientLocal = AupPrecisionMath.DowncastLocalDelta(gradientAup, float3.zero);
@@ -1120,7 +1125,7 @@ namespace Hecton8.World
                 return;
 
             _nativeHash.DecayTransientEvents(
-                Time.unscaledTimeAsDouble,
+                RuntimeNowSeconds(),
                 deltaTime,
                 (uint)SpatialTransientEventType.AcousticImpulse,
                 AcousticTransientDecayScale,
@@ -1148,7 +1153,7 @@ namespace Hecton8.World
 
                 if (frameCount - _lastAcousticDensityFrame >= AcousticDensityMapCadenceFrames)
                 {
-                    _nativeHash.PruneExpiredTransientEvents(Time.unscaledTimeAsDouble);
+                    _nativeHash.PruneExpiredTransientEvents(RuntimeNowSeconds());
                     BuildAcousticDensityMap(frameCount);
                 }
 
@@ -1156,7 +1161,7 @@ namespace Hecton8.World
                 _nativeHash.ScheduleCompactionIfOverCapacity(
                     SpatialHashCompactionCapacityThreshold,
                     SpatialHashCompactionTargetFloor,
-                    Time.unscaledTimeAsDouble);
+                    RuntimeNowSeconds());
             }
         }
 
@@ -1253,7 +1258,7 @@ namespace Hecton8.World
             if (_entries.Count >= MaxSpatialMaintenanceEntryCapacity)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[WorldSpatialHashGrid] Entry capacity exceeded. Runtime buffer growth is forbidden.");
+                Hecton8.Core.H8Debug.LogError("[WorldSpatialHashGrid] Entry capacity exceeded. Runtime buffer growth is forbidden.");
 #endif
                 return 0;
             }
@@ -1426,7 +1431,7 @@ namespace Hecton8.World
             if (entry.Owner is Behaviour behaviour && !behaviour.isActiveAndEnabled)
                 return false;
 
-            return !(entry.Owner is FaunaBrain faunaBrain) || !faunaBrain.IsDead;
+            return !(entry.Owner is IFaunaSpatialContact faunaContact) || !faunaContact.IsDead;
         }
 
         private static bool IsFiniteRuntimePosition(Vector3 position)
@@ -1574,7 +1579,7 @@ namespace Hecton8.World
                 if (_validationInvalidMask[i] == 0)
                     continue;
 
-                UnityEngine.Debug.LogError("[WorldSpatialHashGrid] AUP integrity validation failed. Runtime/AUP spatial coherence diverged.");
+                Hecton8.Core.H8Debug.LogError("[WorldSpatialHashGrid] AUP integrity validation failed. Runtime/AUP spatial coherence diverged.");
                 break;
             }
 #endif
@@ -1977,7 +1982,7 @@ namespace Hecton8.World
             EnsureAcousticDensityMap();
             using (_acousticDensityProfilerMarker.Auto())
             {
-                double currentTimestamp = Time.unscaledTimeAsDouble;
+                double currentTimestamp = RuntimeNowSeconds();
                 if (!IsFiniteDouble(currentTimestamp))
                     return;
 

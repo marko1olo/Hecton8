@@ -1,6 +1,7 @@
+using System;
 using Hecton8.Core;
+using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
-using Hecton8.Physics;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -8,7 +9,7 @@ namespace Hecton8.Interaction
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Interaction/VR Leak Patch Weld Target")]
-    public sealed class VRLeakPatchWeldTarget : MonoBehaviour, IInteractionSignalConsumer, IPhysicsAcousticImpulseEventListener, IUpdatable, IGlobalRegistryHotSwapListener
+    public sealed class VRLeakPatchWeldTarget : MonoBehaviour, IInteractionSignalConsumer, IUpdatable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const float DefaultInteractionStepSeconds = 0.02f;
         private const float MaximumPatchContactRadiusMeters = 3f;
@@ -44,7 +45,8 @@ namespace Hecton8.Interaction
         private bool _sealed;
         private bool _hasAcousticGuide;
         private bool _registeredPatchHoldDecayTick;
-        private bool _registeredPhysicsEventBus;
+        private bool _registeredPhysicsPayloadReader;
+        private int _lastPhysicsEventSnapshotGeneration;
         private byte _missedPatchContactTicks;
 
         public bool PatchInContact => _patchInContact;
@@ -67,18 +69,23 @@ namespace Hecton8.Interaction
             if (Application.isPlaying)
                 GlobalRegistry.TryRegisterHotSwapListener(this);
 
-            TryRegisterPhysicsEventBus();
+            TryRegisterPhysicsPayloadReader();
         }
 
         private void OnDisable()
         {
-            TryUnregisterPhysicsEventBus();
+            TryUnregisterPhysicsPayloadReader();
             GlobalRegistry.TryUnregisterHotSwapListener(this);
             ClearPatchContactImmediate();
             ClearAcousticGuide();
             _patchHoldSeconds = 0f;
             _missedPatchContactTicks = 0;
             TryUnregisterPatchHoldDecayTick();
+        }
+
+        public void LateFrameTick()
+        {
+            DrainPhysicsEventPayloads();
         }
 
         public bool SetPatchContact(Vector3 contactPoint, Vector3 contactNormal, float deltaSeconds)
@@ -199,7 +206,26 @@ namespace Hecton8.Interaction
             return true;
         }
 
-        public void OnAcousticImpulse(in AcousticImpulseEvent impulseEvent)
+        private void DrainPhysicsEventPayloads()
+        {
+            if (!_registeredPhysicsPayloadReader)
+                return;
+
+            int snapshotGeneration = SignalBus<PhysicsEventPayload>.SnapshotGeneration;
+            if (snapshotGeneration == _lastPhysicsEventSnapshotGeneration)
+                return;
+
+            _lastPhysicsEventSnapshotGeneration = snapshotGeneration;
+            ReadOnlySpan<PhysicsEventPayload> signals = SignalBus<PhysicsEventPayload>.GetFrameSnapshot();
+            for (int i = 0; i < signals.Length; i++)
+            {
+                PhysicsEventPayload payload = signals[i];
+                if (payload.EventType == (ushort)PhysicsEventType.AcousticImpulse)
+                    HandleAcousticImpulsePayload(in payload);
+            }
+        }
+
+        private void HandleAcousticImpulsePayload(in PhysicsEventPayload impulseEvent)
         {
             float safeRadiusMeters = ResolveSafeAcousticGuideRadiusMeters(impulseEvent.RadiusMeters);
             if (safeRadiusMeters <= 0f || !IsFiniteVector(impulseEvent.RuntimePosition))
@@ -228,22 +254,22 @@ namespace Hecton8.Interaction
             _hasAcousticGuide = true;
         }
 
-        private void TryRegisterPhysicsEventBus()
+        private void TryRegisterPhysicsPayloadReader()
         {
-            if (_registeredPhysicsEventBus || !Application.isPlaying)
+            if (_registeredPhysicsPayloadReader || !Application.isPlaying)
                 return;
 
-            PhysicsEventBus.Register(this);
-            _registeredPhysicsEventBus = true;
+            _registeredPhysicsPayloadReader = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
-        private void TryUnregisterPhysicsEventBus()
+        private void TryUnregisterPhysicsPayloadReader()
         {
-            if (!_registeredPhysicsEventBus)
+            if (!_registeredPhysicsPayloadReader)
                 return;
 
-            PhysicsEventBus.Unregister(this);
-            _registeredPhysicsEventBus = false;
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredPhysicsPayloadReader = false;
+            _lastPhysicsEventSnapshotGeneration = 0;
         }
 
         private void DecayPatchHold(float deltaSeconds)

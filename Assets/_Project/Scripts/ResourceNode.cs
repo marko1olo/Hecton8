@@ -5,7 +5,6 @@ using Hecton8.Core.Contracts.Signals;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Items;
-using Hecton8.Physics;
 using Hecton8.Tools;
 using Hecton8.World;
 using Unity.Mathematics;
@@ -40,6 +39,7 @@ namespace Hecton8.Scavenging
         private static IPlayerInventoryService s_playerInventoryService;
         private static IModularEquipmentService s_modularEquipmentService;
         private static IObjectPoolService s_objectPool;
+        private static IPhysicsService s_physicsService;
         private static bool s_registryCacheRegistered;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -51,6 +51,7 @@ namespace Hecton8.Scavenging
             s_playerInventoryService = null;
             s_modularEquipmentService = null;
             s_objectPool = null;
+            s_physicsService = null;
             s_registryCacheRegistered = false;
         }
 
@@ -77,6 +78,9 @@ namespace Hecton8.Scavenging
                         break;
                     case GlobalRegistryServiceSlot.ObjectPool:
                         s_objectPool = currentService as IObjectPoolService;
+                        break;
+                    case GlobalRegistryServiceSlot.Physics:
+                        s_physicsService = currentService as IPhysicsService;
                         break;
                 }
             }
@@ -221,6 +225,7 @@ namespace Hecton8.Scavenging
             s_playerInventoryService = GlobalRegistry.PlayerInventory;
             s_modularEquipmentService = GlobalRegistry.ModularEquipment;
             s_objectPool = GlobalRegistry.ObjectPoolService;
+            s_physicsService = GlobalRegistry.Physics;
 
             if (s_registryCacheRegistered || !Application.isPlaying)
                 return;
@@ -541,7 +546,7 @@ namespace Hecton8.Scavenging
                 if (!_lootSpawnBlockedLogged)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError("[ResourceNode] Loot prefab has no PickupItem/HectonItem payload. Depletion aborted to prevent loot loss.", this);
+                    Hecton8.Core.H8Debug.LogError("[ResourceNode] Loot prefab has no PickupItem/HectonItem payload. Depletion aborted to prevent loot loss.", this);
 #endif
                     _lootSpawnBlockedLogged = true;
                 }
@@ -568,7 +573,7 @@ namespace Hecton8.Scavenging
             if (!accepted && capacityAvailable && !_lootSpawnBlockedLogged)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[ResourceNode] Loot oracle unavailable. Depletion aborted to prevent loot loss.", this);
+                Hecton8.Core.H8Debug.LogError("[ResourceNode] Loot oracle unavailable. Depletion aborted to prevent loot loss.", this);
 #endif
                 _lootSpawnBlockedLogged = true;
             }
@@ -772,7 +777,7 @@ namespace Hecton8.Scavenging
                 if (impulse.sqrMagnitude <= 0.0001f)
                     continue;
 
-                PhysicsForceRouter.QueueForce(body, impulse, ForceMode.Impulse);
+                s_physicsService?.QueueForce(body, impulse, ForceMode.Impulse);
             }
         }
 

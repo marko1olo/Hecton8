@@ -89,7 +89,7 @@ namespace Hecton8.Interaction
             {
                 ShowHudWarning(LocalizationKeys.SAVE_STATION_OFFLINE, "SAVE SYSTEM OFFLINE");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[SaveStation] Save service instance not found.", this);
+                Hecton8.Core.H8Debug.LogError("[SaveStation] Save service instance not found.", this);
 #endif
                 return;
             }
@@ -98,7 +98,7 @@ namespace Hecton8.Interaction
             {
                 ShowHudWarning(LocalizationKeys.SAVE_STATION_SLOT_NOT_CONFIGURED, "SAVE SLOT NOT CONFIGURED");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SaveStation] Save slot is not configured.", this);
+                Hecton8.Core.H8Debug.LogWarning("[SaveStation] Save slot is not configured.", this);
 #endif
                 return;
             }
@@ -107,7 +107,7 @@ namespace Hecton8.Interaction
             {
                 ShowHudWarning(LocalizationKeys.SAVE_STATION_SLOT_NOT_CONFIGURED, "SAVE SLOT NOT CONFIGURED");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SaveStation] Save slot rejected by SaveManager slot-name guard.", this);
+                Hecton8.Core.H8Debug.LogWarning("[SaveStation] Save slot rejected by SaveManager slot-name guard.", this);
 #endif
                 return;
             }
@@ -116,7 +116,7 @@ namespace Hecton8.Interaction
             {
                 ShowHudInfo(LocalizationKeys.SAVE_STATION_BUSY, "SAVE ALREADY IN PROGRESS");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SaveStation] Save skipped because another save/load is already running.", this);
+                Hecton8.Core.H8Debug.LogWarning("[SaveStation] Save skipped because another save/load is already running.", this);
 #endif
                 return;
             }
@@ -205,8 +205,8 @@ namespace Hecton8.Interaction
 
         private void CacheRegistryServicesCold()
         {
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
-            _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
+            _audioService = GlobalRegistry.Audio;
             _localization = GlobalRegistry.LocalizationText;
         }
 

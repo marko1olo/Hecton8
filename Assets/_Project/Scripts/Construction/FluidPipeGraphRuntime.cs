@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
+using Hecton8.Core.Memory;
 using Hecton8.Gameplay;
 using Hecton8.Logistics;
 using Hecton8.World;
@@ -18,10 +19,50 @@ namespace Hecton8.Construction
     public sealed class FluidPipeGraphRuntime : MonoBehaviour, IFluidPipeGraphService, ISlowTickable, ILateFrameTickable, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private static int s_x001FluidPipeGraphRuntimeSignalPushDropCount;
-        private const string NativeMemoryOwner = nameof(FluidPipeGraphRuntime);
         private const float SlowTickStepSeconds = 0.1f;
         private const uint PipeImpactMaterialHash = 0x50495045u;
-        private const Allocator DataVaultExemptSceneScratchAllocator = Allocator.Persistent;
+        private const SystemID OwnerSystemId = SystemID.Construction;
+        private const int RuptureBudgetLength = 3;
+        private const BufferID PipePressureBufferId = (BufferID)72080;
+        private const BufferID PipeContentsBufferId = (BufferID)72081;
+        private const BufferID PipeFlagsBufferId = (BufferID)72082;
+        private const BufferID PipeContentKindsBufferId = (BufferID)72083;
+        private const BufferID PipeNetworkIdsBufferId = (BufferID)72084;
+        private const BufferID PipeRoomIndicesBufferId = (BufferID)72085;
+        private const BufferID PipeCapacitiesBufferId = (BufferID)72086;
+        private const BufferID PipeMaxPressureBufferId = (BufferID)72087;
+        private const BufferID PipeFlowRatesBufferId = (BufferID)72088;
+        private const BufferID PipeSourceRatesBufferId = (BufferID)72089;
+        private const BufferID PipeDemandRatesBufferId = (BufferID)72090;
+        private const BufferID PipeFlowVectorsBufferId = (BufferID)72091;
+        private const BufferID PipeRoomExchangeContentsBufferId = (BufferID)72092;
+        private const BufferID PipeLastVisualFlowBufferId = (BufferID)72093;
+        private const BufferID PipeAupsBufferId = (BufferID)72094;
+        private const BufferID PipeTelemetryRingBufferId = (BufferID)72095;
+        private const BufferID PipeRuptureTelemetryRingBufferId = (BufferID)72096;
+        private const BufferID PipeRuptureBudgetBufferId = (BufferID)72097;
+        private const BufferID PipeConnectionSourcesBufferId = (BufferID)72098;
+        private const BufferID PipeConnectionDestinationsBufferId = (BufferID)72099;
+        private const BufferID PipeRuptureDispatchBufferId = (BufferID)72100;
+        private const uint SolveLockPressure = 1u << 0;
+        private const uint SolveLockContents = 1u << 1;
+        private const uint SolveLockFlags = 1u << 2;
+        private const uint SolveLockContentKinds = 1u << 3;
+        private const uint SolveLockNetworkIds = 1u << 4;
+        private const uint SolveLockRoomIndices = 1u << 5;
+        private const uint SolveLockCapacities = 1u << 6;
+        private const uint SolveLockMaxPressure = 1u << 7;
+        private const uint SolveLockFlowRates = 1u << 8;
+        private const uint SolveLockSourceRates = 1u << 9;
+        private const uint SolveLockDemandRates = 1u << 10;
+        private const uint SolveLockFlowVectors = 1u << 11;
+        private const uint SolveLockRoomExchange = 1u << 12;
+        private const uint SolveLockTelemetry = 1u << 13;
+        private const uint SolveLockRuptureTelemetry = 1u << 14;
+        private const uint SolveLockRuptureBudget = 1u << 15;
+        private const uint SolveLockConnectionSources = 1u << 16;
+        private const uint SolveLockConnectionDestinations = 1u << 17;
+        private const uint SolveLockRuptureDispatch = 1u << 18;
 
         [Header("Graph")]
         [SerializeField, Min(16)] private int nodeCapacity = 512;
@@ -36,28 +77,31 @@ namespace Hecton8.Construction
         [SerializeField] private int _debugLastRuptureCount;
         [SerializeField] private float _debugLastMaxPressureKPa;
 
-        private NativeArray<float> _pipePressure;
-        private NativeArray<float> _pipeContents;
-        private NativeArray<byte> _pipeFlags;
-        private NativeArray<byte> _pipeContentKinds;
-        private NativeArray<int> _pipeNetworkIds;
-        private NativeArray<int> _pipeRoomIndices;
-        private NativeArray<float> _pipeCapacities;
-        private NativeArray<float> _pipeMaxPressure;
-        private NativeArray<float> _pipeFlowRates;
-        private NativeArray<float> _pipeSourceRates;
-        private NativeArray<float> _pipeDemandRates;
-        private NativeArray<float3> _pipeFlowVectors;
-        private NativeArray<float> _pipeRoomExchangeContents;
-        private NativeArray<float> _pipeLastVisualFlow01;
-        private NativeArray<AbsoluteUniversePosition> _pipeAups;
-        private NativeArray<FluidPipeTelemetryEntry> _telemetryRing;
-        private NativeArray<FluidPipeRuptureRecord> _ruptureTelemetryRing;
-        private NativeArray<int> _ruptureQueueBudget;
-        private NativeParallelMultiHashMap<int, int> _pipeConnections;
-        private NativeQueue<FluidPipeRuptureRecord> _ruptureQueue;
+        private IDataVault _dataVault;
+        private VaultGenerationHandle<float> _pipePressureHandle;
+        private VaultGenerationHandle<float> _pipeContentsHandle;
+        private VaultGenerationHandle<byte> _pipeFlagsHandle;
+        private VaultGenerationHandle<byte> _pipeContentKindsHandle;
+        private VaultGenerationHandle<int> _pipeNetworkIdsHandle;
+        private VaultGenerationHandle<int> _pipeRoomIndicesHandle;
+        private VaultGenerationHandle<float> _pipeCapacitiesHandle;
+        private VaultGenerationHandle<float> _pipeMaxPressureHandle;
+        private VaultGenerationHandle<float> _pipeFlowRatesHandle;
+        private VaultGenerationHandle<float> _pipeSourceRatesHandle;
+        private VaultGenerationHandle<float> _pipeDemandRatesHandle;
+        private VaultGenerationHandle<float3> _pipeFlowVectorsHandle;
+        private VaultGenerationHandle<float> _pipeRoomExchangeContentsHandle;
+        private VaultGenerationHandle<float> _pipeLastVisualFlowHandle;
+        private VaultGenerationHandle<AbsoluteUniversePosition> _pipeAupsHandle;
+        private VaultGenerationHandle<FluidPipeTelemetryEntry> _telemetryRingHandle;
+        private VaultGenerationHandle<FluidPipeRuptureRecord> _ruptureTelemetryRingHandle;
+        private VaultGenerationHandle<int> _ruptureQueueBudgetHandle;
+        private VaultGenerationHandle<int> _pipeConnectionSourcesHandle;
+        private VaultGenerationHandle<int> _pipeConnectionDestinationsHandle;
+        private VaultGenerationHandle<FluidPipeRuptureRecord> _ruptureDispatchHandle;
 
         private JobHandle _solveHandle;
+        private uint _solveLockMask;
         private bool _solveScheduled;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
@@ -114,6 +158,17 @@ namespace Hecton8.Construction
             object previousService,
             object currentService)
         {
+            if (serviceSlot == GlobalRegistryServiceSlot.DataVault)
+            {
+                CompleteSolve(force: true);
+                ReleaseFluidPipeVaultBuffers(previousService as IDataVault ?? _dataVault);
+                _dataVault = currentService as IDataVault;
+                _initialized = false;
+                if (isActiveAndEnabled)
+                    EnsureNativeState();
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher || currentService == null || !isActiveAndEnabled)
                 return;
 
@@ -162,7 +217,10 @@ namespace Hecton8.Construction
 
         public bool TryReadPipeNode(int nodeIndex, out float pressureKPa, out float contents, out byte flags)
         {
-            if (!_initialized || _solveScheduled || nodeIndex < 0 || nodeIndex >= _nodeCount)
+            if (!_initialized || _solveScheduled || nodeIndex < 0 || nodeIndex >= _nodeCount ||
+                !TryReadOnlyBuffer(in _pipePressureHandle, nodeCapacity, out NativeArray<float>.ReadOnly pipePressure) ||
+                !TryReadOnlyBuffer(in _pipeContentsHandle, nodeCapacity, out NativeArray<float>.ReadOnly pipeContents) ||
+                !TryReadOnlyBuffer(in _pipeFlagsHandle, nodeCapacity, out NativeArray<byte>.ReadOnly pipeFlags))
             {
                 pressureKPa = 0f;
                 contents = 0f;
@@ -170,9 +228,9 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            pressureKPa = _pipePressure[nodeIndex];
-            contents = _pipeContents[nodeIndex];
-            flags = _pipeFlags[nodeIndex];
+            pressureKPa = pipePressure[nodeIndex];
+            contents = pipeContents[nodeIndex];
+            flags = pipeFlags[nodeIndex];
             return true;
         }
 
@@ -186,7 +244,22 @@ namespace Hecton8.Construction
             out int nodeIndex)
         {
             EnsureNativeState();
-            if (_solveScheduled || _nodeCount >= nodeCapacity)
+            if (_solveScheduled || _nodeCount >= nodeCapacity ||
+                !TryResolveBuffer(in _pipePressureHandle, nodeCapacity, out NativeArray<float> pipePressure) ||
+                !TryResolveBuffer(in _pipeContentsHandle, nodeCapacity, out NativeArray<float> pipeContents) ||
+                !TryResolveBuffer(in _pipeFlagsHandle, nodeCapacity, out NativeArray<byte> pipeFlags) ||
+                !TryResolveBuffer(in _pipeContentKindsHandle, nodeCapacity, out NativeArray<byte> pipeContentKinds) ||
+                !TryResolveBuffer(in _pipeNetworkIdsHandle, nodeCapacity, out NativeArray<int> pipeNetworkIds) ||
+                !TryResolveBuffer(in _pipeRoomIndicesHandle, nodeCapacity, out NativeArray<int> pipeRoomIndices) ||
+                !TryResolveBuffer(in _pipeCapacitiesHandle, nodeCapacity, out NativeArray<float> pipeCapacities) ||
+                !TryResolveBuffer(in _pipeMaxPressureHandle, nodeCapacity, out NativeArray<float> pipeMaxPressure) ||
+                !TryResolveBuffer(in _pipeFlowRatesHandle, nodeCapacity, out NativeArray<float> pipeFlowRates) ||
+                !TryResolveBuffer(in _pipeSourceRatesHandle, nodeCapacity, out NativeArray<float> pipeSourceRates) ||
+                !TryResolveBuffer(in _pipeDemandRatesHandle, nodeCapacity, out NativeArray<float> pipeDemandRates) ||
+                !TryResolveBuffer(in _pipeFlowVectorsHandle, nodeCapacity, out NativeArray<float3> pipeFlowVectors) ||
+                !TryResolveBuffer(in _pipeRoomExchangeContentsHandle, nodeCapacity, out NativeArray<float> pipeRoomExchangeContents) ||
+                !TryResolveBuffer(in _pipeLastVisualFlowHandle, nodeCapacity, out NativeArray<float> pipeLastVisualFlow01) ||
+                !TryResolveBuffer(in _pipeAupsHandle, nodeCapacity, out NativeArray<AbsoluteUniversePosition> pipeAups))
             {
                 nodeIndex = -1;
                 return false;
@@ -194,21 +267,21 @@ namespace Hecton8.Construction
 
             nodeIndex = _nodeCount++;
             _debugNodeCount = _nodeCount;
-            _pipePressure[nodeIndex] = 0f;
-            _pipeContents[nodeIndex] = 0f;
-            _pipeFlags[nodeIndex] = (byte)FluidPipeFlags.Active;
-            _pipeContentKinds[nodeIndex] = contentKind;
-            _pipeNetworkIds[nodeIndex] = networkId;
-            _pipeRoomIndices[nodeIndex] = roomIndex;
-            _pipeCapacities[nodeIndex] = math.max(FluidPipeGraphConstants.MinCapacity, capacity);
-            _pipeMaxPressure[nodeIndex] = math.max(FluidPipeGraphConstants.MinMaxPressureKPa, maxPressureKPa);
-            _pipeFlowRates[nodeIndex] = math.max(0f, defaultPipeFlowRate);
-            _pipeSourceRates[nodeIndex] = 0f;
-            _pipeDemandRates[nodeIndex] = 0f;
-            _pipeFlowVectors[nodeIndex] = default;
-            _pipeRoomExchangeContents[nodeIndex] = 0f;
-            _pipeLastVisualFlow01[nodeIndex] = 0f;
-            _pipeAups[nodeIndex] = nodeAup;
+            pipePressure[nodeIndex] = 0f;
+            pipeContents[nodeIndex] = 0f;
+            pipeFlags[nodeIndex] = (byte)FluidPipeFlags.Active;
+            pipeContentKinds[nodeIndex] = contentKind;
+            pipeNetworkIds[nodeIndex] = networkId;
+            pipeRoomIndices[nodeIndex] = roomIndex;
+            pipeCapacities[nodeIndex] = math.max(FluidPipeGraphConstants.MinCapacity, capacity);
+            pipeMaxPressure[nodeIndex] = math.max(FluidPipeGraphConstants.MinMaxPressureKPa, maxPressureKPa);
+            pipeFlowRates[nodeIndex] = math.max(0f, defaultPipeFlowRate);
+            pipeSourceRates[nodeIndex] = 0f;
+            pipeDemandRates[nodeIndex] = 0f;
+            pipeFlowVectors[nodeIndex] = default;
+            pipeRoomExchangeContents[nodeIndex] = 0f;
+            pipeLastVisualFlow01[nodeIndex] = 0f;
+            pipeAups[nodeIndex] = nodeAup;
             return true;
         }
 
@@ -219,15 +292,19 @@ namespace Hecton8.Construction
                 !IsValidNode(sourceNodeIndex) ||
                 !IsValidNode(destinationNodeIndex) ||
                 sourceNodeIndex == destinationNodeIndex ||
-                _pipeNetworkIds[sourceNodeIndex] != _pipeNetworkIds[destinationNodeIndex] ||
-                _pipeContentKinds[sourceNodeIndex] != _pipeContentKinds[destinationNodeIndex])
+                !TryResolveBuffer(in _pipeNetworkIdsHandle, nodeCapacity, out NativeArray<int> pipeNetworkIds) ||
+                !TryResolveBuffer(in _pipeContentKindsHandle, nodeCapacity, out NativeArray<byte> pipeContentKinds) ||
+                !TryResolveBuffer(in _pipeConnectionSourcesHandle, connectionCapacity, out NativeArray<int> connectionSources) ||
+                !TryResolveBuffer(in _pipeConnectionDestinationsHandle, connectionCapacity, out NativeArray<int> connectionDestinations) ||
+                pipeNetworkIds[sourceNodeIndex] != pipeNetworkIds[destinationNodeIndex] ||
+                pipeContentKinds[sourceNodeIndex] != pipeContentKinds[destinationNodeIndex])
             {
                 return false;
             }
 
             int neededConnections = 0;
-            bool hasForward = HasConnection(sourceNodeIndex, destinationNodeIndex);
-            bool hasReverse = HasConnection(destinationNodeIndex, sourceNodeIndex);
+            bool hasForward = HasConnection(sourceNodeIndex, destinationNodeIndex, connectionSources, connectionDestinations);
+            bool hasReverse = HasConnection(destinationNodeIndex, sourceNodeIndex, connectionSources, connectionDestinations);
             if (!hasForward)
                 neededConnections++;
             if (!hasReverse)
@@ -239,13 +316,15 @@ namespace Hecton8.Construction
 
             if (!hasForward)
             {
-                _pipeConnections.Add(sourceNodeIndex, destinationNodeIndex);
+                connectionSources[_connectionCount] = sourceNodeIndex;
+                connectionDestinations[_connectionCount] = destinationNodeIndex;
                 _connectionCount++;
             }
 
             if (!hasReverse)
             {
-                _pipeConnections.Add(destinationNodeIndex, sourceNodeIndex);
+                connectionSources[_connectionCount] = destinationNodeIndex;
+                connectionDestinations[_connectionCount] = sourceNodeIndex;
                 _connectionCount++;
             }
 
@@ -254,44 +333,51 @@ namespace Hecton8.Construction
 
         public bool TryInjectPipeContents(int nodeIndex, float contents)
         {
-            if (!_initialized || _solveScheduled || !IsValidNode(nodeIndex) || !math.isfinite(contents) || contents <= 0f)
+            if (!_initialized || _solveScheduled || !IsValidNode(nodeIndex) || !math.isfinite(contents) || contents <= 0f ||
+                !TryResolveBuffer(in _pipeContentsHandle, nodeCapacity, out NativeArray<float> pipeContents) ||
+                !TryResolveBuffer(in _pipePressureHandle, nodeCapacity, out NativeArray<float> pipePressure) ||
+                !TryResolveBuffer(in _pipeCapacitiesHandle, nodeCapacity, out NativeArray<float> pipeCapacities) ||
+                !TryResolveBuffer(in _pipeMaxPressureHandle, nodeCapacity, out NativeArray<float> pipeMaxPressure))
                 return false;
 
-            float nextContents = _pipeContents[nodeIndex] + contents;
+            float nextContents = pipeContents[nodeIndex] + contents;
             if (!math.isfinite(nextContents))
                 return false;
 
-            _pipeContents[nodeIndex] = nextContents;
-            _pipePressure[nodeIndex] = ResolvePressureForNode(nodeIndex, _pipeContents[nodeIndex]);
+            pipeContents[nodeIndex] = nextContents;
+            pipePressure[nodeIndex] = ResolvePressureForNode(nodeIndex, pipeContents[nodeIndex], pipeCapacities, pipeMaxPressure);
             return true;
         }
 
         public bool TrySetPipeSourceRate(int nodeIndex, float contentsPerSecond)
         {
-            if (!_initialized || _solveScheduled || !IsValidNode(nodeIndex) || !math.isfinite(contentsPerSecond))
+            if (!_initialized || _solveScheduled || !IsValidNode(nodeIndex) || !math.isfinite(contentsPerSecond) ||
+                !TryResolveBuffer(in _pipeSourceRatesHandle, nodeCapacity, out NativeArray<float> pipeSourceRates))
                 return false;
 
-            _pipeSourceRates[nodeIndex] = math.max(0f, contentsPerSecond);
+            pipeSourceRates[nodeIndex] = math.max(0f, contentsPerSecond);
             return true;
         }
 
         public bool TrySetPipeDemandRate(int nodeIndex, float contentsPerSecond)
         {
-            if (!_initialized || _solveScheduled || !IsValidNode(nodeIndex) || !math.isfinite(contentsPerSecond))
+            if (!_initialized || _solveScheduled || !IsValidNode(nodeIndex) || !math.isfinite(contentsPerSecond) ||
+                !TryResolveBuffer(in _pipeDemandRatesHandle, nodeCapacity, out NativeArray<float> pipeDemandRates))
                 return false;
 
-            _pipeDemandRates[nodeIndex] = math.max(0f, contentsPerSecond);
+            pipeDemandRates[nodeIndex] = math.max(0f, contentsPerSecond);
             return true;
         }
 
         public bool TrySetPipeNodeFlags(int nodeIndex, byte setMask, byte clearMask)
         {
-            if (!_initialized || _solveScheduled || !IsValidNode(nodeIndex))
+            if (!_initialized || _solveScheduled || !IsValidNode(nodeIndex) ||
+                !TryResolveBuffer(in _pipeFlagsHandle, nodeCapacity, out NativeArray<byte> pipeFlags))
                 return false;
 
-            byte flags = _pipeFlags[nodeIndex];
+            byte flags = pipeFlags[nodeIndex];
             flags = (byte)((flags | setMask) & ~clearMask);
-            _pipeFlags[nodeIndex] = flags;
+            pipeFlags[nodeIndex] = flags;
             return true;
         }
 
@@ -302,97 +388,32 @@ namespace Hecton8.Construction
 
             nodeCapacity = math.max(16, nodeCapacity);
             connectionCapacity = math.max(16, connectionCapacity);
-            _pipePressure = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _pipeContents = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _pipeFlags = new NativeArray<byte>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _pipeContentKinds = new NativeArray<byte>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _pipeNetworkIds = new NativeArray<int>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _pipeRoomIndices = new NativeArray<int>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _pipeCapacities = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _pipeMaxPressure = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _pipeFlowRates = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _pipeSourceRates = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _pipeDemandRates = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _pipeFlowVectors = new NativeArray<float3>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _pipeRoomExchangeContents = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _pipeLastVisualFlow01 = new NativeArray<float>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _pipeAups = new NativeArray<AbsoluteUniversePosition>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _telemetryRing = new NativeArray<FluidPipeTelemetryEntry>(FluidPipeGraphConstants.BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _ruptureTelemetryRing = new NativeArray<FluidPipeRuptureRecord>(FluidPipeGraphConstants.BlackBoxFrameCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _ruptureQueueBudget = new NativeArray<int>(2, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _pipeConnections = new NativeParallelMultiHashMap<int, int>(connectionCapacity, Allocator.Persistent);
-            _ruptureQueue = new NativeQueue<FluidPipeRuptureRecord>(DataVaultExemptSceneScratchAllocator);
-            PrewarmQueue(ref _ruptureQueue, nodeCapacity);
+            if (!FluidPipeGraphLayoutSentinel.ValidateRuntimeDtos())
+            {
+                _initialized = false;
+                return;
+            }
 
-            RegisterNativeMemory();
+            IDataVault vault = ResolveDataVault();
+            if (vault == null || !EnsureFluidPipeVaultBuffers(vault))
+            {
+                _initialized = false;
+                return;
+            }
+
             _initialized = true;
-        }
-
-        private void RegisterNativeMemory()
-        {
-            NativeMemorySentinel.RegisterNativeArray(_pipePressure, NativeMemoryOwner, nameof(_pipePressure), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_pipeContents, NativeMemoryOwner, nameof(_pipeContents), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_pipeFlags, NativeMemoryOwner, nameof(_pipeFlags), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_pipeContentKinds, NativeMemoryOwner, nameof(_pipeContentKinds), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_pipeNetworkIds, NativeMemoryOwner, nameof(_pipeNetworkIds), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_pipeRoomIndices, NativeMemoryOwner, nameof(_pipeRoomIndices), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_pipeCapacities, NativeMemoryOwner, nameof(_pipeCapacities), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_pipeMaxPressure, NativeMemoryOwner, nameof(_pipeMaxPressure), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_pipeFlowRates, NativeMemoryOwner, nameof(_pipeFlowRates), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_pipeSourceRates, NativeMemoryOwner, nameof(_pipeSourceRates), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_pipeDemandRates, NativeMemoryOwner, nameof(_pipeDemandRates), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_pipeFlowVectors, NativeMemoryOwner, nameof(_pipeFlowVectors), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_pipeRoomExchangeContents, NativeMemoryOwner, nameof(_pipeRoomExchangeContents), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_pipeLastVisualFlow01, NativeMemoryOwner, nameof(_pipeLastVisualFlow01), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_pipeAups, NativeMemoryOwner, nameof(_pipeAups), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_telemetryRing, NativeMemoryOwner, nameof(_telemetryRing), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_ruptureTelemetryRing, NativeMemoryOwner, nameof(_ruptureTelemetryRing), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeArray(_ruptureQueueBudget, NativeMemoryOwner, nameof(_ruptureQueueBudget), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_pipeConnections, NativeMemoryOwner, nameof(_pipeConnections), NativeAllocationLifetime.Scene);
-            NativeMemorySentinel.RegisterNativeQueue(_ruptureQueue, nodeCapacity, NativeMemoryOwner, nameof(_ruptureQueue), NativeAllocationLifetime.Scene);
         }
 
         private void DisposeNativeState()
         {
             CompleteSolve(force: true);
             UnregisterRuntime();
-
-            DisposeArray(ref _pipePressure);
-            DisposeArray(ref _pipeContents);
-            DisposeArray(ref _pipeFlags);
-            DisposeArray(ref _pipeContentKinds);
-            DisposeArray(ref _pipeNetworkIds);
-            DisposeArray(ref _pipeRoomIndices);
-            DisposeArray(ref _pipeCapacities);
-            DisposeArray(ref _pipeMaxPressure);
-            DisposeArray(ref _pipeFlowRates);
-            DisposeArray(ref _pipeSourceRates);
-            DisposeArray(ref _pipeDemandRates);
-            DisposeArray(ref _pipeFlowVectors);
-            DisposeArray(ref _pipeRoomExchangeContents);
-            DisposeArray(ref _pipeLastVisualFlow01);
-            DisposeArray(ref _pipeAups);
-            DisposeArray(ref _telemetryRing);
-            DisposeArray(ref _ruptureTelemetryRing);
-            DisposeArray(ref _ruptureQueueBudget);
-
-            if (_pipeConnections.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(NativeMemoryOwner, nameof(_pipeConnections));
-                _pipeConnections.Dispose();
-                _pipeConnections = default;
-            }
-
-            if (_ruptureQueue.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, nameof(_ruptureQueue));
-                _ruptureQueue.Dispose();
-                _ruptureQueue = default;
-            }
+            ReleaseFluidPipeVaultBuffers(ResolveDataVault());
 
             _initialized = false;
             _nodeCount = 0;
             _connectionCount = 0;
+            _solveLockMask = 0u;
         }
 
         private void RegisterRuntime()
@@ -453,48 +474,87 @@ namespace Hecton8.Construction
 
         private void ScheduleSolve(float deltaTime)
         {
-            if (_ruptureQueue.IsCreated)
-                _ruptureQueue.Clear();
-            ResetRuptureQueueBudget();
+            IDataVault vault = ResolveDataVault();
+            if (!TryAcquireSolveWriteBuffers(
+                    vault,
+                    out uint lockMask,
+                    out NativeArray<float> pipePressure,
+                    out NativeArray<float> pipeContents,
+                    out NativeArray<byte> pipeFlags,
+                    out NativeArray<byte> pipeContentKinds,
+                    out NativeArray<int> pipeNetworkIds,
+                    out NativeArray<int> pipeRoomIndices,
+                    out NativeArray<float> pipeCapacities,
+                    out NativeArray<float> pipeMaxPressure,
+                    out NativeArray<float> pipeFlowRates,
+                    out NativeArray<float> pipeSourceRates,
+                    out NativeArray<float> pipeDemandRates,
+                    out NativeArray<float3> pipeFlowVectors,
+                    out NativeArray<float> pipeRoomExchangeContents,
+                    out NativeArray<FluidPipeTelemetryEntry> telemetryRing,
+                    out NativeArray<FluidPipeRuptureRecord> ruptureTelemetryRing,
+                    out NativeArray<int> ruptureBudget,
+                    out NativeArray<int> connectionSources,
+                    out NativeArray<int> connectionDestinations,
+                    out NativeArray<FluidPipeRuptureRecord> ruptureDispatch))
+            {
+                return;
+            }
+
+            ResetRuptureQueueBudget(ruptureBudget);
 
             FluidPipePressureSolveJob job = new FluidPipePressureSolveJob
             {
                 NodeCount = _nodeCount,
+                ConnectionCount = _connectionCount,
                 FrameIndex = _frameIndex++,
                 TelemetryIndex = _telemetryCursor++,
                 DeltaTime = deltaTime,
                 DefaultFlowRate = math.max(0f, defaultPipeFlowRate),
-                Connections = _pipeConnections,
-                PipeContentKinds = _pipeContentKinds,
-                PipeNetworkIds = _pipeNetworkIds,
-                PipeRoomIndices = _pipeRoomIndices,
-                PipeCapacities = _pipeCapacities,
-                PipeMaxPressure = _pipeMaxPressure,
-                PipeFlowRates = _pipeFlowRates,
-                PipeSourceRates = _pipeSourceRates,
-                PipeDemandRates = _pipeDemandRates,
-                PipePressure = _pipePressure,
-                PipeContents = _pipeContents,
-                PipeFlags = _pipeFlags,
-                PipeFlowVectors = _pipeFlowVectors,
-                PipeRoomExchangeContents = _pipeRoomExchangeContents,
-                TelemetryRing = _telemetryRing,
-                RuptureTelemetryRing = _ruptureTelemetryRing,
-                Ruptures = _ruptureQueue.AsParallelWriter(),
-                RuptureBudget = _ruptureQueueBudget
+                ConnectionSources = connectionSources,
+                ConnectionDestinations = connectionDestinations,
+                PipeContentKinds = pipeContentKinds,
+                PipeNetworkIds = pipeNetworkIds,
+                PipeRoomIndices = pipeRoomIndices,
+                PipeCapacities = pipeCapacities,
+                PipeMaxPressure = pipeMaxPressure,
+                PipeFlowRates = pipeFlowRates,
+                PipeSourceRates = pipeSourceRates,
+                PipeDemandRates = pipeDemandRates,
+                PipePressure = pipePressure,
+                PipeContents = pipeContents,
+                PipeFlags = pipeFlags,
+                PipeFlowVectors = pipeFlowVectors,
+                PipeRoomExchangeContents = pipeRoomExchangeContents,
+                TelemetryRing = telemetryRing,
+                RuptureTelemetryRing = ruptureTelemetryRing,
+                Ruptures = ruptureDispatch,
+                RuptureBudget = ruptureBudget
             };
 
-            _solveHandle = job.Schedule();
-            _solveScheduled = true;
+            bool scheduled = false;
+            try
+            {
+                _solveHandle = job.Schedule();
+                _solveLockMask = lockMask;
+                _solveScheduled = true;
+                scheduled = true;
+            }
+            finally
+            {
+                if (!scheduled)
+                    ReleaseSolveWriteLocks(vault, lockMask);
+            }
         }
 
-        private void ResetRuptureQueueBudget()
+        private void ResetRuptureQueueBudget(NativeArray<int> ruptureBudget)
         {
-            if (!_ruptureQueueBudget.IsCreated || _ruptureQueueBudget.Length < 2)
+            if (!ruptureBudget.IsCreated || ruptureBudget.Length < RuptureBudgetLength)
                 return;
 
-            _ruptureQueueBudget[0] = math.max(1, math.min(nodeCapacity, math.max(0, _nodeCount)));
-            _ruptureQueueBudget[1] = 0;
+            ruptureBudget[0] = math.max(1, math.min(nodeCapacity, math.max(0, _nodeCount)));
+            ruptureBudget[1] = 0;
+            ruptureBudget[2] = 0;
         }
 
         private bool CompleteSolve(bool force)
@@ -506,6 +566,8 @@ namespace Hecton8.Construction
                 return false;
 
             _solveScheduled = false;
+            ReleaseSolveWriteLocks(ResolveDataVault(), _solveLockMask);
+            _solveLockMask = 0u;
             return true;
         }
 
@@ -514,10 +576,16 @@ namespace Hecton8.Construction
             if (!_initialized)
                 return;
 
-            int ruptureCount = 0;
-            while (_ruptureQueue.IsCreated && _ruptureQueue.TryDequeue(out FluidPipeRuptureRecord rupture))
+            if (!TryReadOnlyBuffer(in _ruptureDispatchHandle, nodeCapacity, out NativeArray<FluidPipeRuptureRecord>.ReadOnly ruptureDispatch) ||
+                !TryReadOnlyBuffer(in _ruptureQueueBudgetHandle, RuptureBudgetLength, out NativeArray<int>.ReadOnly ruptureBudget))
             {
-                ruptureCount++;
+                return;
+            }
+
+            int ruptureCount = math.clamp(ruptureBudget[1], 0, ruptureDispatch.Length);
+            for (int i = 0; i < ruptureCount; i++)
+            {
+                FluidPipeRuptureRecord rupture = ruptureDispatch[i];
                 PublishRuptureSignals(in rupture);
             }
 
@@ -572,28 +640,41 @@ namespace Hecton8.Construction
 
         private void ClearOxygenSourceDemandRates()
         {
+            if (!TryResolveBuffer(in _pipeFlagsHandle, nodeCapacity, out NativeArray<byte> pipeFlags) ||
+                !TryResolveBuffer(in _pipeDemandRatesHandle, nodeCapacity, out NativeArray<float> pipeDemandRates))
+            {
+                return;
+            }
+
             for (int i = 0; i < _nodeCount; i++)
             {
-                byte flags = _pipeFlags[i];
+                byte flags = pipeFlags[i];
                 if ((flags & (byte)FluidPipeFlags.OxygenSource) == 0)
                     continue;
 
-                _pipeDemandRates[i] = 0f;
+                pipeDemandRates[i] = 0f;
             }
         }
 
         private void ApplyRoomExchangeOutputs()
         {
+            if (!TryResolveBuffer(in _pipeRoomExchangeContentsHandle, nodeCapacity, out NativeArray<float> pipeRoomExchangeContents) ||
+                !TryReadOnlyBuffer(in _pipeContentKindsHandle, nodeCapacity, out NativeArray<byte>.ReadOnly pipeContentKinds) ||
+                !TryReadOnlyBuffer(in _pipeRoomIndicesHandle, nodeCapacity, out NativeArray<int>.ReadOnly pipeRoomIndices))
+            {
+                return;
+            }
+
             for (int i = 0; i < _nodeCount; i++)
             {
-                float exchange = _pipeRoomExchangeContents[i];
+                float exchange = pipeRoomExchangeContents[i];
                 if (exchange <= 0f)
                     continue;
 
-                byte kind = _pipeContentKinds[i];
+                byte kind = pipeContentKinds[i];
                 if (kind == (byte)FluidPipeContentKind.Oxygen)
                 {
-                    int roomIndex = _pipeRoomIndices[i];
+                    int roomIndex = pipeRoomIndices[i];
                     if (_atmosphereSystem != null && _atmosphereSystem.IsAtmosphereRuntimeActive && roomIndex >= 0)
                         _atmosphereSystem.InjectOxygenUnits(roomIndex, exchange);
                 }
@@ -606,7 +687,13 @@ namespace Hecton8.Construction
 
         private void PublishRuptureSignals(in FluidPipeRuptureRecord rupture)
         {
-            AbsoluteUniversePosition aup = IsValidNode(rupture.NodeIndex) ? _pipeAups[rupture.NodeIndex] : default;
+            AbsoluteUniversePosition aup = default;
+            if (IsValidNode(rupture.NodeIndex) &&
+                TryReadOnlyBuffer(in _pipeAupsHandle, nodeCapacity, out NativeArray<AbsoluteUniversePosition>.ReadOnly pipeAups))
+            {
+                aup = pipeAups[rupture.NodeIndex];
+            }
+
             short roomIndex = ClampToShort(rupture.RoomIndex);
             PipeRuptureSignal pipeSignal = new PipeRuptureSignal
             {
@@ -638,17 +725,24 @@ namespace Hecton8.Construction
 
         private void PublishFlowVisuals()
         {
+            if (!TryReadOnlyBuffer(in _pipeCapacitiesHandle, nodeCapacity, out NativeArray<float>.ReadOnly pipeCapacities) ||
+                !TryReadOnlyBuffer(in _pipeFlowVectorsHandle, nodeCapacity, out NativeArray<float3>.ReadOnly pipeFlowVectors) ||
+                !TryResolveBuffer(in _pipeLastVisualFlowHandle, nodeCapacity, out NativeArray<float> pipeLastVisualFlow01))
+            {
+                return;
+            }
+
             for (int i = 0; i < _nodeCount; i++)
             {
-                float capacity = math.max(FluidPipeGraphConstants.MinCapacity, _pipeCapacities[i]);
-                float flow01 = math.saturate(_pipeFlowVectors[i].y * math.rcp(capacity));
-                float previous = _pipeLastVisualFlow01[i];
+                float capacity = math.max(FluidPipeGraphConstants.MinCapacity, pipeCapacities[i]);
+                float flow01 = math.saturate(pipeFlowVectors[i].y * math.rcp(capacity));
+                float previous = pipeLastVisualFlow01[i];
                 if (flow01 <= 0.001f && previous <= 0.001f)
                     continue;
                 if (math.abs(flow01 - previous) <= 0.01f)
                     continue;
 
-                _pipeLastVisualFlow01[i] = flow01;
+                pipeLastVisualFlow01[i] = flow01;
                 ConnectionSplineBatchRenderer.SetPipeNodeFlow((uint)i, flow01);
             }
         }
@@ -658,13 +752,19 @@ namespace Hecton8.Construction
             if (!IsValidNode(nodeIndex))
                 return;
 
-            int roomIndex = _pipeRoomIndices[nodeIndex];
+            if (!TryReadOnlyBuffer(in _pipeRoomIndicesHandle, nodeCapacity, out NativeArray<int>.ReadOnly pipeRoomIndices) ||
+                !TryReadOnlyBuffer(in _pipeAupsHandle, nodeCapacity, out NativeArray<AbsoluteUniversePosition>.ReadOnly pipeAups))
+            {
+                return;
+            }
+
+            int roomIndex = pipeRoomIndices[nodeIndex];
             if (roomIndex < 0)
                 return;
 
             FluidIncursionSignal incursionSignal = new FluidIncursionSignal
             {
-                LeakAup = _pipeAups[nodeIndex],
+                LeakAup = pipeAups[nodeIndex],
                 CompartmentId = (uint)math.max(0, roomIndex),
                 FloodLevel01 = 0f,
                 FlowRate01 = math.saturate(amount),
@@ -675,19 +775,28 @@ namespace Hecton8.Construction
 
         private FluidPipeTelemetryEntry ReadLatestTelemetry()
         {
-            if (!_telemetryRing.IsCreated || _telemetryRing.Length <= 0)
+            if (!TryReadOnlyBuffer(in _telemetryRingHandle, FluidPipeGraphConstants.BlackBoxFrameCount, out NativeArray<FluidPipeTelemetryEntry>.ReadOnly telemetryRing) ||
+                telemetryRing.Length <= 0)
                 return default;
 
-            int index = (_telemetryCursor - 1) % _telemetryRing.Length;
+            int index = (_telemetryCursor - 1) % telemetryRing.Length;
             if (index < 0)
-                index += _telemetryRing.Length;
-            return _telemetryRing[index];
+                index += telemetryRing.Length;
+            return telemetryRing[index];
         }
 
         private void DumpBlackBox()
         {
-            if (_blackBoxDumped || !_telemetryRing.IsCreated)
+            if (_blackBoxDumped ||
+                !TryReadOnlyBuffer(in _telemetryRingHandle, FluidPipeGraphConstants.BlackBoxFrameCount, out NativeArray<FluidPipeTelemetryEntry>.ReadOnly telemetryRing))
+            {
                 return;
+            }
+
+            bool hasRuptureTelemetry = TryReadOnlyBuffer(
+                in _ruptureTelemetryRingHandle,
+                FluidPipeGraphConstants.BlackBoxFrameCount,
+                out NativeArray<FluidPipeRuptureRecord>.ReadOnly ruptureTelemetryRing);
 
             _blackBoxDumped = true;
             try
@@ -695,16 +804,16 @@ namespace Hecton8.Construction
                 string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
                 string logDirectory = Path.Combine(projectRoot, "Docs", "AgentLogs");
                 Directory.CreateDirectory(logDirectory);
-                string dumpPath = Path.Combine(logDirectory, "Dump_PIPE_LOGISTICS_ARCHITECT.bin");
+                string dumpPath = Path.Combine(logDirectory, "Dump_1306_Construction.bin");
                 using (FileStream stream = new FileStream(dumpPath, FileMode.Create, FileAccess.Write, FileShare.Read))
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(0x48385049u);
-                    writer.Write(_telemetryRing.Length);
-                    writer.Write(_ruptureTelemetryRing.IsCreated ? _ruptureTelemetryRing.Length : 0);
-                    for (int i = 0; i < _telemetryRing.Length; i++)
+                    writer.Write(telemetryRing.Length);
+                    writer.Write(hasRuptureTelemetry ? ruptureTelemetryRing.Length : 0);
+                    for (int i = 0; i < telemetryRing.Length; i++)
                     {
-                        FluidPipeTelemetryEntry entry = _telemetryRing[i];
+                        FluidPipeTelemetryEntry entry = telemetryRing[i];
                         writer.Write(entry.FrameIndex);
                         writer.Write(entry.NodeCount);
                         writer.Write(entry.RuptureCount);
@@ -715,11 +824,11 @@ namespace Hecton8.Construction
                         writer.Write(entry.StateHash);
                     }
 
-                    if (_ruptureTelemetryRing.IsCreated)
+                    if (hasRuptureTelemetry)
                     {
-                        for (int i = 0; i < _ruptureTelemetryRing.Length; i++)
+                        for (int i = 0; i < ruptureTelemetryRing.Length; i++)
                         {
-                            FluidPipeRuptureRecord rupture = _ruptureTelemetryRing[i];
+                            FluidPipeRuptureRecord rupture = ruptureTelemetryRing[i];
                             writer.Write(rupture.NodeIndex);
                             writer.Write(rupture.NetworkId);
                             writer.Write(rupture.RoomIndex);
@@ -735,35 +844,41 @@ namespace Hecton8.Construction
                     }
                 }
             }
-            catch (Exception exception)
+            catch (Exception)
             {
 #if UNITY_EDITOR
-                Debug.LogError("[FluidPipeGraphRuntime] Failed to dump pipe black box: " + exception.Message);
+                Hecton8.Core.H8Debug.LogError("[FluidPipeGraphRuntime] Failed to dump pipe black box.");
 #endif
             }
         }
 
-        private bool HasConnection(int sourceNodeIndex, int destinationNodeIndex)
+        private bool HasConnection(
+            int sourceNodeIndex,
+            int destinationNodeIndex,
+            NativeArray<int> connectionSources,
+            NativeArray<int> connectionDestinations)
         {
-            NativeParallelMultiHashMapIterator<int> iterator;
-            int candidate;
-            if (!_pipeConnections.TryGetFirstValue(sourceNodeIndex, out candidate, out iterator))
-                return false;
-
-            do
+            int count = math.max(0, math.min(_connectionCount, math.min(connectionSources.Length, connectionDestinations.Length)));
+            for (int i = 0; i < count; i++)
             {
-                if (candidate == destinationNodeIndex)
+                if (connectionSources[i] == sourceNodeIndex &&
+                    connectionDestinations[i] == destinationNodeIndex)
+                {
                     return true;
+                }
             }
-            while (_pipeConnections.TryGetNextValue(out candidate, ref iterator));
 
             return false;
         }
 
-        private float ResolvePressureForNode(int nodeIndex, float contents)
+        private static float ResolvePressureForNode(
+            int nodeIndex,
+            float contents,
+            NativeArray<float> pipeCapacities,
+            NativeArray<float> pipeMaxPressure)
         {
-            float capacity = math.max(FluidPipeGraphConstants.MinCapacity, _pipeCapacities[nodeIndex]);
-            float maxPressure = math.max(FluidPipeGraphConstants.MinMaxPressureKPa, _pipeMaxPressure[nodeIndex]);
+            float capacity = math.max(FluidPipeGraphConstants.MinCapacity, pipeCapacities[nodeIndex]);
+            float maxPressure = math.max(FluidPipeGraphConstants.MinMaxPressureKPa, pipeMaxPressure[nodeIndex]);
             return math.max(0f, contents) * math.rcp(capacity) * maxPressure;
         }
 
@@ -798,28 +913,307 @@ namespace Hecton8.Construction
             return (short)value;
         }
 
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
+        private IDataVault ResolveDataVault()
         {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
+            if (_dataVault != null)
+                return _dataVault;
 
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
+            _dataVault = GlobalRegistry.DataVault;
+            return _dataVault;
+        }
 
-            while (queue.TryDequeue(out _))
+        private bool EnsureFluidPipeVaultBuffers(IDataVault vault)
+        {
+            return TryEnsureHandle(vault, ref _pipePressureHandle, PipePressureBufferId, nodeCapacity) &&
+                   TryEnsureHandle(vault, ref _pipeContentsHandle, PipeContentsBufferId, nodeCapacity) &&
+                   TryEnsureHandle(vault, ref _pipeFlagsHandle, PipeFlagsBufferId, nodeCapacity) &&
+                   TryEnsureHandle(vault, ref _pipeContentKindsHandle, PipeContentKindsBufferId, nodeCapacity) &&
+                   TryEnsureHandle(vault, ref _pipeNetworkIdsHandle, PipeNetworkIdsBufferId, nodeCapacity) &&
+                   TryEnsureHandle(vault, ref _pipeRoomIndicesHandle, PipeRoomIndicesBufferId, nodeCapacity) &&
+                   TryEnsureHandle(vault, ref _pipeCapacitiesHandle, PipeCapacitiesBufferId, nodeCapacity) &&
+                   TryEnsureHandle(vault, ref _pipeMaxPressureHandle, PipeMaxPressureBufferId, nodeCapacity) &&
+                   TryEnsureHandle(vault, ref _pipeFlowRatesHandle, PipeFlowRatesBufferId, nodeCapacity) &&
+                   TryEnsureHandle(vault, ref _pipeSourceRatesHandle, PipeSourceRatesBufferId, nodeCapacity) &&
+                   TryEnsureHandle(vault, ref _pipeDemandRatesHandle, PipeDemandRatesBufferId, nodeCapacity) &&
+                   TryEnsureHandle(vault, ref _pipeFlowVectorsHandle, PipeFlowVectorsBufferId, nodeCapacity) &&
+                   TryEnsureHandle(vault, ref _pipeRoomExchangeContentsHandle, PipeRoomExchangeContentsBufferId, nodeCapacity) &&
+                   TryEnsureHandle(vault, ref _pipeLastVisualFlowHandle, PipeLastVisualFlowBufferId, nodeCapacity) &&
+                   TryEnsureHandle(vault, ref _pipeAupsHandle, PipeAupsBufferId, nodeCapacity) &&
+                   TryEnsureHandle(vault, ref _telemetryRingHandle, PipeTelemetryRingBufferId, FluidPipeGraphConstants.BlackBoxFrameCount) &&
+                   TryEnsureHandle(vault, ref _ruptureTelemetryRingHandle, PipeRuptureTelemetryRingBufferId, FluidPipeGraphConstants.BlackBoxFrameCount) &&
+                   TryEnsureHandle(vault, ref _ruptureQueueBudgetHandle, PipeRuptureBudgetBufferId, RuptureBudgetLength) &&
+                   TryEnsureHandle(vault, ref _pipeConnectionSourcesHandle, PipeConnectionSourcesBufferId, connectionCapacity) &&
+                   TryEnsureHandle(vault, ref _pipeConnectionDestinationsHandle, PipeConnectionDestinationsBufferId, connectionCapacity) &&
+                   TryEnsureHandle(vault, ref _ruptureDispatchHandle, PipeRuptureDispatchBufferId, nodeCapacity);
+        }
+
+        private void ReleaseFluidPipeVaultBuffers(IDataVault vault)
+        {
+            if (vault != null)
             {
+                ReleaseBuffer(vault, ref _pipePressureHandle);
+                ReleaseBuffer(vault, ref _pipeContentsHandle);
+                ReleaseBuffer(vault, ref _pipeFlagsHandle);
+                ReleaseBuffer(vault, ref _pipeContentKindsHandle);
+                ReleaseBuffer(vault, ref _pipeNetworkIdsHandle);
+                ReleaseBuffer(vault, ref _pipeRoomIndicesHandle);
+                ReleaseBuffer(vault, ref _pipeCapacitiesHandle);
+                ReleaseBuffer(vault, ref _pipeMaxPressureHandle);
+                ReleaseBuffer(vault, ref _pipeFlowRatesHandle);
+                ReleaseBuffer(vault, ref _pipeSourceRatesHandle);
+                ReleaseBuffer(vault, ref _pipeDemandRatesHandle);
+                ReleaseBuffer(vault, ref _pipeFlowVectorsHandle);
+                ReleaseBuffer(vault, ref _pipeRoomExchangeContentsHandle);
+                ReleaseBuffer(vault, ref _pipeLastVisualFlowHandle);
+                ReleaseBuffer(vault, ref _pipeAupsHandle);
+                ReleaseBuffer(vault, ref _telemetryRingHandle);
+                ReleaseBuffer(vault, ref _ruptureTelemetryRingHandle);
+                ReleaseBuffer(vault, ref _ruptureQueueBudgetHandle);
+                ReleaseBuffer(vault, ref _pipeConnectionSourcesHandle);
+                ReleaseBuffer(vault, ref _pipeConnectionDestinationsHandle);
+                ReleaseBuffer(vault, ref _ruptureDispatchHandle);
+                return;
+            }
+
+            _pipePressureHandle = default;
+            _pipeContentsHandle = default;
+            _pipeFlagsHandle = default;
+            _pipeContentKindsHandle = default;
+            _pipeNetworkIdsHandle = default;
+            _pipeRoomIndicesHandle = default;
+            _pipeCapacitiesHandle = default;
+            _pipeMaxPressureHandle = default;
+            _pipeFlowRatesHandle = default;
+            _pipeSourceRatesHandle = default;
+            _pipeDemandRatesHandle = default;
+            _pipeFlowVectorsHandle = default;
+            _pipeRoomExchangeContentsHandle = default;
+            _pipeLastVisualFlowHandle = default;
+            _pipeAupsHandle = default;
+            _telemetryRingHandle = default;
+            _ruptureTelemetryRingHandle = default;
+            _ruptureQueueBudgetHandle = default;
+            _pipeConnectionSourcesHandle = default;
+            _pipeConnectionDestinationsHandle = default;
+            _ruptureDispatchHandle = default;
+        }
+
+        private bool TryAcquireSolveWriteBuffers(
+            IDataVault vault,
+            out uint lockMask,
+            out NativeArray<float> pipePressure,
+            out NativeArray<float> pipeContents,
+            out NativeArray<byte> pipeFlags,
+            out NativeArray<byte> pipeContentKinds,
+            out NativeArray<int> pipeNetworkIds,
+            out NativeArray<int> pipeRoomIndices,
+            out NativeArray<float> pipeCapacities,
+            out NativeArray<float> pipeMaxPressure,
+            out NativeArray<float> pipeFlowRates,
+            out NativeArray<float> pipeSourceRates,
+            out NativeArray<float> pipeDemandRates,
+            out NativeArray<float3> pipeFlowVectors,
+            out NativeArray<float> pipeRoomExchangeContents,
+            out NativeArray<FluidPipeTelemetryEntry> telemetryRing,
+            out NativeArray<FluidPipeRuptureRecord> ruptureTelemetryRing,
+            out NativeArray<int> ruptureBudget,
+            out NativeArray<int> connectionSources,
+            out NativeArray<int> connectionDestinations,
+            out NativeArray<FluidPipeRuptureRecord> ruptureDispatch)
+        {
+            lockMask = 0u;
+            pipePressure = default;
+            pipeContents = default;
+            pipeFlags = default;
+            pipeContentKinds = default;
+            pipeNetworkIds = default;
+            pipeRoomIndices = default;
+            pipeCapacities = default;
+            pipeMaxPressure = default;
+            pipeFlowRates = default;
+            pipeSourceRates = default;
+            pipeDemandRates = default;
+            pipeFlowVectors = default;
+            pipeRoomExchangeContents = default;
+            telemetryRing = default;
+            ruptureTelemetryRing = default;
+            ruptureBudget = default;
+            connectionSources = default;
+            connectionDestinations = default;
+            ruptureDispatch = default;
+
+            if (vault == null || !EnsureFluidPipeVaultBuffers(vault))
+                return false;
+
+            bool acquired = false;
+            try
+            {
+                if (!TryAcquireSolveWriteBuffer(vault, in _pipePressureHandle, nodeCapacity, SolveLockPressure, ref lockMask, out pipePressure) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeContentsHandle, nodeCapacity, SolveLockContents, ref lockMask, out pipeContents) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeFlagsHandle, nodeCapacity, SolveLockFlags, ref lockMask, out pipeFlags) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeContentKindsHandle, nodeCapacity, SolveLockContentKinds, ref lockMask, out pipeContentKinds) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeNetworkIdsHandle, nodeCapacity, SolveLockNetworkIds, ref lockMask, out pipeNetworkIds) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeRoomIndicesHandle, nodeCapacity, SolveLockRoomIndices, ref lockMask, out pipeRoomIndices) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeCapacitiesHandle, nodeCapacity, SolveLockCapacities, ref lockMask, out pipeCapacities) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeMaxPressureHandle, nodeCapacity, SolveLockMaxPressure, ref lockMask, out pipeMaxPressure) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeFlowRatesHandle, nodeCapacity, SolveLockFlowRates, ref lockMask, out pipeFlowRates) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeSourceRatesHandle, nodeCapacity, SolveLockSourceRates, ref lockMask, out pipeSourceRates) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeDemandRatesHandle, nodeCapacity, SolveLockDemandRates, ref lockMask, out pipeDemandRates) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeFlowVectorsHandle, nodeCapacity, SolveLockFlowVectors, ref lockMask, out pipeFlowVectors) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeRoomExchangeContentsHandle, nodeCapacity, SolveLockRoomExchange, ref lockMask, out pipeRoomExchangeContents) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _telemetryRingHandle, FluidPipeGraphConstants.BlackBoxFrameCount, SolveLockTelemetry, ref lockMask, out telemetryRing) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _ruptureTelemetryRingHandle, FluidPipeGraphConstants.BlackBoxFrameCount, SolveLockRuptureTelemetry, ref lockMask, out ruptureTelemetryRing) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _ruptureQueueBudgetHandle, RuptureBudgetLength, SolveLockRuptureBudget, ref lockMask, out ruptureBudget) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeConnectionSourcesHandle, connectionCapacity, SolveLockConnectionSources, ref lockMask, out connectionSources) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _pipeConnectionDestinationsHandle, connectionCapacity, SolveLockConnectionDestinations, ref lockMask, out connectionDestinations) ||
+                    !TryAcquireSolveWriteBuffer(vault, in _ruptureDispatchHandle, nodeCapacity, SolveLockRuptureDispatch, ref lockMask, out ruptureDispatch))
+                {
+                    return false;
+                }
+
+                acquired = true;
+                return true;
+            }
+            finally
+            {
+                if (!acquired)
+                {
+                    ReleaseSolveWriteLocks(vault, lockMask);
+                    lockMask = 0u;
+                }
             }
         }
 
-        private static void DisposeArray<T>(ref NativeArray<T> array) where T : struct
+        private static bool TryAcquireSolveWriteBuffer<T>(
+            IDataVault vault,
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            uint bit,
+            ref uint lockMask,
+            out NativeArray<T> buffer) where T : struct
         {
-            if (!array.IsCreated)
+            buffer = default;
+            if (vault == null ||
+                requiredLength <= 0 ||
+                !IsHandleCreated(in handle) ||
+                !vault.TryAcquireWriteLock(in handle, OwnerSystemId, out buffer))
+            {
+                return false;
+            }
+
+            lockMask |= bit;
+            return buffer.IsCreated && buffer.Length >= requiredLength;
+        }
+
+        private void ReleaseSolveWriteLocks(IDataVault vault, uint lockMask)
+        {
+            if (vault == null || lockMask == 0u)
                 return;
 
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            if ((lockMask & SolveLockRuptureDispatch) != 0u) ReleaseWriteLock(vault, in _ruptureDispatchHandle);
+            if ((lockMask & SolveLockConnectionDestinations) != 0u) ReleaseWriteLock(vault, in _pipeConnectionDestinationsHandle);
+            if ((lockMask & SolveLockConnectionSources) != 0u) ReleaseWriteLock(vault, in _pipeConnectionSourcesHandle);
+            if ((lockMask & SolveLockRuptureBudget) != 0u) ReleaseWriteLock(vault, in _ruptureQueueBudgetHandle);
+            if ((lockMask & SolveLockRuptureTelemetry) != 0u) ReleaseWriteLock(vault, in _ruptureTelemetryRingHandle);
+            if ((lockMask & SolveLockTelemetry) != 0u) ReleaseWriteLock(vault, in _telemetryRingHandle);
+            if ((lockMask & SolveLockRoomExchange) != 0u) ReleaseWriteLock(vault, in _pipeRoomExchangeContentsHandle);
+            if ((lockMask & SolveLockFlowVectors) != 0u) ReleaseWriteLock(vault, in _pipeFlowVectorsHandle);
+            if ((lockMask & SolveLockDemandRates) != 0u) ReleaseWriteLock(vault, in _pipeDemandRatesHandle);
+            if ((lockMask & SolveLockSourceRates) != 0u) ReleaseWriteLock(vault, in _pipeSourceRatesHandle);
+            if ((lockMask & SolveLockFlowRates) != 0u) ReleaseWriteLock(vault, in _pipeFlowRatesHandle);
+            if ((lockMask & SolveLockMaxPressure) != 0u) ReleaseWriteLock(vault, in _pipeMaxPressureHandle);
+            if ((lockMask & SolveLockCapacities) != 0u) ReleaseWriteLock(vault, in _pipeCapacitiesHandle);
+            if ((lockMask & SolveLockRoomIndices) != 0u) ReleaseWriteLock(vault, in _pipeRoomIndicesHandle);
+            if ((lockMask & SolveLockNetworkIds) != 0u) ReleaseWriteLock(vault, in _pipeNetworkIdsHandle);
+            if ((lockMask & SolveLockContentKinds) != 0u) ReleaseWriteLock(vault, in _pipeContentKindsHandle);
+            if ((lockMask & SolveLockFlags) != 0u) ReleaseWriteLock(vault, in _pipeFlagsHandle);
+            if ((lockMask & SolveLockContents) != 0u) ReleaseWriteLock(vault, in _pipeContentsHandle);
+            if ((lockMask & SolveLockPressure) != 0u) ReleaseWriteLock(vault, in _pipePressureHandle);
+        }
+
+        private bool TryResolveBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T> buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = ResolveDataVault();
+            return vault != null &&
+                   requiredLength > 0 &&
+                   IsHandleCreated(in handle) &&
+                   vault.TryResolveHandle(in handle, out buffer) &&
+                   buffer.IsCreated &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private bool TryReadOnlyBuffer<T>(
+            in VaultGenerationHandle<T> handle,
+            int requiredLength,
+            out NativeArray<T>.ReadOnly buffer) where T : struct
+        {
+            buffer = default;
+            IDataVault vault = ResolveDataVault();
+            return vault != null &&
+                   requiredLength > 0 &&
+                   IsHandleCreated(in handle) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.Length >= requiredLength;
+        }
+
+        private static bool TryEnsureHandle<T>(
+            IDataVault vault,
+            ref VaultGenerationHandle<T> handle,
+            BufferID bufferId,
+            int requiredLength) where T : struct
+        {
+            int safeLength = math.max(1, requiredLength);
+            if (IsHandleCreated(in handle) &&
+                vault.TryResolveHandle(in handle, out NativeArray<T> existing) &&
+                existing.IsCreated &&
+                existing.Length >= safeLength)
+            {
+                return true;
+            }
+
+            if (vault.TryGetGenerationHandle<T>(bufferId, out VaultGenerationHandle<T> existingHandle))
+            {
+                handle = existingHandle;
+                if (vault.TryResolveHandle(in handle, out existing) &&
+                    existing.IsCreated &&
+                    existing.Length >= safeLength)
+                {
+                    return true;
+                }
+            }
+
+            handle = vault.EnsureGenerationHandle<T>(
+                bufferId,
+                safeLength,
+                OwnerSystemId,
+                NativeArrayOptions.ClearMemory);
+            return IsHandleCreated(in handle) &&
+                   vault.TryResolveHandle(in handle, out existing) &&
+                   existing.IsCreated &&
+                   existing.Length >= safeLength;
+        }
+
+        private static void ReleaseWriteLock<T>(IDataVault vault, in VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (IsHandleCreated(in handle))
+                vault.ReleaseWriteLock(in handle, OwnerSystemId);
+        }
+
+        private static void ReleaseBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle) where T : struct
+        {
+            if (IsHandleCreated(in handle))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static bool IsHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
     }
 }

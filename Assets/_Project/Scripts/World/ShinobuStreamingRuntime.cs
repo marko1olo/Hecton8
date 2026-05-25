@@ -34,11 +34,11 @@ namespace Hecton8.World
         [FieldOffset(28)]
         public float DistanceSq;
         [FieldOffset(32)]
-        public byte StateFlags;
-        [FieldOffset(33)]
-        public byte Priority;
-        [FieldOffset(34)]
         public ushort _pad0;
+        [FieldOffset(34)]
+        public byte StateFlags;
+        [FieldOffset(35)]
+        public byte Priority;
         [FieldOffset(36)]
         public uint _pad1;
     }
@@ -47,11 +47,11 @@ namespace Hecton8.World
     public struct AddressablesRequestDTO
     {
         [FieldOffset(0)]
-        public uint AssetHash;
-        [FieldOffset(4)]
-        public int TargetChunkIndex;
-        [FieldOffset(8)]
         public ulong HandlePtr;
+        [FieldOffset(8)]
+        public uint AssetHash;
+        [FieldOffset(12)]
+        public int TargetChunkIndex;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -87,17 +87,21 @@ namespace Hecton8.World
         [FieldOffset(36)]
         public uint Frame;
         [FieldOffset(40)]
-        public byte Flags;
-        [FieldOffset(41)]
-        public byte _pad0;
-        [FieldOffset(42)]
-        public ushort _pad1;
-        [FieldOffset(44)]
         public uint _pad2;
+        [FieldOffset(44)]
+        private uint _pad3;
         [FieldOffset(48)]
-        public ulong _pad3;
+        private uint _pad4;
+        [FieldOffset(52)]
+        private uint _pad5;
         [FieldOffset(56)]
-        public ulong _pad4;
+        private uint _pad6;
+        [FieldOffset(60)]
+        public ushort _pad1;
+        [FieldOffset(62)]
+        public byte Flags;
+        [FieldOffset(63)]
+        public byte _pad0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 16)]
@@ -110,11 +114,11 @@ namespace Hecton8.World
         [FieldOffset(8)]
         public uint StartFrame;
         [FieldOffset(12)]
-        public byte Status;
-        [FieldOffset(13)]
-        public byte Priority;
-        [FieldOffset(14)]
         public ushort PayloadPages;
+        [FieldOffset(14)]
+        public byte Status;
+        [FieldOffset(15)]
+        public byte Priority;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 32)]
@@ -125,11 +129,11 @@ namespace Hecton8.World
         [FieldOffset(24)]
         public uint FrameId;
         [FieldOffset(28)]
-        public byte Fired;
-        [FieldOffset(29)]
-        public byte _pad0;
-        [FieldOffset(30)]
         public ushort _pad1;
+        [FieldOffset(30)]
+        public byte Fired;
+        [FieldOffset(31)]
+        public byte _pad0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 48)]
@@ -154,17 +158,17 @@ namespace Hecton8.World
         [FieldOffset(32)]
         public uint ProfileHash;
         [FieldOffset(36)]
-        public byte Flags;
-        [FieldOffset(37)]
-        public byte _pad0;
-        [FieldOffset(38)]
-        public byte _pad1;
-        [FieldOffset(39)]
-        public byte _pad2;
-        [FieldOffset(40)]
         public float LoadRadiusMeters;
-        [FieldOffset(44)]
+        [FieldOffset(40)]
         public float UnloadRadiusMeters;
+        [FieldOffset(44)]
+        public byte Flags;
+        [FieldOffset(45)]
+        public byte _pad0;
+        [FieldOffset(46)]
+        public byte _pad1;
+        [FieldOffset(47)]
+        public byte _pad2;
 
         public static WorldStreamingRuntimeTuning CreateDefault()
         {
@@ -279,8 +283,7 @@ namespace Hecton8.World
     public struct PredictiveChunkResidencyJob : IJobParallelFor
     {
         [NoAlias] public NativeArray<ChunkResidencyDTO> Chunks;
-        [NoAlias] public NativeList<int>.ParallelWriter HydrationRequests;
-        [NoAlias] public NativeList<int>.ParallelWriter DehydrationRequests;
+        [NoAlias] public NativeArray<ResidencyDecisionDTO> Decisions;
         public double3 CameraAup;
         public float3 CameraVelocity;
         public float LoadRadiusMeters;
@@ -328,17 +331,18 @@ namespace Hecton8.World
             {
                 flags = (byte)((flags | ChunkResidencyStateFlags.HydrationPending | ChunkResidencyStateFlags.Loading) & unchecked((byte)~ChunkResidencyStateFlags.DehydrationPending));
                 chunk.Priority = (byte)(distSq <= loadSq * 0.25f ? 3 : 2);
-                HydrationRequests.AddNoResize(index);
+                WriteDecision(index, 1, chunk.Priority, distSq);
             }
             else if (hydrated && !threat && !pinned && distSq > unloadSq)
             {
                 flags = (byte)((flags | ChunkResidencyStateFlags.DehydrationPending) & unchecked((byte)~ChunkResidencyStateFlags.HydrationPending));
                 chunk.Priority = 1;
-                DehydrationRequests.AddNoResize(index);
+                WriteDecision(index, 2, chunk.Priority, distSq);
             }
             else
             {
                 flags = (byte)(flags & unchecked((byte)~(ChunkResidencyStateFlags.HydrationPending | ChunkResidencyStateFlags.DehydrationPending)));
+                WriteDecision(index, 0, 0, distSq);
             }
 
             chunk.DistanceSq = distSq;
@@ -346,6 +350,22 @@ namespace Hecton8.World
             chunk._pad0 = 0;
             chunk._pad1 = 0u;
             Chunks[index] = chunk;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void WriteDecision(int index, byte action, byte priority, float distanceSq)
+        {
+            if (!Decisions.IsCreated || (uint)index >= (uint)Decisions.Length)
+                return;
+
+            Decisions[index] = new ResidencyDecisionDTO
+            {
+                ChunkId = 0L,
+                DistanceSq = distanceSq,
+                Action = action,
+                Priority = priority,
+                Flags = 0
+            };
         }
     }
 

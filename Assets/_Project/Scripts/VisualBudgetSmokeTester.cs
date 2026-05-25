@@ -202,7 +202,7 @@ namespace Hecton8.Dev
                 .Append(" visor=").Append(_debugVisorRenderTextureMemoryMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
                 .Append(" postfx=").Append(_debugPostFxRenderTextureMemoryMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("MB")
                 .Append(" ui=").Append(_debugUiRenderTextureMemoryMb.ToString("0.0", CultureInfo.InvariantCulture)).Append("MB");
-            Debug.LogError(_reportBuilder.ToString(), this);
+            Hecton8.Core.H8Debug.LogError(_reportBuilder.ToString(), this);
 #endif
             return false;
         }

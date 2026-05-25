@@ -828,17 +828,13 @@ namespace Hecton8.Interaction
             float3 origin3 = new float3(origin.x, origin.y, origin.z);
             float3 direction3 = math.normalizesafe(new float3(direction.x, direction.y, direction.z), new float3(0f, 0f, 1f));
             float stepMeters = ResolveToolSdfStepMeters(range);
-            if (!readModel.TryRaymarchNearestSonarSdf(
+            if (!VoxelSonarSdfMath.TryResolveNearestSdfSurface(
+                    readModel,
                     origin3,
                     direction3,
                     range,
                     stepMeters,
-                    out VoxelSonarSdfRaycastHit sdfHit,
-                    out NativeArray<byte>.ReadOnly _,
-                    out int3 _,
-                    out float3 _,
-                    out float3 _,
-                    out float _) ||
+                    out VoxelSonarSdfRaycastHit sdfHit) ||
                 (sdfHit.Flags & VoxelSonarSdfRaycastHit.FlagHit) == 0u ||
                 !math.all(math.isfinite(sdfHit.Point)) ||
                 !math.all(math.isfinite(sdfHit.Normal)) ||

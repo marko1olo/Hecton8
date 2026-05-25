@@ -108,7 +108,7 @@ namespace Hecton8.Core
             if (subsystemHash == 0u || costMilliseconds <= 0f || !math.isfinite(costMilliseconds))
                 return;
 
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_reportedSubsystemFrame != frame)
             {
                 _reportedSubsystemFrame = frame;
@@ -132,7 +132,7 @@ namespace Hecton8.Core
             if (batchCount <= 0)
                 return;
 
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_reportedBrgBatchFrame != frame)
             {
                 _reportedBrgBatchFrame = frame;
@@ -183,7 +183,7 @@ namespace Hecton8.Core
 
         private static void PublishSpike(float deltaTime)
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_lastSpikeReportFrame == frame)
                 return;
 
@@ -285,7 +285,7 @@ namespace Hecton8.Core
             if (_shaderLodPushed && _mathLodMode == targetMode)
                 return;
 
-            float now = Time.unscaledTime;
+            float now = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             if (_shaderLodPushed && now - _lastScalabilitySwitchTimeSeconds < ScalabilityCooldownSeconds)
                 return;
 
@@ -295,7 +295,7 @@ namespace Hecton8.Core
             _lastScalabilitySwitchTimeSeconds = now;
             ApplyContinuousQualityState(ResolveGlobalQualityWeight01(), lowMode);
             if (lowMode)
-                s_beginMathPrecisionDegradation(Time.frameCount);
+                s_beginMathPrecisionDegradation(Hecton8.Core.SystemDispatcher.CurrentFrameIndex);
             else
                 s_registerMathPrecisionLevel(MathPrecisionLevel.High);
             float shaderQualityWeight01 = ResolveShaderQualityWeight01(ResolveGlobalQualityWeight01(), lowMode);
@@ -303,7 +303,7 @@ namespace Hecton8.Core
             PerformanceEvents.TryRaiseSystemDegradation(
                 frameTimeMilliseconds,
                 thresholdMilliseconds,
-                Time.frameCount,
+                Hecton8.Core.SystemDispatcher.CurrentFrameIndex,
                 degradationLevel);
             GlobalTelemetryBus.PublishSystemDegradation(reasonHash, actionMask, frameTimeMilliseconds);
         }
@@ -315,7 +315,7 @@ namespace Hecton8.Core
             bool lowMode = targetMode == MathLodMode.Low;
             _mathLodMode = targetMode;
             _shaderLodPushed = true;
-            _lastScalabilitySwitchTimeSeconds = Time.unscaledTime;
+            _lastScalabilitySwitchTimeSeconds = (float)SystemDispatcher.CurrentUnscaledTimeSeconds;
             ApplyContinuousQualityState(qualityWeight01, lowMode);
             s_registerMathPrecisionLevel(lowMode ? MathPrecisionLevel.Low : MathPrecisionLevel.High);
             DistanceMath.PushShaderMathLod(ResolveShaderQualityWeight01(qualityWeight01, lowMode));
@@ -362,7 +362,7 @@ namespace Hecton8.Core
 
         private static void PublishDrawCallEstimateIfPresent()
         {
-            int frame = Time.frameCount;
+            int frame = Hecton8.Core.SystemDispatcher.CurrentFrameIndex;
             if (_reportedBrgBatchFrame != frame || _reportedBrgBatchCount <= 0)
                 return;
 

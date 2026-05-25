@@ -584,7 +584,7 @@ namespace Hecton8.Networking
             JobHandle merkleHandle = merkleRoot.Schedule(merkleLeaves);
 
             uint rollbackSignalsEnabled = _rollbackSignalsReady;
-            NativeQueue<RollbackRequiredSignal>.ParallelWriter rollbackSignals = default;
+            global::Hecton8.Core.MpscSignalRingBuffer<RollbackRequiredSignal>.ParallelWriter rollbackSignals = default;
             NativeArray<int> rollbackSignalsBudget = default;
             if (rollbackSignalsEnabled != 0u && SignalBus<RollbackRequiredSignal>.HasNativeStorage)
             {

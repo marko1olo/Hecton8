@@ -1,0 +1,68 @@
+{
+  "schema": "DATA_MONOLITH_APEX_PARANOID_PASS7_1313.v1",
+  "agent_id": "1313",
+  "domain": "Echelon 1 Core Infrastructure / Data Monolith Static Data Pipeline",
+  "task_count": 10,
+  "builds_run": {
+    "dotnet": false,
+    "unity_import": false,
+    "unity_player_build": false
+  },
+  "prompt_proof": {
+    "source": "Docs/Tasks/CURRENT_BATCH.md",
+    "tag": "AGENT_PROMPT id=\"1313\"",
+    "last_extracted_length": 12203
+  },
+  "patches": {
+    "validator_release_preprocessor_mask": {
+      "file": "Tools/h8bin_validator.py",
+      "lines": [2271, 2300, 2473],
+      "reason": "Skip editor/development-only text loaders when proving player-release StreamingAssets purity."
+    },
+    "runtime_csv_helper_fences": [
+      "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime.cs:1060",
+      "Assets/_Project/Scripts/Ecosystem/NutrientDriftRuntime_Carrion.cs:728"
+    ],
+    "streamingassets_text_artifact_moves": [
+      {
+        "from": "Assets/StreamingAssets/Hecton8/camera_trauma_profiles.csv",
+        "to": "Assets/_Project/Data/VFX/camera_trauma_profiles.csv"
+      },
+      {
+        "from": "Assets/StreamingAssets/Hecton8/haptic_response_profiles.csv",
+        "to": "Assets/_Project/Data/Haptics/haptic_response_profiles.csv"
+      },
+      {
+        "from": "Assets/StreamingAssets/Hecton8/PDA/pda_interface_profiles.csv",
+        "to": "Assets/_Project/Data/UI/pda_interface_profiles.csv"
+      }
+    ],
+    "editor_facade_path_updates": [
+      "Assets/_Project/Scripts/Core/HectonInputRuntime_HapticSynth.cs:517",
+      "Assets/_Project/Scripts/VFX/CameraJuiceSystem_CameraJuiceBurst.cs:740",
+      "Assets/_Project/Scripts/UI/WristHologramHudRuntime_PdaScreenProjector.cs:888",
+      "Assets/_Project/Scripts/UI/Editor/OOP_Canvas_Scanner_SHINOBU_348.cs:117"
+    ]
+  },
+  "validation": {
+    "python_py_compile": "PASS",
+    "strict_validator_report": "Docs/Reports/DATA_MONOLITH_H8BIN_VALIDATOR_RELEASE_BLOCKERS_PASS7_1313.json",
+    "strict_validator_status": "PASS",
+    "strict_validator_files_checked": 2,
+    "strict_validator_structs_parsed": 32,
+    "strict_validator_mb_processed": 1.0495,
+    "strict_validator_elapsed_seconds": 0.879134,
+    "streamingassets_text_artifacts": 0,
+    "runtime_text_streamingassets_loaders": 0,
+    "old_profile_streamingassets_reference_hits": 0,
+    "json_1313_parse_ok": 23,
+    "git_diff_check": "PASS_CRLF_WARNINGS_ONLY"
+  },
+  "release_verdict": {
+    "text_artifact_gate": "PASS",
+    "h8bin_payload_gate": "PASS",
+    "android_quest_pal": "REJECTED_FAIL_CLOSED",
+    "unity_profiler_gc_proof": "ABSENT",
+    "overall": "REJECTED_PENDING_PLATFORM_PAL_AND_PLAYER_PROOF"
+  }
+}

@@ -1,0 +1,673 @@
+﻿{
+    "schema":  "RUNTIME_IO_GUARD_SCAN_1302_PASS9_V2",
+    "generatedUtc":  "2026-05-25T18:36:48.3793666Z",
+    "scannedFiles":  30,
+    "ioPathHitCount":  110,
+    "editorGuardedHitCount":  110,
+    "unguardedPlayerRuntimeHitCount":  0,
+    "unguardedHits":  [
+
+                      ],
+    "allHits":  [
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                        "line":  3,
+                        "editorGuarded":  true,
+                        "text":  "using System.IO;"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                        "line":  839,
+                        "editorGuarded":  true,
+                        "text":  "string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, \"..\"));"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                        "line":  840,
+                        "editorGuarded":  true,
+                        "text":  "return Path.GetFullPath(Path.Combine(projectRoot, relativePath));"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                        "line":  850,
+                        "editorGuarded":  true,
+                        "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                        "line":  861,
+                        "editorGuarded":  true,
+                        "text":  "catch (IOException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AnalyticalGerstnerWaveRuntime.cs",
+                        "line":  865,
+                        "editorGuarded":  true,
+                        "text":  "catch (UnauthorizedAccessException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                        "line":  3,
+                        "editorGuarded":  true,
+                        "text":  "using System.IO;"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                        "line":  1180,
+                        "editorGuarded":  true,
+                        "text":  "string path = Path.Combine(Application.dataPath, \"..\", vehicleSamplingProfilesCsvRelativePath);"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                        "line":  1181,
+                        "editorGuarded":  true,
+                        "text":  "path = Path.GetFullPath(path);"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                        "line":  1182,
+                        "editorGuarded":  true,
+                        "text":  "if (!File.Exists(path))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/AsyncReadback/AsyncBuoyancyReadbackRuntime.cs",
+                        "line":  1203,
+                        "editorGuarded":  true,
+                        "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                        "line":  3,
+                        "editorGuarded":  true,
+                        "text":  "using System.IO;"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                        "line":  66,
+                        "editorGuarded":  true,
+                        "text":  "[Tooltip(\"Project-relative material volume CSV path.\")]"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                        "line":  70,
+                        "editorGuarded":  true,
+                        "text":  "[Tooltip(\"Project-relative material settling CSV path.\")]"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                        "line":  835,
+                        "editorGuarded":  true,
+                        "text":  "if (string.IsNullOrEmpty(path) || !File.Exists(path))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                        "line":  861,
+                        "editorGuarded":  true,
+                        "text":  "if (string.IsNullOrEmpty(path) || !File.Exists(path))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                        "line":  887,
+                        "editorGuarded":  true,
+                        "text":  "if (string.IsNullOrEmpty(path) || !File.Exists(path))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                        "line":  1835,
+                        "editorGuarded":  true,
+                        "text":  "string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, \"..\"));"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                        "line":  1836,
+                        "editorGuarded":  true,
+                        "text":  "return Path.GetFullPath(Path.Combine(projectRoot, relativePath));"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                        "line":  1847,
+                        "editorGuarded":  true,
+                        "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                        "line":  1858,
+                        "editorGuarded":  true,
+                        "text":  "catch (IOException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Buoyancy/BuoyancyDisplacementRuntime.cs",
+                        "line":  1862,
+                        "editorGuarded":  true,
+                        "text":  "catch (UnauthorizedAccessException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                        "line":  3,
+                        "editorGuarded":  true,
+                        "text":  "using System.IO;"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                        "line":  544,
+                        "editorGuarded":  true,
+                        "text":  "DispatcherJobFence.TryComplete(ref handle, forceComplete: true); // COLD SYNC JOB: CI/editor fallback injection, never the live propagation path."
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                        "line":  954,
+                        "editorGuarded":  true,
+                        "text":  "string path = Path.Combine(Application.dataPath, \"_Project\", \"Data\", \"Combat\", \"ordnance_blast_profiles.csv\");"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                        "line":  958,
+                        "editorGuarded":  true,
+                        "text":  "string legacyPath = Path.Combine(Application.dataPath, \"_Project\", \"Data\", \"Combat\", \"ordnance_specs.csv\");"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                        "line":  964,
+                        "editorGuarded":  true,
+                        "text":  "if (!EnsureInitialized() || _jobScheduled || string.IsNullOrEmpty(csvPath) || !File.Exists(csvPath))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Cavitation/AbyssalCavitationRuntime.cs",
+                        "line":  976,
+                        "editorGuarded":  true,
+                        "text":  "using (FileStream stream = File.OpenRead(csvPath))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                        "line":  3,
+                        "editorGuarded":  true,
+                        "text":  "using System.IO;"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                        "line":  196,
+                        "editorGuarded":  true,
+                        "text":  "_csvPath = Path.Combine(_projectRoot, \"Data\", \"Physics\", \"exosuit_performance_profiles.csv\");"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                        "line":  1341,
+                        "editorGuarded":  true,
+                        "text":  "if (!File.Exists(_csvPath))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                        "line":  1344,
+                        "editorGuarded":  true,
+                        "text":  "long writeTicks = File.GetLastWriteTimeUtc(_csvPath).Ticks;"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                        "line":  1414,
+                        "editorGuarded":  true,
+                        "text":  "using (FileStream stream = File.OpenRead(path))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                        "line":  1970,
+                        "editorGuarded":  true,
+                        "text":  "return Path.GetFullPath(Path.Combine(dataPath, \"..\"));"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                        "line":  1972,
+                        "editorGuarded":  true,
+                        "text":  "string currentDirectory = Directory.GetCurrentDirectory();"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Exosuit/ExosuitKinematicsRuntime.cs",
+                        "line":  1975,
+                        "editorGuarded":  true,
+                        "text":  ": Path.GetFullPath(currentDirectory);"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                        "line":  3,
+                        "editorGuarded":  true,
+                        "text":  "using System.IO;"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                        "line":  1211,
+                        "editorGuarded":  true,
+                        "text":  "string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                        "line":  1219,
+                        "editorGuarded":  true,
+                        "text":  "using (FileStream stream = new FileStream(csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                        "line":  1267,
+                        "editorGuarded":  true,
+                        "text":  "string primary = Path.Combine(projectRoot, SeaglideHydrodynamicsConstants.CsvRelativePath);"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                        "line":  1268,
+                        "editorGuarded":  true,
+                        "text":  "if (File.Exists(primary))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                        "line":  1271,
+                        "editorGuarded":  true,
+                        "text":  "string legacy = Path.Combine(projectRoot, SeaglideHydrodynamicsConstants.LegacyCsvRelativePath);"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Seaglide/SeaglideHydrodynamicsRuntime.cs",
+                        "line":  1272,
+                        "editorGuarded":  true,
+                        "text":  "return File.Exists(legacy) ? legacy : null;"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                        "line":  3,
+                        "editorGuarded":  true,
+                        "text":  "using System.IO;"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                        "line":  2407,
+                        "editorGuarded":  true,
+                        "text":  "if (string.IsNullOrEmpty(_csvPath) || !File.Exists(_csvPath))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                        "line":  2413,
+                        "editorGuarded":  true,
+                        "text":  "ticks = File.GetLastWriteTimeUtc(_csvPath).Ticks;"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                        "line":  2415,
+                        "editorGuarded":  true,
+                        "text":  "catch (IOException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                        "line":  2419,
+                        "editorGuarded":  true,
+                        "text":  "catch (UnauthorizedAccessException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                        "line":  2464,
+                        "editorGuarded":  true,
+                        "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 256, FileOptions.SequentialScan))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                        "line":  2482,
+                        "editorGuarded":  true,
+                        "text":  "catch (IOException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                        "line":  2486,
+                        "editorGuarded":  true,
+                        "text":  "catch (UnauthorizedAccessException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                        "line":  2841,
+                        "editorGuarded":  true,
+                        "text":  "DirectoryInfo assets = Directory.GetParent(Application.dataPath);"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                        "line":  2842,
+                        "editorGuarded":  true,
+                        "text":  "return assets != null ? assets.FullName : Directory.GetCurrentDirectory();"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                        "line":  2847,
+                        "editorGuarded":  true,
+                        "text":  "string projectDataPath = Path.Combine(projectRoot, \"Assets\", \"_Project\", \"Data\", \"Vehicles\", \"vehicle_handling_profiles.csv\");"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                        "line":  2848,
+                        "editorGuarded":  true,
+                        "text":  "if (File.Exists(projectDataPath))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/Automation/SubmarineAutopilotSdfNavigator.cs",
+                        "line":  2851,
+                        "editorGuarded":  true,
+                        "text":  "return Path.Combine(projectRoot, \"vehicle_handling_profiles.csv\");"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  3,
+                        "editorGuarded":  true,
+                        "text":  "using System.IO;"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  143,
+                        "editorGuarded":  true,
+                        "text":  "_csvPath = Path.Combine(_projectRoot, \"sub_physics_overrides.csv\");"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  144,
+                        "editorGuarded":  true,
+                        "text":  "_hullProfilesCsvPath = Path.Combine(_projectRoot, \"Data\", \"Physics\", \"vehicle_hull_profiles.csv\");"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1072,
+                        "editorGuarded":  true,
+                        "text":  "bool massLoaded = TryReadMassProfile(Path.Combine(_projectRoot, \"Docs\", \"Archive\", \"submarine_mass_profiles.h8bin\"), ref config);"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1073,
+                        "editorGuarded":  true,
+                        "text":  "bool dragLoaded = TryReadDragProfile(Path.Combine(_projectRoot, \"Docs\", \"Archive\", \"hydro_drag_constants.bin\"), dragLut);"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1076,
+                        "editorGuarded":  true,
+                        "text":  "massLoaded = TryReadMassProfile(Path.Combine(_projectRoot, \"Assets\", \"StreamingAssets\", \"submarine_mass_profiles.h8bin\"), ref config);"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1078,
+                        "editorGuarded":  true,
+                        "text":  "dragLoaded = TryReadDragProfile(Path.Combine(_projectRoot, \"Assets\", \"StreamingAssets\", \"hydro_drag_constants.bin\"), dragLut);"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1080,
+                        "editorGuarded":  true,
+                        "text":  "massLoaded = TryReadMassProfile(Path.Combine(_projectRoot, \"StreamingAssets\", \"submarine_mass_profiles.h8bin\"), ref config);"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1082,
+                        "editorGuarded":  true,
+                        "text":  "dragLoaded = TryReadDragProfile(Path.Combine(_projectRoot, \"StreamingAssets\", \"hydro_drag_constants.bin\"), dragLut);"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1099,
+                        "editorGuarded":  true,
+                        "text":  "catch (IOException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1103,
+                        "editorGuarded":  true,
+                        "text":  "catch (UnauthorizedAccessException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1111,
+                        "editorGuarded":  true,
+                        "text":  "if (!File.Exists(path))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1114,
+                        "editorGuarded":  true,
+                        "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128, FileOptions.SequentialScan))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1142,
+                        "editorGuarded":  true,
+                        "text":  "if (!File.Exists(path))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1145,
+                        "editorGuarded":  true,
+                        "text":  "using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128, FileOptions.SequentialScan))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1267,
+                        "editorGuarded":  true,
+                        "text":  "if (string.IsNullOrEmpty(_csvPath) || !File.Exists(_csvPath))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1273,
+                        "editorGuarded":  true,
+                        "text":  "ticks = File.GetLastWriteTimeUtc(_csvPath).Ticks;"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1275,
+                        "editorGuarded":  true,
+                        "text":  "catch (IOException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1279,
+                        "editorGuarded":  true,
+                        "text":  "catch (UnauthorizedAccessException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1325,
+                        "editorGuarded":  true,
+                        "text":  "using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128, FileOptions.SequentialScan))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1344,
+                        "editorGuarded":  true,
+                        "text":  "catch (IOException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1348,
+                        "editorGuarded":  true,
+                        "text":  "catch (UnauthorizedAccessException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1368,
+                        "editorGuarded":  true,
+                        "text":  "if (string.IsNullOrEmpty(_hullProfilesCsvPath) || !File.Exists(_hullProfilesCsvPath))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1371,
+                        "editorGuarded":  true,
+                        "text":  "FileInfo info;"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1374,
+                        "editorGuarded":  true,
+                        "text":  "info = new FileInfo(_hullProfilesCsvPath);"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1376,
+                        "editorGuarded":  true,
+                        "text":  "catch (IOException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1380,
+                        "editorGuarded":  true,
+                        "text":  "catch (UnauthorizedAccessException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1406,
+                        "editorGuarded":  true,
+                        "text":  "using (FileStream stream = new FileStream(_hullProfilesCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128, FileOptions.SequentialScan))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1428,
+                        "editorGuarded":  true,
+                        "text":  "catch (IOException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1432,
+                        "editorGuarded":  true,
+                        "text":  "catch (UnauthorizedAccessException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  1641,
+                        "editorGuarded":  true,
+                        "text":  "FileStream stream,"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  2039,
+                        "editorGuarded":  true,
+                        "text":  "private static uint ReadUInt32At(FileStream stream, long offset)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  2056,
+                        "editorGuarded":  true,
+                        "text":  "private static float ReadFloatAt(FileStream stream, long offset)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  2078,
+                        "editorGuarded":  true,
+                        "text":  "string current = Directory.GetCurrentDirectory();"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  2082,
+                        "editorGuarded":  true,
+                        "text":  "string name = Path.GetFileName(current);"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime.cs",
+                        "line":  2085,
+                        "editorGuarded":  true,
+                        "text":  ": Path.Combine(current, \"Hecton8\");"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                        "line":  3,
+                        "editorGuarded":  true,
+                        "text":  "using System.IO;"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                        "line":  59,
+                        "editorGuarded":  true,
+                        "text":  "_gyroProfilesCsvPath = Path.Combine(_projectRoot, \"Data\", \"Physics\", \"vehicle_gyro_profiles.csv\");"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                        "line":  573,
+                        "editorGuarded":  true,
+                        "text":  "if (string.IsNullOrEmpty(_gyroProfilesCsvPath) || !File.Exists(_gyroProfilesCsvPath))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                        "line":  576,
+                        "editorGuarded":  true,
+                        "text":  "FileInfo info;"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                        "line":  579,
+                        "editorGuarded":  true,
+                        "text":  "info = new FileInfo(_gyroProfilesCsvPath);"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                        "line":  581,
+                        "editorGuarded":  true,
+                        "text":  "catch (IOException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                        "line":  585,
+                        "editorGuarded":  true,
+                        "text":  "catch (UnauthorizedAccessException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                        "line":  618,
+                        "editorGuarded":  true,
+                        "text":  "using (FileStream stream = new FileStream(_gyroProfilesCsvPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 128, FileOptions.SequentialScan))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                        "line":  633,
+                        "editorGuarded":  true,
+                        "text":  "catch (IOException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/SubmarineDynamicsRuntime_Gyroscopes.cs",
+                        "line":  637,
+                        "editorGuarded":  true,
+                        "text":  "catch (UnauthorizedAccessException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                        "line":  3,
+                        "editorGuarded":  true,
+                        "text":  "using System.IO;"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                        "line":  107,
+                        "editorGuarded":  true,
+                        "text":  "_csvPath = Path.Combine(_projectRoot, \"vehicle_component_layouts.csv\");"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                        "line":  812,
+                        "editorGuarded":  true,
+                        "text":  "if (!_buffersReady || _dataVault == null || !File.Exists(_csvPath))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                        "line":  821,
+                        "editorGuarded":  true,
+                        "text":  "FileInfo info = new FileInfo(_csvPath);"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                        "line":  851,
+                        "editorGuarded":  true,
+                        "text":  "using (FileStream stream = new FileStream(_csvPath, FileMode.Open, FileAccess.Read, FileShare.Read))"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                        "line":  872,
+                        "editorGuarded":  true,
+                        "text":  "catch (IOException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                        "line":  876,
+                        "editorGuarded":  true,
+                        "text":  "catch (UnauthorizedAccessException)"
+                    },
+                    {
+                        "file":  "Assets/_Project/Scripts/Physics/Vehicles/VehicleComponentDamageRuntime.cs",
+                        "line":  1063,
+                        "editorGuarded":  true,
+                        "text":  "DirectoryInfo parent = Directory.GetParent(dataPath);"
+                    }
+                ]
+}

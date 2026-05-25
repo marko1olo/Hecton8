@@ -20,7 +20,9 @@ namespace Hecton8.Physics
         public const int TelemetryCapacity = 300;
         public const int CounterBlockCount = 8;
         public const int OrdnanceProfileCapacity = 32;
+#if UNITY_EDITOR
         public const int CsvScratchBytes = 16384;
+#endif
         public const int SdfDescriptorCount = 1;
         public const int SdfVolumeDimX = 32;
         public const int SdfVolumeDimY = 16;
@@ -28,7 +30,6 @@ namespace Hecton8.Physics
         public const int SdfVoxelCapacity = SdfVolumeDimX * SdfVolumeDimY * SdfVolumeDimZ;
         public const float SafeLocalAupSpanMeters = 32768f;
         public const uint SourceHash = 0x53323438u; // S248
-        public const string DumpRelativePath = "Docs/AgentLogs/Dump_SHINOBU_248.bin";
     }
 
     internal static class AbyssalCavitationVaultBufferIds
@@ -40,7 +41,9 @@ namespace Hecton8.Physics
         public const BufferID VisualSpheres = (BufferID)71564;
         public const BufferID TelemetryRing = (BufferID)71565;
         public const BufferID OrdnanceProfiles = (BufferID)71566;
+#if UNITY_EDITOR
         public const BufferID CsvScratch = (BufferID)71567;
+#endif
         public const BufferID Tuning = (BufferID)71568;
         public const BufferID SdfDescriptor = (BufferID)71569;
         public const BufferID SdfVoxels = (BufferID)71570;

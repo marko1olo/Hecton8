@@ -681,19 +681,13 @@ namespace Hecton8.Core.Bucketing
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void CompleteRebalanceHandle(ref JobHandle handle)
         {
-            handle.Complete();
-            handle = default;
+            DispatcherJobFence.TryComplete(ref handle, forceComplete: true);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static bool TryFinalizeRebalanceHandle(ref JobHandle handle)
         {
-            if (!handle.IsCompleted)
-                return false;
-
-            handle.Complete();
-            handle = default;
-            return true;
+            return DispatcherJobFence.TryFinalizeCompleted(ref handle);
         }
 
         private void UpdatePacingFlags()

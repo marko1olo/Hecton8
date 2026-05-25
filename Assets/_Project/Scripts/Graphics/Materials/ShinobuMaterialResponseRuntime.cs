@@ -1073,10 +1073,16 @@ namespace Hecton8.Graphics.Materials
                 return;
 
             NativeArray<T> mapped = destination.LockBufferForWrite<T>(0, safeCount);
-            void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
-            void* src = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(source);
-            UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<T>());
-            destination.UnlockBufferAfterWrite<T>(safeCount);
+            try
+            {
+                void* dst = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(mapped);
+                void* src = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(source);
+                UnsafeUtility.MemCpy(dst, src, (long)safeCount * UnsafeUtility.SizeOf<T>());
+            }
+            finally
+            {
+                destination.UnlockBufferAfterWrite<T>(safeCount);
+            }
         }
 
         private static void UploadConstants(GraphicsBuffer destination, GlobalShaderConstantsDTO constants)
@@ -1085,8 +1091,14 @@ namespace Hecton8.Graphics.Materials
                 return;
 
             NativeArray<GlobalShaderConstantsDTO> mapped = destination.LockBufferForWrite<GlobalShaderConstantsDTO>(0, 1);
-            mapped[0] = constants;
-            destination.UnlockBufferAfterWrite<GlobalShaderConstantsDTO>(1);
+            try
+            {
+                mapped[0] = constants;
+            }
+            finally
+            {
+                destination.UnlockBufferAfterWrite<GlobalShaderConstantsDTO>(1);
+            }
         }
 
         private GraphicsBuffer SelectMaterialStateBuffer(int index)

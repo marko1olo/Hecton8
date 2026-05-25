@@ -94,7 +94,7 @@ namespace Hecton8.Quest
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Quest, this);
 
             TryRegisterHotSwapListener();
-            BindSaveService(Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance);
+            BindSaveService(GlobalRegistry.Save);
             _graphEvaluator?.Bind();
         }
 
@@ -306,51 +306,6 @@ namespace Hecton8.Quest
             return _questHashLookup.TryGetValue(questHash, out questData) && questData != null;
         }
 
-        internal bool TryGetQuestPresentation(
-            uint questHash,
-            out string title,
-            out string description,
-            out uint markerTargetHash,
-            out Vector3 markerWorldPosition,
-            out float markerHeightOffset)
-        {
-            title = string.Empty;
-            description = string.Empty;
-            markerTargetHash = 0u;
-            markerWorldPosition = default;
-            markerHeightOffset = 0f;
-
-            if (_stateManager != null &&
-                _stateManager.TryGetQuestPresentation(
-                    questHash,
-                    out title,
-                    out description,
-                    out markerTargetHash,
-                    out markerWorldPosition,
-                    out markerHeightOffset))
-            {
-                if (string.IsNullOrWhiteSpace(title) &&
-                    TryGetQuestDataByHash(questHash, out QuestData stateQuestData) &&
-                    stateQuestData != null)
-                {
-                    title = stateQuestData.DisplayTitleOrFallback;
-                    description = stateQuestData.DescriptionOrFallback;
-                }
-
-                return true;
-            }
-
-            if (!TryGetQuestDataByHash(questHash, out QuestData questData) || questData == null)
-                return false;
-
-            title = questData.DisplayTitleOrFallback;
-            description = questData.DescriptionOrFallback;
-            markerTargetHash = 0u;
-            markerWorldPosition = questData.markerWorldPosition;
-            markerHeightOffset = math.max(0f, questData.markerHeightOffset);
-            return true;
-        }
-
         public bool TryCopyQuestPresentation(
             uint questHash,
             char[] titleDestination,
@@ -537,7 +492,7 @@ namespace Hecton8.Quest
             if (_hasLookupAmbiguity)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[QuestManager] Quest registry ambiguity detected.");
+                Hecton8.Core.H8Debug.LogError("[QuestManager] Quest registry ambiguity detected.");
 #endif
                 enabled = false;
                 return;
@@ -546,7 +501,7 @@ namespace Hecton8.Quest
             if (!initialized || _stateManager.HasCompileErrors)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[QuestManager] Quest state graph compilation failed.");
+                Hecton8.Core.H8Debug.LogError("[QuestManager] Quest state graph compilation failed.");
 #endif
                 enabled = false;
                 return;
@@ -617,7 +572,7 @@ namespace Hecton8.Quest
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (logUnknownQuest)
-                    Debug.LogWarning("[QuestManager] Unknown questId.");
+                    Hecton8.Core.H8Debug.LogWarning("[QuestManager] Unknown questId.");
 #endif
 
                 return false;

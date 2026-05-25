@@ -8,7 +8,6 @@ namespace Hecton8.Interaction
     using Hecton8.Core;
     using Hecton8.Gameplay;
     using Hecton8.Items;
-    using Hecton8.Physics;
     using Hecton8.World;
     using Unity.Mathematics;
     using UnityEngine;
@@ -168,6 +167,7 @@ namespace Hecton8.Interaction
         private Camera _playerCamera;
         private PhysicalHandController _physicalHandController;
         private IInteractionSignalService _interactionSignals;
+        private IPhysicsService _physicsService;
         private InteractionState _state;
         private bool _registeredTick;
         private bool _registeredFixedTick;
@@ -268,6 +268,7 @@ namespace Hecton8.Interaction
             HectonXRRuntimeState.XRActiveChanged -= HandleXRActiveChanged;
             HectonXRRuntimeState.XRActiveChanged += HandleXRActiveChanged;
             _interactionSignals = GlobalRegistry.InteractionSignals;
+            _physicsService = GlobalRegistry.Physics;
             _dispatcherAvailable = GlobalRegistry.Dispatcher != null;
             TryRegisterHotSwapListener();
             RefreshPanelButtonLayerMask();
@@ -282,6 +283,7 @@ namespace Hecton8.Interaction
             _dispatcherAvailable = false;
             TryUnregisterHotSwapListener();
             _interactionSignals = null;
+            _physicsService = null;
             CancelActiveInteraction();
             UnregisterFromTickSystems();
         }
@@ -291,6 +293,7 @@ namespace Hecton8.Interaction
             _dispatcherAvailable = false;
             TryUnregisterHotSwapListener();
             _interactionSignals = null;
+            _physicsService = null;
         }
 
         /// <inheritdoc />
@@ -305,6 +308,12 @@ namespace Hecton8.Interaction
             if (serviceSlot == GlobalRegistryServiceSlot.InteractionSignals)
             {
                 _interactionSignals = currentService as IInteractionSignalService;
+                return;
+            }
+
+            if (serviceSlot == GlobalRegistryServiceSlot.Physics)
+            {
+                _physicsService = currentService as IPhysicsService;
                 return;
             }
 
@@ -561,7 +570,7 @@ namespace Hecton8.Interaction
             if (hitCount >= _panelButtonOverlaps.Length && !_panelButtonOverlapSaturationLogged)
             {
                 _panelButtonOverlapSaturationLogged = true;
-                Debug.LogWarning("[PhysicalInteractionHandler] Physical panel overlap buffer saturated.", this);
+                Hecton8.Core.H8Debug.LogWarning("[PhysicalInteractionHandler] Physical panel overlap buffer saturated.", this);
             }
 #endif
             if (hitCount <= 0)
@@ -1033,7 +1042,7 @@ namespace Hecton8.Interaction
                     Vector3 currentLinearVelocity = IsFiniteVector(_activeBody.linearVelocity) ? _activeBody.linearVelocity : Vector3.zero;
                     Vector3 deltaVelocity = restoredLinearVelocity - currentLinearVelocity;
                     if (IsFiniteVector(deltaVelocity) && deltaVelocity.sqrMagnitude > 0.000001f)
-                        PhysicsForceRouter.QueueForce(_activeBody, deltaVelocity, ForceMode.VelocityChange);
+                        _physicsService?.QueueForce(_activeBody, deltaVelocity, ForceMode.VelocityChange);
                 }
             }
         }

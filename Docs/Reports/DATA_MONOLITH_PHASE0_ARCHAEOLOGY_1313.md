@@ -1,0 +1,265 @@
+﻿# DATA MONOLITH PHASE 0 ARCHAEOLOGY - 1313
+
+Evidence: STATIC_SOURCE_STATIC_BINARY_ONLY. Unity bake/import/boot/profiler proof not executed.
+
+## Active Blob
+- Path: Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin
+- Magic/version/header: H8DM / 2 / 64
+- Blob bytes: 1064384; sections: 26; checksum: 0x19D880780D6E1B46; schema: 0x33313331
+- Phase 0 original snapshot was superseded by `Docs/Reports/DATA_MONOLITH_BLOB_V2_MIGRATION_1313.md`.
+
+## Findings
+- Data/Balance remains active authoring pool: 42 CSV, 2 JSON, 1 baked BIN, 1 baked H8BIN.
+- StreamingAssets contains 3 CSV files outside DataMonolith.
+- Editor/DataMonolith files scanned: 18.
+- Script parser/file-IO surfaces indexed: 758.
+- Strict runtime text ingest risks: 226; runtime CSV parser token reviews: 65; broad file-I/O reviews: 111; monolith binary consumers: 10.
+- Explicit structs audited: 53; sequential structs in target contracts: 0.
+
+## Strict Runtime Text Ingest Risk Files
+- `Assets\_Project\Scripts\AI\Cognition\ShinobuApexBrainVault.cs`
+- `Assets\_Project\Scripts\AI\Cognition\UtilityAICognitionAnxietyContracts.cs`
+- `Assets\_Project\Scripts\AI\Cognition\UtilityAICognitionContracts.cs`
+- `Assets\_Project\Scripts\AI\Cognition\UtilityAICognitionVault.cs`
+- `Assets\_Project\Scripts\AI\Cognition\UtilityAICognitionVault_AnxietyDecay.cs`
+- `Assets\_Project\Scripts\AI\Ecosystem\EcosystemPopulationBalancer.cs`
+- `Assets\_Project\Scripts\AI\Ecosystem\ShinobuEcosystemBalancer.cs`
+- `Assets\_Project\Scripts\AI\Ecosystem\ShinobuFloraFaunaSymbiosisSolver.cs`
+- `Assets\_Project\Scripts\AI\Ecosystem\ShinobuSpatialGridSolver.cs`
+- `Assets\_Project\Scripts\AI\Pathfinding\PathFunnelNavmeshRuntime_VoxelAStar.cs`
+- `Assets\_Project\Scripts\AI\Pathfinding\VoxelAStarJobs.cs`
+- `Assets\_Project\Scripts\Animation\FaunaProcedural\ProceduralBoneBlenderRuntime.cs`
+- `Assets\_Project\Scripts\Animation\FaunaProcedural\ProceduralBoneBlenderTypes.cs`
+- `Assets\_Project\Scripts\Animation\KineticCharacter\KineticCharacterAnimatorRuntime.cs`
+- `Assets\_Project\Scripts\Animation\KineticCharacter\KineticCharacterAnimatorTypes.cs`
+- `Assets\_Project\Scripts\Atmosphere\BaseAtmosphereLogisticsRuntime.cs`
+- `Assets\_Project\Scripts\Atmosphere\ShinobuOceanSurfaceAtmosphereContracts.cs`
+- `Assets\_Project\Scripts\Atmosphere\ShinobuOceanSurfaceAtmosphereRuntime.cs`
+- `Assets\_Project\Scripts\Atmosphere\StormPropagation\ShinobuStormPropagationRuntime.cs`
+- `Assets\_Project\Scripts\Atmosphere\ToxicOutgassingChemistryRuntime.cs`
+- `Assets\_Project\Scripts\Audio\AdaptiveStem\AdaptiveStemAudioMixer.cs`
+- `Assets\_Project\Scripts\Audio\Synthesis\DynamicMusic\DynamicMusicGranularSynthesizer.cs`
+- `Assets\_Project\Scripts\Audio\Synthesis\HullStressGranularDspKernel.cs`
+- `Assets\_Project\Scripts\Audio\Synthesis\VocalBankPlaybackRuntime.cs`
+- `Assets\_Project\Scripts\Audio\VocalWarningSystem.cs`
+- `Assets\_Project\Scripts\Construction\BaseModuleCatalogRuntime.cs`
+- `Assets\_Project\Scripts\Construction\BulkheadContainmentRuntime.cs`
+- `Assets\_Project\Scripts\Construction\BulkheadContainmentRuntime_HatchLocks.cs`
+- `Assets\_Project\Scripts\Construction\DroneFleetManager.cs`
+- `Assets\_Project\Scripts\Construction\FoundationSnappingCalculatorData.cs`
+- `Assets\_Project\Scripts\Construction\ModularBaseConstructionValidator.cs`
+- `Assets\_Project\Scripts\Construction\SumpPumpPipeGridRuntime.cs`
+- `Assets\_Project\Scripts\ConstructionManager.cs`
+- `Assets\_Project\Scripts\Core\Contracts\AupPrecisionContracts.cs`
+- `Assets\_Project\Scripts\Core\Data\H8DataBaker.cs`
+- `Assets\_Project\Scripts\Core\Diagnostics\AsynchronousTelemetryExporter.cs`
+- `Assets\_Project\Scripts\Core\GlobalTelemetryBus.Blackbox.cs`
+- `Assets\_Project\Scripts\Core\HapticSynthesisContracts.cs`
+- `Assets\_Project\Scripts\Core\HardwareProfileCatalog.cs`
+- `Assets\_Project\Scripts\Core\HectonInputRuntime_HapticSynth.cs`
+- `Assets\_Project\Scripts\Core\HomeostasisBrain.ScalabilityDictator.cs`
+- `Assets\_Project\Scripts\Core\InputDispatcher.cs`
+- `Assets\_Project\Scripts\Core\Memory\GlobalDataVault.cs`
+- `Assets\_Project\Scripts\Core\Memory\H8Memory.cs`
+- `Assets\_Project\Scripts\Core\Memory\VaultLegacyBinaryArchaeology.cs`
+- `Assets\_Project\Scripts\Core\Memory\VaultMemoryContracts.cs`
+- `Assets\_Project\Scripts\Core\MemorySentinelRuntime.cs`
+- `Assets\_Project\Scripts\Core\Origin\AupOriginShiftCoordinator.cs`
+- `Assets\_Project\Scripts\Core\Origin\AupPrecisionJobs.cs`
+- `Assets\_Project\Scripts\Core\RebindingManager.cs`
+- `Assets\_Project\Scripts\Core\Scheduling\JobSchedulingProfileCatalog.cs`
+- `Assets\_Project\Scripts\Core\Signals\SignalWardenRuntime.cs`
+- `Assets\_Project\Scripts\Core\SystemDispatcher.cs`
+- `Assets\_Project\Scripts\CraftingSystem.FastFail.cs`
+- `Assets\_Project\Scripts\Dev\BotController.cs`
+- `Assets\_Project\Scripts\Dev\CelestialCataclysmSmokeTester.cs`
+- `Assets\_Project\Scripts\Dev\HabitatStressSmokeTester.cs`
+- `Assets\_Project\Scripts\Dev\NarrativeProgressionSmokeTester.cs`
+- `Assets\_Project\Scripts\Economy\TradeMarauderRuntime.cs`
+- `Assets\_Project\Scripts\Ecosystem\FaunaGenome64.cs`
+- `Assets\_Project\Scripts\Ecosystem\MacroEcosystemMathematicianRuntime.cs`
+- `Assets\_Project\Scripts\Ecosystem\NutrientDriftRuntime.cs`
+- `Assets\_Project\Scripts\Ecosystem\NutrientDriftRuntime_Carrion.cs`
+- `Assets\_Project\Scripts\Environment\Fluids\OceanPerformanceProfileCsv.cs`
+- `Assets\_Project\Scripts\Equipment\Auxiliary\AuxiliaryEquipmentProfilesCsvParser.cs`
+- `Assets\_Project\Scripts\Equipment\Auxiliary\AuxiliaryEquipmentRouterRuntime.cs`
+- `Assets\_Project\Scripts\FabricationAssemblerRuntime.cs`
+- `Assets\_Project\Scripts\Fauna\FaunaKinematicsRuntime.cs`
+- `Assets\_Project\Scripts\Fauna\MesofaunaBehavioralStateMachine.cs`
+- `Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.AcousticSdf.cs`
+- `Assets\_Project\Scripts\Fauna\PredatorCognitionDomain.cs`
+- `Assets\_Project\Scripts\Fauna\PredatorCognitionDomain_Steering.cs`
+- `Assets\_Project\Scripts\Gameplay\Combat\ArmorPenetrationEditorFacade.cs`
+- `Assets\_Project\Scripts\Gameplay\Combat\BallisticsEditorFacade.cs`
+- `Assets\_Project\Scripts\Gameplay\Combat\BallisticsRuntime.cs`
+- `Assets\_Project\Scripts\Gameplay\Combat\CombatDamageRuntime_StatusEffects.cs`
+- `Assets\_Project\Scripts\Gameplay\Combat\HectonCombatRuntime_ArmorPenetration.cs`
+- `Assets\_Project\Scripts\Gameplay\Combat\StatusEffectsEditorFacade.cs`
+- `Assets\_Project\Scripts\Gameplay\PlayerKinematicsRuntime_HandIK.cs`
+- `Assets\_Project\Scripts\Gameplay\RadiationHazardGrid.cs`
+- `Assets\_Project\Scripts\Gameplay\ScannerDataMiningRouter.cs`
+- `Assets\_Project\Scripts\Gameplay\SomaticKinematicsRuntime.cs`
+- `Assets\_Project\Scripts\Gameplay\SubmarineAutoLevelBallastController.cs`
+- `Assets\_Project\Scripts\Gameplay\VRSomaticProvider.Comfort.cs`
+- `Assets\_Project\Scripts\GlobalPhysicsStateManager.cs`
+- `Assets\_Project\Scripts\Graphics\Culling\AbyssalShadowCullingRuntime.cs`
+- `Assets\_Project\Scripts\Graphics\Culling\AbyssalShadowCullingTypes.cs`
+- `Assets\_Project\Scripts\Graphics\Culling\TBDRPipelineSurgeonRuntime.cs`
+- `Assets\_Project\Scripts\Graphics\Culling\TBDRPipelineSurgeonTypes.cs`
+- `Assets\_Project\Scripts\Graphics\Materials\ShinobuMaterialResponseRuntime.cs`
+- `Assets\_Project\Scripts\Graphics\Materials\VisualPressureAgingRuntime.cs`
+- `Assets\_Project\Scripts\Graphics\Scalability\ThermalDynamicResolutionAdapter.cs`
+- `Assets\_Project\Scripts\Habitat\Deformation\Runtime\BaseStructuralWarningDispatcherTypes.cs`
+- `Assets\_Project\Scripts\Habitat\Deformation\Runtime\HullIntegrityRuntime.cs`
+- `Assets\_Project\Scripts\Habitat\Deformation\Runtime\StructuralIntegrityCalculatorRuntime.cs`
+- `Assets\_Project\Scripts\HectonFluidEngine.cs`
+- `Assets\_Project\Scripts\Input\UserOptionsPersistence.cs`
+- `Assets\_Project\Scripts\Interaction\VRInteractionKinematicBridge.cs`
+- `Assets\_Project\Scripts\Inventory\Routing\InventoryRoutingNetwork.cs`
+- `Assets\_Project\Scripts\Inventory\Shinobu19EconomyLedger.cs`
+- `Assets\_Project\Scripts\Inventory\SoaInventoryQueryEngine.CargoSync.cs`
+- `Assets\_Project\Scripts\Inventory\SoaInventoryQueryEngine.cs`
+- `Assets\_Project\Scripts\Lighting\DynamicPointLightCulling\DynamicPointLightCullingDirector.cs`
+- `Assets\_Project\Scripts\Lighting\HectonLightingRuntime_DayNightRelay.cs`
+- `Assets\_Project\Scripts\Lighting\InteriorGIProbeVolumeRuntime.cs`
+- `Assets\_Project\Scripts\LocalizationManager.cs`
+- `Assets\_Project\Scripts\Meta\GlobalProfileManager.cs`
+- `Assets\_Project\Scripts\ModdingAPI\FutureCommandSandboxValidator.cs`
+- `Assets\_Project\Scripts\ModdingAPI\ModLoader.cs`
+- `Assets\_Project\Scripts\ModularEquipmentEngine.cs`
+- `Assets\_Project\Scripts\Narrative\HectonNarrativeDirector_PoiTriggers.cs`
+- `Assets\_Project\Scripts\Networking\HectonRollbackNetcodeRuntime.cs`
+- `Assets\_Project\Scripts\OmegaSurvivalKinematicsSmokeTester.cs`
+- `Assets\_Project\Scripts\Optimization\AssetLifecycleGovernor.cs`
+- `Assets\_Project\Scripts\PDA\CartographyGridJobs.cs`
+- `Assets\_Project\Scripts\PDA\PlayerExplorationTracker.cs`
+- `Assets\_Project\Scripts\Physics\Buoyancy\AnalyticalGerstnerWaveRuntime.cs`
+- `Assets\_Project\Scripts\Physics\Buoyancy\AsyncReadback\AsyncBuoyancyReadbackRuntime.cs`
+- `Assets\_Project\Scripts\Physics\Buoyancy\BuoyancyDisplacementRuntime.cs`
+- `Assets\_Project\Scripts\Physics\Cable132\CablePhysicsSolver132.cs`
+- `Assets\_Project\Scripts\Physics\Cavitation\AbyssalCavitationContracts.cs`
+- `Assets\_Project\Scripts\Physics\Cavitation\AbyssalCavitationRuntime.cs`
+- `Assets\_Project\Scripts\Physics\Exosuit\ExosuitKinematicsRuntime.cs`
+- `Assets\_Project\Scripts\Physics\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs`
+- `Assets\_Project\Scripts\Physics\HabitatFluidIncursionDirector.cs`
+- `Assets\_Project\Scripts\Physics\HarpoonTensionSolver328.cs`
+- `Assets\_Project\Scripts\Physics\KCC\HydrodynamicKccRuntime.cs`
+- `Assets\_Project\Scripts\Physics\Seaglide\SeaglideHydrodynamicsRuntime.cs`
+- `Assets\_Project\Scripts\Physics\TetherAupVerletJobs.cs`
+- `Assets\_Project\Scripts\Physics\Vehicles\Automation\SubmarineAutopilotSdfNavigator.cs`
+- `Assets\_Project\Scripts\Physics\Vehicles\SubmarineBallastBuoyancyContracts.cs`
+- `Assets\_Project\Scripts\Physics\Vehicles\SubmarineDynamicsContracts.cs`
+- `Assets\_Project\Scripts\Physics\Vehicles\SubmarineDynamicsRuntime.cs`
+- `Assets\_Project\Scripts\Physics\Vehicles\SubmarineDynamicsRuntime_Gyroscopes.cs`
+- `Assets\_Project\Scripts\Physics\Vehicles\VehicleComponentDamageRuntime.cs`
+- `Assets\_Project\Scripts\Physiology\ShinobuMetabolismRuntime.cs`
+- `Assets\_Project\Scripts\Physiology\ShinobuPhysiologyRuntime.cs`
+- `Assets\_Project\Scripts\Physiology\ShinobuRadiationMutationRuntime.cs`
+- `Assets\_Project\Scripts\Physiology\ShinobuRespawnReconciliationRuntime.cs`
+- `Assets\_Project\Scripts\Physiology\ShinobuSensoryImpairmentRuntime.cs`
+- `Assets\_Project\Scripts\Physiology\ShinobuSuitIntegrityRuntime.cs`
+- `Assets\_Project\Scripts\Plugins\Crest\OceanKinematics\OceanKinematicsVaultRuntime.cs`
+- `Assets\_Project\Scripts\Power\BatteryChargerLogistics\BatteryChargerLogisticsContracts.cs`
+- `Assets\_Project\Scripts\Power\BatteryChargerLogistics\BatteryChargerLogisticsRuntime.cs`
+- `Assets\_Project\Scripts\Power\PowerGridJacobiContracts.cs`
+- `Assets\_Project\Scripts\Power\PowerGridSolarContracts.cs`
+- `Assets\_Project\Scripts\Power\ShinobuLogisticsRouter.cs`
+- `Assets\_Project\Scripts\Power\SubmarineOsThermalGridRuntime.cs`
+- `Assets\_Project\Scripts\QA\Headless\HeadlessSimulationRunner.cs`
+- `Assets\_Project\Scripts\QA\Headless\HeadlessStressFractureBot.cs`
+- `Assets\_Project\Scripts\QA\Headless\JacobiStressFuzzer\PowerGridJacobiStressFuzzer.cs`
+- `Assets\_Project\Scripts\QA\Headless\Shinobu38QaWatchdogRuntime.cs`
+- `Assets\_Project\Scripts\QA\QAEnduranceWatchdogBot.cs`
+- `Assets\_Project\Scripts\Quest\NarrativeDagInspectorWindow.cs`
+- `Assets\_Project\Scripts\Quest\QuestDagDataLoading.cs`
+- `Assets\_Project\Scripts\Quest\QuestDagResolverRuntime.cs`
+- `Assets\_Project\Scripts\Rendering\AbyssalCaustics\AbyssalCausticsContracts.cs`
+- `Assets\_Project\Scripts\Rendering\AbyssalCaustics\AbyssalDeferredCausticsRuntime.cs`
+- `Assets\_Project\Scripts\Rendering\BilateralDrs\BilateralDrsUpscalerContracts.cs`
+- `Assets\_Project\Scripts\Rendering\BilateralDrs\HectonBilateralDrsUpscalerRuntime.cs`
+- `Assets\_Project\Scripts\Rendering\GlobalShaderDispatcher.cs`
+- `Assets\_Project\Scripts\Rendering\OceanSinglePass\OceanSinglePassContracts.cs`
+- `Assets\_Project\Scripts\Rendering\OceanSinglePass\OceanSinglePassRuntime.cs`
+- `Assets\_Project\Scripts\Rendering\OceanSinglePass\ShorelineFoamGraftContracts.cs`
+- `Assets\_Project\Scripts\Rendering\WaterOptics\WaterOpticsRuntime.cs`
+- `Assets\_Project\Scripts\SavePersistenceOmegaSmokeTester.cs`
+- `Assets\_Project\Scripts\SaveSystem\EntityDeltaCompressionArchitecture.cs`
+- `Assets\_Project\Scripts\SaveSystem\SaveStateMerkleTree.cs`
+- `Assets\_Project\Scripts\SaveSystem\VoxelDeltaCompressionArchitecture.cs`
+- `Assets\_Project\Scripts\SaveSystem\WalIntegrityFuzzerCore.cs`
+- `Assets\_Project\Scripts\SaveSystem\WalIntegrityFuzzerCore_SHINOBU357.cs`
+- `Assets\_Project\Scripts\SpatialAudioManager.cs`
+- `Assets\_Project\Scripts\TetherManager.cs`
+- `Assets\_Project\Scripts\Thermodynamics\AbyssalThermodynamicsJobs.cs`
+- `Assets\_Project\Scripts\Thermodynamics\AbyssalThermodynamicsSolver.cs`
+- `Assets\_Project\Scripts\Thermodynamics\AbyssalThermodynamicsSolver.ReactorBridge.cs`
+- `Assets\_Project\Scripts\Thermodynamics\OOP_Thermal_Scanner.cs`
+- `Assets\_Project\Scripts\Thermodynamics\ReactorThermalGridContracts.cs`
+- `Assets\_Project\Scripts\Thermodynamics\ThermodynamicsHazardGridRuntime.cs`
+- `Assets\_Project\Scripts\Thermodynamics\ThermodynamicsHazardGridRuntime.FileWorker.cs`
+- `Assets\_Project\Scripts\Tools\LaserCutterDodRuntime.cs`
+- `Assets\_Project\Scripts\Tools\ToolKinematics\ToolKinematicsRuntime.cs`
+- `Assets\_Project\Scripts\Tools\UpgradeMatrixCompiler.cs`
+- `Assets\_Project\Scripts\UI\DiegeticGlitchSurgeonRuntime.cs`
+- `Assets\_Project\Scripts\UI\PDAEncyclopediaStreamer.cs`
+- `Assets\_Project\Scripts\UI\TerminalOS\TerminalOsRuntime.cs`
+- `Assets\_Project\Scripts\UI\TopographicalSonar\TopographicalSonarSynthesizer.cs`
+- `Assets\_Project\Scripts\UI\WristHologramHudRuntime.cs`
+- `Assets\_Project\Scripts\UI\WristHologramHudRuntime_PdaScreenProjector.cs`
+- `Assets\_Project\Scripts\VFX\Bioluminescence\BiolumPulseSyncRuntime.cs`
+- `Assets\_Project\Scripts\VFX\CameraJuiceSystem_CameraJuiceBurst.cs`
+- `Assets\_Project\Scripts\VFX\Debris\ShinobuVoxelSculptorWindow.cs`
+- `Assets\_Project\Scripts\VFX\HectonMarineSnowRenderer.cs`
+- `Assets\_Project\Scripts\VFX\JacobianFoam\JacobianFoamContracts.cs`
+- `Assets\_Project\Scripts\VFX\Parasites\ParasiteSwarmContracts.cs`
+- `Assets\_Project\Scripts\VFX\Parasites\ParasiteSwarmGpuRuntime.cs`
+- `Assets\_Project\Scripts\VFX\PlasmaBeam\ShinobuPlasmaBeamRuntime.cs`
+- `Assets\_Project\Scripts\VFX\PropwashGpuContracts.cs`
+- `Assets\_Project\Scripts\VFX\VfxComputeParticleBudgetCatalog.cs`
+- `Assets\_Project\Scripts\VFX\VolumetricFogContracts.cs`
+- `Assets\_Project\Scripts\Visor\DiegeticVisorLensRuntime.cs`
+- `Assets\_Project\Scripts\Visor\DynamicDecalVaultRuntime.cs`
+- `Assets\_Project\Scripts\Visor\HectonVisorARStencilRendererFeature.cs`
+- `Assets\_Project\Scripts\Visor\HectonVisorUberPostFeature.cs`
+- `Assets\_Project\Scripts\Visor\HectonVisorUberPostFeature.Noir.cs`
+- `Assets\_Project\Scripts\VisualOmegaSmokeTester.cs`
+- `Assets\_Project\Scripts\VoxelDeformationSmokeTester.cs`
+- `Assets\_Project\Scripts\World\Biomes\BiomeTransitionManagerRuntime.cs`
+- `Assets\_Project\Scripts\World\ChemicalInfluenceGrid.cs`
+- `Assets\_Project\Scripts\World\EcosystemDirector.cs`
+- `Assets\_Project\Scripts\World\FloraAmbientSway\FloraAmbientSwayRuntime.cs`
+- `Assets\_Project\Scripts\World\FloraGenomics\FloraGenomeCsvHotloader.cs`
+- `Assets\_Project\Scripts\World\FloraGenomics\FloraGenomeVaultRuntime.cs`
+- `Assets\_Project\Scripts\World\FloraInteractionManager.cs`
+- `Assets\_Project\Scripts\World\GlobalWorldSampler.cs`
+- `Assets\_Project\Scripts\World\ProceduralCoral\ProceduralCoralVault.cs`
+- `Assets\_Project\Scripts\World\ProceduralWreckage\ProceduralWreckageVault.cs`
+- `Assets\_Project\Scripts\World\Resources\ProceduralOreSpawner.cs`
+- `Assets\_Project\Scripts\World\Resources\WorldRegrowthSimulation.cs`
+- `Assets\_Project\Scripts\World\SeedShipAnomaly\SeedShipAnomalyRuntime.cs`
+- `Assets\_Project\Scripts\World\ShinobuBiomimetic\ShinobuBiomimeticArchitectureRuntime.cs`
+- `Assets\_Project\Scripts\World\SpawnZoneSdfValidation.cs`
+- `Assets\_Project\Scripts\World\TerrainChunkPagerRuntime.cs`
+- `Assets\_Project\Scripts\World\TerrainChunkPagerTypes.cs`
+- `Assets\_Project\Scripts\World\VolcanicUpdraftDirector.cs`
+- `Assets\_Project\Scripts\World\VoxelSurfaceNets\VoxelSurfaceNetsVault.cs`
+
+## Monolith Consumer Files
+- `Assets\_Project\Scripts\Bootstrap\GameBootstrapper.cs`
+- `Assets\_Project\Scripts\EncounterDirector.cs`
+- `Assets\_Project\Scripts\Environment\HectonSeismicTideDirector.cs`
+- `Assets\_Project\Scripts\Fauna\StressDrivenSpawnDirector.cs`
+- `Assets\_Project\Scripts\HectonVoxelEngine.cs`
+- `Assets\_Project\Scripts\LocRegistry.cs`
+- `Assets\_Project\Scripts\Scavenging\ScavengingLootOracle.cs`
+- `Assets\_Project\Scripts\World\Biomes\BiomeBoundarySdfRuntime.cs`
+- `Assets\_Project\Scripts\World\GPUScatterDirector.cs`
+- `Assets\_Project\Scripts\World\WorldChunkResidencyManager.cs`
+
+## Dependency Route
+- `GameBootstrapper.InitializeMemoryPreWarmPhaseAsync` owns cold boot.
+- Route: `InitializeBootstrapAllocators -> EnsureGlobalDataVaultRegistered -> BinaryLayoutManifest.VerifyColdBoot -> InitializeBootstrapDataMonolith -> H8StaticDataArena.TryInitializeFromStreamingAssets`.
+- DataVault buffers: `DataMonolithPayload`, `DataMonolithTelemetryRing`, `DataMonolithTelemetryCursor`.
+
+## Phase 0 Verdict
+Existing Data Monolith infrastructure is real and the active binary has a valid H8DM header/section table. Release parser-free status is not proven. Strict runtime CSV/JSON/text ingest surfaces remain outside Editor/DataMonolith; broad file-I/O findings are separate review noise until tied to static-data authoring.

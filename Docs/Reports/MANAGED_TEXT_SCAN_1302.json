@@ -1,0 +1,61 @@
+{
+    "schema":  "hecton8.managed_text_scan_1302.v2",
+    "generatedAt":  "2026-05-25",
+    "scope":  "Runtime .cs under Physics excluding Editor/.Editor/Tether/Cable/HarpoonTension",
+    "fileCount":  46,
+    "hitCount":  7,
+    "countsByPattern":  [
+                            {
+                                "pattern":  "HeapOrArrayNew",
+                                "count":  3
+                            },
+                            {
+                                "pattern":  "StringConcatLiteral",
+                                "count":  4
+                            }
+                        ],
+    "hits":  [
+                 {
+                     "file":  "Assets\\_Project\\Scripts\\Physics\\FluidFeedbackListener.cs",
+                     "line":  48,
+                     "pattern":  "HeapOrArrayNew",
+                     "text":  "private static readonly ListenerSlot[] _listeners = new ListenerSlot[ListenerCapacity];"
+                 },
+                 {
+                     "file":  "Assets\\_Project\\Scripts\\Physics\\GlobalPhysicsStateManager.Shinobu37PhysicsCulling.cs",
+                     "line":  172,
+                     "pattern":  "HeapOrArrayNew",
+                     "text":  "private readonly Plane[] _physicsFrustumPlaneScratch = new Plane[6]; // COLD ALLOC: Plane[6] - Unity frustum API scratch for GeometryUtility.CalculateFrustumPlanes(Camera, Plane[]) - owner: GlobalPhysicsStateManager"
+                 },
+                 {
+                     "file":  "Assets\\_Project\\Scripts\\Physics\\Buoyancy\\BuoyancyDisplacementRuntime.cs",
+                     "line":  1959,
+                     "pattern":  "HeapOrArrayNew",
+                     "text":  "private readonly char[] _simdGizmoLabelBuffer = new char[160];"
+                 },
+                 {
+                     "file":  "Assets\\_Project\\Scripts\\Physics\\Cavitation\\AbyssalCavitationRuntime.cs",
+                     "line":  1061,
+                     "pattern":  "StringConcatLiteral",
+                     "text":  "string tempPath = path + \".tmp\";"
+                 },
+                 {
+                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\HydrodynamicKccRuntime.cs",
+                     "line":  4233,
+                     "pattern":  "StringConcatLiteral",
+                     "text":  "string tempPath = path + \".tmp\";"
+                 },
+                 {
+                     "file":  "Assets\\_Project\\Scripts\\Physics\\KCC\\HydrodynamicKccRuntime.cs",
+                     "line":  4273,
+                     "pattern":  "StringConcatLiteral",
+                     "text":  "string backupPath = path + \".bak\";"
+                 },
+                 {
+                     "file":  "Assets\\_Project\\Scripts\\Physics\\Vehicles\\VehicleComponentDamageContracts.cs",
+                     "line":  266,
+                     "pattern":  "StringConcatLiteral",
+                     "text":  "error = fieldName + \" offset expected \" + expected + \" observed \" + observed + \".\";"
+                 }
+             ]
+}

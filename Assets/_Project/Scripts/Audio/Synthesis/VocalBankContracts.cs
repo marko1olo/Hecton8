@@ -82,14 +82,14 @@ namespace Hecton8.Audio.Synthesis
         [FieldOffset(12)] public float PlaybackSpeed;
         [FieldOffset(16)] public float VolumeScalar;
         [FieldOffset(20)] public uint Flags;
-        [FieldOffset(24)] public byte Pad0;
-        [FieldOffset(25)] public byte Pad1;
-        [FieldOffset(26)] public byte Pad2;
-        [FieldOffset(27)] public byte Pad3;
-        [FieldOffset(28)] public byte Pad4;
-        [FieldOffset(29)] public byte Pad5;
-        [FieldOffset(30)] public byte Pad6;
-        [FieldOffset(31)] public byte Pad7;
+        [FieldOffset(24)] private byte _pad0;
+        [FieldOffset(25)] private byte _pad1;
+        [FieldOffset(26)] private byte _pad2;
+        [FieldOffset(27)] private byte _pad3;
+        [FieldOffset(28)] private byte _pad4;
+        [FieldOffset(29)] private byte _pad5;
+        [FieldOffset(30)] private byte _pad6;
+        [FieldOffset(31)] private byte _pad7;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe ref VocalStateDTO AsRef(void* pointer)
@@ -138,7 +138,7 @@ namespace Hecton8.Audio.Synthesis
         [FieldOffset(48)] public uint PayloadByteLength;
         [FieldOffset(52)] public uint SampleRate;
         [FieldOffset(56)] public uint Codec;
-        [FieldOffset(60)] public uint Padding0;
+        [FieldOffset(60)] private uint _pad0;
     }
 
     [StructLayout(LayoutKind.Explicit, Size = 64)]
@@ -153,10 +153,13 @@ namespace Hecton8.Audio.Synthesis
         [FieldOffset(24)] public float LastDspMicroseconds;
         [FieldOffset(28)] public float LastPeak;
         [FieldOffset(32)] public float LastRms;
-        [FieldOffset(36)] public uint Padding0;
-        [FieldOffset(40)] public ulong Padding1;
-        [FieldOffset(48)] public ulong Padding2;
-        [FieldOffset(56)] public ulong Padding3;
+        [FieldOffset(36)] private uint _pad0;
+        [FieldOffset(40)] private uint _pad1;
+        [FieldOffset(44)] private uint _pad2;
+        [FieldOffset(48)] private uint _pad3;
+        [FieldOffset(52)] private uint _pad4;
+        [FieldOffset(56)] private uint _pad5;
+        [FieldOffset(60)] private uint _pad6;
     }
 
     public static unsafe class VocalBankReader
@@ -224,10 +227,13 @@ namespace Hecton8.Audio.Synthesis
                 header.EndianMarker != VocalBankConstants.LittleEndianMarker ||
                 header.PayloadOffset > (ulong)bankLength ||
                 header.PayloadBytes > (ulong)bankLength ||
-                header.PayloadOffset + header.PayloadBytes > (ulong)bankLength)
+                header.PayloadBytes > (ulong)bankLength - header.PayloadOffset)
                 return false;
 
             ulong indexBytes = (ulong)header.RecordCount * header.RecordSize;
+            if (indexBytes > ulong.MaxValue - header.HeaderSize)
+                return false;
+
             return header.HeaderSize + indexBytes <= header.PayloadOffset;
         }
 
@@ -237,7 +243,11 @@ namespace Hecton8.Audio.Synthesis
             if (index >= header.RecordCount)
                 return false;
 
-            byte* source = bank + (int)(header.HeaderSize + index * header.RecordSize);
+            ulong recordOffset = header.HeaderSize + ((ulong)index * header.RecordSize);
+            if (recordOffset > int.MaxValue)
+                return false;
+
+            byte* source = bank + (int)recordOffset;
             record.HashID = ReadUInt32LE(source);
             record.ByteLength = ReadUInt32LE(source + 4);
             record.ByteOffset = ReadUInt64LE(source + 8);
@@ -267,9 +277,14 @@ namespace Hecton8.Audio.Synthesis
 
                 if (candidate.HashID == hash)
                 {
+                    if (candidate.ByteLength > ulong.MaxValue - candidate.ByteOffset ||
+                        header.PayloadBytes > ulong.MaxValue - header.PayloadOffset)
+                        return false;
+
                     ulong end = candidate.ByteOffset + candidate.ByteLength;
+                    ulong payloadEnd = header.PayloadOffset + header.PayloadBytes;
                     if (candidate.ByteOffset < header.PayloadOffset ||
-                        end > header.PayloadOffset + header.PayloadBytes ||
+                        end > payloadEnd ||
                         end > (ulong)bankLength)
                         return false;
 
@@ -308,7 +323,10 @@ namespace Hecton8.Audio.Synthesis
             uint blockBytes = 4u + ((blockSamples - 1u + 1u) >> 1);
             uint payloadOffset = 64u + 32u;
             uint payloadBytes = blockCount * blockBytes;
-            if (payloadOffset + payloadBytes > (uint)BankBytes.Length)
+            uint bankByteCapacity = (uint)BankBytes.Length;
+            if (payloadOffset > bankByteCapacity)
+                return;
+            if (payloadBytes > bankByteCapacity - payloadOffset)
                 payloadBytes = math.max(0u, (uint)BankBytes.Length - payloadOffset);
 
             WriteUInt32(0, VocalBankConstants.Magic);
@@ -339,18 +357,17 @@ namespace Hecton8.Audio.Synthesis
             BankBytes[91] = 96;
             WriteUInt32(92, 0u);
 
-            Records[0] = new VocalBankIndexRecordDTO
-            {
-                HashID = PhraseHashID,
-                ByteLength = payloadBytes,
-                ByteOffset = payloadOffset,
-                TotalSamples = safeTotalSamples,
-                SampleRate = safeSampleRate,
-                Codec = VocalBankConstants.CodecH8Adpcm,
-                Channels = 1,
-                Priority = 16,
-                RadioDistortionByte = 96
-            };
+            VocalBankIndexRecordDTO record = default;
+            record.HashID = PhraseHashID;
+            record.ByteLength = payloadBytes;
+            record.ByteOffset = payloadOffset;
+            record.TotalSamples = safeTotalSamples;
+            record.SampleRate = safeSampleRate;
+            record.Codec = VocalBankConstants.CodecH8Adpcm;
+            record.Channels = 1;
+            record.Priority = 16;
+            record.RadioDistortionByte = 96;
+            Records[0] = record;
 
             int write = (int)payloadOffset;
             uint seed = PhraseHashID == 0u ? 0x6D2B79F5u : PhraseHashID;
@@ -550,7 +567,7 @@ namespace Hecton8.Audio.Synthesis
 
             if (bank == null || bankByteLength <= 0 ||
                 codecRef.PayloadOffset >= (ulong)bankByteLength ||
-                codecRef.PayloadOffset + codecRef.PayloadByteLength > (ulong)bankByteLength ||
+                codecRef.PayloadByteLength > (ulong)bankByteLength - codecRef.PayloadOffset ||
                 codecRef.PayloadOffset > 2147483647UL ||
                 stateRef.TotalSamples == 0u)
             {
@@ -686,8 +703,11 @@ namespace Hecton8.Audio.Synthesis
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static float DecodePcm16(byte* payload, uint payloadLength, uint sampleIndex)
         {
-            uint byteIndex = sampleIndex * 2u;
-            if (payload == null || byteIndex + 1u >= payloadLength)
+            if (payload == null || sampleIndex > (uint.MaxValue >> 1))
+                return 0f;
+
+            uint byteIndex = sampleIndex << 1;
+            if (byteIndex >= payloadLength || payloadLength - byteIndex < 2u)
                 return 0f;
 
             int index = (int)byteIndex;
@@ -703,10 +723,14 @@ namespace Hecton8.Audio.Synthesis
             const uint blockBytes = 36u;
             uint blockIndex = sampleIndex / blockSamples;
             uint blockSampleStart = blockIndex * blockSamples;
-            uint blockOffset = blockIndex * blockBytes;
-            if (payload == null || blockOffset + 4u > payloadLength)
+            ulong blockOffset64 = (ulong)blockIndex * blockBytes;
+            if (payload == null ||
+                blockOffset64 > int.MaxValue ||
+                blockOffset64 > payloadLength ||
+                payloadLength - (uint)blockOffset64 < 4u)
                 return 0f;
 
+            uint blockOffset = (uint)blockOffset64;
             int blockByteOffset = (int)blockOffset;
             if (codec.DecodedSampleIndex < (int)blockSampleStart ||
                 codec.DecodedSampleIndex >= (int)(blockSampleStart + blockSamples))
@@ -724,10 +748,11 @@ namespace Hecton8.Audio.Synthesis
             while (codec.DecodedSampleIndex < target)
             {
                 int nextLocal = codec.DecodedSampleIndex + 1 - (int)blockSampleStart;
-                uint packedOffset = blockOffset + 4u + (uint)((nextLocal - 1) >> 1);
-                if (packedOffset >= payloadLength)
+                ulong packedOffset64 = (ulong)blockOffset + 4u + (uint)((nextLocal - 1) >> 1);
+                if (packedOffset64 > int.MaxValue || packedOffset64 >= payloadLength)
                     break;
 
+                uint packedOffset = (uint)packedOffset64;
                 int packed = payload[(int)packedOffset];
                 int nibble = ((nextLocal - 1) & 1) == 0 ? packed & 0x0F : (packed >> 4) & 0x0F;
                 int signedDelta = nibble >= 8 ? nibble - 16 : nibble;
@@ -779,24 +804,23 @@ namespace Hecton8.Audio.Synthesis
                 return;
 
             int index = counters->TelemetryCursor % (int)VocalBankConstants.TelemetryRingCapacity;
-            telemetry[index] = new VocalTelemetryEntryDTO
-            {
-                Frame = frame,
-                PhraseHashID = state.PhraseHashID,
-                CurrentSampleIndex = state.CurrentSampleIndex,
-                TotalSamples = state.TotalSamples,
-                DspMicroseconds = counters->LastDspMicroseconds,
-                OutputPeak = counters->LastPeak,
-                OutputRms = counters->LastRms,
-                QualityWeight01 = codec.QualityWeight01,
-                RadioDistortion01 = codec.RadioDistortion01,
-                Priority = codec.Priority,
-                Flags = state.Flags | codec.FaultFlags,
-                UnderrunCount = 0u,
-                PayloadByteLength = codec.PayloadByteLength,
-                SampleRate = codec.SampleRate,
-                Codec = codec.Codec
-            };
+            VocalTelemetryEntryDTO entry = default;
+            entry.Frame = frame;
+            entry.PhraseHashID = state.PhraseHashID;
+            entry.CurrentSampleIndex = state.CurrentSampleIndex;
+            entry.TotalSamples = state.TotalSamples;
+            entry.DspMicroseconds = counters->LastDspMicroseconds;
+            entry.OutputPeak = counters->LastPeak;
+            entry.OutputRms = counters->LastRms;
+            entry.QualityWeight01 = codec.QualityWeight01;
+            entry.RadioDistortion01 = codec.RadioDistortion01;
+            entry.Priority = codec.Priority;
+            entry.Flags = state.Flags | codec.FaultFlags;
+            entry.UnderrunCount = 0u;
+            entry.PayloadByteLength = codec.PayloadByteLength;
+            entry.SampleRate = codec.SampleRate;
+            entry.Codec = codec.Codec;
+            telemetry[index] = entry;
             counters->TelemetryCursor = (index + 1) % (int)VocalBankConstants.TelemetryRingCapacity;
         }
     }

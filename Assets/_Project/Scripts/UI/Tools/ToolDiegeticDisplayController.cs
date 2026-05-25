@@ -14,7 +14,7 @@ namespace Hecton8.UI.Tools
     /// Drives a held-tool diegetic status screen from the native tool-state signal lane.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ToolDiegeticDisplayController : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
+    public sealed class ToolDiegeticDisplayController : MonoBehaviour, ISlowTickable, ILateFrameTickable, IGlobalRegistryHotSwapListener
     {
         private const int RenderTextureSize = 256;
         private const int TextBufferCapacity = 96;
@@ -88,7 +88,6 @@ namespace Hecton8.UI.Tools
         private IRenderTexturePoolService _renderTextureOwnerPool;
         private Texture _boundScreenTexture;
         private RenderTextureFormat _renderTextureFormat = RenderTextureFormat.ARGB32;
-        private bool _registered;
         private bool _hasState;
         private bool _stateDirty = true;
         private bool _renderRequested = true;
@@ -169,7 +168,6 @@ namespace Hecton8.UI.Tools
             _notRenderableSeconds = 0f;
             ResolveQualityImmediate();
             TryRegisterHotSwapListener();
-            TryRegisterUpdatable();
             TryRegisterSlowTickable();
             TryRegisterLateFrameTickable();
             ApplyScreenTexture(_fallbackEmissiveTexture, fallbackActive: true);
@@ -179,14 +177,12 @@ namespace Hecton8.UI.Tools
         private void Start()
         {
             TryRegisterHotSwapListener();
-            TryRegisterUpdatable();
             TryRegisterSlowTickable();
             TryRegisterLateFrameTickable();
         }
 
         private void OnDisable()
         {
-            TryUnregisterUpdatable();
             TryUnregisterSlowTickable();
             TryUnregisterLateFrameTickable();
             TryUnregisterHotSwapListener();
@@ -206,12 +202,10 @@ namespace Hecton8.UI.Tools
         {
             if (serviceSlot == GlobalRegistryServiceSlot.Dispatcher)
             {
-                _registered = false;
                 _registeredSlowTick = false;
                 _registeredLateFrame = false;
                 if (currentService != null && isActiveAndEnabled)
                 {
-                    TryRegisterUpdatable();
                     TryRegisterSlowTickable();
                     TryRegisterLateFrameTickable();
                 }
@@ -241,7 +235,7 @@ namespace Hecton8.UI.Tools
         /// Dispatcher tick. Updates only from latest tool-state signal and renders offscreen UI only when dirty.
         /// </summary>
         /// <param name="deltaTime">Scaled dispatcher delta.</param>
-        public void Tick(float deltaTime)
+        private void AdvanceToolDisplayPresentationState(float deltaTime)
         {
             float safeDeltaTime = SanitizeSeconds(deltaTime);
 
@@ -337,6 +331,8 @@ namespace Hecton8.UI.Tools
 
         public void LateFrameTick()
         {
+            AdvanceToolDisplayPresentationState(SystemDispatcher.CurrentFrameDeltaTime);
+
             if (_pendingPresentationDecision)
                 ResolvePresentationDecision();
 
@@ -960,23 +956,6 @@ namespace Hecton8.UI.Tools
         private bool ResolveRequestedFallback()
         {
             return _qualityFallback01 >= 0.75f || _poolUnavailableFallback;
-        }
-
-        private void TryRegisterUpdatable()
-        {
-            if (_registered || !Application.isPlaying)
-                return;
-
-            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
-        }
-
-        private void TryUnregisterUpdatable()
-        {
-            if (!_registered)
-                return;
-
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _registered = false;
         }
 
         private void TryRegisterSlowTickable()

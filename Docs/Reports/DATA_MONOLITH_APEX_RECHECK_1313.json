@@ -1,0 +1,110 @@
+{
+  "schema": "HECTON8_DATA_MONOLITH_APEX_RECHECK_V1",
+  "agent": "1313",
+  "date": "2026-05-25",
+  "evidenceClass": "STATIC_SOURCE_STATIC_BINARY_TOOL_VALIDATOR",
+  "unityBuildRun": false,
+  "dotnetBuildRun": false,
+  "activePreprocessorScan": {
+    "targetFile": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+    "windowsReleaseForbiddenHits": 0,
+    "androidNonWindowsReleaseForbiddenHits": 0,
+    "sourceMatchedLinesAllBranches": 23
+  },
+  "correctedDefects": [
+    {
+      "file": "Assets/_Project/Scripts/Data/Monolith/H8StaticDataArena.cs",
+      "line": 2293,
+      "issue": "native telemetry dump used one large stack buffer",
+      "fix": "write 20-byte header plus reusable 64-byte entry stack buffer"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 5045,
+      "issue": "boot marker used NativeArray<byte>",
+      "fix": "use stackalloc byte[BootStateRecordBytes] and UnsafeUtility.MemClear"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 5367,
+      "issue": "fatal boot crash log used generic string parameter, NativeArray<byte>, UTF8Encoding, Substring, runtime string length, and 24KB ceiling",
+      "fix": "write fixed 66-byte FatalBootCrashMessage through stackalloc byte[byteCount]"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
+      "line": 4566,
+      "issue": "runtime audit token new float3(rayOrigin.x, rayOrigin.y, rayOrigin.z)",
+      "fix": "use math.float3 for the VoxelSonar runtimeOrigin argument"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Data/Monolith/H8DataMonolithTypes.cs",
+      "line": 217,
+      "issue": "H8ItemRecord failed strict ARM64 field order",
+      "fix": "move RecipeMask0/RecipeMask1 to offsets 0/8, move 4-byte fields to 16-72, keep 2-byte fields at 76/78, and bump format/schema"
+    },
+    {
+      "file": "Assets/_Project/Scripts/Editor/DataMonolith/H8DataMonolithBatchAudit.cs",
+      "line": 18,
+      "issue": "batch parser scan result did not gate exit code",
+      "fix": "parserClean participates in EditorApplication.Exit"
+    }
+  ],
+  "remainingHardFailures": [
+    {
+      "file": "Docs/Reports/DATA_MONOLITH_RELEASE_ROUTE_SCAN_1313.json",
+      "line": 6,
+      "issue": "281 production candidate CSV/JSON/text loader routes remain",
+      "owner": "cross-domain migration queue"
+    }
+  ],
+  "dtoLayoutVerdict": {
+    "byteOffsetMap": "Docs/Reports/DATA_MONOLITH_BYTE_OFFSET_MAP_1313.md",
+    "allTargetStructsExplicit": true,
+    "sizeMultipleOf8": true,
+    "strictDescendingFieldOrderFailures": [
+      "H8DataBlobHeader"
+    ],
+    "abiReorderPerformed": true,
+    "activeBlobAfterSchemaMigration": {
+      "path": "Assets/StreamingAssets/Hecton8/DataMonolith/static_data.h8bin",
+      "blobFormatVersion": 2,
+      "blobSchemaHash": "0x33313331",
+      "codeFormatVersion": 2,
+      "codeSchemaHash": "0x33313331",
+      "checksum64": "0x19D880780D6E1B46",
+      "validatorReport": "Docs/Reports/DATA_MONOLITH_H8BIN_VALIDATOR_1313.json",
+      "status": "STATIC_VALIDATION_PASS"
+    }
+  },
+  "platformVerdict": {
+    "windowsReleaseArenaBranch": "STATIC_TOKEN_PASS",
+    "nonWindowsReleaseArenaBranch": "FAIL_CLOSED_NOT_HYDRATING",
+    "questReleaseReady": false
+  },
+  "touchedFileTokenScan": {
+    "newNativeArrayHits": 0,
+    "newFloat3OrDouble3HitsInRuntimeTouchedFiles": 0,
+    "utf8EncodingHitsInGameBootstrapper": 0,
+    "substringHitsInGameBootstrapperFatalLog": 0,
+    "fatalBootGenericMessageParameterHits": 0,
+    "fatalBootCrashMessageLengthHits": 0,
+    "fatalBootCrashLogBufferBytesHits": 0
+  },
+  "globalParserPurge": {
+    "filesScanned": 1731,
+    "productionCandidateFindingCount": 281,
+    "strictBlockingCandidateCount": 262,
+    "csvStateOrNoiseCount": 19,
+    "triageReport": "Docs/Reports/DATA_MONOLITH_RELEASE_ROUTE_TRIAGE_1313.json",
+    "complete": false
+  },
+  "verificationNotPerformed": [
+    "Unity import",
+    "Monolith bake",
+    "Play Mode",
+    "Player boot",
+    "Profiler",
+    "GCMonitor",
+    "dotnet build"
+  ]
+}

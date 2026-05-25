@@ -13,7 +13,6 @@ using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Interaction;
 using Hecton8.Items;
-using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Unity.Burst;
 using Unity.Burst.CompilerServices;
@@ -684,7 +683,7 @@ namespace Hecton8.World
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5850)]
-    public sealed class PersistentWorldRegistry : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, ISceneTransitionWorldResidencyBridge, IRuntimeWatchdogWorldHealthBridge, INutrientThermalVentReadModel, IFaunaPersistentWorldStateService, IGlobalRegistryHotSwapListener
+    public sealed class PersistentWorldRegistry : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, ISceneTransitionWorldResidencyBridge, IRuntimeWatchdogWorldHealthBridge, INutrientThermalVentReadModel, IFaunaPersistentWorldStateService, IPersistentDroppedItemRegistry, IGlobalRegistryHotSwapListener
     {
         private sealed class SectorOverrideState
         {
@@ -971,6 +970,7 @@ namespace Hecton8.World
         private ISaveService _saveService;
         private IPlayerRuntimeContext _playerRuntimeContext;
         private IPlayerInventoryService _playerInventoryService;
+        private IPhysicsService _physicsService;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -1449,7 +1449,7 @@ namespace Hecton8.World
                 !ReferenceEquals(GlobalRegistry.PersistentWorldRegistry, this))
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[PersistentWorldRegistry] Duplicate registry owner detected. Disabling duplicate.");
+                Hecton8.Core.H8Debug.LogError("[PersistentWorldRegistry] Duplicate registry owner detected. Disabling duplicate.");
 #endif
                 enabled = false;
                 return;
@@ -1622,6 +1622,41 @@ namespace Hecton8.World
 
             ItemData itemData = itemCatalog.FindByHash(itemHashId);
             return TryRegisterDroppedItem(itemData, quantity, runtimePosition);
+        }
+
+        bool IPersistentDroppedItemRegistry.TryRegisterDroppedItem(ItemData itemData, int quantity, Vector3 runtimePosition)
+        {
+            return TryRegisterDroppedItem(itemData, quantity, runtimePosition);
+        }
+
+        bool IPersistentDroppedItemRegistry.TryRegisterDroppedItem(ItemData itemData, int quantity, Vector3 runtimePosition, Vector3 initialImpulse)
+        {
+            return TryRegisterDroppedItem(itemData, quantity, runtimePosition, initialImpulse);
+        }
+
+        bool IPersistentDroppedItemRegistry.TryRegisterDroppedItem(
+            ItemData itemData,
+            int quantity,
+            Vector3 runtimePosition,
+            Vector3 initialImpulse,
+            Vector3 inheritedVelocityChange)
+        {
+            return TryRegisterDroppedItem(itemData, quantity, runtimePosition, initialImpulse, inheritedVelocityChange);
+        }
+
+        bool IPersistentDroppedItemRegistry.TryRegisterDroppedItemWithState(
+            ItemData itemData,
+            int quantity,
+            Vector3 runtimePosition,
+            ulong geneticsMask,
+            ushort qualityMilli)
+        {
+            return TryRegisterDroppedItemWithState(itemData, quantity, runtimePosition, geneticsMask, qualityMilli);
+        }
+
+        bool IPersistentDroppedItemRegistry.TryRegisterDroppedItem(int itemHashId, ItemCatalog itemCatalog, int quantity, Vector3 runtimePosition)
+        {
+            return TryRegisterDroppedItem(itemHashId, itemCatalog, quantity, runtimePosition);
         }
 
         internal bool TryRegisterDestroyedFlora(ulong floraPersistentIdHash, uint instanceUid, Vector3 runtimePosition)
@@ -2687,7 +2722,7 @@ namespace Hecton8.World
                 {
                     await Awaitable.MainThreadAsync();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError(string.Concat("[PersistentWorldRegistry] Indexed sector paging failed: ", error));
+                    Hecton8.Core.H8Debug.LogError(string.Concat("[PersistentWorldRegistry] Indexed sector paging failed: ", error));
 #endif
                     return;
                 }
@@ -2696,7 +2731,7 @@ namespace Hecton8.World
                 {
                     await Awaitable.MainThreadAsync();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning(string.Concat("[PersistentWorldRegistry] Indexed sector paging recovered with quarantine: ", error));
+                    Hecton8.Core.H8Debug.LogWarning(string.Concat("[PersistentWorldRegistry] Indexed sector paging recovered with quarantine: ", error));
 #endif
                     await Awaitable.BackgroundThreadAsync();
                     quarantinedSectorResetApplied = ResetQuarantinedIndexedSectorsToPristine();
@@ -2706,7 +2741,7 @@ namespace Hecton8.World
                 {
                     await Awaitable.MainThreadAsync();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError(string.Concat("[PersistentWorldRegistry] Sector override merge failed: ", overrideError));
+                    Hecton8.Core.H8Debug.LogError(string.Concat("[PersistentWorldRegistry] Sector override merge failed: ", overrideError));
 #endif
                     return;
                 }
@@ -2715,7 +2750,7 @@ namespace Hecton8.World
                 {
                     await Awaitable.MainThreadAsync();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError(string.Concat("[PersistentWorldRegistry] Sector entity-state restore failed: ", entityStateError));
+                    Hecton8.Core.H8Debug.LogError(string.Concat("[PersistentWorldRegistry] Sector entity-state restore failed: ", entityStateError));
 #endif
                     return;
                 }
@@ -2784,7 +2819,7 @@ namespace Hecton8.World
                         out string resetError))
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning(CreateHexErrorMessage("[PersistentWorldRegistry] Pristine sector reset failed for 0x", sectorHash, resetError));
+                    Hecton8.Core.H8Debug.LogWarning(CreateHexErrorMessage("[PersistentWorldRegistry] Pristine sector reset failed for 0x", sectorHash, resetError));
 #endif
                     continue;
                 }
@@ -2896,6 +2931,12 @@ namespace Hecton8.World
                 return;
             }
 
+            if (serviceSlot == GlobalRegistryServiceSlot.Physics)
+            {
+                _physicsService = currentService as IPhysicsService;
+                return;
+            }
+
             if (serviceSlot != GlobalRegistryServiceSlot.Dispatcher ||
                 currentService == null ||
                 !_serviceRegistered ||
@@ -2910,9 +2951,10 @@ namespace Hecton8.World
 
         private void CacheRegistryServicesCold()
         {
-            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            _saveService = GlobalRegistry.Save;
             _playerRuntimeContext = GlobalRegistry.Player;
             _playerInventoryService = GlobalRegistry.PlayerInventory;
+            _physicsService = GlobalRegistry.Physics;
         }
 
         private void TryRegisterHotSwapListener()
@@ -3101,8 +3143,9 @@ namespace Hecton8.World
             {
                 pooledRigidbody.mass = itemData.MassKg;
                 pooledRigidbody.isKinematic = false;
-                PhysicsForceRouter.QueueLinearVelocitySet(pooledRigidbody, Vector3.zero, wake: false);
-                PhysicsForceRouter.QueueAngularVelocitySet(pooledRigidbody, Vector3.zero, wake: false);
+                IPhysicsService physicsService = _physicsService;
+                physicsService?.QueueLinearVelocitySet(pooledRigidbody, Vector3.zero, wake: false);
+                physicsService?.QueueAngularVelocitySet(pooledRigidbody, Vector3.zero, wake: false);
                 _poolSlotRigidbodies[poolIndex] = pooledRigidbody;
                 Vector3 resolvedSpawnVelocity = Vector3.zero;
                 bool hasResolvedSpawnVelocity = false;
@@ -3119,10 +3162,10 @@ namespace Hecton8.World
                 }
 
                 if (hasResolvedSpawnVelocity)
-                    PhysicsForceRouter.QueueLinearVelocitySet(pooledRigidbody, resolvedSpawnVelocity);
+                    physicsService?.QueueLinearVelocitySet(pooledRigidbody, resolvedSpawnVelocity);
 
                 if (TryConsumeSpawnImpulse(record.InstanceUid, out float3 spawnImpulse))
-                    PhysicsForceRouter.QueueForce(pooledRigidbody, new Vector3(spawnImpulse.x, spawnImpulse.y, spawnImpulse.z), ForceMode.Impulse);
+                    physicsService?.QueueForce(pooledRigidbody, new Vector3(spawnImpulse.x, spawnImpulse.y, spawnImpulse.z), ForceMode.Impulse);
             }
             else
             {
@@ -3172,8 +3215,9 @@ namespace Hecton8.World
 
             if (pooledRigidbody != null)
             {
-                PhysicsForceRouter.QueueLinearVelocitySet(pooledRigidbody, Vector3.zero, wake: false);
-                PhysicsForceRouter.QueueAngularVelocitySet(pooledRigidbody, Vector3.zero, wake: false);
+                IPhysicsService physicsService = _physicsService;
+                physicsService?.QueueLinearVelocitySet(pooledRigidbody, Vector3.zero, wake: false);
+                physicsService?.QueueAngularVelocitySet(pooledRigidbody, Vector3.zero, wake: false);
                 pooledRigidbody.isKinematic = true;
                 pooledRigidbody.Sleep();
             }
@@ -3637,7 +3681,7 @@ namespace Hecton8.World
                 DisposeEntityStateWriteWorkDeferred(entityStateWriteWork);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError(failureMessage);
+                Hecton8.Core.H8Debug.LogError(failureMessage);
 #endif
                 return false;
             }
@@ -3947,7 +3991,7 @@ namespace Hecton8.World
                     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                         await Awaitable.MainThreadAsync();
-                        Debug.LogError(CreateHexErrorMessage("[PersistentWorldRegistry] Sector override commit failed for 0x", sectorHash, error));
+                        Hecton8.Core.H8Debug.LogError(CreateHexErrorMessage("[PersistentWorldRegistry] Sector override commit failed for 0x", sectorHash, error));
                         await Awaitable.BackgroundThreadAsync();
 #endif
                     }
@@ -4805,7 +4849,7 @@ namespace Hecton8.World
                     _pendingEntityStateTempWrites.Count,
                     ref _lastEntityStateQueueOverflowTelemetryFrame);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[PersistentWorldRegistry] Async entity-state temp write queue is full; dropped non-critical terrain/flora state.");
+                Hecton8.Core.H8Debug.LogWarning("[PersistentWorldRegistry] Async entity-state temp write queue is full; dropped non-critical terrain/flora state.");
 #endif
                 return false;
             }
@@ -4830,7 +4874,7 @@ namespace Hecton8.World
                         out string error))
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError(CreateHexErrorMessage("[PersistentWorldRegistry] Async entity-state temp write schedule failed for 0x", sectorHash, error));
+                    Hecton8.Core.H8Debug.LogError(CreateHexErrorMessage("[PersistentWorldRegistry] Async entity-state temp write schedule failed for 0x", sectorHash, error));
 #endif
                     return false;
                 }
@@ -4877,7 +4921,7 @@ namespace Hecton8.World
                 if (!SaveBinaryStorage.TryCompleteIndexedSectorEntityStateOverrideWrite(ref work.WriteHandle, out string error))
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError(CreateHexErrorMessage("[PersistentWorldRegistry] Async entity-state temp write failed for 0x", work.SectorHash, error));
+                    Hecton8.Core.H8Debug.LogError(CreateHexErrorMessage("[PersistentWorldRegistry] Async entity-state temp write failed for 0x", work.SectorHash, error));
 #endif
                 }
 
@@ -5867,7 +5911,7 @@ namespace Hecton8.World
                 if (drainedCount >= maxDrainCount && _dehydrateQueue.TryDequeue(out _))
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError(
+                    Hecton8.Core.H8Debug.LogError(
                         CreateRecordCountWatchdogMessage(_records.Length));
 #endif
 
@@ -6720,7 +6764,7 @@ namespace Hecton8.World
             if (sequence == 0u || sequence > InstanceUidCounterMask)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[PersistentWorldRegistry] Exhausted 24-bit persistent item instance UID counter.");
+                Hecton8.Core.H8Debug.LogError("[PersistentWorldRegistry] Exhausted 24-bit persistent item instance UID counter.");
 #endif
                 return false;
             }
@@ -6757,7 +6801,7 @@ namespace Hecton8.World
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError(CreateHexMessage("[PersistentWorldRegistry] Failed to reserve resource-node tombstone UID. tombstoneId=", tombstoneId));
+            Hecton8.Core.H8Debug.LogError(CreateHexMessage("[PersistentWorldRegistry] Failed to reserve resource-node tombstone UID. tombstoneId=", tombstoneId));
 #endif
             return false;
         }
@@ -6789,7 +6833,7 @@ namespace Hecton8.World
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError(CreateHexMessage("[PersistentWorldRegistry] Failed to reserve resource-node metamorphosis UID. tombstoneId=", tombstoneId));
+            Hecton8.Core.H8Debug.LogError(CreateHexMessage("[PersistentWorldRegistry] Failed to reserve resource-node metamorphosis UID. tombstoneId=", tombstoneId));
 #endif
             return false;
         }

@@ -26,7 +26,7 @@ namespace Hecton8.Physics
         public int frameIndex;
     }
 
-    public sealed class QueryCacheContext
+    public sealed class QueryCacheContext : IPlayerLookQueryCache
     {
         private const int FixedCacheCapacity = 64;
         private const int FixedCacheMask = FixedCacheCapacity - 1;
@@ -117,6 +117,24 @@ namespace Hecton8.Physics
             return false;
         }
 
+        public bool TryGetHit(
+            Ray ray,
+            float distance,
+            int mask,
+            QueryTriggerInteraction triggerMode,
+            out InteractionSurfaceHit hit)
+        {
+            if (TryGet(ray, distance, mask, triggerMode, out QueryResult result) &&
+                result.hasHit)
+            {
+                hit = result.hit;
+                return true;
+            }
+
+            hit = default;
+            return false;
+        }
+
         public void Set(
             Ray ray,
             float distance,
@@ -134,6 +152,21 @@ namespace Hecton8.Physics
             }
 
             _cache[key] = new CachedQueryResult { result = result, frameIndex = SystemDispatcher.CurrentFrameIndex };
+        }
+
+        public void SetHit(
+            Ray ray,
+            float distance,
+            int mask,
+            QueryTriggerInteraction triggerMode,
+            InteractionSurfaceHit hit)
+        {
+            Set(
+                ray,
+                distance,
+                mask,
+                triggerMode,
+                new QueryResult { hasHit = true, hit = hit });
         }
 
         private bool TryGetFixed(ulong key, out QueryResult result)
@@ -196,7 +229,7 @@ namespace Hecton8.Physics
             if (!_fixedCacheSaturationLogged)
             {
                 _fixedCacheSaturationLogged = true;
-                Debug.LogWarning("[QueryCacheContext] Fixed PlayerLook query cache saturated. Increase FixedCacheCapacity.");
+                Hecton8.Core.H8Debug.LogWarning("[QueryCacheContext] Fixed PlayerLook query cache saturated. Increase FixedCacheCapacity.");
             }
 #endif
             // Preserve open-address invariants; this cache is per-frame, so bounded clear beats corrupt eviction.

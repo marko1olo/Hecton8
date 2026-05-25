@@ -35,17 +35,10 @@ namespace Hecton8.UI
         private static readonly Color StatusTextColor = new Color(0.82f, 0.96f, 0.92f, 0.96f);
         private static readonly Color StatusBackgroundColor = new Color(0.02f, 0.08f, 0.10f, 0.82f);
         private static readonly uint _fontSwapRescaleHash = unchecked((uint)LocHash.Compute("FontStreamingManager.UIRescale"));
-        private static readonly System.Collections.Generic.List<SuitHUDV4CanvasOverlay> s_overlayResolveBuffer =
-            new System.Collections.Generic.List<SuitHUDV4CanvasOverlay>(2);
-
         // COLD ALLOC: LabelSwapScheduler[1] â€” staged font swap queue owner for active localized labels â€” owner: FontStreamingManager
         private readonly LabelSwapScheduler _swapScheduler = new LabelSwapScheduler();
         // COLD ALLOC: char[96] â€” status label assembly for staged font streaming â€” owner: FontStreamingManager
         private char[] _statusBuffer = new char[96];
-        // COLD ALLOC: List[64] â€” active scene root cache for TMP registry bootstrap â€” owner: FontStreamingManager
-        private readonly System.Collections.Generic.List<GameObject> _sceneRootBuffer = new System.Collections.Generic.List<GameObject>(64);
-        // COLD ALLOC: List[512] â€” temporary TMP text scan buffer for registry bootstrap â€” owner: FontStreamingManager
-        private readonly System.Collections.Generic.List<TMP_Text> _textScanBuffer = new System.Collections.Generic.List<TMP_Text>(512);
         private VaultGenerationHandle<uint> _visibleHashPrefetchHandle;
         private VaultGenerationHandle<int2> _visibleSlicePrefetchHandle;
         private IDataVault _dataVault;
@@ -407,7 +400,7 @@ namespace Hecton8.UI
             ref VaultGenerationHandle<T> handle,
             BufferID bufferId,
             int requiredCapacity,
-            NativeArrayOptions options) where T : struct
+            NativeArrayOptions options) where T : unmanaged
         {
             IDataVault vault = _dataVault;
             if (vault == null)
@@ -538,7 +531,7 @@ namespace Hecton8.UI
             _visiblePrefetchBuffersLocked = false;
         }
 
-        private void ReleasePrefetchHandle<T>(ref VaultGenerationHandle<T> handle) where T : struct
+        private void ReleasePrefetchHandle<T>(ref VaultGenerationHandle<T> handle) where T : unmanaged
         {
             IDataVault vault = _dataVault;
             if (vault != null && handle.BufferID != 0u && handle.Generation != 0u)
@@ -547,7 +540,7 @@ namespace Hecton8.UI
             handle = default;
         }
 
-        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : struct
+        private static bool IsExactVaultHandle<T>(in VaultGenerationHandle<T> handle, BufferID expectedBufferId) where T : unmanaged
         {
             return handle.BufferID == unchecked((uint)(int)expectedBufferId) && handle.Generation != 0u;
         }
@@ -836,41 +829,34 @@ namespace Hecton8.UI
             if (!scene.IsValid() || !scene.isLoaded)
                 return;
 
-            _sceneRootBuffer.Clear();
-            scene.GetRootGameObjects(_sceneRootBuffer);
-            for (int rootIndex = 0; rootIndex < _sceneRootBuffer.Count; rootIndex++)
-            {
-                GameObject root = _sceneRootBuffer[rootIndex];
-                if (root == null)
-                    continue;
+            Canvas canvas = ResolveTargetCanvas();
+            if (canvas == null)
+                return;
 
-                _textScanBuffer.Clear();
-                root.GetComponentsInChildren(true, _textScanBuffer);
-                for (int textIndex = 0; textIndex < _textScanBuffer.Count; textIndex++)
-                {
-                    TMP_Text text = _textScanBuffer[textIndex];
-                    if (text == null)
-                        continue;
+            EnsureRegistryNodesInHierarchy(canvas.transform);
+        }
 
-                    TMP_TextRegistry.EnsureRegistered(text);
-                }
-            }
+        private static void EnsureRegistryNodesInHierarchy(Transform root)
+        {
+            if (root == null)
+                return;
+
+            if (root.TryGetComponent(out TMP_Text text))
+                TMP_TextRegistry.EnsureRegistered(text);
+
+            for (int i = 0; i < root.childCount; i++)
+                EnsureRegistryNodesInHierarchy(root.GetChild(i));
         }
 
         private static Canvas ResolveTargetCanvas()
         {
-            SuitHUDV4CanvasOverlay.CopyActiveOverlaysTo(s_overlayResolveBuffer);
-            for (int i = 0; i < s_overlayResolveBuffer.Count; i++)
+            for (int i = 0; i < SuitHUDV4CanvasOverlay.ActiveOverlayCount; i++)
             {
-                SuitHUDV4CanvasOverlay overlay = s_overlayResolveBuffer[i];
+                SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.GetActiveOverlay(i);
                 if (overlay != null && overlay.TargetCanvas != null)
-                {
-                    s_overlayResolveBuffer.Clear();
                     return overlay.TargetCanvas;
-                }
             }
 
-            s_overlayResolveBuffer.Clear();
             if (SuitHUDV4CanvasOverlay.ActiveRuntimeInstance == null)
                 return null;
 

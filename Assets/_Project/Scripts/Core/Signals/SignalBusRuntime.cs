@@ -6,6 +6,7 @@ using Hecton8.Core.Contracts;
 using Hecton8.Core.Generated;
 using Hecton8.Core.Memory;
 using Hecton8.Core.Memory.Layout;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -34,34 +35,29 @@ namespace Hecton8.Core.Contracts.Signals
     /// Registry for every closed <see cref="SignalBus{T}"/> lane touched this session.
     /// </summary>
     [Preserve]
-    public static class SignalBusRegistry
+    public static unsafe class SignalBusRegistry
     {
         private const int LaneCapacity = 512;
         private const int StressScale = 1000;
 
-        // COLD ALLOC: SignalLaneDisposeDelegate[512] - closed generic disposal operations; no managed adapter objects - owner: SignalBusRegistry
-        private static readonly SignalLaneDisposeDelegate[] _laneDisposeDispatch = new SignalLaneDisposeDelegate[LaneCapacity];
-        // COLD ALLOC: SignalLaneTelemetryDelegate[512] - closed generic telemetry copies; avoids interface-lane dispatch for diagnostics - owner: SignalBusRegistry
-        private static readonly SignalLaneTelemetryDelegate[] _laneTelemetryDispatch = new SignalLaneTelemetryDelegate[LaneCapacity];
-        // COLD ALLOC: SignalLaneDispatch[512] - closed-generic operation table; one record per registered lane, no concrete DTO table - owner: SignalBusRegistry
-        private static readonly SignalLaneDispatch[] _laneDispatch = new SignalLaneDispatch[LaneCapacity];
+        private static NativeArray<SignalLaneDispatch> _laneDispatch;
         private static int _laneCount;
-        private static int _dispatchLaneCount;
         private static int _registrationOverflow;
+        private static int _registrationGate;
         private static int _globalQualityMilli = StressScale;
         private static int _systemStressMilli;
         private static int _simulationHalted;
 
         /// <summary>Current active typed lane count.</summary>
-        public static int LaneCount => _laneCount;
+        public static int LaneCount => Volatile.Read(ref _laneCount);
 
         /// <summary>True after any lane failed registration because registry capacity was exhausted.</summary>
         public static bool RegistrationOverflow => Volatile.Read(ref _registrationOverflow) != 0;
 
-        /// <summary>Number of registered lanes flushed through the closed-generic operation table.</summary>
-        public static int DispatchLaneCount => Volatile.Read(ref _dispatchLaneCount);
+        /// <summary>Number of registered lanes flushed through the native operation table.</summary>
+        public static int DispatchLaneCount => Volatile.Read(ref _laneCount);
 
-        /// <summary>Compatibility alias for older diagnostics. All active lanes now use delegate dispatch.</summary>
+        /// <summary>Compatibility alias for older diagnostics. All active lanes now use the native dispatch table.</summary>
         [Obsolete("Use DispatchLaneCount. Fallback dispatch was removed when hardcoded DTO tables were deleted.", false)]
         public static int FallbackLaneCount => DispatchLaneCount;
 
@@ -77,43 +73,53 @@ namespace Hecton8.Core.Contracts.Signals
         internal static int SystemStressMilli => Volatile.Read(ref _systemStressMilli);
         internal static int GlobalQualityMilli => Volatile.Read(ref _globalQualityMilli);
 
-        internal static void Register(
-            SignalLaneDisposeDelegate dispose,
-            SignalLaneFlushDelegate flush,
-            SignalLaneClearDelegate clear,
-            SignalLaneTelemetryDelegate copyTelemetry,
+        internal static bool Register(
+            delegate*<void> dispose,
+            delegate*<int, void> flush,
+            delegate*<ref SignalLaneTelemetry, void> copyTelemetry,
             bool flushDuringSimulationPause)
         {
-            if (dispose == null)
-                return;
+            if (dispose == null || flush == null || copyTelemetry == null)
+                return false;
 
-            for (int i = 0; i < _laneCount; i++)
+            EnterRegistrationGate();
+            try
             {
-                if (ReferenceEquals(_laneDisposeDispatch[i], dispose))
-                    return;
-            }
+                if (!EnsureDispatchStorage())
+                {
+                    Volatile.Write(ref _registrationOverflow, 1);
+                    return false;
+                }
 
-            if (_laneCount >= LaneCapacity)
-            {
-                Volatile.Write(ref _registrationOverflow, 1);
+                int laneCount = _laneCount;
+                for (int i = 0; i < laneCount; i++)
+                {
+                    if ((IntPtr)_laneDispatch[i].Dispose == (IntPtr)dispose)
+                        return true;
+                }
+
+                if (laneCount >= LaneCapacity)
+                {
+                    int firstOverflow = Interlocked.Exchange(ref _registrationOverflow, 1);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[SIGNAL LANE REGISTRY OVERFLOW]");
+                    if (firstOverflow == 0)
+                        Hecton8.Core.H8Debug.LogError("[SIGNAL LANE REGISTRY OVERFLOW]");
 #endif
-                return;
-            }
+                    return false;
+                }
 
-            int laneIndex = _laneCount;
-            _laneDisposeDispatch[laneIndex] = dispose;
-            _laneTelemetryDispatch[laneIndex] = copyTelemetry;
-            if (flush != null && clear != null)
-            {
-                _laneDispatch[_dispatchLaneCount++] = new SignalLaneDispatch(
+                _laneDispatch[laneCount] = new SignalLaneDispatch(
+                    dispose,
                     flush,
-                    clear,
+                    copyTelemetry,
                     flushDuringSimulationPause);
+                Volatile.Write(ref _laneCount, laneCount + 1);
+                return true;
             }
-
-            _laneCount++;
+            finally
+            {
+                ExitRegistrationGate();
+            }
         }
 
         /// <summary>Sets the runtime stress scalar that controls optional lane propagation.</summary>
@@ -144,43 +150,41 @@ namespace Hecton8.Core.Contracts.Signals
             Volatile.Write(ref _simulationHalted, 0);
         }
 
-        /// <summary>Flushes every active signal queue into contiguous frame snapshots.</summary>
-        public static void FlushPreSimulation()
+        /// <summary>Flushes every active signal queue into contiguous frame snapshots for the next frame.</summary>
+        public static void FlushPostSimulation()
         {
             int systemStressMilli = Volatile.Read(ref _systemStressMilli);
             bool simulationPaused = SimulationSignalRoute.SimulationPaused;
             FlushRegisteredSignalLanes(systemStressMilli, simulationPaused);
         }
 
-        /// <summary>Clears every frame snapshot after consumers finish the simulation frame.</summary>
-        public static void ClearPostSimulationSnapshots()
-        {
-            ClearRegisteredSignalLaneSnapshots();
-        }
-
         /// <summary>Disposes every typed lane. Called on subsystem reset and application quit.</summary>
         public static void DisposeAll()
         {
-            int laneCount = _laneCount;
-            for (int i = 0; i < laneCount; i++)
+            EnterRegistrationGate();
+            try
             {
-                SignalLaneDisposeDelegate dispose = _laneDisposeDispatch[i];
-                if (dispose != null)
-                    dispose();
+                int laneCount = _laneCount;
+                for (int i = 0; i < laneCount && _laneDispatch.IsCreated; i++)
+                {
+                    delegate*<void> dispose = _laneDispatch[i].Dispose;
+                    if (dispose != null)
+                        dispose();
+                }
 
-                _laneDisposeDispatch[i] = null;
-                _laneTelemetryDispatch[i] = null;
+                if (_laneDispatch.IsCreated)
+                    H8Memory.Release(ref _laneDispatch, SystemID.CoreDataVault);
+
+                Volatile.Write(ref _laneCount, 0);
+                Volatile.Write(ref _registrationOverflow, 0);
+                Volatile.Write(ref _globalQualityMilli, StressScale);
+                Volatile.Write(ref _systemStressMilli, 0);
+                Volatile.Write(ref _simulationHalted, 0);
             }
-
-            _laneCount = 0;
-            for (int i = 0; i < _dispatchLaneCount; i++)
-                _laneDispatch[i] = default;
-
-            _dispatchLaneCount = 0;
-            Volatile.Write(ref _registrationOverflow, 0);
-            Volatile.Write(ref _globalQualityMilli, StressScale);
-            Volatile.Write(ref _systemStressMilli, 0);
-            Volatile.Write(ref _simulationHalted, 0);
+            finally
+            {
+                ExitRegistrationGate();
+            }
         }
 
         /// <summary>Copies per-lane telemetry into a caller-owned buffer.</summary>
@@ -191,11 +195,14 @@ namespace Hecton8.Core.Contracts.Signals
             if (!destination.IsCreated || destination.Length == 0)
                 return 0;
 
-            int copyCount = Math.Min(_laneCount, destination.Length);
+            if (!_laneDispatch.IsCreated)
+                return 0;
+
+            int copyCount = Math.Min(Math.Min(Volatile.Read(ref _laneCount), _laneDispatch.Length), destination.Length);
             for (int i = 0; i < copyCount; i++)
             {
                 SignalLaneTelemetry telemetry = default;
-                SignalLaneTelemetryDelegate copyTelemetry = _laneTelemetryDispatch[i];
+                delegate*<ref SignalLaneTelemetry, void> copyTelemetry = _laneDispatch[i].CopyTelemetry;
                 if (copyTelemetry != null)
                     copyTelemetry(ref telemetry);
 
@@ -208,10 +215,17 @@ namespace Hecton8.Core.Contracts.Signals
         internal static bool TryCopyTelemetryAt(int index, out SignalLaneTelemetry telemetry)
         {
             telemetry = default;
-            if ((uint)index >= (uint)_laneCount)
+            int laneCount = Volatile.Read(ref _laneCount);
+            if ((uint)index >= (uint)laneCount)
                 return false;
 
-            SignalLaneTelemetryDelegate copyTelemetry = _laneTelemetryDispatch[index];
+            if (!_laneDispatch.IsCreated)
+                return false;
+
+            if ((uint)index >= (uint)_laneDispatch.Length)
+                return false;
+
+            delegate*<ref SignalLaneTelemetry, void> copyTelemetry = _laneDispatch[index].CopyTelemetry;
             if (copyTelemetry == null)
                 return false;
 
@@ -219,36 +233,43 @@ namespace Hecton8.Core.Contracts.Signals
             return true;
         }
 
-        internal delegate void SignalLaneFlushDelegate(int systemStressMilli);
-        internal delegate void SignalLaneClearDelegate();
-        internal delegate void SignalLaneTelemetryDelegate(ref SignalLaneTelemetry telemetry);
-        internal delegate void SignalLaneDisposeDelegate();
-
+        [StructLayout(LayoutKind.Explicit, Size = 32)]
         internal readonly struct SignalLaneDispatch
         {
-            public readonly SignalLaneFlushDelegate Flush;
-            public readonly SignalLaneClearDelegate Clear;
-            public readonly byte FlushDuringSimulationPause;
+            [FieldOffset(0)] public readonly delegate*<void> Dispose;
+            [FieldOffset(8)] public readonly delegate*<int, void> Flush;
+            [FieldOffset(16)] public readonly delegate*<ref SignalLaneTelemetry, void> CopyTelemetry;
+            [FieldOffset(24)] private readonly uint _pad0;
+            [FieldOffset(28)] private readonly ushort _pad1;
+            [FieldOffset(30)] public readonly byte FlushDuringSimulationPause;
+            [FieldOffset(31)] private readonly byte _pad2;
 
             public SignalLaneDispatch(
-                SignalLaneFlushDelegate flush,
-                SignalLaneClearDelegate clear,
+                delegate*<void> dispose,
+                delegate*<int, void> flush,
+                delegate*<ref SignalLaneTelemetry, void> copyTelemetry,
                 bool flushDuringSimulationPause)
             {
+                Dispose = dispose;
                 Flush = flush;
-                Clear = clear;
+                CopyTelemetry = copyTelemetry;
+                _pad0 = 0u;
+                _pad1 = 0;
                 FlushDuringSimulationPause = flushDuringSimulationPause ? (byte)1 : (byte)0;
+                _pad2 = 0;
             }
         }
 
         private static void FlushRegisteredSignalLanes(int systemStressMilli, bool simulationPaused)
         {
-            int dispatchCount = Volatile.Read(ref _dispatchLaneCount);
+            if (!_laneDispatch.IsCreated)
+                return;
+
+            int dispatchCount = Math.Min(Volatile.Read(ref _laneCount), _laneDispatch.Length);
             for (int i = 0; i < dispatchCount; i++)
             {
                 SignalLaneDispatch dispatch = _laneDispatch[i];
                 if (dispatch.Flush == null ||
-                    dispatch.Clear == null ||
                     (simulationPaused && dispatch.FlushDuringSimulationPause == 0))
                 {
                     continue;
@@ -258,29 +279,40 @@ namespace Hecton8.Core.Contracts.Signals
             }
         }
 
-        private static void ClearRegisteredSignalLaneSnapshots()
+        private static bool EnsureDispatchStorage()
         {
-            int dispatchCount = Volatile.Read(ref _dispatchLaneCount);
-            for (int i = 0; i < dispatchCount; i++)
-            {
-                SignalLaneDispatch dispatch = _laneDispatch[i];
-                if (dispatch.Clear != null)
-                    dispatch.Clear();
-            }
+            if (_laneDispatch.IsCreated)
+                return true;
+
+            _laneDispatch = H8Memory.Allocate<SignalLaneDispatch>(
+                LaneCapacity,
+                SystemID.CoreDataVault,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
+            return _laneDispatch.IsCreated;
         }
 
+        private static void EnterRegistrationGate()
+        {
+            SpinWait spin = default;
+            while (Interlocked.CompareExchange(ref _registrationGate, 1, 0) != 0)
+                spin.SpinOnce();
+        }
 
+        private static void ExitRegistrationGate()
+        {
+            Volatile.Write(ref _registrationGate, 0);
+        }
     }
 
     /// <summary>
-    /// Typed unmanaged signal lane. Each closed generic type owns a discrete NativeQueue and frame snapshot.
+    /// Typed unmanaged signal lane. Each closed generic type owns a bounded MPSC ring and frame snapshot.
     /// </summary>
     /// <typeparam name="T">Unmanaged signal payload type.</typeparam>
     [Preserve]
     public static class SignalBus<T>
         where T : unmanaged, ISignal
     {
-        private const string OwnerLabel = "SignalBus";
         private const int DefaultExpectedCapacity = 64;
         private const int DefaultMaxFrameSignals = DefaultExpectedCapacity;
         private const int DefaultSurvivalFrameSignals = 16;
@@ -289,20 +321,16 @@ namespace Hecton8.Core.Contracts.Signals
         private const int TryPushShedStressMilli = 850;
         private const uint LaneOverflowFaultHash = 0x4C4F5646u; // LOVF
         private const uint NonCriticalVfxKillSwitchMask = 1u << 20;
-        private const uint FnvOffset = 2166136261u;
-        private const uint FnvPrime = 16777619u;
         private const uint SnapshotBufferIdPrefix = 0x40000000u;
         private const uint SnapshotBufferIdMask = 0x3FFFFFFFu;
         private const ushort LayoutPolicyCacheLineCritical = 1;
         private const byte TelemetryFlagCacheLineStrideDebt = 32;
-        private const byte TelemetryFlagLegacyMpscWriterOpened = 64;
         private const int TelemetryLayoutPolicyMask = 0x00FF;
-        private const int TelemetryLegacyWriterOpenCountShift = 8;
         private const int ParallelWriterBudgetRemainingIndex = 0;
         private const int ParallelWriterBudgetDroppedIndex = 1;
         private const int ParallelWriterBudgetLength = 2;
 
-        private static NativeQueue<T> _queue;
+        private static global::Hecton8.Core.MpscSignalRingBuffer<T> _ring;
         private static NativeArray<int> _parallelWriterBudget;
         private static VaultGenerationHandle<T> _frameSnapshotHandle;
         private static IDataVault _frameSnapshotVault;
@@ -326,8 +354,6 @@ namespace Hecton8.Core.Contracts.Signals
         private static T _latestSignal;
         private static int _latestSignalSequence;
         private static int _peakQueuedLastFlush;
-        private static int _legacyWriterOpenPending;
-        private static int _legacyWriterOpenLastFlush;
         private static bool _initialized;
         private static bool _registered;
         private static bool _configured;
@@ -336,15 +362,6 @@ namespace Hecton8.Core.Contracts.Signals
         private static uint _laneHash;
         private static ushort _layoutPolicyFlags;
         private static readonly uint _defaultLaneHash = ComputeTypeHash();
-
-        // COLD ALLOC: SignalLaneFlushDelegate[1] - closed generic lane operation for non-generated dispatch - owner: SignalBus<T>
-        private static readonly SignalBusRegistry.SignalLaneFlushDelegate _flushDispatch = FlushPreSimulation;
-        // COLD ALLOC: SignalLaneClearDelegate[1] - closed generic lane operation for non-generated dispatch - owner: SignalBus<T>
-        private static readonly SignalBusRegistry.SignalLaneClearDelegate _clearDispatch = ClearPostSimulation;
-        // COLD ALLOC: SignalLaneTelemetryDelegate[1] - closed generic telemetry copy operation - owner: SignalBus<T>
-        private static readonly SignalBusRegistry.SignalLaneTelemetryDelegate _telemetryDispatch = CopyTelemetryStatic;
-        // COLD ALLOC: SignalLaneDisposeDelegate[1] - closed generic disposal operation; replaces managed lane adapter object - owner: SignalBus<T>
-        private static readonly SignalBusRegistry.SignalLaneDisposeDelegate _disposeDispatch = Dispose;
 
         /// <summary>Stable lane hash used by telemetry and load-shedding reports.</summary>
         public static uint LaneHash
@@ -364,7 +381,7 @@ namespace Hecton8.Core.Contracts.Signals
             }
         }
 
-        /// <summary>Monotonic snapshot generation advanced by the dispatcher pre-simulation flush.</summary>
+        /// <summary>Monotonic snapshot generation advanced by the dispatcher post-simulation flush.</summary>
         public static int SnapshotGeneration
         {
             get
@@ -382,30 +399,17 @@ namespace Hecton8.Core.Contracts.Signals
         /// <summary>Total rejected non-finite payloads since the lane was initialized.</summary>
         public static int CorruptedSignalTotal => Volatile.Read(ref _corruptedSignalTotal);
 
-        /// <summary>Peak queue depth observed at the last pre-simulation flush.</summary>
+        /// <summary>Peak queue depth observed at the last post-simulation flush.</summary>
         public static int PeakQueuedLastFlush => Volatile.Read(ref _peakQueuedLastFlush);
 
-        /// <summary>True when the lane owns native queue storage. Pure readiness probe; initialization is explicit.</summary>
-        public static bool HasNativeStorage => _queue.IsCreated;
+        /// <summary>True when the lane owns native ring storage. Pure readiness probe; initialization is explicit.</summary>
+        public static bool HasNativeStorage => _ring.IsCreated;
 
-        /// <summary>
-        /// Opens the legacy MPSC queue writer for compatibility producers that have not migrated to thread-local scratch.
-        /// This is a low-frequency bridge, not the preferred route for cache-line-critical producer storms.
-        /// </summary>
-        private static NativeQueue<T>.ParallelWriter OpenLegacyMpscWriter()
+        /// <summary>Opens the first-party bounded MPSC ring writer for job producers.</summary>
+        public static global::Hecton8.Core.MpscSignalRingBuffer<T>.ParallelWriter OpenParallelWriter()
         {
             EnsureInitialized();
-            if (!_queue.IsCreated)
-                return default;
-
-            Interlocked.Increment(ref _legacyWriterOpenPending);
-            return _queue.AsParallelWriter();
-        }
-
-        /// <summary>Compatibility alias for the legacy MPSC bridge. High-frequency producers use thread-local scratch.</summary>
-        public static NativeQueue<T>.ParallelWriter OpenParallelWriter()
-        {
-            return OpenLegacyMpscWriter();
+            return _ring.IsCreated ? _ring.AsParallelWriter() : default;
         }
 
         /// <summary>Native writer budget shared by job producers for pre-enqueue bounded shedding.</summary>
@@ -418,12 +422,21 @@ namespace Hecton8.Core.Contracts.Signals
             }
         }
 
-        /// <summary>Legacy producer writer facade. New cache-line-critical Core producers use thread-local scratch or explicit owner facades.</summary>
-        public static NativeQueue<T>.ParallelWriter ParallelWriter
+        /// <summary>Bounded producer writer facade backed by the first-party MPSC ring.</summary>
+        public static global::Hecton8.Core.MpscSignalRingBuffer<T>.ParallelWriter ParallelWriter
         {
             get
             {
-                return OpenLegacyMpscWriter();
+                return OpenParallelWriter();
+            }
+        }
+
+        /// <summary>Compatibility alias for producers that already migrated to the explicit ring name.</summary>
+        public static global::Hecton8.Core.MpscSignalRingBuffer<T>.ParallelWriter RingParallelWriter
+        {
+            get
+            {
+                return OpenParallelWriter();
             }
         }
 
@@ -486,7 +499,7 @@ namespace Hecton8.Core.Contracts.Signals
                 if (!_configurationFaultLogged)
                 {
                     _configurationFaultLogged = true;
-                    Debug.LogError("[SIGNAL CONTRACT] Rejected late reconfigure for " + typeof(T).FullName + ". First initialized lane owns capacity/hash/frame budget until Dispose().");
+                    Hecton8.Core.H8Debug.LogError("[SIGNAL CONTRACT] Rejected late reconfigure.");
                 }
 #endif
                 return;
@@ -522,30 +535,43 @@ namespace Hecton8.Core.Contracts.Signals
                 if (!_layoutFaultLogged)
                 {
                     _layoutFaultLogged = true;
-                    Debug.LogError("[SIGNAL ABI FENCE] Rejected " + typeof(T).FullName + " size " + UnsafeUtility.SizeOf<T>() + ". Allowed: positive 8-byte-aligned payloads up to 192 bytes.");
+                    Hecton8.Core.H8Debug.LogError("[SIGNAL ABI FENCE] Rejected payload stride.");
                 }
 #endif
                 return;
             }
 
-            _queue = new NativeQueue<T>(Allocator.Persistent); // COLD ALLOC: NativeQueue<T>[configured capacity] - typed signal queue - owner: SignalBus<T>
-            Hecton8.Core.NativeMemorySentinel.RegisterNativeQueue(
-                _queue,
+            _ring = new global::Hecton8.Core.MpscSignalRingBuffer<T>(
                 _expectedCapacity,
-                OwnerLabel,
-                ResolveQueueLabel(),
-                Hecton8.Core.NativeAllocationLifetime.Session);
-
-            if (!TryAcquireFrameSnapshotBuffer(_maxFrameSignals))
+                Allocator.Persistent,
+                Hecton8.Core.Memory.SystemID.CoreDataVault);
+            if (!_ring.IsCreated)
             {
-                Hecton8.Core.NativeMemorySentinel.UnregisterNativeQueue(OwnerLabel, ResolveQueueLabel());
-                _queue.Dispose();
-                _queue = default;
+                _ring.Dispose();
+                _ring = default;
                 return;
             }
 
-            PrewarmQueue(_expectedCapacity);
-            _parallelWriterBudget = new NativeArray<int>(ParallelWriterBudgetLength, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[2] - per-lane job writer budget/drop counter - owner: SignalBus<T>
+            if (!TryAcquireFrameSnapshotBuffer(_maxFrameSignals))
+            {
+                _ring.Dispose();
+                _ring = default;
+                return;
+            }
+
+            _parallelWriterBudget = H8Memory.Allocate<int>(
+                ParallelWriterBudgetLength,
+                Hecton8.Core.Memory.SystemID.CoreDataVault,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory); // COLD NATIVE: NativeArray<int>[2] via H8Memory - per-lane writer budget/drop counter - owner: SignalBus<T>
+            if (!_parallelWriterBudget.IsCreated)
+            {
+                _ring.Dispose();
+                _ring = default;
+                ReleaseFrameSnapshotBuffer();
+                return;
+            }
+
             ResetParallelWriterBudget();
             _legacyReadCursor = 0;
             _frameSnapshotCount = 0;
@@ -563,12 +589,10 @@ namespace Hecton8.Core.Contracts.Signals
             _latestSignal = default;
             _latestSignalSequence = 0;
             _peakQueuedLastFlush = 0;
-            _legacyWriterOpenPending = 0;
-            _legacyWriterOpenLastFlush = 0;
             _initialized = true;
         }
 
-        /// <summary>Pushes one signal into this type's queue.</summary>
+        /// <summary>Pushes one signal into this type's ring.</summary>
         /// <param name="signal">Signal payload.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Push(in T signal)
@@ -583,18 +607,11 @@ namespace Hecton8.Core.Contracts.Signals
         public static bool TryPush(in T signal)
         {
             EnsureInitialized();
-            if (!_queue.IsCreated)
+            if (!_ring.IsCreated)
                 return false;
 
             if (SignalLanePolicyCache<T>.NonCriticalVfx &&
                 SignalBusRegistry.SystemStressMilli > TryPushShedStressMilli)
-            {
-                Interlocked.Increment(ref _loadShedTotal);
-                Interlocked.Increment(ref _droppedPendingFlush);
-                return false;
-            }
-
-            if (_queue.Count >= _expectedCapacity)
             {
                 Interlocked.Increment(ref _loadShedTotal);
                 Interlocked.Increment(ref _droppedPendingFlush);
@@ -613,7 +630,13 @@ namespace Hecton8.Core.Contracts.Signals
             if (SignalLanePolicyCache<T>.FatalInterrupt)
                 SignalBusRegistry.SetSimulationHalted();
 
-            _queue.Enqueue(sanitizedSignal);
+            if (!_ring.TryEnqueue(in sanitizedSignal))
+            {
+                Interlocked.Increment(ref _loadShedTotal);
+                Interlocked.Increment(ref _droppedPendingFlush);
+                return false;
+            }
+
             _latestSignal = sanitizedSignal;
             AdvanceLatestSignalSequence();
             Interlocked.Increment(ref _acceptedSignalTotal);
@@ -634,10 +657,10 @@ namespace Hecton8.Core.Contracts.Signals
             return false;
         }
 
-        /// <summary>Attempts a Burst/job writer enqueue using a lane-owned native budget before NativeQueue growth.</summary>
+        /// <summary>Attempts a Burst/job writer enqueue through the first-party bounded MPSC ring.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe bool TryEnqueueBounded(
-            NativeQueue<T>.ParallelWriter writer,
+            global::Hecton8.Core.MpscSignalRingBuffer<T>.ParallelWriter writer,
             NativeArray<int> writerBudget,
             T signal)
         {
@@ -645,6 +668,13 @@ namespace Hecton8.Core.Contracts.Signals
                 return false;
 
             if (SignalLanePolicyCache<T>.FatalInterrupt)
+            {
+                Interlocked.Increment(ref _corruptedSignalTotal);
+                return false;
+            }
+
+            int writerGuardCode = SignalPayloadFiniteGuards.Sanitize(ref signal);
+            if (writerGuardCode != 0)
             {
                 Interlocked.Increment(ref _corruptedSignalTotal);
                 return false;
@@ -658,8 +688,11 @@ namespace Hecton8.Core.Contracts.Signals
                 return false;
             }
 
-            writer.Enqueue(signal);
-            return true;
+            if (writer.TryEnqueue(in signal))
+                return true;
+
+            Interlocked.Increment(ref budget[ParallelWriterBudgetDroppedIndex]);
+            return false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -780,7 +813,7 @@ namespace Hecton8.Core.Contracts.Signals
             return dropped;
         }
 
-        internal static void FlushPreSimulation(int systemStressMilli)
+        internal static void FlushPostSimulation(int systemStressMilli)
         {
             if (!_initialized)
                 return;
@@ -799,14 +832,13 @@ namespace Hecton8.Core.Contracts.Signals
                 Interlocked.Add(ref _loadShedTotal, parallelWriterDrops);
             }
 
-            _legacyWriterOpenLastFlush = Interlocked.Exchange(ref _legacyWriterOpenPending, 0);
             _coalescedLastFlush = 0;
             _stormDetectedLastFlush = 0;
             int coalescedThisFlush = 0;
             int loadShedThisFlush = 0;
             int corruptedThisFlush = 0;
 
-            int queued = _queue.Count;
+            int queued = CountPendingSignals();
             _queuedBeforeFlush = queued;
             _pushedLastFlush = queued + _droppedLastFlush;
             _peakQueuedLastFlush = queued > _peakQueuedLastFlush ? queued : _peakQueuedLastFlush;
@@ -821,14 +853,14 @@ namespace Hecton8.Core.Contracts.Signals
                 _droppedLastFlush += queued;
                 Interlocked.Add(ref _loadShedTotal, queued);
                 _stormDetectedLastFlush = 1;
-                ClearQueue();
+                ClearPendingSignals();
                 global::Hecton8.Core.GlobalTelemetryBus.PublishSystemDegradation(
                     LaneOverflowFaultHash,
                     NonCriticalVfxKillSwitchMask,
                     queued);
                 global::Hecton8.Core.GlobalRegistry.SetSystemKillSwitchBits(NonCriticalVfxKillSwitchMask, true);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[LANE_OVERFLOW_FAULT]");
+                Hecton8.Core.H8Debug.LogWarning("[LANE_OVERFLOW_FAULT]");
 #endif
                 return;
             }
@@ -844,10 +876,10 @@ namespace Hecton8.Core.Contracts.Signals
                 DropOldest(overflow);
             }
 
-            int copyLimit = Math.Min(_queue.Count, frameLimit);
+            int copyLimit = Math.Min(CountPendingSignals(), frameLimit);
             for (int i = 0; i < copyLimit; i++)
             {
-                if (!_queue.TryDequeue(out T signal))
+                if (!TryDequeuePendingSignal(out T signal))
                     break;
 
                 int guardCode = SignalPayloadFiniteGuards.Sanitize(ref signal);
@@ -1180,45 +1212,33 @@ namespace Hecton8.Core.Contracts.Signals
         {
             for (int i = 0; i < count; i++)
             {
-                if (!_queue.TryDequeue(out _))
+                if (!TryDequeuePendingSignal(out _))
                     break;
             }
         }
 
-        private static void ClearQueue()
+        private static void ClearPendingSignals()
         {
-            _queue.Clear();
-        }
-
-        internal static void ClearPostSimulation()
-        {
-            _frameSnapshotCount = 0;
-            _legacyReadCursor = 0;
+            if (_ring.IsCreated)
+                _ring.Clear();
         }
 
         internal static void Dispose()
         {
-            if (_queue.IsCreated)
+            if (_ring.IsCreated)
             {
-                Hecton8.Core.NativeMemorySentinel.UnregisterNativeQueue(OwnerLabel, ResolveQueueLabel());
-                _queue.Dispose();
-                _queue = default;
+                _ring.Dispose();
+                _ring = default;
             }
 
             if (_parallelWriterBudget.IsCreated)
             {
-                _parallelWriterBudget.Dispose();
-                _parallelWriterBudget = default;
+                H8Memory.Release(
+                    ref _parallelWriterBudget,
+                    Hecton8.Core.Memory.SystemID.CoreDataVault);
             }
 
-            if (_frameSnapshotVault != null && _frameSnapshotHandle.BufferID != 0u)
-                _frameSnapshotVault.ReleaseBuffer(in _frameSnapshotHandle);
-
-            _frameSnapshotHandle = default;
-            _frameSnapshotVault = null;
-            _frameSnapshotBufferId = BufferID.Unknown;
-            _frameSnapshotCount = 0;
-            _frameSnapshotGeneration = 0;
+            ReleaseFrameSnapshotBuffer();
 
             _legacyReadCursor = 0;
             _queuedBeforeFlush = 0;
@@ -1234,8 +1254,6 @@ namespace Hecton8.Core.Contracts.Signals
             _latestSignal = default;
             _latestSignalSequence = 0;
             _peakQueuedLastFlush = 0;
-            _legacyWriterOpenPending = 0;
-            _legacyWriterOpenLastFlush = 0;
             _initialized = false;
             _registered = false;
             _configured = false;
@@ -1302,7 +1320,7 @@ namespace Hecton8.Core.Contracts.Signals
             Volatile.Write(ref _latestSignalSequence, next);
         }
 
-        private static void EnsureRegistered()
+        private static unsafe void EnsureRegistered()
         {
             if (_registered)
                 return;
@@ -1310,13 +1328,11 @@ namespace Hecton8.Core.Contracts.Signals
             if (_laneHash == 0u)
                 _laneHash = _defaultLaneHash;
 
-            SignalBusRegistry.Register(
-                _disposeDispatch,
-                _flushDispatch,
-                _clearDispatch,
-                _telemetryDispatch,
+            _registered = SignalBusRegistry.Register(
+                &Dispose,
+                &FlushPostSimulation,
+                &CopyTelemetryStatic,
                 SignalLanePolicyCache<T>.FlushDuringSimulationPause);
-            _registered = true;
         }
 
         private static void CopyTelemetryStatic(ref SignalLaneTelemetry telemetry)
@@ -1325,9 +1341,6 @@ namespace Hecton8.Core.Contracts.Signals
             int corruptedTotal = Volatile.Read(ref _corruptedSignalTotal);
             if (corruptedTotal < 0)
                 corruptedTotal = int.MaxValue;
-            int legacyWriterOpenCount = Volatile.Read(ref _legacyWriterOpenLastFlush);
-            if (legacyWriterOpenCount < 0)
-                legacyWriterOpenCount = int.MaxValue;
 
             telemetry.LaneHash = LaneHash;
             telemetry.QueuedBeforeFlush = _queuedBeforeFlush;
@@ -1342,29 +1355,30 @@ namespace Hecton8.Core.Contracts.Signals
                 (corruptedTotal > 0 ? 16 : 0));
             if (HasCacheLineCriticalStrideDebt())
                 flags |= TelemetryFlagCacheLineStrideDebt;
-            if (legacyWriterOpenCount > 0)
-                flags |= TelemetryFlagLegacyMpscWriterOpened;
 
             telemetry.Flags = flags;
             telemetry.Reserved0 = (byte)math.min(UnsafeUtility.SizeOf<T>(), byte.MaxValue);
-            telemetry.Reserved1 = PackTelemetryReserved1(legacyWriterOpenCount);
+            telemetry.Reserved1 = PackTelemetryReserved1();
             telemetry.Reserved2 = ((ulong)(uint)corruptedTotal << 32) | (uint)pushedLastFlush;
         }
 
-        private static ushort PackTelemetryReserved1(int legacyWriterOpenCount)
+        private static ushort PackTelemetryReserved1()
         {
-            int writerCount = legacyWriterOpenCount > byte.MaxValue ? byte.MaxValue : legacyWriterOpenCount;
-            return (ushort)((_layoutPolicyFlags & TelemetryLayoutPolicyMask) | (writerCount << TelemetryLegacyWriterOpenCountShift));
+            return (ushort)(_layoutPolicyFlags & TelemetryLayoutPolicyMask);
         }
 
-        private static void PrewarmQueue(int capacity)
+        private static int CountPendingSignals()
         {
-            for (int i = 0; i < capacity; i++)
-                _queue.Enqueue(default);
+            return _ring.IsCreated ? _ring.Count : 0;
+        }
 
-            while (_queue.TryDequeue(out _))
-            {
-            }
+        private static bool TryDequeuePendingSignal(out T signal)
+        {
+            if (_ring.IsCreated && _ring.TryDequeue(out signal))
+                return true;
+
+            signal = default;
+            return false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1413,6 +1427,18 @@ namespace Hecton8.Core.Contracts.Signals
             _frameSnapshotCount = 0;
             _frameSnapshotGeneration = 0;
             return true;
+        }
+
+        private static void ReleaseFrameSnapshotBuffer()
+        {
+            if (_frameSnapshotVault != null && _frameSnapshotHandle.BufferID != 0u)
+                _frameSnapshotVault.ReleaseBuffer(in _frameSnapshotHandle);
+
+            _frameSnapshotHandle = default;
+            _frameSnapshotVault = null;
+            _frameSnapshotBufferId = BufferID.Unknown;
+            _frameSnapshotCount = 0;
+            _frameSnapshotGeneration = 0;
         }
 
         private static bool TryReadFrameSnapshot(out NativeArray<T>.ReadOnly frameSnapshot, out int snapshotCount)
@@ -1481,28 +1507,8 @@ namespace Hecton8.Core.Contracts.Signals
 
         private static uint ComputeTypeHash()
         {
-            string name = typeof(T).FullName;
-            if (string.IsNullOrEmpty(name))
-                name = typeof(T).Name;
-
-            uint hash = FnvOffset;
-            for (int i = 0; i < name.Length; i++)
-            {
-                hash ^= name[i];
-                hash *= FnvPrime;
-            }
-
+            uint hash = unchecked((uint)BurstRuntime.GetHashCode32<T>());
             return hash == 0u ? 1u : hash;
-        }
-
-        private static string ResolveQueueLabel()
-        {
-            return typeof(T).Name + ".Queue";
-        }
-
-        private static string ResolveSnapshotLabel()
-        {
-            return typeof(T).Name + ".FrameSnapshot";
         }
 
     }
@@ -1822,15 +1828,6 @@ namespace Hecton8.Core.Contracts.Signals
                 return true;
             }
 
-            if (string.Equals(type.FullName, "Hecton8.Atmosphere.ToxicityExposureSignal", StringComparison.Ordinal))
-            {
-                expectedCapacity = 64;
-                maxFrameSignals = 64;
-                lowTierFrameSignals = 16;
-                laneHash = 0x54584F58u;
-                return true;
-            }
-
             if (type == typeof(DynamicMusicScalarSignal))
             {
                 expectedCapacity = DynamicMusicScalarSignal.ExpectedCapacity;
@@ -2047,12 +2044,12 @@ namespace Hecton8.Core.Contracts.Signals
                 return true;
             }
 
-            if (type == typeof(global::Hecton8.Physics.SeaglidePropulsionRequestSignal))
+            if (type == typeof(global::Hecton8.Core.Contracts.Physics.SeaglidePropulsionRequestSignal))
             {
-                expectedCapacity = global::Hecton8.Physics.SeaglidePropulsionRequestSignal.ExpectedCapacity;
-                maxFrameSignals = global::Hecton8.Physics.SeaglidePropulsionRequestSignal.MaxFrameSignals;
-                lowTierFrameSignals = global::Hecton8.Physics.SeaglidePropulsionRequestSignal.LowTierFrameSignals;
-                laneHash = global::Hecton8.Physics.SeaglidePropulsionRequestSignal.LaneHash;
+                expectedCapacity = global::Hecton8.Core.Contracts.Physics.SeaglidePropulsionRequestSignal.ExpectedCapacity;
+                maxFrameSignals = global::Hecton8.Core.Contracts.Physics.SeaglidePropulsionRequestSignal.MaxFrameSignals;
+                lowTierFrameSignals = global::Hecton8.Core.Contracts.Physics.SeaglidePropulsionRequestSignal.LowTierFrameSignals;
+                laneHash = global::Hecton8.Core.Contracts.Physics.SeaglidePropulsionRequestSignal.LaneHash;
                 return true;
             }
 

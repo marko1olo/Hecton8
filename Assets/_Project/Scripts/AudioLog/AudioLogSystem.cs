@@ -92,17 +92,17 @@ namespace Hecton8.Narrative
         private const uint VaultFallbackEncryptedHashes = 4u;
         private const uint VaultFallbackEncryptedBits = 8u;
         private const uint VaultFallbackTelemetry = 16u;
-        // COLD ALLOC: HashSet<uint>[1024] — discovered audio-log hashes per save — owner: AudioLogSystem
+        // COLD ALLOC: HashSet<uint>[1024] â€” discovered audio-log hashes per save â€” owner: AudioLogSystem
         private readonly HashSet<uint> _discoveredLogHashes = new HashSet<uint>(ResolvedLogHashCapacity);
-        // COLD ALLOC: Dictionary<uint,AudioLogData>[1024] — resolved log lookup by stable log hash — owner: AudioLogSystem
+        // COLD ALLOC: Dictionary<uint,AudioLogData>[1024] â€” resolved log lookup by stable log hash â€” owner: AudioLogSystem
         private readonly Dictionary<uint, AudioLogData> _logLookupByHash = new Dictionary<uint, AudioLogData>(ResolvedLogHashCapacity);
-        // COLD ALLOC: Dictionary<AudioLogData,uint>[1024] — resolved log reverse lookup by asset reference — owner: AudioLogSystem
+        // COLD ALLOC: Dictionary<AudioLogData,uint>[1024] â€” resolved log reverse lookup by asset reference â€” owner: AudioLogSystem
         private readonly Dictionary<AudioLogData, uint> _hashByLog = new Dictionary<AudioLogData, uint>(ResolvedLogHashCapacity);
-        // COLD ALLOC: Dictionary<uint,uint>[1024] — audio log discovery notification hash lookup — owner: AudioLogSystem
+        // COLD ALLOC: Dictionary<uint,uint>[1024] â€” audio log discovery notification hash lookup â€” owner: AudioLogSystem
         private readonly Dictionary<uint, uint> _discoveryNotificationHashByLogHash = new Dictionary<uint, uint>(ResolvedLogHashCapacity);
-        // COLD ALLOC: uint[16] — fixed narrative queue dedupe slots — owner: AudioLogSystem
+        // COLD ALLOC: uint[16] â€” fixed narrative queue dedupe slots â€” owner: AudioLogSystem
         private readonly uint[] _queuedLogHashDedup = new uint[PlaybackQueueCapacity];
-        // COLD ALLOC: uint[1024] — flat resolved audio-log catalog for deterministic save iteration — owner: AudioLogSystem
+        // COLD ALLOC: uint[1024] â€” flat resolved audio-log catalog for deterministic save iteration â€” owner: AudioLogSystem
         private readonly uint[] _resolvedLogHashes = new uint[ResolvedLogHashCapacity];
         private const string AudioLogFolder = "Assets/_Project/Data/Lore/AudioLogs";
         private IDataVault _dataVault;
@@ -556,7 +556,7 @@ namespace Hecton8.Narrative
             IAudioService audioManager = _cachedAudioService;
             if (audioManager == null)
             {
-                CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
+                CacheAudioService(GlobalRegistry.Audio);
                 audioManager = _cachedAudioService;
             }
 
@@ -1268,7 +1268,7 @@ namespace Hecton8.Narrative
             if (guids == null || guids.Length == 0)
                 return;
 
-            List<AudioLogData> loadedLogs = new List<AudioLogData>(guids.Length); // COLD ALLOC: List<AudioLogData>[guids.Length] — editor-time log catalog bootstrap — owner: AudioLogSystem
+            List<AudioLogData> loadedLogs = new List<AudioLogData>(guids.Length); // COLD ALLOC: List<AudioLogData>[guids.Length] â€” editor-time log catalog bootstrap â€” owner: AudioLogSystem
             if (allLogs != null)
             {
                 for (int i = 0; i < allLogs.Length; i++)
@@ -1332,9 +1332,9 @@ namespace Hecton8.Narrative
 
         private void CacheRegistryServicesCold()
         {
-            CacheAudioService(Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance);
-            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
-            _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+            CacheAudioService(GlobalRegistry.Audio);
+            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            _cachedSaveService = GlobalRegistry.Save;
             _dataVault = GlobalRegistry.DataVault;
         }
 
@@ -1350,7 +1350,7 @@ namespace Hecton8.Narrative
                 return;
 
             if (_cachedSaveService == null)
-                _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
+                _cachedSaveService = GlobalRegistry.Save;
 
             if (_cachedSaveService == null)
                 return;
@@ -1453,7 +1453,7 @@ namespace Hecton8.Narrative
             if (data == null) return;
 
             if (data.audioLogDiscoveredIds == null)
-                data.audioLogDiscoveredIds = new List<string>(math.max(0, maxSavedLogs)); // COLD ALLOC: List<string>[maxSavedLogs] — fallback discovered audio-log save list — owner: AudioLogSystem
+                data.audioLogDiscoveredIds = new List<string>(math.max(0, maxSavedLogs)); // COLD ALLOC: List<string>[maxSavedLogs] â€” fallback discovered audio-log save list â€” owner: AudioLogSystem
             else
                 data.audioLogDiscoveredIds.Clear();
             AudioLogDiscoveryBitMask.EnsureCapacity(ref data.audioLogDiscoveryBitWords);

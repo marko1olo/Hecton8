@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Core.Contracts.Signals;
 using Hecton8.Core.Memory;
 using Hecton8.World;
@@ -28,11 +29,16 @@ namespace Hecton8.Core.Contracts.Signals
         [FieldOffset(15)] public byte Flags;
         [FieldOffset(16)] public uint AudioFrameLatency;
         [FieldOffset(20)] private uint _pad0;
-        [FieldOffset(24)] private ulong _pad1;
-        [FieldOffset(32)] private ulong _pad2;
-        [FieldOffset(40)] private ulong _pad3;
-        [FieldOffset(48)] private ulong _pad4;
-        [FieldOffset(56)] private ulong _pad5;
+        [FieldOffset(24)] private uint _pad1;
+        [FieldOffset(28)] private uint _pad2;
+        [FieldOffset(32)] private uint _pad3;
+        [FieldOffset(36)] private uint _pad4;
+        [FieldOffset(40)] private uint _pad5;
+        [FieldOffset(44)] private uint _pad6;
+        [FieldOffset(48)] private uint _pad7;
+        [FieldOffset(52)] private uint _pad8;
+        [FieldOffset(56)] private uint _pad9;
+        [FieldOffset(60)] private uint _pad10;
     }
 }
 
@@ -49,18 +55,18 @@ namespace Hecton8.UI
         [FieldOffset(8)] public uint StartAudioFrame;
         [FieldOffset(12)] public float CurrentProgress;
         [FieldOffset(16)] public uint Flags;
-        [FieldOffset(20)] public byte _pad0;
-        [FieldOffset(21)] public byte _pad1;
-        [FieldOffset(22)] public byte _pad2;
-        [FieldOffset(23)] public byte _pad3;
-        [FieldOffset(24)] public byte _pad4;
-        [FieldOffset(25)] public byte _pad5;
-        [FieldOffset(26)] public byte _pad6;
-        [FieldOffset(27)] public byte _pad7;
-        [FieldOffset(28)] public byte _pad8;
-        [FieldOffset(29)] public byte _pad9;
-        [FieldOffset(30)] public byte _pad10;
-        [FieldOffset(31)] public byte _pad11;
+        [FieldOffset(20)] private byte _pad0;
+        [FieldOffset(21)] private byte _pad1;
+        [FieldOffset(22)] private byte _pad2;
+        [FieldOffset(23)] private byte _pad3;
+        [FieldOffset(24)] private byte _pad4;
+        [FieldOffset(25)] private byte _pad5;
+        [FieldOffset(26)] private byte _pad6;
+        [FieldOffset(27)] private byte _pad7;
+        [FieldOffset(28)] private byte _pad8;
+        [FieldOffset(29)] private byte _pad9;
+        [FieldOffset(30)] private byte _pad10;
+        [FieldOffset(31)] private byte _pad11;
     }
 
     /// <summary>
@@ -83,8 +89,8 @@ namespace Hecton8.UI
         [FieldOffset(44)] public uint LayoutAuditHash;
         [FieldOffset(48)] public uint BufferIdCueState;
         [FieldOffset(52)] public uint BufferIdTelemetry;
-        [FieldOffset(56)] public uint _pad0;
-        [FieldOffset(60)] public uint _pad1;
+        [FieldOffset(56)] private uint _pad0;
+        [FieldOffset(60)] private uint _pad1;
     }
 
     public static unsafe class BabelSubtitleSyncRuntime
@@ -112,7 +118,7 @@ namespace Hecton8.UI
         private const BufferID SubtitleCueStateBufferId = (BufferID)15070550;
         private const BufferID SubtitleCueTelemetryBufferId = (BufferID)15070551;
         private const string DumpRelativePath = "Docs/AgentLogs/Dump_BABEL_SURGEON.bin";
-        private const string DumpAgentRelativePath = "Docs/AgentLogs/Dump_SHINOBU_150.bin";
+        private const string DumpAgentRelativePath = "Docs/AgentLogs/Dump_1309_BabelSubtitleSync.bin";
 
         private static readonly DispatcherBridge s_dispatcherBridge = new DispatcherBridge();
         private static IDataVault s_vault;
@@ -221,11 +227,9 @@ namespace Hecton8.UI
                 return false;
             }
 
-            ClearSubtitleCueFlagsJob clearJob = new ClearSubtitleCueFlagsJob
-            {
-                Cues = (SubtitleCueDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(cues),
-                CueCount = MaxSubtitleCueCount
-            };
+            ClearSubtitleCueFlagsJob clearJob = default;
+            clearJob.Cues = (SubtitleCueDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(cues);
+            clearJob.CueCount = MaxSubtitleCueCount;
             // COLD SYNC JOB: first-use cue sanitation must finish before runtime signal ingestion sees the buffer.
             for (int i = 0; i < MaxSubtitleCueCount; i++)
                 clearJob.Execute(i);
@@ -380,7 +384,7 @@ namespace Hecton8.UI
                    telemetry.Length >= TelemetryFrameCapacity;
         }
 
-        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : struct
+        private static bool IsVaultHandleCreated<T>(in VaultGenerationHandle<T> handle) where T : unmanaged
         {
             return handle.BufferID != 0u && handle.Generation != 0u;
         }
@@ -392,7 +396,7 @@ namespace Hecton8.UI
         }
 
         private static void ReleaseVaultBuffer<T>(IDataVault vault, ref VaultGenerationHandle<T> handle)
-            where T : struct
+            where T : unmanaged
         {
             if (vault != null && handle.BufferID != 0u)
                 vault.ReleaseBuffer(in handle);
@@ -481,7 +485,10 @@ namespace Hecton8.UI
             Vector3 cameraForward,
             out char arrow)
         {
-            float3 delta = AbsoluteUniversePosition.ToCameraRelativeFloat3(in sourceAup, in cameraAup);
+            float3 delta = AupPrecisionMath.LocalDeltaFloat3(
+                sourceAup.ToAbsoluteDouble3(),
+                cameraAup.ToAbsoluteDouble3(),
+                float3.zero);
             if (!math.all(math.isfinite(delta)) || math.lengthsq(delta) <= 0.0001f)
             {
                 arrow = '\0';
@@ -489,8 +496,8 @@ namespace Hecton8.UI
             }
 
             float3 dir = math.normalize(delta);
-            float rightDot = math.dot(dir, new float3(cameraRight.x, cameraRight.y, cameraRight.z));
-            float forwardDot = math.dot(dir, new float3(cameraForward.x, cameraForward.y, cameraForward.z));
+            float rightDot = math.dot(dir, math.float3(cameraRight.x, cameraRight.y, cameraRight.z));
+            float forwardDot = math.dot(dir, math.float3(cameraForward.x, cameraForward.y, cameraForward.z));
             if (forwardDot < -0.45f && math.abs(forwardDot) >= math.abs(rightDot))
             {
                 arrow = '\u2193';
@@ -509,8 +516,8 @@ namespace Hecton8.UI
                    OffsetOf<SubtitleCueDTO>(nameof(SubtitleCueDTO.StartAudioFrame)) == 8 &&
                    OffsetOf<SubtitleCueDTO>(nameof(SubtitleCueDTO.CurrentProgress)) == 12 &&
                    OffsetOf<SubtitleCueDTO>(nameof(SubtitleCueDTO.Flags)) == 16 &&
-                   OffsetOf<SubtitleCueDTO>(nameof(SubtitleCueDTO._pad0)) == 20 &&
-                   OffsetOf<SubtitleCueDTO>(nameof(SubtitleCueDTO._pad11)) == 31 &&
+                   OffsetOf<SubtitleCueDTO>("_pad0") == 20 &&
+                   OffsetOf<SubtitleCueDTO>("_pad11") == 31 &&
                    UnsafeUtility.SizeOf<SubtitleCueSignal>() == 64 &&
                    UnsafeUtility.SizeOf<LocalizationTelemetryEntry>() == 64;
         }
@@ -629,13 +636,11 @@ namespace Hecton8.UI
             if (count <= 0)
                 return dependsOn;
 
-            EvaluateSubtitleCuesJob job = new EvaluateSubtitleCuesJob
-            {
-                Cues = (SubtitleCueDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(cues),
-                CueCount = count,
-                AudioFrameClock = s_audioFrameClock,
-                SampleRate = (uint)math.max(1, s_sampleRate)
-            };
+            EvaluateSubtitleCuesJob job = default;
+            job.Cues = (SubtitleCueDTO*)NativeArrayUnsafeUtility.GetUnsafePtr(cues);
+            job.CueCount = count;
+            job.AudioFrameClock = s_audioFrameClock;
+            job.SampleRate = (uint)math.max(1, s_sampleRate);
             s_pendingCueEvaluationHandle = job.Schedule(count, 32, dependsOn);
             s_pendingCueEvaluationActive = true;
             return s_pendingCueEvaluationHandle;
@@ -731,23 +736,22 @@ namespace Hecton8.UI
             if (s_telemetryCursor >= TelemetryFrameCapacity)
                 s_telemetryCursor = 0;
 
-            telemetry[slot] = new LocalizationTelemetryEntry
-            {
-                Frame = s_lastPreparedFrame,
-                AudioFrameClock = s_audioFrameClock,
-                ActiveSubtitleCount = (uint)math.max(0, s_activeCueCount),
-                DecodedCharacterCount = (uint)math.max(0, s_decodedCharactersThisFrame),
-                Utf8DecodeMilliseconds = decodeMilliseconds,
-                MissingTokenHashCount = (uint)math.max(0, s_missingTokenHashesThisFrame),
-                LastTokenHash = s_lastTokenHash,
-                CueSignalCount = (uint)math.max(0, s_cueSignalCountThisFrame),
-                GlobalQualityWeight = ResolveGlobalQualityWeight(),
-                Flags = s_layoutValid ? 0u : FlagFault,
-                DroppedCueCount = (uint)math.max(0, s_droppedCueCount),
-                LayoutAuditHash = 0x15015032u,
-                BufferIdCueState = (uint)SubtitleCueStateBufferId,
-                BufferIdTelemetry = (uint)SubtitleCueTelemetryBufferId
-            };
+            LocalizationTelemetryEntry entry = default;
+            entry.Frame = s_lastPreparedFrame;
+            entry.AudioFrameClock = s_audioFrameClock;
+            entry.ActiveSubtitleCount = (uint)math.max(0, s_activeCueCount);
+            entry.DecodedCharacterCount = (uint)math.max(0, s_decodedCharactersThisFrame);
+            entry.Utf8DecodeMilliseconds = decodeMilliseconds;
+            entry.MissingTokenHashCount = (uint)math.max(0, s_missingTokenHashesThisFrame);
+            entry.LastTokenHash = s_lastTokenHash;
+            entry.CueSignalCount = (uint)math.max(0, s_cueSignalCountThisFrame);
+            entry.GlobalQualityWeight = ResolveGlobalQualityWeight();
+            entry.Flags = s_layoutValid ? 0u : FlagFault;
+            entry.DroppedCueCount = (uint)math.max(0, s_droppedCueCount);
+            entry.LayoutAuditHash = 0x15015032u;
+            entry.BufferIdCueState = (uint)SubtitleCueStateBufferId;
+            entry.BufferIdTelemetry = (uint)SubtitleCueTelemetryBufferId;
+            telemetry[slot] = entry;
         }
 
         private static float ResolveGlobalQualityWeight()
@@ -784,12 +788,16 @@ namespace Hecton8.UI
         private static void WriteDump(string path, byte* source, int byteCount)
         {
             using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read);
-            stream.Write(new ReadOnlySpan<byte>(source, byteCount));
+            stream.Write(MemoryMarshal.CreateReadOnlySpan(ref UnsafeUtility.AsRef<byte>(source), byteCount));
         }
 
-        private static int OffsetOf<T>(string fieldName) where T : struct
+        private static int OffsetOf<T>(string fieldName) where T : unmanaged
         {
-            System.Reflection.FieldInfo field = typeof(T).GetField(fieldName);
+            System.Reflection.FieldInfo field = typeof(T).GetField(
+                fieldName,
+                System.Reflection.BindingFlags.Public |
+                System.Reflection.BindingFlags.NonPublic |
+                System.Reflection.BindingFlags.Instance);
             return field == null ? -1 : UnsafeUtility.GetFieldOffset(field);
         }
 

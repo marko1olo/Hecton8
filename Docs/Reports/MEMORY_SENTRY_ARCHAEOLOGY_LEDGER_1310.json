@@ -1,0 +1,185 @@
+{
+  "schema": "hecton8.memory_sentry_archaeology.v1",
+  "agent": "1310",
+  "status": "IMPLEMENTED_PARANOID_SCANNER_PASS_NO_BUILD_REQUESTED",
+  "evidenceClass": "STATIC_SOURCE",
+  "promptSource": "Docs/Tasks/CURRENT_BATCH.md#AGENT_PROMPT_1310",
+  "sourceFiles": [
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/GlobalDataVault.cs",
+      "lineCount": 5105,
+      "scope": "vault allocator, lock state, compaction, telemetry ring, arena growth"
+    },
+    {
+      "path": "Assets/_Project/Scripts/Core/Memory/H8Memory.cs",
+      "lineCount": 4093,
+      "scope": "raw allocation/reallocation, tracking, native blackbox"
+    }
+  ],
+  "mandatesRead": [
+    "OPT_Native_Memory_Collections_JobSystem_Protocol.txt",
+    "OPT_HectonArenaAllocator_2_0.txt",
+    "DATA_Runtime_Struct_Layout_ARM64.txt",
+    "DBG_Telemetry_Crash_Reporting_PostMortem.txt",
+    "OPT_Zero_GC_Policy_AllocFree_Mandate.txt",
+    "OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt",
+    "ARCH_Execution_Phases.txt"
+  ],
+  "methods": [
+    {
+      "name": "GlobalDataVault.TryAcquireWriteLock<T>",
+      "lines": "1435-1500",
+      "currentFenceGate": "none at first line; downstream TryResolveHandle rejects active compaction after metadata mutation is possible",
+      "currentAtomicRoute": "Interlocked.CompareExchange writes VaultBufferMeta.ActiveWriterSystemID through _metadataByBufferId pointer",
+      "raceWindow": "active writer id can become non-zero before VaultArenaBlock.Reserved0/Reserved1 lock is written; compactor can observe no block lock if fence activates between these operations",
+      "requiredFix": "Volatile.Read(_compactionFence) first-line after out default; Thread.MemoryBarrier around ActiveWriterSystemID acquire; set block pin under compaction recheck; publish metadata after block lock and release barrier"
+    },
+    {
+      "name": "GlobalDataVault.ReleaseWriteLock<T>",
+      "lines": "1503-1537",
+      "currentFenceGate": "none",
+      "currentAtomicRoute": "reads ActiveWriterSystemID naked, then Interlocked.CompareExchange to zero after block release",
+      "raceWindow": "release can reorder block unlock and writer clear on weak ARM64 ordering unless explicit barriers are used",
+      "requiredFix": "Volatile.Read active writer; release barrier before writer clear; final barrier after metadata write"
+    },
+    {
+      "name": "GlobalDataVault.TryLockBuffer",
+      "lines": "1803-1843",
+      "currentFenceGate": "none at first line",
+      "currentAtomicRoute": "increments VaultArenaBlock.Reserved1 then sets active lock bit after metadata check",
+      "raceWindow": "compactor/growth can observe ActiveBurstLockMask zero before SetActiveLockBit while block lock mutation is in progress",
+      "requiredFix": "Volatile.Read(_compactionFence) first-line; reserve active lock bit before block mutation; recheck compaction fence after bit acquire; release bit on every failure"
+    },
+    {
+      "name": "GlobalDataVault.TryUnlockBuffer",
+      "lines": "1853-1875",
+      "currentFenceGate": "none",
+      "currentAtomicRoute": "decrements Reserved1 then clears active bit if no block maps to that bit",
+      "raceWindow": "unlock ordering can expose zero active mask before block write is visible unless release barrier is explicit",
+      "requiredFix": "barrier before active bit clear; use volatile/fenced block release helper"
+    },
+    {
+      "name": "GlobalDataVault.TryRunLiveCompactionSlice",
+      "lines": "3144-3230",
+      "currentFenceGate": "Volatile.Read(_compactionFence) before Interlocked.Exchange; loop checks HasActiveBurstLocks(activeBurstLockMask)",
+      "currentAtomicRoute": "Interlocked.Exchange sets fence; loop checks ActiveBurstLockMask and block Reserved0/Reserved1 before MemMove",
+      "raceWindow": "uses caller-supplied external mask plus local mask; if TryLockBuffer publishes block lock before active bit or TryAcquireWriteLock publishes writer before block lock, compactor can still race",
+      "requiredFix": "keep compactor fail-closed checks; add telemetry for skipped locked blocks; rely on fixed lock publication ordering"
+    },
+    {
+      "name": "GlobalDataVault.TryMoveOccupiedBlockLeft",
+      "lines": "3232-3325",
+      "currentFenceGate": "called only from TryRunLiveCompactionSlice after fence acquisition",
+      "currentAtomicRoute": "checks BlockFlagLocked, BlockFlagExternalView, Reserved1 before UnsafeUtility.MemMove",
+      "raceWindow": "safe only if all lock paths publish block/active bits before compactor enters",
+      "requiredFix": "recheck active masks immediately before MemMove and count skip telemetry"
+    },
+    {
+      "name": "GlobalDataVault.TryGrowArenaForBytes",
+      "lines": "3642-3675",
+      "currentFenceGate": "checks _compactionFence and _allocationLock, but does not read ActiveBurstLockMask",
+      "currentAtomicRoute": "none before TryGrowArena",
+      "raceWindow": "H8Memory.ReallocateRaw can relocate/free the arena while a scheduled job owns a raw alias if _activeLocks != 0",
+      "requiredFix": "Volatile.Read(_compactionFence) and ActiveBurstLockMask fail-closed before desired-size math and immediately before TryGrowArena"
+    },
+    {
+      "name": "GlobalDataVault.TryGrowArena",
+      "lines": "3677-3719",
+      "currentFenceGate": "checks stress only; called by TryGrowArenaForBytes",
+      "currentAtomicRoute": "calls H8Memory.ReallocateRaw then RefreshBlocksAfterArenaRelocation",
+      "raceWindow": "must not be reachable under active locks; caller gate is currently insufficient",
+      "requiredFix": "secondary active-lock and compaction-fence guard inside TryGrowArena before ReallocateRaw"
+    },
+    {
+      "name": "GlobalDataVault.RecordDefragBlackBox",
+      "lines": "3381-3428",
+      "currentFenceGate": "not applicable",
+      "currentAtomicRoute": "writes NativeArray element by value; cursor/count are naked int writes",
+      "raceWindow": "single owner phase assumed; explicit pointer write and volatile cursor publication required by task",
+      "requiredFix": "write through NativeArrayUnsafeUtility pointer and use Volatile.Write/Interlocked bounded cursor update"
+    },
+    {
+      "name": "GlobalDataVault.WriteDefragBlackBoxFile",
+      "lines": "3495-3528",
+      "currentFenceGate": "not applicable",
+      "currentAtomicRoute": "writes headers through BinaryWriter and entries through ReadOnlySpan<byte>",
+      "raceWindow": "not hot path but allocates managed FileStream/BinaryWriter on dump call; task asks for background route to 1310 dump file",
+      "requiredFix": "add 1310 dump path, avoid BinaryWriter for new dump route, copy native ring bytes through FileStream.Write(ReadOnlySpan<byte>) on background thread trigger"
+    },
+    {
+      "name": "H8Memory.ReallocateRaw",
+      "lines": "2707-2756",
+      "currentFenceGate": "none; lower-level raw allocator trusts caller",
+      "currentAtomicRoute": "ValidateTrackedPointerOwner, TryReserveReplacementBytes, UnsafeUtility.Malloc, MemMove, RegisterPointer, UnregisterPointer, Free",
+      "raceWindow": "caller must guarantee no active aliases because old pointer is freed",
+      "requiredFix": "keep H8Memory generic; enforce DataVault active-lock gate at caller"
+    }
+  ],
+  "metadataStructs": [
+    {
+      "name": "VaultBufferMeta",
+      "line": 294,
+      "layout": "Explicit",
+      "sizeBytes": 64,
+      "hotFields": {
+        "ActiveWriterSystemID": 44,
+        "Version": 36,
+        "Flags": 56,
+        "BufferKey": 60
+      },
+      "audit": "64-byte cache-line DTO; ActiveWriterSystemID shares cache line with version/type/ref flags"
+    },
+    {
+      "name": "VaultArenaBlock",
+      "line": 363,
+      "layout": "Explicit",
+      "sizeBytes": 32,
+      "hotFields": {
+        "Version": 24,
+        "State": 28,
+        "Reserved0": 29,
+        "Reserved1": 30
+      },
+      "audit": "32-byte block record; two records per 64-byte cache line, so adjacent block mutation can false-share but struct size matches prompt"
+    },
+    {
+      "name": "MemoryDefragTelemetryEntry",
+      "line": 376,
+      "layout": "Explicit",
+      "sizeBytes": 128,
+      "hotFields": {
+        "Sequence": 48,
+        "Frame": 52,
+        "ActiveBurstLockMask": 60,
+        "ActiveMutationGuardMask": 40,
+        "Flags": 88,
+        "LockedSkipCount": 76,
+        "Reserved32": 124
+      },
+      "audit": "128-byte telemetry record, two 64-byte cache lines, multiple-of-8 and ARM64 safe; offset 76 now records locked/active-mask compaction skips"
+    }
+  ],
+  "phaseRecord": {
+    "ownerAssembly": "Hecton8.Core",
+    "phase": "PRE_SIMULATION for relocation/growth admission; POST_SIMULATION for blackbox ring publication",
+    "dataVaultBuffersRead": ["_metadataByBufferId", "_blocks", "_keys", "_defragBlackBox"],
+    "dataVaultBuffersWritten": ["_metadataByBufferId", "_blocks", "_defragBlackBox", "_lastRelocationRecords"],
+    "signalBusConsumed": [],
+    "signalBusPublished": [],
+    "mx350BudgetMicros": 100,
+    "loadShedFallback": "fail closed: skip compaction/growth/lock acquisition, record alias-blocked/fault telemetry"
+  },
+  "staticConclusion": {
+    "task01": "COMPLETE_STATIC",
+    "task02": "RACE_WINDOWS_FOUND_AND_PATCHED",
+    "task03": "DTO_SIZES_MATCH_SOURCE_CONSTANTS",
+    "task04to09": "IMPLEMENTED",
+    "task10": "EDITOR_FUZZER_ADDED_NOT_EXECUTED_IN_CLI",
+    "task11": "PARANOID_STATIC_SCANNER_PASS_21_CHECKS",
+    "hotManagedLogicScan": "PASS_0_HITS",
+    "arm64ByteOffsetMap": "PASS_7_DTOS_MULTIPLE_OF_8_NO_MISALIGNED_FIELDS",
+    "aupScan": "PASS_0_DIRECT_ABSOLUTE_FLOAT_CASTS",
+    "assemblyIsolation": "PASS_EXISTING_EDITOR_ASMDEF_NO_NEIGHBOR_DOMAIN_USING",
+    "runtimeProof": "UNITY_RUNTIME_PROOF_ABSENT"
+  }
+}

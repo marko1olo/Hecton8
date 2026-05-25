@@ -1595,7 +1595,7 @@ namespace Hecton8.Physics.Vehicles
         // returned JobHandle before draining, and the SignalBus lane is not resized or disposed while the job
         // can still execute. The job only enqueues finite payloads and never reads queue state.
         [NoAlias, NativeDisableContainerSafetyRestriction]
-        public NativeQueue<CavitationAcousticSignal>.ParallelWriter CavitationWriter;
+        public global::Hecton8.Core.MpscSignalRingBuffer<CavitationAcousticSignal>.ParallelWriter CavitationWriter;
         [NativeDisableParallelForRestriction] public NativeArray<int> CavitationWriterBudget;
         public float FixedDeltaTime;
         public float GlobalQualityWeight;

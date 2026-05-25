@@ -2,7 +2,10 @@ using System;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Core.Memory;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -33,7 +36,7 @@ namespace Hecton8.Construction
     public struct RepairDroneTorchAcousticPayload
     {
         [FieldOffset(0)]
-        public Vector3 Position;
+        public float3 Position;
         [FieldOffset(12)]
         public float Volume;
         [FieldOffset(16)]
@@ -57,7 +60,7 @@ namespace Hecton8.Construction
     }
 
     /// <summary>
-    /// NativeQueue-backed event bridge that lets the audio owner consume repair-torch pulses without scene scans.
+    /// Vault-backed event bridge that lets the audio owner consume repair-torch pulses without scene scans.
     /// </summary>
     public static class RepairDroneTorchAcousticEvents
     {
@@ -65,7 +68,8 @@ namespace Hecton8.Construction
         private const int PendingEventCapacity = 32;
         private const int ReferenceSlotCapacity = 32;
         private const ushort TorchAcousticEventType = 1;
-        private const Allocator DataVaultExemptSignalLaneAllocator = Allocator.Persistent;
+        private const BufferID PendingEventBufferId = (BufferID)72039;
+        private const BufferID NextFrameEventBufferId = (BufferID)72040;
         private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("RepairDroneTorchAcousticEvents.Overflow"));
         private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("RepairDroneTorchAcousticEvents"));
 
@@ -85,10 +89,12 @@ namespace Hecton8.Construction
         private static readonly AudioClip[] _clipReferenceSlots = new AudioClip[ReferenceSlotCapacity];
         // COLD ALLOC: bool[32] - clip sidecar occupancy map prevents wrap overwrite before deferred flush - owner: RepairDroneTorchAcousticEvents
         private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
-        private static NativeQueue<RepairDroneTorchAcousticPayload> _pendingEvents;
-        private static NativeQueue<RepairDroneTorchAcousticPayload> _nextFrameEvents;
+        private static IDataVault _vault;
+        private static VaultGenerationHandle<RepairDroneTorchAcousticPayload> _pendingEventsHandle;
+        private static VaultGenerationHandle<RepairDroneTorchAcousticPayload> _nextFrameEventsHandle;
         private static int _listenerCount;
         private static int _pendingEventCount;
+        private static int _pendingEventReadIndex;
         private static int _nextFrameEventCount;
         private static bool _isDispatching;
         private static int _referenceWriteIndex;
@@ -96,24 +102,14 @@ namespace Hecton8.Construction
         private static int _lastOverflowWarningFrame = -1;
 
         /// <summary>Number of repair drone torch acoustic payloads waiting for late-frame dispatch.</summary>
-        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+        public static int PendingCount => math.max(0, _pendingEventCount - _pendingEventReadIndex) + _nextFrameEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(RepairDroneTorchAcousticEvents), nameof(_pendingEvents));
-                _pendingEvents.Dispose();
-                _pendingEvents = default;
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(RepairDroneTorchAcousticEvents), nameof(_nextFrameEvents));
-                _nextFrameEvents.Dispose();
-                _nextFrameEvents = default;
-            }
+            ReleaseVaultBuffer(ref _pendingEventsHandle);
+            ReleaseVaultBuffer(ref _nextFrameEventsHandle);
+            _vault = null;
 
             for (int i = 0; i < _listenerCount; i++)
                 _listeners[i].Clear();
@@ -121,6 +117,7 @@ namespace Hecton8.Construction
             _listenerCount = 0;
             ClearReferenceSlots();
             _pendingEventCount = 0;
+            _pendingEventReadIndex = 0;
             _nextFrameEventCount = 0;
             _isDispatching = false;
             _referenceWriteIndex = 0;
@@ -144,6 +141,8 @@ namespace Hecton8.Construction
                 return;
 
             _listeners[_listenerCount++].Listener = listener;
+            if (_listenerCount == 1)
+                TryEnsureInitialized();
         }
 
         /// <summary>Unregisters one deferred repair-drone torch acoustic listener.</summary>
@@ -174,7 +173,7 @@ namespace Hecton8.Construction
         /// <summary>Flushes queued repair-drone torch acoustic payloads.</summary>
         public static void FlushPending()
         {
-            if (!_pendingEvents.IsCreated)
+            if (!IsHandleCreated(in _pendingEventsHandle))
                 return;
 
             if (_listenerCount <= 0)
@@ -184,29 +183,38 @@ namespace Hecton8.Construction
             }
 
             PromoteNextFrameEventsIfFrontEmpty();
-            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            if (!TryReadPayloadBuffer(in _pendingEventsHandle, out NativeArray<RepairDroneTorchAcousticPayload>.ReadOnly pendingEvents))
+            {
+                DropQueuedPayloads();
+                return;
+            }
+
+            int scanBudget = math.max(0, _pendingEventCount - _pendingEventReadIndex);
+            while (scanBudget-- > 0 && _pendingEventReadIndex < _pendingEventCount)
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                    return;
-
-                if (!_pendingEvents.TryDequeue(out RepairDroneTorchAcousticPayload payload))
                 {
-                    _pendingEventCount = 0;
-                    break;
+                    if (!CompactPendingEvents())
+                        DropQueuedPayloads();
+
+                    return;
                 }
 
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
+                RepairDroneTorchAcousticPayload payload = pendingEvents[_pendingEventReadIndex++];
 
                 Dispatch(in payload);
                 ReleaseReferenceSlot(payload.ReferenceSlot);
             }
 
-            if (_pendingEvents.IsEmpty())
+            if (_pendingEventReadIndex >= _pendingEventCount)
             {
                 _pendingEventCount = 0;
+                _pendingEventReadIndex = 0;
                 PromoteNextFrameEventsIfFrontEmpty();
+            }
+            else if (!CompactPendingEvents())
+            {
+                DropQueuedPayloads();
             }
         }
 
@@ -223,57 +231,46 @@ namespace Hecton8.Construction
             }
 
             _clipReferenceSlots[referenceSlot] = acousticEvent.Clip;
-            Enqueue(new RepairDroneTorchAcousticPayload
-            {
-                Position = acousticEvent.Position,
-                Volume = acousticEvent.Volume,
-                Pitch = acousticEvent.Pitch,
-                ClipHashId = unchecked((uint)EntityId.ToULong(acousticEvent.Clip.GetEntityId())),
-                ReferenceSlot = referenceSlot,
-                EventType = TorchAcousticEventType,
-                Reserved = 0
-            });
+            RepairDroneTorchAcousticPayload payload = default;
+            payload.Position = math.float3(acousticEvent.Position.x, acousticEvent.Position.y, acousticEvent.Position.z);
+            payload.Volume = acousticEvent.Volume;
+            payload.Pitch = acousticEvent.Pitch;
+            payload.ClipHashId = unchecked((uint)EntityId.ToULong(acousticEvent.Clip.GetEntityId()));
+            payload.ReferenceSlot = referenceSlot;
+            payload.EventType = TorchAcousticEventType;
+            payload.Reserved = 0;
+            Enqueue(in payload);
         }
 
-        private static void EnsureInitialized()
+        private static bool TryEnsureInitialized()
         {
-            if (!_pendingEvents.IsCreated)
+            if (!RuntimeLayoutValid())
+                return false;
+
+            IDataVault vault = _vault;
+            if (vault == null)
             {
-                _pendingEvents = new NativeQueue<RepairDroneTorchAcousticPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RepairDroneTorchAcousticPayload>[32] - deferred repair drone torch acoustic lane flushed by SystemDispatcher LateUpdate - owner: RepairDroneTorchAcousticEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _pendingEvents,
-                    PendingEventCapacity,
-                    nameof(RepairDroneTorchAcousticEvents),
-                    nameof(_pendingEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
+                vault = GlobalRegistry.DataVault;
+                if (vault == null)
+                    return false;
+
+                _vault = vault;
             }
 
-            if (!_nextFrameEvents.IsCreated)
-            {
-                _nextFrameEvents = new NativeQueue<RepairDroneTorchAcousticPayload>(DataVaultExemptSignalLaneAllocator); // COLD ALLOC: NativeQueue<RepairDroneTorchAcousticPayload>[32] - next-frame repair drone torch acoustic lane prevents same-frame reentrant dispatch - owner: RepairDroneTorchAcousticEvents
-                NativeMemorySentinel.RegisterNativeQueue(
-                    _nextFrameEvents,
-                    PendingEventCapacity,
-                    nameof(RepairDroneTorchAcousticEvents),
-                    nameof(_nextFrameEvents),
-                    NativeAllocationLifetime.Session);
-                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
-            }
+            return TryEnsurePayloadBuffer(vault, ref _pendingEventsHandle, PendingEventBufferId) &&
+                   TryEnsurePayloadBuffer(vault, ref _nextFrameEventsHandle, NextFrameEventBufferId);
         }
 
-        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
-            where T : unmanaged
+        public static bool RuntimeLayoutValid()
         {
-            if (!queue.IsCreated || capacity <= 0)
-                return;
-
-            for (int i = 0; i < capacity; i++)
-                queue.Enqueue(default);
-
-            while (queue.TryDequeue(out _))
-            {
-            }
+            return UnsafeUtility.SizeOf<RepairDroneTorchAcousticPayload>() == 32 &&
+                   Marshal.OffsetOf<RepairDroneTorchAcousticPayload>(nameof(RepairDroneTorchAcousticPayload.Position)).ToInt32() == 0 &&
+                   Marshal.OffsetOf<RepairDroneTorchAcousticPayload>(nameof(RepairDroneTorchAcousticPayload.Volume)).ToInt32() == 12 &&
+                   Marshal.OffsetOf<RepairDroneTorchAcousticPayload>(nameof(RepairDroneTorchAcousticPayload.Pitch)).ToInt32() == 16 &&
+                   Marshal.OffsetOf<RepairDroneTorchAcousticPayload>(nameof(RepairDroneTorchAcousticPayload.ClipHashId)).ToInt32() == 20 &&
+                   Marshal.OffsetOf<RepairDroneTorchAcousticPayload>(nameof(RepairDroneTorchAcousticPayload.ReferenceSlot)).ToInt32() == 24 &&
+                   Marshal.OffsetOf<RepairDroneTorchAcousticPayload>(nameof(RepairDroneTorchAcousticPayload.EventType)).ToInt32() == 28 &&
+                   Marshal.OffsetOf<RepairDroneTorchAcousticPayload>(nameof(RepairDroneTorchAcousticPayload.Reserved)).ToInt32() == 30;
         }
 
         private static bool Enqueue(in RepairDroneTorchAcousticPayload payload)
@@ -285,15 +282,33 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            EnsureInitialized();
+            if (!TryEnsureInitialized())
+            {
+                ReleaseReferenceSlot(payload.ReferenceSlot);
+                ReportOverflowOncePerFrame();
+                return false;
+            }
+
             if (_isDispatching)
             {
-                _nextFrameEvents.Enqueue(payload);
+                if (!TryWritePayload(ref _nextFrameEventsHandle, _nextFrameEventCount, in payload))
+                {
+                    ReleaseReferenceSlot(payload.ReferenceSlot);
+                    ReportOverflowOncePerFrame();
+                    return false;
+                }
+
                 _nextFrameEventCount++;
                 return true;
             }
 
-            _pendingEvents.Enqueue(payload);
+            if (!TryWritePayload(ref _pendingEventsHandle, _pendingEventCount, in payload))
+            {
+                ReleaseReferenceSlot(payload.ReferenceSlot);
+                ReportOverflowOncePerFrame();
+                return false;
+            }
+
             _pendingEventCount++;
             return true;
         }
@@ -311,7 +326,7 @@ namespace Hecton8.Construction
                 return;
 
             RepairDroneTorchAcousticEvent acousticEvent = new RepairDroneTorchAcousticEvent(
-                payload.Position,
+                new Vector3(payload.Position.x, payload.Position.y, payload.Position.z),
                 clip,
                 payload.Volume,
                 payload.Pitch);
@@ -385,21 +400,8 @@ namespace Hecton8.Construction
 
         private static void DropQueuedPayloads()
         {
-            if (_pendingEvents.IsCreated)
-            {
-                while (_pendingEvents.TryDequeue(out _))
-                {
-                }
-            }
-
-            if (_nextFrameEvents.IsCreated)
-            {
-                while (_nextFrameEvents.TryDequeue(out _))
-                {
-                }
-            }
-
             _pendingEventCount = 0;
+            _pendingEventReadIndex = 0;
             _nextFrameEventCount = 0;
             ClearReferenceSlots();
             _referenceWriteIndex = 0;
@@ -418,19 +420,148 @@ namespace Hecton8.Construction
 
         private static void PromoteNextFrameEventsIfFrontEmpty()
         {
-            if (!_pendingEvents.IsCreated ||
-                !_nextFrameEvents.IsCreated ||
+            if (!IsHandleCreated(in _pendingEventsHandle) ||
+                !IsHandleCreated(in _nextFrameEventsHandle) ||
                 _pendingEventCount > 0 ||
                 _nextFrameEventCount <= 0)
             {
                 return;
             }
 
-            NativeQueue<RepairDroneTorchAcousticPayload> swap = _pendingEvents;
-            _pendingEvents = _nextFrameEvents;
-            _nextFrameEvents = swap;
+            VaultGenerationHandle<RepairDroneTorchAcousticPayload> swap = _pendingEventsHandle;
+            _pendingEventsHandle = _nextFrameEventsHandle;
+            _nextFrameEventsHandle = swap;
             _pendingEventCount = _nextFrameEventCount;
+            _pendingEventReadIndex = 0;
             _nextFrameEventCount = 0;
+        }
+
+        private static bool CompactPendingEvents()
+        {
+            if (_pendingEventReadIndex <= 0)
+                return true;
+
+            int liveCount = math.max(0, _pendingEventCount - _pendingEventReadIndex);
+            if (liveCount <= 0)
+            {
+                _pendingEventCount = 0;
+                _pendingEventReadIndex = 0;
+                return true;
+            }
+
+            IDataVault vault = _vault;
+            if (vault == null ||
+                !IsHandleCreated(in _pendingEventsHandle) ||
+                !vault.TryAcquireWriteLock(in _pendingEventsHandle, SystemID.Construction, out NativeArray<RepairDroneTorchAcousticPayload> buffer))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!buffer.IsCreated || _pendingEventCount > buffer.Length)
+                    return false;
+
+                for (int i = 0; i < liveCount; i++)
+                    buffer[i] = buffer[_pendingEventReadIndex + i];
+
+                _pendingEventCount = liveCount;
+                _pendingEventReadIndex = 0;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in _pendingEventsHandle, SystemID.Construction);
+            }
+        }
+
+        private static bool TryEnsurePayloadBuffer(
+            IDataVault vault,
+            ref VaultGenerationHandle<RepairDroneTorchAcousticPayload> handle,
+            BufferID defaultBufferId)
+        {
+            if (vault == null)
+                return false;
+
+            if (TryReadPayloadBuffer(vault, in handle, out _))
+                return true;
+
+            BufferID bufferId = handle.BufferID != 0u ? (BufferID)(int)handle.BufferID : defaultBufferId;
+            if (vault.TryGetGenerationHandle<RepairDroneTorchAcousticPayload>(bufferId, out VaultGenerationHandle<RepairDroneTorchAcousticPayload> existingHandle))
+            {
+                handle = existingHandle;
+                if (TryReadPayloadBuffer(vault, in handle, out _))
+                    return true;
+            }
+
+            handle = vault.EnsureGenerationHandle<RepairDroneTorchAcousticPayload>(
+                bufferId,
+                PendingEventCapacity,
+                SystemID.Construction,
+                NativeArrayOptions.ClearMemory);
+
+            return TryReadPayloadBuffer(vault, in handle, out _);
+        }
+
+        private static bool TryWritePayload(
+            ref VaultGenerationHandle<RepairDroneTorchAcousticPayload> handle,
+            int index,
+            in RepairDroneTorchAcousticPayload payload)
+        {
+            IDataVault vault = _vault;
+            if (vault == null ||
+                !IsHandleCreated(in handle) ||
+                index < 0 ||
+                !vault.TryAcquireWriteLock(in handle, SystemID.Construction, out NativeArray<RepairDroneTorchAcousticPayload> buffer))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!buffer.IsCreated || index >= buffer.Length)
+                    return false;
+
+                buffer[index] = payload;
+                return true;
+            }
+            finally
+            {
+                vault.ReleaseWriteLock(in handle, SystemID.Construction);
+            }
+        }
+
+        private static bool TryReadPayloadBuffer(
+            in VaultGenerationHandle<RepairDroneTorchAcousticPayload> handle,
+            out NativeArray<RepairDroneTorchAcousticPayload>.ReadOnly buffer)
+        {
+            return TryReadPayloadBuffer(_vault, in handle, out buffer);
+        }
+
+        private static bool TryReadPayloadBuffer(
+            IDataVault vault,
+            in VaultGenerationHandle<RepairDroneTorchAcousticPayload> handle,
+            out NativeArray<RepairDroneTorchAcousticPayload>.ReadOnly buffer)
+        {
+            buffer = default;
+            return vault != null &&
+                   IsHandleCreated(in handle) &&
+                   vault.TryReadOnlyHandle(in handle, out buffer) &&
+                   buffer.Length >= PendingEventCapacity;
+        }
+
+        private static void ReleaseVaultBuffer(ref VaultGenerationHandle<RepairDroneTorchAcousticPayload> handle)
+        {
+            IDataVault vault = _vault;
+            if (vault != null && IsHandleCreated(in handle))
+                vault.ReleaseBuffer(in handle);
+
+            handle = default;
+        }
+
+        private static bool IsHandleCreated(in VaultGenerationHandle<RepairDroneTorchAcousticPayload> handle)
+        {
+            return handle.BufferID != 0u && handle.Generation != 0u;
         }
     }
 

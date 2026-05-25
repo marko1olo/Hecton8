@@ -1,6 +1,5 @@
 #if UNITY_EDITOR
 using System;
-using System.Collections.Generic;
 using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -18,13 +17,9 @@ namespace Hecton8.EditorTools
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_OverdrawHeatmap.shader";
         private static readonly int HeatColorId = Shader.PropertyToID("_HeatColor");
         private static readonly int HeatStrengthId = Shader.PropertyToID("_HeatStrength");
-        // COLD ALLOC: List<ShaderTagId>[3] — renderer-list pass tags for overdraw heatmap — owner: HectonOverdrawHeatmapFeature
-        private static readonly List<ShaderTagId> ShaderTagIds = new List<ShaderTagId>(3)
-        {
-            new ShaderTagId("UniversalForward"),
-            new ShaderTagId("UniversalForwardOnly"),
-            new ShaderTagId("SRPDefaultUnlit")
-        };
+        private static readonly ShaderTagId UniversalForwardShaderTag = new ShaderTagId("UniversalForward");
+        private static readonly ShaderTagId UniversalForwardOnlyShaderTag = new ShaderTagId("UniversalForwardOnly");
+        private static readonly ShaderTagId SrpDefaultUnlitShaderTag = new ShaderTagId("SRPDefaultUnlit");
 
         [Serializable]
         private sealed class FeatureSettings
@@ -86,7 +81,9 @@ namespace Hecton8.EditorTools
                 UniversalLightData lightData = frameData.Get<UniversalLightData>();
                 UniversalRenderingData renderingData = frameData.Get<UniversalRenderingData>();
 
-                DrawingSettings drawingSettings = CreateDrawingSettings(ShaderTagIds, renderingData, cameraData, lightData, SortingCriteria.CommonTransparent);
+                DrawingSettings drawingSettings = CreateDrawingSettings(UniversalForwardShaderTag, renderingData, cameraData, lightData, SortingCriteria.CommonTransparent);
+                drawingSettings.SetShaderPassName(1, UniversalForwardOnlyShaderTag);
+                drawingSettings.SetShaderPassName(2, SrpDefaultUnlitShaderTag);
                 drawingSettings.overrideMaterial = _material;
                 drawingSettings.overrideMaterialPassIndex = 0;
 

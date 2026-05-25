@@ -1095,12 +1095,125 @@ namespace Hecton8.World
             }
         }
 
+        public int CollectSphere(in AbsoluteUniversePosition origin, float radiusMeters, int requiredKindMask, ulong interactionFilter, NativeArray<int> resultHandles)
+        {
+            if (!resultHandles.IsCreated)
+            {
+                _lastQueryStats = default;
+                return 0;
+            }
+
+            using (_queryProfilerMarker.Auto())
+            {
+                if (!IsFiniteAup(in origin) ||
+                    !math.isfinite(radiusMeters) ||
+                    radiusMeters <= 0f ||
+                    !_cellOccupancy.IsCreated ||
+                    _entryHandles.Length == 0)
+                {
+                    _lastQueryStats = default;
+                    return 0;
+                }
+
+                double3 absoluteCenter = origin.ToAbsoluteDouble3();
+                double radius = math.max(0.001d, radiusMeters);
+                Long3 minCell = ToCell(new double3(absoluteCenter.x - radius, absoluteCenter.y - radius, absoluteCenter.z - radius));
+                Long3 maxCell = ToCell(new double3(absoluteCenter.x + radius, absoluteCenter.y + radius, absoluteCenter.z + radius));
+                int cellSpan = EstimateCellSpan(minCell, maxCell);
+                if (cellSpan > MaxSphereQueryCellSpan)
+                {
+                    _lastQueryStats = new QueryStats(QueryModeSphere, 0, 0, 0, 0, 1);
+                    return 0;
+                }
+
+                ulong resolvedInteractionFilter = interactionFilter;
+
+                _queryScratch.Reset();
+                int dedupeCount = 0;
+                int dedupeCapacity = _queryScratch.Dedup.Capacity;
+                int resultCapacity = _queryScratch.Handles.Capacity;
+                int visitedCellCount = 0;
+                int candidateHandleCount = 0;
+
+                for (long z = minCell.Z; z <= maxCell.Z && _queryScratch.Handles.Length < resultCapacity && dedupeCount < dedupeCapacity; z++)
+                {
+                    for (long y = minCell.Y; y <= maxCell.Y && _queryScratch.Handles.Length < resultCapacity && dedupeCount < dedupeCapacity; y++)
+                    {
+                        for (long x = minCell.X; x <= maxCell.X && _queryScratch.Handles.Length < resultCapacity && dedupeCount < dedupeCapacity; x++)
+                        {
+                            visitedCellCount++;
+                            Long3 cellKey = new Long3(x, y, z);
+                            if (!_cellOccupancy.TryGetFirstValue(cellKey, out int handle, out NativeParallelMultiHashMapIterator<Long3> iterator))
+                                continue;
+
+                            do
+                            {
+                                candidateHandleCount++;
+                                if (dedupeCount >= dedupeCapacity)
+                                    continue;
+
+                                if (!_queryScratch.Dedup.Add(handle))
+                                    continue;
+                                dedupeCount++;
+
+                                if (!_entries.TryGetValue(handle, out SpatialEntry entry))
+                                    continue;
+
+                                if (requiredKindMask != 0 && (entry.KindMask & requiredKindMask) == 0)
+                                    continue;
+
+                                if (resolvedInteractionFilter != 0UL && (entry.EntityFlags & resolvedInteractionFilter) != resolvedInteractionFilter)
+                                    continue;
+
+                                if (!SphereOverlapsEntry(absoluteCenter, radius * radius, in entry))
+                                    continue;
+
+                                if (_queryScratch.Handles.Length >= resultCapacity)
+                                    continue;
+
+                                _queryScratch.Handles.AddNoResize(handle);
+                            }
+                            while (_queryScratch.Handles.Length < resultCapacity &&
+                                   dedupeCount < dedupeCapacity &&
+                                   _cellOccupancy.TryGetNextValue(out handle, ref iterator));
+                        }
+                    }
+                }
+
+                int copyCount = math.min(_queryScratch.Handles.Length, resultHandles.Length);
+                NativeArray<int>.Copy(_queryScratch.Handles.AsArray(), 0, resultHandles, 0, copyCount);
+                byte saturated = (_queryScratch.Handles.Length >= resultCapacity ||
+                                  dedupeCount >= dedupeCapacity ||
+                                  copyCount < _queryScratch.Handles.Length)
+                    ? (byte)1
+                    : (byte)0;
+                _lastQueryStats = new QueryStats(
+                    QueryModeSphere,
+                    visitedCellCount,
+                    candidateHandleCount,
+                    dedupeCount,
+                    copyCount,
+                    saturated);
+                return copyCount;
+            }
+        }
+
         public int CollectSphere(in AbsoluteUniversePosition origin, float radiusMeters, int requiredKindMask, uint interactionFilter, NativeList<int> resultHandles)
         {
             return CollectSphere(in origin, radiusMeters, requiredKindMask, (ulong)interactionFilter, resultHandles);
         }
 
         public int CollectSphere(in AbsoluteUniversePosition origin, float radiusMeters, int requiredKindMask, NativeList<int> resultHandles)
+        {
+            return CollectSphere(in origin, radiusMeters, requiredKindMask, 0UL, resultHandles);
+        }
+
+        public int CollectSphere(in AbsoluteUniversePosition origin, float radiusMeters, int requiredKindMask, uint interactionFilter, NativeArray<int> resultHandles)
+        {
+            return CollectSphere(in origin, radiusMeters, requiredKindMask, (ulong)interactionFilter, resultHandles);
+        }
+
+        public int CollectSphere(in AbsoluteUniversePosition origin, float radiusMeters, int requiredKindMask, NativeArray<int> resultHandles)
         {
             return CollectSphere(in origin, radiusMeters, requiredKindMask, 0UL, resultHandles);
         }
@@ -1341,7 +1454,7 @@ namespace Hecton8.World
             if (_nextSlot > MaxHandleSlot)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                UnityEngine.Debug.LogError("[HectonSpatialHash] Handle allocator exhausted.");
+                Hecton8.Core.H8Debug.LogError("[HectonSpatialHash] Handle allocator exhausted.");
 #endif
                 return 0;
             }

@@ -143,15 +143,15 @@ namespace Hecton8.Gameplay
         private const uint SomaticProfileQuest3Hash = 0x47CA36AAu;
         private const uint SomaticComfortTelemetryHash = 0x56525343u; // VRSC
 
-        private VaultNativeArray<SomaticComfortStateDTO> _somaticComfortWrite;
-        private VaultNativeArray<SomaticComfortStateDTO> _somaticComfortRead;
-        private VaultNativeArray<SomaticDerivativeDTO> _somaticDerivatives;
-        private VaultNativeArray<SomaticKinematicHistoryDTO> _somaticHistory;
-        private VaultNativeArray<VrComfortProfileDTO> _somaticProfiles;
-        private VaultNativeArray<VrComfortProfileLookupSlotDTO> _somaticProfileLookup;
-        private VaultNativeArray<ComfortTelemetryEntry> _somaticComfortTelemetry;
-        private VaultNativeArray<SomaticMockSicknessSampleDTO> _somaticMockSicknessSamples;
-        private VaultNativeArray<byte> _somaticCsvScratch;
+        private VaultBufferView<SomaticComfortStateDTO> _somaticComfortWrite;
+        private VaultBufferView<SomaticComfortStateDTO> _somaticComfortRead;
+        private VaultBufferView<SomaticDerivativeDTO> _somaticDerivatives;
+        private VaultBufferView<SomaticKinematicHistoryDTO> _somaticHistory;
+        private VaultBufferView<VrComfortProfileDTO> _somaticProfiles;
+        private VaultBufferView<VrComfortProfileLookupSlotDTO> _somaticProfileLookup;
+        private VaultBufferView<ComfortTelemetryEntry> _somaticComfortTelemetry;
+        private VaultBufferView<SomaticMockSicknessSampleDTO> _somaticMockSicknessSamples;
+        private VaultBufferView<byte> _somaticCsvScratch;
         private JobHandle _somaticComfortHandle;
         private bool _somaticComfortBuffersSeeded;
         private bool _somaticComfortJobScheduled;
@@ -311,72 +311,72 @@ namespace Hecton8.Gameplay
 
             if (!_somaticComfortWrite.IsCreated)
             {
-                _somaticComfortWrite = VaultNativeArray<SomaticComfortStateDTO>.Create(
+                _somaticComfortWrite = VaultBufferView<SomaticComfortStateDTO>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticComfortWrite,
                     1,
                     NativeArrayOptions.UninitializedMemory);
-                _somaticComfortRead = VaultNativeArray<SomaticComfortStateDTO>.Create(
+                _somaticComfortRead = VaultBufferView<SomaticComfortStateDTO>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticComfortRead,
                     1,
                     NativeArrayOptions.UninitializedMemory);
-                _somaticDerivatives = VaultNativeArray<SomaticDerivativeDTO>.Create(
+                _somaticDerivatives = VaultBufferView<SomaticDerivativeDTO>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticDerivatives,
                     1,
                     NativeArrayOptions.UninitializedMemory);
-                _somaticHistory = VaultNativeArray<SomaticKinematicHistoryDTO>.Create(
+                _somaticHistory = VaultBufferView<SomaticKinematicHistoryDTO>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticHistory,
                     1,
                     NativeArrayOptions.UninitializedMemory);
-                _somaticProfiles = VaultNativeArray<VrComfortProfileDTO>.Create(
+                _somaticProfiles = VaultBufferView<VrComfortProfileDTO>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticProfile,
                     SomaticComfortProfileCapacity,
                     NativeArrayOptions.UninitializedMemory);
-                _somaticProfileLookup = VaultNativeArray<VrComfortProfileLookupSlotDTO>.Create(
+                _somaticProfileLookup = VaultBufferView<VrComfortProfileLookupSlotDTO>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticProfileLookup,
                     SomaticComfortProfileLookupCapacity,
                     NativeArrayOptions.UninitializedMemory);
-                _somaticKccStateMirror = VaultNativeArray<VRSomaticKinematicStateMirrorDTO>.Create(
+                _somaticKccStateMirror = VaultBufferView<VRSomaticKinematicStateMirrorDTO>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticKccStateMirror,
                     1,
                     NativeArrayOptions.UninitializedMemory);
-                _somaticRawRotation = VaultNativeArray<quaternion>.Create(
+                _somaticRawRotation = VaultBufferView<quaternion>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticRawRotation,
                     1,
                     NativeArrayOptions.UninitializedMemory);
-                _somaticHorizonWrite = VaultNativeArray<VRSomaticComfortDTO>.Create(
+                _somaticHorizonWrite = VaultBufferView<VRSomaticComfortDTO>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticHorizonWrite,
                     1,
                     NativeArrayOptions.UninitializedMemory);
-                _somaticHorizonRead = VaultNativeArray<VRSomaticComfortDTO>.Create(
+                _somaticHorizonRead = VaultBufferView<VRSomaticComfortDTO>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticHorizonRead,
                     1,
                     NativeArrayOptions.UninitializedMemory);
-                _somaticHorizonTelemetry = VaultNativeArray<SomaticTelemetryEntry>.Create(
+                _somaticHorizonTelemetry = VaultBufferView<SomaticTelemetryEntry>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticHorizonTelemetry,
                     BlackBoxFrameCapacity,
                     NativeArrayOptions.UninitializedMemory);
-                _somaticComfortTelemetry = VaultNativeArray<ComfortTelemetryEntry>.Create(
+                _somaticComfortTelemetry = VaultBufferView<ComfortTelemetryEntry>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticComfortTelemetry,
                     BlackBoxFrameCapacity,
                     NativeArrayOptions.UninitializedMemory);
-                _somaticMockSicknessSamples = VaultNativeArray<SomaticMockSicknessSampleDTO>.Create(
+                _somaticMockSicknessSamples = VaultBufferView<SomaticMockSicknessSampleDTO>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticMockSickness,
                     SomaticMockSicknessSampleCapacity,
                     NativeArrayOptions.UninitializedMemory);
-                _somaticCsvScratch = VaultNativeArray<byte>.Create(
+                _somaticCsvScratch = VaultBufferView<byte>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticCsvScratch,
                     SomaticCsvScratchBytes,
@@ -384,7 +384,7 @@ namespace Hecton8.Gameplay
             }
             if (!_somaticKccStateMirror.IsCreated)
             {
-                _somaticKccStateMirror = VaultNativeArray<VRSomaticKinematicStateMirrorDTO>.Create(
+                _somaticKccStateMirror = VaultBufferView<VRSomaticKinematicStateMirrorDTO>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticKccStateMirror,
                     1,
@@ -392,7 +392,7 @@ namespace Hecton8.Gameplay
             }
             if (!_somaticRawRotation.IsCreated)
             {
-                _somaticRawRotation = VaultNativeArray<quaternion>.Create(
+                _somaticRawRotation = VaultBufferView<quaternion>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticRawRotation,
                     1,
@@ -400,7 +400,7 @@ namespace Hecton8.Gameplay
             }
             if (!_somaticHorizonWrite.IsCreated)
             {
-                _somaticHorizonWrite = VaultNativeArray<VRSomaticComfortDTO>.Create(
+                _somaticHorizonWrite = VaultBufferView<VRSomaticComfortDTO>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticHorizonWrite,
                     1,
@@ -408,7 +408,7 @@ namespace Hecton8.Gameplay
             }
             if (!_somaticHorizonRead.IsCreated)
             {
-                _somaticHorizonRead = VaultNativeArray<VRSomaticComfortDTO>.Create(
+                _somaticHorizonRead = VaultBufferView<VRSomaticComfortDTO>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticHorizonRead,
                     1,
@@ -416,7 +416,7 @@ namespace Hecton8.Gameplay
             }
             if (!_somaticHorizonTelemetry.IsCreated)
             {
-                _somaticHorizonTelemetry = VaultNativeArray<SomaticTelemetryEntry>.Create(
+                _somaticHorizonTelemetry = VaultBufferView<SomaticTelemetryEntry>.Create(
                     vault,
                     BufferID.ShinobuVRSomaticHorizonTelemetry,
                     BlackBoxFrameCapacity,
@@ -638,7 +638,7 @@ namespace Hecton8.Gameplay
                 ResolveCinematicBlendApprox(12f, safeDeltaTime)), runtimeComfortTarget01);
             int historyDepth = (int)math.lerp(2f, 8f, quality);
             int derivativeSampleStride = (int)math.max(1f, math.round(math.lerp(12f, 1f, quality)));
-            int frameIndex = Time.frameCount;
+            int frameIndex = SystemDispatcher.CurrentFrameIndex;
             uint historyFlags = history[0].Flags;
             bool derivativeSampleDue =
                 (historyFlags & SomaticHistoryValidFlag) == 0u ||

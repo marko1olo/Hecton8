@@ -1,6 +1,6 @@
-using Hecton8.AI;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Core.Contracts;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Mathematics;
@@ -20,7 +20,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Fake Radar Blip Controller")]
-    public sealed class FakeRadarBlipController : MonoBehaviour, IUpdatable, ILateFrameTickable, IRenderable, IScanEventListener, IGlobalRegistryHotSwapListener
+    public sealed class FakeRadarBlipController : MonoBehaviour, ILateFrameTickable, IRenderable, IScanEventListener, IGlobalRegistryHotSwapListener
     {
         private const int MaxBlips = 64;
         private const int HudInternalLayerIndex = 17;
@@ -60,13 +60,10 @@ namespace Hecton8.UI
         private static readonly int _FlickerFrequencyId = Shader.PropertyToID("_FlickerFrequency");
         private static readonly int _FlickerIntensityId = Shader.PropertyToID("_FlickerIntensity");
         private static readonly int _FillAlphaId = Shader.PropertyToID("_FillAlpha");
-        // COLD ALLOC: Vector2[16] — deterministic thermal ghost direction LUT — owner: FakeRadarBlipController
-        private static readonly Vector2[] s_thermalGhostDirections = CreateThermalGhostDirections();
-
         [SerializeField, Min(1f)] private float radarRangeMeters = DefaultRadarRangeMeters;
         [SerializeField, Min(1f)] private float radarRadiusPixels = DefaultRadarRadiusPixels;
         [SerializeField, Min(1f)] private float blipSizePixels = BlipSizePixels;
-        [SerializeField] private Vector2 radarCenterInsetPixels = new Vector2(DefaultRadarCenterInsetX, DefaultRadarCenterInsetY);
+        [SerializeField] private Vector2 radarCenterInsetPixels = DefaultRadarCenterInsetPixels();
         [SerializeField] private Shader radarBlipShader;
         [SerializeField] private Color blipColor = new Color(1f, 0.24f, 0.28f, 0.92f);
 
@@ -109,7 +106,7 @@ namespace Hecton8.UI
         private Vector3 _scheduledCameraRight;
         private Vector3 _scheduledCameraUp;
         private Vector2 _scheduledRadarCenter;
-        private float3 _lastRadarForwardBucket = new float3(0f, 0f, 1f);
+        private float3 _lastRadarForwardBucket = DefaultRadarForwardBucket();
         private float _scheduledRadarRadius;
         private float _scheduledWorldPerPixel;
         private int _visibleBlipMatrixCount;
@@ -118,6 +115,41 @@ namespace Hecton8.UI
         private bool _discardScheduledCullResult;
 
         public int DiscardedContactsWithoutAupCount => _discardedContactsWithoutAupCount;
+
+        private static Vector2 DefaultRadarCenterInsetPixels()
+        {
+            return MakeVector2(DefaultRadarCenterInsetX, DefaultRadarCenterInsetY);
+        }
+
+        private static float3 DefaultRadarForwardBucket()
+        {
+            return MakeFloat3(0f, 0f, 1f);
+        }
+
+        private static Vector2 MakeVector2(float x, float y)
+        {
+            Vector2 value = default;
+            value.x = x;
+            value.y = y;
+            return value;
+        }
+
+        private static float2 MakeFloat2(float x, float y)
+        {
+            float2 value = default;
+            value.x = x;
+            value.y = y;
+            return value;
+        }
+
+        private static float3 MakeFloat3(float x, float y, float z)
+        {
+            float3 value = default;
+            value.x = x;
+            value.y = y;
+            value.z = z;
+            return value;
+        }
 
         private static void IncrementCounterSaturated(ref int counter)
         {
@@ -162,7 +194,7 @@ namespace Hecton8.UI
             DisposeRuntimeResources();
         }
 
-        public void Tick(float deltaTime)
+        private void AdvanceRadarPresentation(float deltaTime)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             long tickStart = Stopwatch.GetTimestamp();
@@ -220,6 +252,8 @@ namespace Hecton8.UI
 
         public void LateFrameTick()
         {
+            AdvanceRadarPresentation(SystemDispatcher.CurrentFrameDeltaTime);
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             long tickStart = Stopwatch.GetTimestamp();
 #endif
@@ -352,16 +386,19 @@ namespace Hecton8.UI
             Vector3 cameraRight = cameraTransform.right;
             Vector3 cameraUp = cameraTransform.up;
             Vector3 planeCenter = cameraTransform.position + cameraForward * projectionDistance;
-            Vector2 radarCenter = new Vector2(
-                halfWidth - math.max(0f, radarCenterInsetPixels.x) * worldPerPixel,
-                -halfHeight + math.max(0f, radarCenterInsetPixels.y) * worldPerPixel);
+            Vector2 radarCenter = default;
+            radarCenter.x = halfWidth - math.max(0f, radarCenterInsetPixels.x) * worldPerPixel;
+            radarCenter.y = -halfHeight + math.max(0f, radarCenterInsetPixels.y) * worldPerPixel;
             float blipWorldSize = math.max(1f, blipSizePixels) * worldPerPixel;
             float blipHalfExtent = blipWorldSize * 0.5f;
             float radarRadiusWorld = radius * worldPerPixel;
-            float2 boundsMin = new float2(-halfWidth - blipHalfExtent, -halfHeight - blipHalfExtent);
-            float2 boundsMax = new float2(halfWidth + blipHalfExtent, halfHeight + blipHalfExtent);
+            float2 boundsMin = MakeFloat2(-halfWidth - blipHalfExtent, -halfHeight - blipHalfExtent);
+            float2 boundsMax = MakeFloat2(halfWidth + blipHalfExtent, halfHeight + blipHalfExtent);
             Quaternion planeRotation = cameraTransform.rotation;
-            Vector3 planeScale = new Vector3(blipWorldSize, blipWorldSize, 1f);
+            Vector3 planeScale = default;
+            planeScale.x = blipWorldSize;
+            planeScale.y = blipWorldSize;
+            planeScale.z = 1f;
             _scheduledPlaneCenter = planeCenter;
             _scheduledCameraRight = cameraRight;
             _scheduledCameraUp = cameraUp;
@@ -371,15 +408,15 @@ namespace Hecton8.UI
             _scheduledRadarRadius = radius;
             _scheduledWorldPerPixel = worldPerPixel;
             float3 radarForwardFlatF3 = ResolveRadarForwardBucket(cameraForward);
-            float3 radarRightFlatF3 = new float3(radarForwardFlatF3.z, 0f, -radarForwardFlatF3.x);
+            float3 radarRightFlatF3 = MakeFloat3(radarForwardFlatF3.z, 0f, -radarForwardFlatF3.x);
 
             int visibleCount = 0;
-            float2 radarCenter2 = new float2(radarCenter.x, radarCenter.y);
+            float2 radarCenter2 = MakeFloat2(radarCenter.x, radarCenter.y);
             float radarScale = invRange * radarRadiusWorld;
             for (int i = 0; i < hitCount && visibleCount < blipCapacity; i++)
             {
                 SpatialQueryHit hit = _queryHits[i];
-                if (!(hit.Owner is FaunaBrain brain) || !brain.isAggressive)
+                if (!(hit.Owner is IFaunaSpatialContact faunaContact) || !faunaContact.IsAggressiveContact)
                     continue;
 
                 if (!hit.HasAbsolutePosition)
@@ -389,8 +426,11 @@ namespace Hecton8.UI
                 }
 
                 AbsoluteUniversePosition hitAup = hit.AbsolutePosition;
-                float3 enemyDeltaAup = AbsoluteUniversePosition.ToCameraRelativeFloat3(in hitAup, in playerAup);
-                float2 flatDelta = new float2(
+                float3 enemyDeltaAup = AupPrecisionMath.LocalDeltaFloat3(
+                    hitAup.ToAbsoluteDouble3(),
+                    playerAup.ToAbsoluteDouble3(),
+                    float3.zero);
+                float2 flatDelta = MakeFloat2(
                     math.dot(enemyDeltaAup, radarRightFlatF3),
                     math.dot(enemyDeltaAup, radarForwardFlatF3));
 
@@ -507,17 +547,15 @@ namespace Hecton8.UI
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
+            if (playerContext != null &&
+                playerContext.TryGetMovementRuntimeState(out PlayerMovementRuntimeState movementState) &&
+                (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
             {
-                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
-                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
-                {
-                    playerAup = movementState.PredictedAup;
-                    return true;
-                }
+                playerAup = movementState.PredictedAup;
+                return true;
             }
 
-            IPlayerRuntimeContext playerContext = _cachedPlayerContext;
             HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
             if (playerMovement != null)
             {
@@ -544,10 +582,10 @@ namespace Hecton8.UI
                 _scheduledPlaneCenter +
                 _scheduledCameraRight * _scheduledRadarCenter.x +
                 _scheduledCameraUp * (_scheduledRadarCenter.y + lineY);
-            Vector3 lineScale = new Vector3(
-                radarRadiusWorld * 2f,
-                math.max(1f, WreckSignalDistortionThicknessPixels) * _scheduledWorldPerPixel * (0.65f + 0.95f * pulse01),
-                1f);
+            Vector3 lineScale = default;
+            lineScale.x = radarRadiusWorld * 2f;
+            lineScale.y = math.max(1f, WreckSignalDistortionThicknessPixels) * _scheduledWorldPerPixel * (0.65f + 0.95f * pulse01);
+            lineScale.z = 1f;
             AppendVisibleBlipMatrix(Matrix4x4.TRS(worldPosition, _scheduledPlaneRotation, lineScale), ref visibleCount);
         }
 
@@ -662,37 +700,31 @@ namespace Hecton8.UI
 
         private static Vector2 ResolveThermalGhostDirection(uint hash)
         {
-            return s_thermalGhostDirections[(int)((hash >> 8) & 0x0Fu)];
-        }
-
-        private static Vector2[] CreateThermalGhostDirections()
-        {
             const float Diagonal = 0.70710678f;
-            // COLD ALLOC: Vector2[16] — deterministic thermal ghost direction LUT backing store — owner: FakeRadarBlipController
-            return new Vector2[]
+            switch ((int)((hash >> 8) & 0x0Fu))
             {
-                new Vector2(0f, 1f),
-                new Vector2(Diagonal, Diagonal),
-                new Vector2(1f, 0f),
-                new Vector2(Diagonal, -Diagonal),
-                new Vector2(0f, -1f),
-                new Vector2(-Diagonal, -Diagonal),
-                new Vector2(-1f, 0f),
-                new Vector2(-Diagonal, Diagonal),
-                new Vector2(0.38268343f, 0.9238795f),
-                new Vector2(0.9238795f, 0.38268343f),
-                new Vector2(0.9238795f, -0.38268343f),
-                new Vector2(0.38268343f, -0.9238795f),
-                new Vector2(-0.38268343f, -0.9238795f),
-                new Vector2(-0.9238795f, -0.38268343f),
-                new Vector2(-0.9238795f, 0.38268343f),
-                new Vector2(-0.38268343f, 0.9238795f)
-            };
+                case 0: return MakeVector2(0f, 1f);
+                case 1: return MakeVector2(Diagonal, Diagonal);
+                case 2: return MakeVector2(1f, 0f);
+                case 3: return MakeVector2(Diagonal, -Diagonal);
+                case 4: return MakeVector2(0f, -1f);
+                case 5: return MakeVector2(-Diagonal, -Diagonal);
+                case 6: return MakeVector2(-1f, 0f);
+                case 7: return MakeVector2(-Diagonal, Diagonal);
+                case 8: return MakeVector2(0.38268343f, 0.9238795f);
+                case 9: return MakeVector2(0.9238795f, 0.38268343f);
+                case 10: return MakeVector2(0.9238795f, -0.38268343f);
+                case 11: return MakeVector2(0.38268343f, -0.9238795f);
+                case 12: return MakeVector2(-0.38268343f, -0.9238795f);
+                case 13: return MakeVector2(-0.9238795f, -0.38268343f);
+                case 14: return MakeVector2(-0.9238795f, 0.38268343f);
+                default: return MakeVector2(-0.38268343f, 0.9238795f);
+            }
         }
 
         private float3 ResolveRadarForwardBucket(Vector3 cameraForward)
         {
-            float3 flatForward = new float3(cameraForward.x, 0f, cameraForward.z);
+            float3 flatForward = MakeFloat3(cameraForward.x, 0f, cameraForward.z);
             if (math.lengthsq(flatForward) <= 0.0001f)
                 return _lastRadarForwardBucket;
 
@@ -703,11 +735,11 @@ namespace Hecton8.UI
             float signZ = flatForward.z < 0f ? -1f : 1f;
             float3 bucket;
             if (absX > absZ * 2f)
-                bucket = new float3(signX, 0f, 0f);
+                bucket = MakeFloat3(signX, 0f, 0f);
             else if (absZ > absX * 2f)
-                bucket = new float3(0f, 0f, signZ);
+                bucket = MakeFloat3(0f, 0f, signZ);
             else
-                bucket = new float3(signX * Diagonal, 0f, signZ * Diagonal);
+                bucket = MakeFloat3(signX * Diagonal, 0f, signZ * Diagonal);
 
             _lastRadarForwardBucket = bucket;
             return bucket;
@@ -965,9 +997,6 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            if (!_registered)
-                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
-
             if (!_registeredLateFrame)
                 _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
 
@@ -995,12 +1024,6 @@ namespace Hecton8.UI
 
         private void TryUnregister()
         {
-            if (_registered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registered = false;
-            }
-
             if (_registeredLateFrame)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
