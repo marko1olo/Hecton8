@@ -711,7 +711,8 @@ namespace Hecton8.Habitat.Deformation
                     Flags = (byte)(collapsedNow ? 1 : 0),
                     SourceId = (ushort)(StructuralIntegrityConstants.AgentHash & 0xFFFFu)
                 };
-                SignalBus<BaseIntegrityEventPayload>.TryEnqueueBounded(IntegrityEvents, IntegrityEventsBudget, evt);
+                if (!SignalBus<BaseIntegrityEventPayload>.TryEnqueueBounded(IntegrityEvents, IntegrityEventsBudget, evt))
+                    flags |= StructuralIntegrityConstants.StateFlagSignalDrop;
             }
 
             if (stress >= 0.95f && (flags & StructuralIntegrityConstants.StateFlagLeakEmitted) == 0)
@@ -740,8 +741,10 @@ namespace Hecton8.Habitat.Deformation
                     StressIndex = (byte)math.min(255, index),
                     QualityTier = ResolveSignalQualityByte(tuning.GlobalQualityWeight)
                 };
-                SignalBus<FluidIncursionSignal>.TryEnqueueBounded(FluidEvents, FluidEventsBudget, flood);
-                SignalBus<BaseModuleCompromisedSignal>.TryEnqueueBounded(CompromisedEvents, CompromisedEventsBudget, compromised);
+                if (!SignalBus<FluidIncursionSignal>.TryEnqueueBounded(FluidEvents, FluidEventsBudget, flood))
+                    flags |= StructuralIntegrityConstants.StateFlagSignalDrop;
+                if (!SignalBus<BaseModuleCompromisedSignal>.TryEnqueueBounded(CompromisedEvents, CompromisedEventsBudget, compromised))
+                    flags |= StructuralIntegrityConstants.StateFlagSignalDrop;
             }
 
             state.Flags = flags;
@@ -894,6 +897,8 @@ namespace Hecton8.Habitat.Deformation
                     flags |= StructuralIntegrityConstants.TelemetryFlagNonFinite;
                 if ((state.Flags & StructuralIntegrityConstants.StateFlagCollapsed) != 0)
                     collapsedCount++;
+                if ((state.Flags & StructuralIntegrityConstants.StateFlagSignalDrop) != 0)
+                    flags |= StructuralIntegrityConstants.TelemetryFlagSignalDrop;
                 if (stress >= 0.8f)
                     criticalCount++;
                 if (stress > maxStress)

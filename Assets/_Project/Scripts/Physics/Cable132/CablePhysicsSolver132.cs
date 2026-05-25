@@ -53,6 +53,7 @@ namespace Hecton8.Physics
         public const uint ConstraintFault = 1u << 2;
         public const uint NetcodeFence = 1u << 3;
         public const uint TetherTensionEvent = 1u << 16;
+        public const uint SignalDrop = 1u << 17;
     }
 
     public struct CableSplineUploadTicket132
@@ -1322,8 +1323,13 @@ namespace Hecton8.Physics
 
             if (PhysicsEvents.IsCreated && constraintIndex < PhysicsEvents.Length)
                 PhysicsEvents[constraintIndex] = payload;
-            if (PhysicsEventWriterEnabled != 0)
-                SignalBus<PhysicsEventPayload>.TryEnqueueBounded(PhysicsEventWriter, PhysicsEventWriterBudget, payload);
+            if (PhysicsEventWriterEnabled != 0 &&
+                !SignalBus<PhysicsEventPayload>.TryEnqueueBounded(PhysicsEventWriter, PhysicsEventWriterBudget, payload))
+            {
+                payload.StatusBits |= CableNodeFlags132.SignalDrop;
+                if (PhysicsEvents.IsCreated && constraintIndex < PhysicsEvents.Length)
+                    PhysicsEvents[constraintIndex] = payload;
+            }
         }
 
         private static bool ClampAupDelta(ref double3 delta)

@@ -46,12 +46,14 @@ namespace Hecton8.Physics.Vehicles
         public const uint TankFlagBlowing = 1u << 1;
         public const uint TankFlagInitialized = 1u << 2;
         public const uint TankFlagPressureBlocked = 1u << 3;
+        public const uint TankFlagSignalDrop = 1u << 4;
         public const uint TankFlagNonFinite = 1u << 31;
         public const uint SampleFlagMockFluid = 1u << 0;
         public const uint ForceFlagValid = 1u << 0;
         public const uint ForceFlagPressureBlocked = 1u << 1;
         public const uint ForceFlagMockFluid = 1u << 2;
         public const uint ForceFlagTimingProxy = 1u << 3;
+        public const uint ForceFlagSignalDrop = 1u << 4;
         public const uint ForceFlagNonFinite = 1u << 31;
         public const byte MovementModePneumaticHiss = 13;
     }
@@ -539,7 +541,11 @@ namespace Hecton8.Physics.Vehicles
                 signal.LocomotionMode = SubmarineBallastConstants.MovementModePneumaticHiss;
                 signal.SurfaceMode = (byte)math.clamp(index, 0, 255);
                 signal.Flags = 1;
-                SignalBus<MovementAcousticSignal>.TryEnqueueBounded(AcousticWriter, AcousticWriterBudget, signal);
+                if (!SignalBus<MovementAcousticSignal>.TryEnqueueBounded(AcousticWriter, AcousticWriterBudget, signal))
+                {
+                    flags |= SubmarineBallastConstants.TankFlagSignalDrop;
+                    tank.InputStateFlags = flags;
+                }
             }
         }
 
@@ -609,6 +615,7 @@ namespace Hecton8.Physics.Vehicles
                 totalWaterLiters += waterLiters;
                 totalAirMassKg += airVolumeM3 * SubmarineBallastConstants.AirDensityKgPerM3AtOneAtm * airPressure;
                 flags |= math.select(0u, SubmarineBallastConstants.ForceFlagPressureBlocked, (tank.InputStateFlags & SubmarineBallastConstants.TankFlagPressureBlocked) != 0u);
+                flags |= math.select(0u, SubmarineBallastConstants.ForceFlagSignalDrop, (tank.InputStateFlags & SubmarineBallastConstants.TankFlagSignalDrop) != 0u);
                 flags |= math.select(0u, SubmarineBallastConstants.ForceFlagNonFinite, (tank.InputStateFlags & SubmarineBallastConstants.TankFlagNonFinite) != 0u);
             }
 

@@ -649,7 +649,7 @@ namespace Hecton8.Interaction
                 return;
             }
 
-            if (!itemData.TryWriteInteractText(Hecton8.Core.GlobalRegistry.Localization, _cachedInteractTextBuffer, out _cachedInteractTextLength))
+            if (!itemData.TryWriteInteractText(Hecton8.Core.GlobalRegistry.LocalizationText, _cachedInteractTextBuffer, out _cachedInteractTextLength))
                 _cachedInteractTextLength = CopySpanToInteractBuffer(itemData.GetInteractText().AsSpan());
         }
 

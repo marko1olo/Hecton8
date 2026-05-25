@@ -77,15 +77,15 @@ namespace Hecton8.Gameplay
             switch (type)
             {
                 case HazardType.Radiation:
-                    return ResolveLocalized(LocalizationKeys.HAZARD_RADIATION_ENTER, MsgRadiationEnter);
+                    return ResolveLocalizedSpan(LocalizationKeys.HAZARD_RADIATION_ENTER, MsgRadiationEnter);
                 case HazardType.Heat:
-                    return ResolveLocalized(LocalizationKeys.HAZARD_HEAT_ENTER, MsgHeatEnter);
+                    return ResolveLocalizedSpan(LocalizationKeys.HAZARD_HEAT_ENTER, MsgHeatEnter);
                 case HazardType.Toxicity:
-                    return ResolveLocalized(LocalizationKeys.HAZARD_TOXICITY_ENTER, MsgToxicityEnter);
+                    return ResolveLocalizedSpan(LocalizationKeys.HAZARD_TOXICITY_ENTER, MsgToxicityEnter);
                 case HazardType.Biohazard:
-                    return ResolveLocalized(LocalizationKeys.HAZARD_BIOHAZARD_ENTER, MsgBiohazardEnter);
+                    return ResolveLocalizedSpan(LocalizationKeys.HAZARD_BIOHAZARD_ENTER, MsgBiohazardEnter);
                 default:
-                    return ResolveLocalized(LocalizationKeys.HAZARD_BIOHAZARD_ENTER, MsgBiohazardEnter);
+                    return ResolveLocalizedSpan(LocalizationKeys.HAZARD_BIOHAZARD_ENTER, MsgBiohazardEnter);
             }
         }
 
@@ -94,19 +94,19 @@ namespace Hecton8.Gameplay
             switch (type)
             {
                 case HazardType.Radiation:
-                    return ResolveLocalized(LocalizationKeys.HAZARD_RADIATION_EXIT, MsgRadiationExit);
+                    return ResolveLocalizedSpan(LocalizationKeys.HAZARD_RADIATION_EXIT, MsgRadiationExit);
                 case HazardType.Heat:
-                    return ResolveLocalized(LocalizationKeys.HAZARD_HEAT_EXIT, MsgHeatExit);
+                    return ResolveLocalizedSpan(LocalizationKeys.HAZARD_HEAT_EXIT, MsgHeatExit);
                 case HazardType.Toxicity:
-                    return ResolveLocalized(LocalizationKeys.HAZARD_TOXICITY_EXIT, MsgToxicityExit);
+                    return ResolveLocalizedSpan(LocalizationKeys.HAZARD_TOXICITY_EXIT, MsgToxicityExit);
                 case HazardType.Biohazard:
-                    return ResolveLocalized(LocalizationKeys.HAZARD_BIOHAZARD_EXIT, MsgBiohazardExit);
+                    return ResolveLocalizedSpan(LocalizationKeys.HAZARD_BIOHAZARD_EXIT, MsgBiohazardExit);
                 default:
-                    return ResolveLocalized(LocalizationKeys.HAZARD_BIOHAZARD_EXIT, MsgBiohazardExit);
+                    return ResolveLocalizedSpan(LocalizationKeys.HAZARD_BIOHAZARD_EXIT, MsgBiohazardExit);
             }
         }
 
-        private static ReadOnlySpan<char> ResolveLocalized(string key, string fallback)
+        private static ReadOnlySpan<char> ResolveLocalizedSpan(string key, string fallback)
         {
             ILocalizationTextReadModel localization = GlobalRegistry.LocalizationText;
             return localization != null

@@ -1100,3 +1100,12 @@ Cinematic Cheats used: Fail-closed stale/no-volume presentation is preferred ove
 Exact Microseconds saved: 0 us measured. Static impact: fresh runtime generation now uses cached `HectonVoxelVolume` components for mesh and collider publication instead of null-volume fallback branches.
 Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. `mesh_publication_component_cache_present` now requires the prebind helper and both generated-volume call sites.
 Build: Guarded loop checked 6 times after diff-check. CPU sampled 90%, 77%, 100%, 85%, 100%, and 76%, with zero active compiler/build processes. Build was not launched because all CPU samples were above the 50% project threshold.
+
+## 2026-05-25 Carve Debug Tier Adapter Removal
+
+What was wrong: `VoxelDeltaProcessor` runtime cadence used `GlobalQualityWeight`, but the debug method and `VoxelDeformationSmokeTester` still depended on `HectonQualityTier` values and source-string tier cases.
+What was done: Changed `DebugResolveQueuedCarveDrainBudget` to accept `float qualityWeight01`, removed `ResolveQualityWeightFromTier`, and updated the smoke tester to validate monotonic continuous budgets instead of tier cases.
+Cinematic Cheats used: None; this is quality-authority proof cleanup. Dear Lie still masks low-tier carve backlog dwell while continuous cadence drains within fixed queues.
+Exact Microseconds saved: 0 us measured. Static impact: the test suite no longer enforces a binary carve cadence route.
+Verification: OOP scanner reports `PASS_STATIC_WITH_BUDGETED_UNITY_MESH_UPLOAD_RESIDUAL`, failed_gates=none. `queued_drain_continuous_quality_scaled` now rejects the old tier adapter and tier-debug signature.
+Build: Pending CPU/process gate.

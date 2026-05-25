@@ -2,6 +2,7 @@ namespace Hecton8.Items
 {
     using System;
     using Hecton.Localization;
+    using Hecton8.Core;
     using Hecton8.Inventory;
     using Hecton8.Physics;
     using UnityEngine;
@@ -389,13 +390,13 @@ namespace Hecton8.Items
         /// <summary>
         /// Returns the cached interaction prompt through a cached localization owner.
         /// </summary>
-        public string GetInteractText(LocalizationManager manager)
+        public string GetInteractText(ILocalizationTextReadModel manager)
         {
             EnsureLocalizedCache(manager);
             return _cachedItemName;
         }
 
-        public bool TryWriteInteractText(LocalizationManager manager, Span<char> destination, out int length)
+        public bool TryWriteInteractText(ILocalizationTextReadModel manager, Span<char> destination, out int length)
         {
             length = 0;
             ReadOnlySpan<char> itemNameSpan = localizedItemName.ResolveSpanOrFallback(
@@ -417,7 +418,7 @@ namespace Hecton8.Items
         /// <summary>
         /// Returns the localized item name through a cached localization owner.
         /// </summary>
-        public string GetItemName(LocalizationManager manager)
+        public string GetItemName(ILocalizationTextReadModel manager)
         {
             EnsureLocalizedCache(manager);
             return _cachedItemName;
@@ -426,7 +427,7 @@ namespace Hecton8.Items
         /// <summary>
         /// Returns the localized description through a cached localization owner.
         /// </summary>
-        public string GetDescription(LocalizationManager manager)
+        public string GetDescription(ILocalizationTextReadModel manager)
         {
             EnsureLocalizedCache(manager);
             return _cachedDescription;
@@ -435,7 +436,7 @@ namespace Hecton8.Items
         /// <summary>
         /// Returns the localized description as a span for caller-owned UI buffers.
         /// </summary>
-        public ReadOnlySpan<char> GetDescriptionSpan(LocalizationManager manager)
+        public ReadOnlySpan<char> GetDescriptionSpan(ILocalizationTextReadModel manager)
         {
             return localizedDescription.ResolveSpanOrFallback(manager, legacyDescription);
         }
@@ -443,7 +444,7 @@ namespace Hecton8.Items
         /// <summary>
         /// Returns the localized interaction verb through a cached localization owner.
         /// </summary>
-        public string GetInteractVerb(LocalizationManager manager)
+        public string GetInteractVerb(ILocalizationTextReadModel manager)
         {
             EnsureLocalizedCache(manager);
             return _cachedInteractVerb;
@@ -451,13 +452,13 @@ namespace Hecton8.Items
 
         private void EnsureLocalizedCache()
         {
-            LocalizationManager manager = LocalizationManager.ActiveRuntimeInstance;
+            ILocalizationTextReadModel manager = Hecton8.Core.GlobalRegistry.LocalizationText;
             EnsureLocalizedCache(manager);
         }
 
-        private void EnsureLocalizedCache(LocalizationManager manager)
+        private void EnsureLocalizedCache(ILocalizationTextReadModel manager)
         {
-            GameLanguage language = manager != null ? manager.CurrentLanguage : GameLanguage.English;
+            GameLanguage language = manager != null ? (GameLanguage)manager.ActiveLanguageId : GameLanguage.English;
 
             if (_cachedLanguage == language &&
                 !string.IsNullOrEmpty(_cachedItemName))
@@ -509,7 +510,7 @@ namespace Hecton8.Items
         private static string ResolveLegacyFallback(
             LocalizedTextReference reference,
             GameLanguage language,
-            LocalizationManager manager,
+            ILocalizationTextReadModel manager,
             string legacyFallback,
             string hardFallback)
         {

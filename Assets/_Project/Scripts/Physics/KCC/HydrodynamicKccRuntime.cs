@@ -674,10 +674,13 @@ namespace Hecton8.Physics.KCC
 
         public void Execute(int index)
         {
-            TryEnqueueBounded(
+            if (!TryEnqueueBounded(
                 InputWriter,
                 InputWriterBudget,
-                GenerateMockMovementInputJob.BuildInput(index, AnchorAup, Tuning, SimulationFrame, SectorHash, SimulationTickDelta));
+                GenerateMockMovementInputJob.BuildInput(index, AnchorAup, Tuning, SimulationFrame, SectorHash, SimulationTickDelta)))
+            {
+                return;
+            }
         }
 
         private static unsafe bool TryEnqueueBounded(
@@ -2250,6 +2253,7 @@ namespace Hecton8.Physics.KCC
     public struct EmitWakeSignalsJob : IJobParallelFor
     {
         [ReadOnly, NoAlias] public NativeArray<HydrodynamicWakePacketDTO> WakePackets;
+        [NativeDisableParallelForRestriction, NoAlias] public NativeArray<HydrodynamicKccFaultFlagDTO> FaultFlags;
         // SAFETY_JUSTIFICATION_PARAGRAPH_1:
         // SignalBus owns this queue lane; the job is a producer only and the returned handle fences any drain.
         // Unity's container safety cannot encode that external queue ownership on the ParallelWriter field.
@@ -2279,7 +2283,18 @@ namespace Hecton8.Physics.KCC
                 Velocity = direction * magnitude,
                 SourceFlags = HydrodynamicKccMath.PackWakeSourceFlags(HydrodynamicKccMath.WakeSourcePlayer, magnitude, radius)
             };
-            SignalBus<WakeGeneratedSignal>.TryEnqueueBounded(WakeWriter, WakeWriterBudget, signal);
+            if (!SignalBus<WakeGeneratedSignal>.TryEnqueueBounded(WakeWriter, WakeWriterBudget, signal))
+                MarkSignalDrop(index);
+        }
+
+        private void MarkSignalDrop(int index)
+        {
+            if (!FaultFlags.IsCreated || (uint)index >= (uint)FaultFlags.Length)
+                return;
+
+            HydrodynamicKccFaultFlagDTO entry = FaultFlags[index];
+            entry.FaultMask |= (int)HydrodynamicKccMath.FlagSignalDrop;
+            FaultFlags[index] = entry;
         }
     }
 
@@ -3218,6 +3233,7 @@ namespace Hecton8.Physics.KCC
             JobHandle wakeHandle = new EmitWakeSignalsJob
             {
                 WakePackets = wakePackets,
+                FaultFlags = faults,
                 WakeWriter = SignalBus<WakeGeneratedSignal>.ParallelWriter,
                 WakeWriterBudget = SignalBus<WakeGeneratedSignal>.ParallelWriterBudget
             }.Schedule(capacity, 32, resolutionHandle);
