@@ -375,12 +375,8 @@ namespace Hecton8.UI
             if (!_registeredPdaEvents)
                 RefreshVisibility();
 
-            if (_pendingSelectHash != 0u)
-            {
-                uint hash = _pendingSelectHash;
-                _pendingSelectHash = 0u;
-                BeginEntry(hash);
-            }
+            // Entry selection rebuilds title/body/meta TMP buffers. Keep Tick as a
+            // signal drain only; VISUAL_SYNC consumes the pending selection.
         }
 
         public void LateFrameTick()
@@ -399,6 +395,13 @@ namespace Hecton8.UI
                 TryColdBootstrap();
                 if (!_vaultReady)
                     return;
+            }
+
+            if (_pendingSelectHash != 0u)
+            {
+                uint hash = _pendingSelectHash;
+                _pendingSelectHash = 0u;
+                BeginEntry(hash);
             }
 
             if (_needsEntryReload)

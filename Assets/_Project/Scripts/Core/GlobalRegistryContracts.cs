@@ -2644,6 +2644,43 @@ namespace Hecton8.Core
         bool TryResolveMadnessWhisperPreview(int sourceTokenHash, int cycle, char[] destination, out int length);
     }
 
+    public static class LocalizationMadnessHash
+    {
+        public static int ComputeSourceTokenHash(ReadOnlySpan<char> sourceToken)
+        {
+            unchecked
+            {
+                ReadOnlySpan<char> token = sourceToken.Length == 0 ? "<null>".AsSpan() : sourceToken;
+                int hash = 17;
+                for (int i = 0; i < token.Length; i++)
+                    hash = (hash * 31) + token[i];
+
+                return hash;
+            }
+        }
+
+        public static int ComputeSourceTokenHash(
+            ReadOnlySpan<char> prefix,
+            ReadOnlySpan<char> separator,
+            ReadOnlySpan<char> suffix)
+        {
+            unchecked
+            {
+                int hash = 17;
+                AppendTokenHash(prefix, ref hash);
+                AppendTokenHash(separator, ref hash);
+                AppendTokenHash(suffix, ref hash);
+                return hash;
+            }
+        }
+
+        private static void AppendTokenHash(ReadOnlySpan<char> value, ref int hash)
+        {
+            for (int i = 0; i < value.Length; i++)
+                hash = (hash * 31) + value[i];
+        }
+    }
+
     public interface ILocalizationStressHudRefreshSink
     {
         void RefreshHullStressHudCorruptionVisuals();

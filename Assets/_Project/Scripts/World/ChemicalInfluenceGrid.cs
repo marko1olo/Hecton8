@@ -279,6 +279,7 @@ namespace Hecton8.World
         private bool _buffersReady;
         private bool _gridHasOrigin;
         private bool _hasScheduledWork;
+        private bool _pendingDuplicateDestroy;
         private bool _scheduledSwapAfterFinalize;
         private bool _scheduledBuffersLocked;
         private JobHandle _scheduledHandle;
@@ -763,6 +764,16 @@ namespace Hecton8.World
 
         public void LateFrameTick()
         {
+            if (_pendingDuplicateDestroy)
+            {
+                _pendingDuplicateDestroy = false;
+                if (_activeRuntimeInstance != this)
+                {
+                    Destroy(gameObject);
+                    return;
+                }
+            }
+
             TryFinalizeScheduledWork();
         }
 
@@ -770,7 +781,7 @@ namespace Hecton8.World
         {
             if (_activeRuntimeInstance != null && _activeRuntimeInstance != this)
             {
-                Destroy(gameObject);
+                _pendingDuplicateDestroy = true;
                 return;
             }
 

@@ -21,7 +21,7 @@ namespace Hecton8.UI
     /// Prevents broken bootstrap appearance by maintaining visual continuity during async operations.
     /// </summary>
     [RequireComponent(typeof(CanvasGroup))]
-    public sealed class LoadingScreenController : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
+    public sealed class LoadingScreenController : MonoBehaviour, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener
     {
         private enum VisibilityState
         {
@@ -395,7 +395,7 @@ namespace Hecton8.UI
             return charsWritten;
         }
 
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
             float unscaledDeltaTime = GetUnscaledDeltaTime();
             if (unscaledDeltaTime <= 0f)
@@ -513,7 +513,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _registeredToTickManager = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private bool TryRegisterRuntime()
@@ -547,7 +547,7 @@ namespace Hecton8.UI
             if (!_registeredToTickManager)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _registeredToTickManager = false;
         }
 

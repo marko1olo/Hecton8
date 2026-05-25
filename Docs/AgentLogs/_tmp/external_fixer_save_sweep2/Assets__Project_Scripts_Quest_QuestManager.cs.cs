@@ -1,0 +1,814 @@
+using System;
+using System.Collections.Generic;
+using Hecton.Localization;
+using Hecton8.Core;
+using Hecton8.SaveSystem;
+using Hecton8.UI;
+using Unity.Collections;
+using Unity.Mathematics;
+using UnityEngine;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
+namespace Hecton8.Quest
+{
+    [DisallowMultipleComponent]
+    [DefaultExecutionOrder(-130)]
+    public sealed class QuestManager : MonoBehaviour, ISaveable, IQuestSystem, IGlobalRegistryHotSwapListener
+    {
+        [Header("Quest Registry")]
+        [Tooltip("All authored quest assets assigned to this runtime owner.")]
+        [SerializeField] private QuestData[] allQuests = Array.Empty<QuestData>();
+
+        private const string QuestFolder = "Assets/_Project/Data/Lore/Quests";
+        private const string ObjectiveCompletedPrefix = "OBJECTIVE COMPLETED: ";
+        private const string ObjectiveRestoredPrefix = "OBJECTIVE RESTORED: ";
+        private const string ObjectiveNewPrefix = "NEW OBJECTIVE: ";
+        private const string UnknownObjectiveLabel = "UNKNOWN OBJECTIVE";
+        private const int QuestNotificationMessageCapacity = 192;
+        private const int QuestNotificationTitleCapacity = 128;
+        private const float DepthTierTwoMeters = 100f;
+        private const float DepthTierThreeMeters = 300f;
+        private const float DepthTierFourMeters = 1000f;
+
+        private static uint[] s_stagedLoadedPackedState;
+        private static QuestSaveHeader s_stagedLoadedQuestHeader;
+
+        internal static QuestManager ActiveRuntimeInstance { get; private set; }
+
+        // COLD ALLOC: Dictionary<uint,QuestData>[64] - authored quest lookup by stable FNV quest hash - owner: QuestManager
+        private readonly Dictionary<uint, QuestData> _questHashLookup = new Dictionary<uint, QuestData>(64);
+
+        private QuestStateManager _stateManager;
+        private QuestGraphEvaluator _graphEvaluator;
+        private bool _loadedFromSave;
+        private bool _hasLookupAmbiguity;
+        private bool _serviceRegistered;
+        private ISaveService _registeredSaveService;
+        private bool _hotSwapRegistered;
+        private uint[] _questCompletedNotificationHashes = Array.Empty<uint>();
+        private uint[] _questRestoredNotificationHashes = Array.Empty<uint>();
+        private uint[] _questNewNotificationHashes = Array.Empty<uint>();
+        private readonly char[] _questNotificationMessageBuffer = new char[QuestNotificationMessageCapacity];
+        private readonly char[] _questNotificationTitleBuffer = new char[QuestNotificationTitleCapacity];
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_stagedLoadedPackedState = null;
+            s_stagedLoadedQuestHeader = default;
+            ActiveRuntimeInstance = null;
+        }
+
+        public int SavePriority => 7;
+
+        public int LoadPriority => 7;
+
+        internal int PackedStateWordCount => _stateManager != null ? _stateManager.WordCount : 0;
+
+        /// <summary>
+        /// True once the quest runtime owner is registered in the global registry.
+        /// </summary>
+        public bool IsInitialized => ReferenceEquals(GlobalRegistry.QuestSystem, this) &&
+                                     ReferenceEquals(GlobalRegistry.Quest, this);
+
+        private void Awake()
+        {
+            BuildLookup();
+            InitializeStateGraph();
+        }
+
+        private void OnEnable()
+        {
+            QuestManager registeredQuest = GlobalRegistry.Quest;
+            if (registeredQuest != null && registeredQuest != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            ActiveRuntimeInstance = this;
+            GlobalRegistry.RegisterQuestRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.Quest, this);
+
+            TryRegisterHotSwapListener();
+            BindSaveService(Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance);
+            _graphEvaluator?.Bind();
+        }
+
+        private void OnDisable()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
+            _graphEvaluator?.Unbind();
+
+            TryUnregisterHotSwapListener();
+            BindSaveService(null);
+
+            if (_serviceRegistered)
+            {
+                GlobalRegistry.UnregisterQuestRuntime(this);
+                _serviceRegistered = false;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
+            TryUnregisterHotSwapListener();
+            BindSaveService(null);
+
+            _graphEvaluator?.Dispose();
+            _graphEvaluator = null;
+
+            if (_stateManager != null)
+            {
+                _stateManager.Dispose();
+                _stateManager = null;
+            }
+
+            if (_serviceRegistered)
+            {
+                GlobalRegistry.UnregisterQuestRuntime(this);
+                _serviceRegistered = false;
+            }
+        }
+
+        private void Start()
+        {
+            if (_loadedFromSave || _stateManager == null)
+                return;
+
+            _stateManager.ApplyAutoActivationFlags(allQuests);
+            FlushRuntimeResults();
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Save)
+                BindSaveService(currentService as ISaveService);
+        }
+
+        private void BindSaveService(ISaveService saveService)
+        {
+            if (ReferenceEquals(_registeredSaveService, saveService))
+                return;
+
+            _registeredSaveService?.Unregister(this);
+            _registeredSaveService = saveService;
+            _registeredSaveService?.Register(this);
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            TryAutoPopulateQuestRegistry();
+            BuildLookup();
+        }
+#endif
+
+        public void ActivateQuest(string questId)
+        {
+            if (!TryResolveQuestHash(questId, logUnknownQuest: true, out uint questHash, out _))
+                return;
+
+            ActivateQuest(questHash);
+        }
+
+        public void ActivateQuest(uint questHash)
+        {
+            if (questHash == 0u || _stateManager == null || !_stateManager.TryActivateQuest(questHash, out int questIndex))
+                return;
+
+            _stateManager.RecordManualTransition(questIndex, completed: false);
+            EmitQuestTransition(questIndex, completed: false, QuestTransitionType.Activate);
+        }
+
+        public void CompleteQuest(string questId)
+        {
+            if (!TryResolveQuestHash(questId, logUnknownQuest: true, out uint questHash, out _))
+                return;
+
+            CompleteQuest(questHash);
+        }
+
+        public void CompleteQuest(uint questHash)
+        {
+            if (questHash == 0u || _stateManager == null || !_stateManager.TryCompleteQuest(questHash, out int questIndex))
+                return;
+
+            _stateManager.RecordManualTransition(questIndex, completed: true);
+            EmitQuestTransition(questIndex, completed: true, QuestTransitionType.Complete);
+        }
+
+        public bool IsActive(string questId)
+        {
+            return TryResolveQuestHash(questId, logUnknownQuest: false, out uint questHash, out _) &&
+                   _stateManager != null &&
+                   _stateManager.IsQuestActive(questHash);
+        }
+
+        public bool IsActive(uint questHash)
+        {
+            return questHash != 0u &&
+                   _stateManager != null &&
+                   _stateManager.IsQuestActive(questHash);
+        }
+
+        public bool IsCompleted(string questId)
+        {
+            return TryResolveQuestHash(questId, logUnknownQuest: false, out uint questHash, out _) &&
+                   _stateManager != null &&
+                   _stateManager.IsQuestCompleted(questHash);
+        }
+
+        public bool IsCompleted(uint questHash)
+        {
+            return questHash != 0u &&
+                   _stateManager != null &&
+                   _stateManager.IsQuestCompleted(questHash);
+        }
+
+        public bool GetFlag(uint flagId)
+        {
+            return flagId != 0u &&
+                   _stateManager != null &&
+                   _stateManager.GetFlag(flagId);
+        }
+
+        public void UpdateDepth(float depthMeters)
+        {
+            _graphEvaluator?.UpdateDepth(depthMeters);
+        }
+
+        public void UpdateDepthContext(float depthMeters, uint zoneHash, bool isThermalZone)
+        {
+            _graphEvaluator?.UpdateDepthContext(depthMeters, zoneHash, isThermalZone);
+        }
+
+        internal int CopyActiveQuestHashes(uint[] destination)
+        {
+            return _stateManager != null
+                ? _stateManager.CopyActiveQuestHashes(destination)
+                : 0;
+        }
+
+        public bool TryGetQuestIdByHash(uint questHash, out string questId)
+        {
+            questId = string.Empty;
+            if (questHash == 0u)
+                return false;
+
+            if (_questHashLookup.Count == 0 && allQuests != null && allQuests.Length > 0)
+                BuildLookup();
+
+            if (!_questHashLookup.TryGetValue(questHash, out QuestData questData) || questData == null || string.IsNullOrWhiteSpace(questData.questId))
+                return false;
+
+            questId = questData.questId;
+            return true;
+        }
+
+        internal bool TryGetQuestDataByHash(uint questHash, out QuestData questData)
+        {
+            questData = null;
+            if (questHash == 0u)
+                return false;
+
+            if (_questHashLookup.Count == 0 && allQuests != null && allQuests.Length > 0)
+                BuildLookup();
+
+            return _questHashLookup.TryGetValue(questHash, out questData) && questData != null;
+        }
+
+        internal bool TryGetQuestPresentation(
+            uint questHash,
+            out string title,
+            out string description,
+            out uint markerTargetHash,
+            out Vector3 markerWorldPosition,
+            out float markerHeightOffset)
+        {
+            title = string.Empty;
+            description = string.Empty;
+            markerTargetHash = 0u;
+            markerWorldPosition = default;
+            markerHeightOffset = 0f;
+
+            if (_stateManager != null &&
+                _stateManager.TryGetQuestPresentation(
+                    questHash,
+                    out title,
+                    out description,
+                    out markerTargetHash,
+                    out markerWorldPosition,
+                    out markerHeightOffset))
+            {
+                if (string.IsNullOrWhiteSpace(title) &&
+                    TryGetQuestDataByHash(questHash, out QuestData stateQuestData) &&
+                    stateQuestData != null)
+                {
+                    title = stateQuestData.DisplayTitleOrFallback;
+                    description = stateQuestData.DescriptionOrFallback;
+                }
+
+                return true;
+            }
+
+            if (!TryGetQuestDataByHash(questHash, out QuestData questData) || questData == null)
+                return false;
+
+            title = questData.DisplayTitleOrFallback;
+            description = questData.DescriptionOrFallback;
+            markerTargetHash = 0u;
+            markerWorldPosition = questData.markerWorldPosition;
+            markerHeightOffset = math.max(0f, questData.markerHeightOffset);
+            return true;
+        }
+
+        public bool TryCopyQuestPresentation(
+            uint questHash,
+            char[] titleDestination,
+            out int titleLength,
+            char[] descriptionDestination,
+            out int descriptionLength,
+            out uint markerTargetHash,
+            out Vector3 markerWorldPosition,
+            out float markerHeightOffset)
+        {
+            titleLength = 0;
+            descriptionLength = 0;
+            markerTargetHash = 0u;
+            markerWorldPosition = default;
+            markerHeightOffset = 0f;
+
+            if (_stateManager != null &&
+                _stateManager.TryCopyQuestPresentation(
+                    questHash,
+                    titleDestination,
+                    out titleLength,
+                    descriptionDestination,
+                    out descriptionLength,
+                    out markerTargetHash,
+                    out markerWorldPosition,
+                    out markerHeightOffset))
+            {
+                return true;
+            }
+
+            if (!TryGetQuestDataByHash(questHash, out QuestData questData) || questData == null)
+                return false;
+
+            ILocalizationTextReadModel manager = GlobalRegistry.LocalizationText;
+            if (titleDestination != null &&
+                questData.TryWriteDisplayTitleOrFallback(manager, titleDestination, out int fallbackTitleLength))
+            {
+                titleLength = math.min(fallbackTitleLength, titleDestination.Length);
+            }
+
+            if (descriptionDestination != null &&
+                questData.TryWriteDescriptionOrFallback(manager, descriptionDestination, out int fallbackDescriptionLength))
+            {
+                descriptionLength = math.min(fallbackDescriptionLength, descriptionDestination.Length);
+            }
+
+            markerTargetHash = 0u;
+            markerWorldPosition = questData.markerWorldPosition;
+            markerHeightOffset = math.max(0f, questData.markerHeightOffset);
+            return titleLength > 0 || markerWorldPosition.sqrMagnitude > 0.0001f;
+        }
+
+        public bool UpsertProceduralDirective(
+            uint questHash,
+            uint completionItemHash,
+            string title,
+            string description,
+            uint markerTargetHash,
+            Vector3 markerWorldPosition,
+            float markerHeightOffset,
+            byte phaseGateCode,
+            float requiredQuantity,
+            bool activateWhenAllowed,
+            out bool activatedNow)
+        {
+            activatedNow = false;
+            if (_stateManager == null)
+                return false;
+
+            bool updated = _stateManager.TryUpsertProceduralDirective(
+                questHash,
+                completionItemHash,
+                title,
+                description,
+                markerTargetHash,
+                markerWorldPosition,
+                markerHeightOffset,
+                (QuestPhaseGateType)phaseGateCode,
+                requiredQuantity,
+                activateWhenAllowed,
+                out _,
+                out activatedNow);
+            if (updated && activatedNow)
+                FlushRuntimeResults();
+
+            return updated;
+        }
+
+        internal unsafe bool TryCopyPackedStateSnapshot(void* destinationPtr, int destinationWordCapacity, out QuestSaveHeader header, double timestamp)
+        {
+            header = _stateManager != null
+                ? _stateManager.BuildSaveHeader(timestamp)
+                : default;
+            return _stateManager != null &&
+                   _stateManager.TryCopyPackedStateSnapshot(destinationPtr, destinationWordCapacity);
+        }
+
+        public static void StageLoadedPackedState(uint[] packedWords)
+        {
+            StageLoadedPackedState(default, packedWords);
+        }
+
+        internal static void StageLoadedPackedState(in QuestSaveHeader header, uint[] packedWords)
+        {
+            s_stagedLoadedQuestHeader = header;
+            if (packedWords == null || packedWords.Length <= 0)
+            {
+                s_stagedLoadedPackedState = null;
+                return;
+            }
+
+            if (s_stagedLoadedPackedState == null || s_stagedLoadedPackedState.Length != packedWords.Length)
+            {
+                // COLD ALLOC: uint[packedWords.Length] - staged packed quest words from SaveManager load handoff - owner: QuestManager
+                s_stagedLoadedPackedState = new uint[packedWords.Length];
+            }
+
+            Array.Copy(packedWords, s_stagedLoadedPackedState, packedWords.Length);
+        }
+
+        public void PopulateSaveData(SaveData data)
+        {
+            if (data == null)
+                return;
+
+            QuestData[] quests = allQuests ?? Array.Empty<QuestData>();
+            int questCapacity = quests.Length;
+            if (data.questActiveIds == null)
+                data.questActiveIds = new List<string>(questCapacity); // COLD ALLOC: List<string>[questCapacity] - legacy save active quest id staging - owner: QuestManager
+            else if (data.questActiveIds.Capacity < questCapacity)
+                data.questActiveIds.Capacity = questCapacity;
+
+            if (data.questCompletedIds == null)
+                data.questCompletedIds = new List<string>(questCapacity); // COLD ALLOC: List<string>[questCapacity] - legacy save completed quest id staging - owner: QuestManager
+            else if (data.questCompletedIds.Capacity < questCapacity)
+                data.questCompletedIds.Capacity = questCapacity;
+
+            data.questActiveIds.Clear();
+            data.questCompletedIds.Clear();
+
+            for (int i = 0; i < quests.Length; i++)
+            {
+                QuestData questData = quests[i];
+                if (questData == null || string.IsNullOrWhiteSpace(questData.questId))
+                    continue;
+
+                uint questHash = QuestFlagHashKernel.ComputeStableHash(questData.questId);
+                if (IsActive(questHash))
+                    data.questActiveIds.Add(questData.questId);
+
+                if (IsCompleted(questHash))
+                    data.questCompletedIds.Add(questData.questId);
+            }
+        }
+
+        public void LoadFromSaveData(SaveData data)
+        {
+            _loadedFromSave = true;
+            if (_stateManager == null)
+                return;
+
+            uint[] stagedWords = s_stagedLoadedPackedState;
+            QuestSaveHeader stagedHeader = s_stagedLoadedQuestHeader;
+            s_stagedLoadedPackedState = null;
+            s_stagedLoadedQuestHeader = default;
+
+            if (stagedWords != null && stagedWords.Length > 0)
+            {
+                _stateManager.RestorePackedState(stagedHeader, stagedWords);
+                return;
+            }
+
+            IEnumerable<string> activeQuestIds = data != null ? data.questActiveIds : null;
+            IEnumerable<string> completedQuestIds = data != null ? data.questCompletedIds : null;
+            _stateManager.RestoreLegacyState(activeQuestIds, completedQuestIds);
+        }
+
+        private void InitializeStateGraph()
+        {
+            if (_stateManager == null)
+                _stateManager = new QuestStateManager();
+
+            bool initialized = _stateManager.Initialize(allQuests);
+            if (_hasLookupAmbiguity)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[QuestManager] Quest registry ambiguity detected.");
+#endif
+                enabled = false;
+                return;
+            }
+
+            if (!initialized || _stateManager.HasCompileErrors)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[QuestManager] Quest state graph compilation failed.");
+#endif
+                enabled = false;
+                return;
+            }
+
+            _graphEvaluator?.Dispose();
+            _graphEvaluator = new QuestGraphEvaluator(_stateManager, FlushRuntimeResults);
+        }
+
+        private void FlushRuntimeResults()
+        {
+            if (_stateManager == null)
+                return;
+
+            for (int i = 0; i < _stateManager.ResultCount; i++)
+            {
+                QuestRuntimeResult result = _stateManager.GetResult(i);
+                EmitQuestTransition(result.QuestIndex, result.Completed != 0, result.TransitionType);
+            }
+        }
+
+        private void EmitQuestTransition(int questIndex, bool completed, QuestTransitionType transitionType)
+        {
+            if (_stateManager == null ||
+                !_stateManager.TryGetQuestHash(questIndex, out uint questHash))
+            {
+                return;
+            }
+
+            uint notificationHash = ResolveQuestNotificationHash(questIndex, completed, transitionType);
+
+            switch (transitionType)
+            {
+                case QuestTransitionType.Complete:
+                    QuestEvents.TryRaiseCompleted(questHash);
+                    break;
+
+                case QuestTransitionType.Revert:
+                    QuestEvents.TryRaiseActivated(questHash);
+                    break;
+
+                default:
+                    QuestEvents.TryRaiseActivated(questHash);
+                    break;
+            }
+
+            if (notificationHash != 0u)
+                NotificationEvents.TryPushRegisteredInfo(notificationHash);
+        }
+
+        private QuestData GetQuestDataByIndex(int questIndex)
+        {
+            return questIndex >= 0 && questIndex < allQuests.Length
+                ? allQuests[questIndex]
+                : null;
+        }
+
+        private bool TryResolveQuestHash(string questId, bool logUnknownQuest, out uint questHash, out QuestData questData)
+        {
+            questHash = 0u;
+            questData = null;
+
+            if (string.IsNullOrWhiteSpace(questId) || _hasLookupAmbiguity)
+                return false;
+
+            questHash = QuestFlagHashKernel.ComputeStableHash(questId);
+            if (questHash == 0u || !TryResolveQuestData(questHash, out questData))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (logUnknownQuest)
+                    Debug.LogWarning("[QuestManager] Unknown questId.");
+#endif
+
+                return false;
+            }
+
+            return true;
+        }
+
+        private void BuildLookup()
+        {
+            _questHashLookup.Clear();
+            _hasLookupAmbiguity = false;
+            EnsureQuestNotificationCacheCapacity(allQuests.Length);
+
+            for (int i = 0; i < allQuests.Length; i++)
+            {
+                QuestData questData = allQuests[i];
+                if (questData == null || string.IsNullOrWhiteSpace(questData.questId))
+                    continue;
+
+                uint questHash = QuestFlagHashKernel.ComputeStableHash(questData.questId);
+                if (questHash == 0u)
+                    continue;
+
+                if (_questHashLookup.TryGetValue(questHash, out QuestData existingQuestData) &&
+                    !ReferenceEquals(existingQuestData, questData))
+                {
+                    RegisterLookupAmbiguity(questData.questId, existingQuestData, questData);
+                    continue;
+                }
+
+                _questHashLookup[questHash] = questData;
+
+                CacheQuestNotificationHashes(i, questData);
+            }
+        }
+
+        private void EnsureQuestNotificationCacheCapacity(int questCount)
+        {
+            if (_questCompletedNotificationHashes.Length == questCount &&
+                _questRestoredNotificationHashes.Length == questCount &&
+                _questNewNotificationHashes.Length == questCount)
+            {
+                return;
+            }
+
+            // COLD ALLOC: uint[questCount] - pre-registered objective complete notification hashes - owner: QuestManager
+            _questCompletedNotificationHashes = new uint[questCount];
+            // COLD ALLOC: uint[questCount] - pre-registered objective restored notification hashes - owner: QuestManager
+            _questRestoredNotificationHashes = new uint[questCount];
+            // COLD ALLOC: uint[questCount] - pre-registered new objective notification hashes - owner: QuestManager
+            _questNewNotificationHashes = new uint[questCount];
+        }
+
+        private void CacheQuestNotificationHashes(int questIndex, QuestData questData)
+        {
+            if (questIndex < 0 || questIndex >= _questCompletedNotificationHashes.Length || questData == null)
+                return;
+
+            _questCompletedNotificationHashes[questIndex] = RegisterQuestNotification(ObjectiveCompletedPrefix.AsSpan(), questData);
+            _questRestoredNotificationHashes[questIndex] = RegisterQuestNotification(ObjectiveRestoredPrefix.AsSpan(), questData);
+            _questNewNotificationHashes[questIndex] = RegisterQuestNotification(ObjectiveNewPrefix.AsSpan(), questData);
+        }
+
+        private uint RegisterQuestNotification(ReadOnlySpan<char> prefix, QuestData questData)
+        {
+            int messageLength = 0;
+            if (!TryAppendSpan(prefix, _questNotificationMessageBuffer, ref messageLength))
+                return 0u;
+
+            ILocalizationTextReadModel manager = GlobalRegistry.LocalizationText;
+            if (questData == null ||
+                !questData.TryWriteDisplayTitleOrFallback(manager, _questNotificationTitleBuffer, out int titleLength) ||
+                titleLength <= 0)
+            {
+                UnknownObjectiveLabel.AsSpan().CopyTo(_questNotificationTitleBuffer);
+                titleLength = UnknownObjectiveLabel.Length;
+            }
+
+            ReadOnlySpan<char> titleSpan = _questNotificationTitleBuffer.AsSpan(
+                0,
+                math.min(titleLength, _questNotificationTitleBuffer.Length));
+            if (!TryAppendSpan(titleSpan, _questNotificationMessageBuffer, ref messageLength))
+                return 0u;
+
+            return NotificationEvents.RegisterMessage(_questNotificationMessageBuffer.AsSpan(0, messageLength));
+        }
+
+        private static bool TryAppendSpan(ReadOnlySpan<char> source, char[] destination, ref int length)
+        {
+            if (destination == null || length < 0 || length > destination.Length)
+                return false;
+
+            int available = destination.Length - length;
+            if (available <= 0)
+                return source.Length == 0;
+
+            int copyLength = math.min(source.Length, available);
+            if (copyLength <= 0)
+                return true;
+
+            source.Slice(0, copyLength).CopyTo(destination.AsSpan(length, copyLength));
+            length += copyLength;
+            return copyLength == source.Length;
+        }
+
+        private uint ResolveQuestNotificationHash(int questIndex, bool completed, QuestTransitionType transitionType)
+        {
+            if (questIndex < 0 || questIndex >= _questCompletedNotificationHashes.Length)
+                return 0u;
+
+            switch (transitionType)
+            {
+                case QuestTransitionType.Complete:
+                    return _questCompletedNotificationHashes[questIndex];
+                case QuestTransitionType.Revert:
+                    return _questRestoredNotificationHashes[questIndex];
+                default:
+                    return completed
+                        ? _questCompletedNotificationHashes[questIndex]
+                        : _questNewNotificationHashes[questIndex];
+            }
+        }
+
+        private bool TryResolveQuestData(uint questHash, out QuestData questData)
+        {
+            questData = null;
+
+            if (_questHashLookup.Count == 0 && allQuests != null && allQuests.Length > 0)
+                BuildLookup();
+
+            return questHash != 0u && _questHashLookup.TryGetValue(questHash, out questData);
+        }
+
+        private void RegisterLookupAmbiguity(string questId, QuestData existingQuestData, QuestData incomingQuestData)
+        {
+            _hasLookupAmbiguity = true;
+        }
+
+        private static float MapDepthTierToMeters(int tier)
+        {
+            switch (tier)
+            {
+                case 2:
+                    return DepthTierTwoMeters;
+                case 3:
+                    return DepthTierThreeMeters;
+                case 4:
+                    return DepthTierFourMeters;
+                default:
+                    return 0f;
+            }
+        }
+
+#if UNITY_EDITOR
+        private void TryAutoPopulateQuestRegistry()
+        {
+            string[] guids = AssetDatabase.FindAssets("t:QuestData", new[] { QuestFolder });
+            if (guids == null || guids.Length == 0)
+                return;
+
+            List<QuestData> loadedQuests = new List<QuestData>(guids.Length); // COLD ALLOC: List<QuestData>[guids.Length] - editor-time quest registry bootstrap - owner: QuestManager
+            HashSet<QuestData> seenQuests = new HashSet<QuestData>(); // COLD ALLOC: HashSet<QuestData> - editor-time duplicate guard - owner: QuestManager
+            if (allQuests != null)
+            {
+                for (int i = 0; i < allQuests.Length; i++)
+                {
+                    QuestData existing = allQuests[i];
+                    if (existing != null && seenQuests.Add(existing))
+                        loadedQuests.Add(existing);
+                }
+            }
+
+            int previousCount = loadedQuests.Count;
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                QuestData questData = AssetDatabase.LoadAssetAtPath<QuestData>(path);
+                if (questData == null)
+                    continue;
+
+                if (seenQuests.Add(questData))
+                    loadedQuests.Add(questData);
+            }
+
+            if (loadedQuests.Count <= 0 || loadedQuests.Count == previousCount)
+                return;
+
+            allQuests = loadedQuests.ToArray();
+            EditorUtility.SetDirty(this);
+        }
+#endif
+    }
+}

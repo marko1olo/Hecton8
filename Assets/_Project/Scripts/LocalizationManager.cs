@@ -1975,15 +1975,7 @@ namespace Hecton.Localization
 
         internal static int ComputeMadnessSourceTokenHash(ReadOnlySpan<char> sourceToken)
         {
-            unchecked
-            {
-                ReadOnlySpan<char> token = sourceToken.Length == 0 ? "<null>".AsSpan() : sourceToken;
-                int hash = 17;
-                for (int i = 0; i < token.Length; i++)
-                    hash = (hash * 31) + token[i];
-
-                return hash;
-            }
+            return LocalizationMadnessHash.ComputeSourceTokenHash(sourceToken);
         }
 
         internal static int ComputeMadnessSourceTokenHash(
@@ -1991,14 +1983,7 @@ namespace Hecton.Localization
             ReadOnlySpan<char> separator,
             ReadOnlySpan<char> suffix)
         {
-            unchecked
-            {
-                int hash = 17;
-                AppendMadnessTokenHash(prefix, ref hash);
-                AppendMadnessTokenHash(separator, ref hash);
-                AppendMadnessTokenHash(suffix, ref hash);
-                return hash;
-            }
+            return LocalizationMadnessHash.ComputeSourceTokenHash(prefix, separator, suffix);
         }
 
         int ILocalizationMadnessPresentationReadModel.ComputeMadnessSourceTokenHash(ReadOnlySpan<char> sourceToken)

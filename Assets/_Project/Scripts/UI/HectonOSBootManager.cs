@@ -16,7 +16,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Hecton OS Boot Manager")]
-    public sealed class HectonOSBootManager : MonoBehaviour, ITickable, IUpdatable, IPDAEventListener, IPDAIntrusionEventListener, IGlobalRegistryHotSwapListener
+    public sealed class HectonOSBootManager : MonoBehaviour, ILateFrameTickable, IPDAEventListener, IPDAIntrusionEventListener, IGlobalRegistryHotSwapListener
     {
         private enum BootReason : byte
         {
@@ -207,8 +207,9 @@ namespace Hecton8.UI
         }
 
         /// <inheritdoc />
-        public void Tick(float deltaTime)
+        public void LateFrameTick()
         {
+            float deltaTime = Time.unscaledDeltaTime;
             ProcessSessionLifecycleSignals();
             ConsumeFatalPressureSignals();
 
@@ -614,7 +615,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _tickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -622,7 +623,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 

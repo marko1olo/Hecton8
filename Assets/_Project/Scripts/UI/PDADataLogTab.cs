@@ -60,7 +60,7 @@ namespace Hecton8.UI
             new Quaternion(0f, 0.70710677f, 0f, -0.70710677f),
             new Quaternion(0f, 0.38268343f, 0f, -0.9238795f)
         };
-        private static LocalizationManager s_cachedLocalization;
+        private static ILocalizationMadnessPresentationReadModel s_cachedLocalization;
         private static LoreDatabaseManager s_cachedLoreDatabase;
         private static AudioLogSystem s_cachedAudioLogs;
         private static IPlayerRuntimeContext s_cachedPlayerContext;
@@ -672,9 +672,9 @@ namespace Hecton8.UI
 
             if (serviceSlot == GlobalRegistryServiceSlot.LocalizationRuntime)
             {
-                s_cachedLocalization = currentService as LocalizationManager;
+                s_cachedLocalization = currentService as ILocalizationMadnessPresentationReadModel;
                 HandleLanguageChanged(s_cachedLocalization != null
-                    ? s_cachedLocalization.CurrentLanguage
+                    ? (GameLanguage)s_cachedLocalization.ActiveLanguageId
                     : GameLanguage.English);
                 return;
             }
@@ -718,7 +718,7 @@ namespace Hecton8.UI
 
         private static void CacheRegistryServicesCold()
         {
-            s_cachedLocalization = GlobalRegistry.Localization;
+            s_cachedLocalization = GlobalRegistry.LocalizationMadnessPresentation;
             s_cachedLoreDatabase = GlobalRegistry.LoreDatabase;
             s_cachedAudioLogs = GlobalRegistry.AudioLogs;
             s_cachedPlayerContext = GlobalRegistry.Player;
@@ -1461,8 +1461,8 @@ namespace Hecton8.UI
         private static int BuildLoreSurfaceHash(ReadOnlySpan<char> logId, ReadOnlySpan<char> surfaceId)
         {
             return logId.Length > 0
-                ? LocalizationManager.ComputeMadnessSourceTokenHash(logId, ".".AsSpan(), surfaceId)
-                : LocalizationManager.ComputeMadnessSourceTokenHash(surfaceId);
+                ? LocalizationMadnessHash.ComputeSourceTokenHash(logId, ".".AsSpan(), surfaceId)
+                : LocalizationMadnessHash.ComputeSourceTokenHash(surfaceId);
         }
 
         private int ResolveCatalogIndex(AudioLogData log)
