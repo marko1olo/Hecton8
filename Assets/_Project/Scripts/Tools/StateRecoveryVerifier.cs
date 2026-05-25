@@ -465,7 +465,7 @@ namespace Hecton8.Tools
 
         private string ResolveExistingSaveSlot()
         {
-            SaveManager saveManager = Hecton8.Core.GlobalRegistry.Save as SaveManager;
+            SaveManager saveManager = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance as SaveManager;
             if (saveManager == null || _saveSlotProbeOrder == null)
                 return string.Empty;
 

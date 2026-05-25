@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Core.Contracts.Signals;
@@ -182,7 +182,7 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
-            _cachedSaveService = Hecton8.Core.GlobalRegistry.Save;
+            _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             _cachedLocalization = Hecton8.Core.GlobalRegistry.Localization;
         }
 

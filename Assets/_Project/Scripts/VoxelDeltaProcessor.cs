@@ -261,7 +261,7 @@ namespace Hecton8.Caves
             TryGetComponent(out _engine);
             _dataVault = GlobalRegistry.DataVault;
             _simulationBucketer = GlobalRegistry.SimulationBucketer;
-            _saveService = GlobalRegistry.Save;
+            _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             _fluidDecals = GlobalRegistry.AbyssalFluidDecals;
             TryRegisterHotSwapListener();
             EnsureCarveEventQueue();
@@ -297,8 +297,8 @@ namespace Hecton8.Caves
         {
             DisposeCarveEventQueue();
             DisposeBlackBox();
-            DisposeScheduledCarveBuffersForShutdownOnly();
-            DisposeScheduledCompactionBuffersForShutdownOnly();
+            DisposeScheduledCarveBuffers();
+            DisposeScheduledCompactionBuffers();
             DisposeCompactionScratchBuffers();
             DisposeNativeSnapshotScratchBuffer();
             _simulationBucketer = null;
@@ -4566,7 +4566,7 @@ namespace Hecton8.Caves
                    TryResolveVaultBuffer(vault, in _scheduledCarveWritesHandle, BufferID.ShinobuDeltaCrusherCarveWrites, ScheduledCarveWriteCapacity, out _);
         }
 
-        private void DisposeScheduledCarveBuffersForShutdownOnly()
+        private void DisposeScheduledCarveBuffers()
         {
             // [BLOCKING_SYNC_POINT] OnDisable teardown only: DataVault carve-write memory is persistent,
             // but the component must not leave a live writer lock behind during scene shutdown.
@@ -4669,10 +4669,8 @@ namespace Hecton8.Caves
             return Time.timeSinceLevelLoad;
         }
 
-        private void DisposeScheduledCompactionBuffersForShutdownOnly()
+        private void DisposeScheduledCompactionBuffers()
         {
-            // [BLOCKING_SYNC_POINT] OnDisable teardown only: compaction scratch is persistent and must
-            // not be released while a scene-shutdown compaction writer can still touch it.
             if (_scheduledCompactionRunning)
                 DispatcherJobFence.TryComplete(ref _scheduledCompactionHandle, forceComplete: true);
 

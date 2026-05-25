@@ -348,7 +348,7 @@ namespace Hecton8.Narrative
                 _objectPool = GlobalRegistry.ObjectPoolService;
 
             if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
         }
 
         private bool ResolveCatalog()
@@ -561,7 +561,7 @@ namespace Hecton8.Narrative
                 return;
 
             if (_saveService == null)
-                _saveService = GlobalRegistry.Save;
+                _saveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
 
             if (_saveService == null)
                 return;

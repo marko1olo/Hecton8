@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // HECTON-8 - PlayerInventory.cs
 // Native SOA-backed inventory owner. Managed ItemData resolution is seam-only.
 // ============================================================================
@@ -883,7 +883,7 @@ namespace Hecton8.Inventory
             }
 
             _cachedAudioService = GlobalRegistry.Audio;
-            _cachedSaveService = GlobalRegistry.Save;
+            _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             _cachedDataVault = GlobalRegistry.DataVault;
         }
 
@@ -893,7 +893,7 @@ namespace Hecton8.Inventory
                 return;
 
             if (_cachedSaveService == null)
-                _cachedSaveService = GlobalRegistry.Save;
+                _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
 
             if (_cachedSaveService == null)
                 return;
