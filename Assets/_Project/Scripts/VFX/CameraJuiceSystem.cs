@@ -593,7 +593,7 @@ namespace Hecton8.VFX
         private void RefreshCachedRegistryServices()
         {
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Dispatcher, GlobalRegistry.TickDispatcher);
-            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Player, GlobalRegistry.Player);
+            ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Player, Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.Submarine, GlobalRegistry.Submarine);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.DynamicResolutionRuntime, GlobalRegistry.DynamicResolution);
             ApplyRegistryServiceRebind(GlobalRegistryServiceSlot.VRAMMonitorRuntime, GlobalRegistry.VRAMBudgetReadModel);

@@ -455,7 +455,7 @@ namespace Hecton8.UI
         {
             _localization = GlobalRegistry.LocalizationStressPresentation;
             _nativeInputManager = GlobalRegistry.NativeInputRuntime;
-            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private void Unsubscribe()

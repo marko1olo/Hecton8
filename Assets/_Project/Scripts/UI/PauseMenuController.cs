@@ -193,7 +193,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _cachedSaveService = Hecton8.SaveSystem.SaveManager.ActiveRuntimeInstance;
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationLanguageControl;
         }

@@ -110,7 +110,7 @@ namespace Hecton8.VFX.Parasites
             if (_vault == null)
                 return;
 
-            CachePlayerContext(GlobalRegistry.Player);
+            CachePlayerContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
 
             ParasiteSwarmContracts.EnsureVaultBuffers(_vault);
 #if UNITY_EDITOR

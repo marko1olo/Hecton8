@@ -593,7 +593,7 @@ namespace Hecton8.UI
             _encounterDirector = GlobalRegistry.EncounterDirector;
             _audioService = Hecton8.Audio.SpatialAudioManager.ActiveRuntimeInstance;
             _worldSeedProvider = GlobalRegistry.WorldSeedProvider;
-            _playerContext = GlobalRegistry.Player;
+            _playerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _streamingBackpressureService = GlobalRegistry.StreamingBackpressure;
         }
 

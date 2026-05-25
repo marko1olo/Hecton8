@@ -307,7 +307,7 @@ namespace Hecton8.Visor
                 return false;
 
             _vault = vault;
-            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _coldRoutesCached = true;
             return true;
         }
@@ -324,7 +324,7 @@ namespace Hecton8.Visor
 
         public static void RefreshColdPlayerContext()
         {
-            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         public static void ResetColdStorageForRebind()

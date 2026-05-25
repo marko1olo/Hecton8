@@ -721,7 +721,7 @@ namespace Hecton8.UI
             s_cachedLocalization = GlobalRegistry.LocalizationMadnessPresentation;
             s_cachedLoreDatabase = GlobalRegistry.LoreDatabase;
             s_cachedAudioLogs = GlobalRegistry.AudioLogs;
-            s_cachedPlayerContext = GlobalRegistry.Player;
+            s_cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

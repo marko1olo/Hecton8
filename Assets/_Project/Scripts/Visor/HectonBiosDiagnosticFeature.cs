@@ -210,7 +210,7 @@ namespace Hecton8.Visor
             Shader shader = settings != null ? settings.shader : null;
             RecreateMaterial(ref _material, shader);
             TryRegisterHotSwapListener();
-            CachePlayerContext(Hecton8.Core.GlobalRegistry.Player);
+            CachePlayerContext(Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext);
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)

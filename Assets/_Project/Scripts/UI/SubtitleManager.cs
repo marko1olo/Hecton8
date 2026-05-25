@@ -417,7 +417,7 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationStressPresentation;
-            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         /// <summary>

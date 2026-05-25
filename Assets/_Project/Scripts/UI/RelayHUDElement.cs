@@ -539,7 +539,7 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _relayDirector = GlobalRegistry.EmergencyRelay;
-            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             if (_cachedPlayerContext != null)
             {
                 _mainCamera = _cachedPlayerContext.PlayerCamera;

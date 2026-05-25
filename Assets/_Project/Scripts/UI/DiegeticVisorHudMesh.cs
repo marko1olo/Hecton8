@@ -314,7 +314,7 @@ namespace Hecton8.UI
 
         private void CacheRegistryServicesCold()
         {
-            _cachedPlayerContext = GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
             _cachedQualityWeight01 = ResolveCurrentQualityWeight(_cachedQualityWeight01);
         }
 

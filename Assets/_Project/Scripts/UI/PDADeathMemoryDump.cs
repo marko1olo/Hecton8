@@ -561,7 +561,7 @@ namespace Hecton8.UI
         private void CacheRegistryServicesCold()
         {
             _cachedLocalization = Hecton8.Core.GlobalRegistry.LocalizationText;
-            _cachedPlayerContext = Hecton8.Core.GlobalRegistry.Player;
+            _cachedPlayerContext = Hecton8.Core.PlayerRuntimeContextService.ActiveRuntimeContext;
         }
 
         private static RectTransform FindExistingChild(Transform parent, string childName)
