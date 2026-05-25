@@ -2142,9 +2142,9 @@ namespace Hecton8.Gameplay
                             TargetForwardVectors[slot],
                             ref damage,
                             ref flags,
-                            out float frontDot))
+                        out float frontDot))
                     {
-                        SignalBus<DeflectSignal>.TryEnqueueBounded(DeflectSignalWriter, DeflectSignalWriterBudget, new DeflectSignal
+                        if (!SignalBus<DeflectSignal>.TryEnqueueBounded(DeflectSignalWriter, DeflectSignalWriterBudget, new DeflectSignal
                         {
                             LocalPoint = detail.LocalPoint,
                             FrontDot = frontDot,
@@ -2154,7 +2154,11 @@ namespace Hecton8.Gameplay
                             Flags = 0,
                             ArmorClass = (byte)armorClass,
                             Reserved = 0
-                        });
+                        }))
+                        {
+                            Counters[CounterDroppedResults] = Counters[CounterDroppedResults] + 1;
+                        }
+
                         EmitArmorImpactFeedback(
                             ImpactSignalWriter,
                             ImpactSignalWriterBudget,

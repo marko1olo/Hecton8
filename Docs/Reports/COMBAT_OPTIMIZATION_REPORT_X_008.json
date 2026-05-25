@@ -1,7 +1,7 @@
 {
   "metadata": {
     "agent": "X_008",
-    "generatedUtc": "2026-05-25T00:03:56.987273+00:00",
+    "generatedUtc": "2026-05-25T00:10:22.471696+00:00",
     "root": "C:\\hades\\Hecton8",
     "evidenceClass": "STATIC_SOURCE_SCAN_AND_SOURCE_LAYOUT_DECLARATIONS",
     "runtimeProof": "PENDING_VERIFICATION_UNITY_IMPORT_BURST_DISASSEMBLY_PROFILER_NOT_RUN"
@@ -674,6 +674,7 @@
     "writeHelperChecksAupLaneCreated": true,
     "writeHelperSanitizesAupBranchlessly": true,
     "writeHelperUsesSignalCodecAupBounds": true,
+    "combatDamageSignalCodecFromRuntimePointUsesAupBounds": true,
     "storageRejectTelemetryHashDeclared": true,
     "verdict": "PASS",
     "contract": "Damage admission must prove queue detail storage and impact AUP storage before writing ingress lanes, otherwise the job preflight can never repair the corrupted queue."

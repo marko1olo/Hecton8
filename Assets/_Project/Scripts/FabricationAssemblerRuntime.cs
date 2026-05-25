@@ -184,6 +184,7 @@ namespace Hecton8.Crafting
         public const uint Mock = 1u << 5;
         public const uint CompletionObserved = 1u << 6;
         public const uint Dirty = 1u << 7;
+        public const uint SignalDrop = 1u << 8;
     }
 
     public sealed class FabricationAssemblerRuntime : IGlobalRegistryHotSwapListener
@@ -572,7 +573,7 @@ namespace Hecton8.Crafting
                     stats.ActiveJobs++;
                     if ((state.Flags & FabricationAssemblerFlags.Completed) != 0u)
                         stats.CompletedJobs++;
-                    stats.FaultFlags |= state.Flags & FabricationAssemblerFlags.Fault;
+                    stats.FaultFlags |= state.Flags & (FabricationAssemblerFlags.Fault | FabricationAssemblerFlags.SignalDrop);
                     sum += progress;
                 }
             }
@@ -1089,7 +1090,7 @@ namespace Hecton8.Crafting
                     float progress = math.saturate(math.isfinite(job.Progress01) ? job.Progress01 : 0f);
                     active++;
                     completed += (state.Flags & FabricationAssemblerFlags.Completed) != 0u ? 1u : 0u;
-                    faultFlags |= state.Flags & FabricationAssemblerFlags.Fault;
+                    faultFlags |= state.Flags & (FabricationAssemblerFlags.Fault | FabricationAssemblerFlags.SignalDrop);
                     lastHash = job.TargetPrefabHash;
                     lastFabricator = state.FabricatorHash;
                     sum += progress;
@@ -1912,16 +1913,22 @@ namespace Hecton8.Crafting
 
                 if (completed && !observed)
                 {
-                    EmitCompletionSignals(index, in job, in state, flags, progress, state.RollbackHash, deconstruct);
+                    if (!EmitCompletionSignals(index, in job, in state, flags, progress, state.RollbackHash, deconstruct))
+                        flags |= FabricationAssemblerFlags.SignalDrop;
+
                     flags |= FabricationAssemblerFlags.CompletionObserved | FabricationAssemblerFlags.Dirty;
                     state.Flags = flags;
                 }
 
-                EmitTickSignal(in job, in state, flags, progress, quality, emissionMultiplier);
+                if (!EmitTickSignal(in job, in state, flags, progress, quality, emissionMultiplier))
+                {
+                    flags |= FabricationAssemblerFlags.SignalDrop | FabricationAssemblerFlags.Dirty;
+                    state.Flags = flags;
+                }
             }
         }
 
-        private void EmitCompletionSignals(
+        private bool EmitCompletionSignals(
             int slot,
             in FabricationJobDTO job,
             in FabricationRuntimeDTO state,
@@ -1931,11 +1938,11 @@ namespace Hecton8.Crafting
             bool deconstruct)
         {
             if (!math.all(math.isfinite(job.TargetAUP)))
-                return;
+                return true;
 
             if (deconstruct)
             {
-                SignalBus<DeconstructResultSignal>.TryEnqueueBounded(DeconstructResultWriter, DeconstructResultWriterBudget, new DeconstructResultSignal
+                return SignalBus<DeconstructResultSignal>.TryEnqueueBounded(DeconstructResultWriter, DeconstructResultWriterBudget, new DeconstructResultSignal
                 {
                     TargetAup = FabricationAssemblerRuntime.ToAbsoluteUniversePosition(job.TargetAUP),
                     TargetEntityId = job.TargetPrefabHash,
@@ -1945,10 +1952,9 @@ namespace Hecton8.Crafting
                     Reason = 0,
                     Frame = Frame
                 });
-                return;
             }
 
-            SignalBus<FabricationCompletedSignal>.TryEnqueueBounded(FabricationCompletedSignalWriter, FabricationCompletedSignalWriterBudget, new FabricationCompletedSignal
+            return SignalBus<FabricationCompletedSignal>.TryEnqueueBounded(FabricationCompletedSignalWriter, FabricationCompletedSignalWriterBudget, new FabricationCompletedSignal
             {
                 TargetAUP = job.TargetAUP,
                 TargetPrefabHash = job.TargetPrefabHash,
@@ -1962,7 +1968,7 @@ namespace Hecton8.Crafting
             });
         }
 
-        private void EmitTickSignal(
+        private bool EmitTickSignal(
             in FabricationJobDTO job,
             in FabricationRuntimeDTO state,
             uint flags,
@@ -1971,9 +1977,9 @@ namespace Hecton8.Crafting
             float emissionMultiplier)
         {
             if (!math.all(math.isfinite(job.TargetAUP)))
-                return;
+                return true;
 
-            SignalBus<FabricationTickSignal>.TryEnqueueBounded(FabricationTickSignalWriter, FabricationTickSignalWriterBudget, new FabricationTickSignal
+            return SignalBus<FabricationTickSignal>.TryEnqueueBounded(FabricationTickSignalWriter, FabricationTickSignalWriterBudget, new FabricationTickSignal
             {
                 TargetAUP = job.TargetAUP,
                 Progress01 = progress01,

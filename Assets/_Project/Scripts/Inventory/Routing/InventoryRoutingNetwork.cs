@@ -220,6 +220,7 @@ namespace Hecton8.Inventory
         public const uint TelemetryFlagFatal = 1u << 0;
         public const uint TelemetryFlagFragmented = 1u << 1;
         public const uint TelemetryFlagToasterSliced = 1u << 2;
+        public const byte TransactionResultSignalDrop = 1 << 0;
         public const uint ContainerRangeActive = 1u << 0;
         public const uint ContainerRangeSyncFailed = 1u << 1;
         public const uint ContainerRangeCapacityExceeded = 1u << 2;
@@ -1481,7 +1482,7 @@ namespace Hecton8.Inventory
                     double3 sourceAup = InventoryRoutingNetwork.DecodeAupHash(source.ContainerAUPHash);
                     double3 destinationAup = InventoryRoutingNetwork.DecodeAupHash(destination.ContainerAUPHash);
                     double3 midpointLocalFromSource = (destinationAup - sourceAup) * 0.5d;
-                    SignalBus<LogisticsTransferSignal>.TryEnqueueBounded(TransferSignalWriter, TransferSignalWriterBudget, new LogisticsTransferSignal
+                    if (!SignalBus<LogisticsTransferSignal>.TryEnqueueBounded(TransferSignalWriter, TransferSignalWriterBudget, new LogisticsTransferSignal
                     {
                         TransactionId = request.TransactionId,
                         ItemHashID = request.ItemHashID,
@@ -1493,7 +1494,10 @@ namespace Hecton8.Inventory
                         Flags = request.Flags,
                         SourceSlotIndex = unchecked((uint)request.SourceSlotIndex),
                         DestinationSlotIndex = unchecked((uint)request.DestinationSlotIndex)
-                    });
+                    }))
+                    {
+                        result.Flags |= InventoryRoutingNetwork.TransactionResultSignalDrop;
+                    }
                 }
 
                 slots[request.SourceSlotIndex] = source;

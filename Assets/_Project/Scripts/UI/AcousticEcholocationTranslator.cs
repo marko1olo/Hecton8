@@ -984,7 +984,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _tickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -992,7 +992,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 
@@ -1433,7 +1433,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _tickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -1441,7 +1441,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 
@@ -2139,7 +2139,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            _tickRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -2147,7 +2147,7 @@ namespace Hecton8.UI
             if (!_tickRegistered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
             _tickRegistered = false;
         }
 

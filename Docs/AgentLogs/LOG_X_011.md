@@ -1248,3 +1248,32 @@ Verification:
 - `git diff --check` on touched files: only LF->CRLF warnings.
 - Post-frame-owner compile rerun: passed after guard opened on attempt 7 (`CpuLoad=27`, `CompilerProcessCount=0`).
 - Runtime profiler/GCMonitor proof: not run.
+
+## 2026-05-25 - X_011 Loop 54 Interaction Prompt Provider Span Expansion
+
+What was wrong:
+- VWS/subtitle core remained statically clean, but nearby interactable prompt producers still had managed localized string cache/resolve paths.
+- Some user-facing or presentation-adjacent frame reads still went directly through `Time.frameCount`.
+- A whole-project Zero-GC claim would still be false without runtime profiler proof and because TMP uses preallocated managed `char[]` bridge buffers.
+
+What was done:
+- Added/expanded `InteractableTextCopy` span helpers for localized/configured prompt copying.
+- Migrated 24 touched prompt/presentation files to fixed buffers or `ReadOnlySpan<char>` routes where active UI text is produced.
+- Patched direct frame reads in `PlayerActionController`, `MantaEmergencyWreck`, and `DebrisManager` to `SystemDispatcher.CurrentFrameIndex`.
+- Left `DeployableBeacon.CreateDeterministicBeaconId()` intact because it creates persistent beacon identity, not render text.
+
+Cinematic Cheats used:
+- Stable fallback strings only on legacy compatibility APIs.
+- Fixed-size char buffers for prompt/UI text instead of localized string caches.
+- Dispatcher-owned frame id as the single frame source.
+
+Exact Microseconds saved:
+- 0 measured. Static expected gain is removal of localized prompt string refresh churn and three direct Unity frame reads in presentation-adjacent logic. No Unity profiler/GCMonitor run.
+
+Verification:
+- Focused scan over `VocalWarningSystem`, `VocalBankPlaybackRuntime`, `BabelSubtitleSyncRuntime`, `SubtitleManager`, `AudioLogSystem`, and `AudioLogPickup`: 0 hits for `Time.frameCount`, `WaitForSeconds`, coroutine tokens, TMP string sinks, string materializers, exception-message construction, `NativeMinHeap`, `VocalWarningHeapOps`, `BufferedSubtitleRequest`, `GetOrFallback`, and `ResolveLocalized`.
+- Touched-file scan over 24 patched files: one residual `string.Create` at `DeployableBeacon.CreateDeterministicBeaconId()`, classified as persistent save identity.
+- `git diff --check` on 24 touched files: exit 0; one LF->CRLF warning on `HectonOSBootManager.cs`.
+- Compile: not launched after Loop 54. Build guard was red: `CpuLoad=100`, `CompilerProcessCount=2`.
+- Last compile proof: Loop 53 `dotnet build Assembly-CSharp.csproj --no-restore` passed with 0 errors and 2 external `Hecton8.Input.csproj` warnings, elapsed 00:00:51.08.
+- Runtime profiler/GCMonitor proof: not run.

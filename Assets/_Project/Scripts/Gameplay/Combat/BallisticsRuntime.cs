@@ -2229,9 +2229,11 @@ namespace Hecton8.Gameplay
                     signal.TargetId = (ushort)math.min(ushort.MaxValue, hit.TargetEntityID);
                     signal.Channel = 0;
                     signal.Flags = CombatDamageSignal.DirectRuntimeFlag;
-                    SignalBus<CombatDamageSignal>.TryEnqueueBounded(DamageWriter, DamageWriterBudget, signal);
-                    emitted++;
-                    continue;
+                    if (SignalBus<CombatDamageSignal>.TryEnqueueBounded(DamageWriter, DamageWriterBudget, signal))
+                    {
+                        emitted++;
+                        continue;
+                    }
                 }
 
                 hit.Flags |= BallisticHitFlags.SignalDropped;

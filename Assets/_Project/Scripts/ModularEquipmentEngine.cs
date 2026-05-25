@@ -60,6 +60,7 @@ namespace Hecton8.Tools
         private const uint EquipmentFaultThermalGridInvalid = 1u << 1;
         private const uint EquipmentFaultCsvOverflow = 1u << 2;
         private const uint EquipmentFaultOverBudget = 1u << 3;
+        private const uint EquipmentFaultSignalDrop = 1u << 4;
         private const uint EquipmentOverheatLaneHash = 0xE1480A01u;
         private const uint ToolDepletedLaneHash = 0xE1480A02u;
         private const uint EquipmentMockBaseToolHash = 0x53483148u;
@@ -3356,7 +3357,7 @@ namespace Hecton8.Tools
                             flags |= ActiveEquipmentStateFlags.Depleted;
                             if ((previousFlags & ActiveEquipmentStateFlags.Depleted) == 0u)
                             {
-                                SignalBus<ToolDepletedSignal>.TryEnqueueBounded(DepletedWriter, DepletedWriterBudget, new ToolDepletedSignal
+                                if (SignalBus<ToolDepletedSignal>.TryEnqueueBounded(DepletedWriter, DepletedWriterBudget, new ToolDepletedSignal
                                 {
                                     ToolHashID = dto.ToolHashID,
                                     Frame = Frame,
@@ -3367,8 +3368,15 @@ namespace Hecton8.Tools
                                     Reserved0 = 0,
                                     Reserved1 = 0,
                                     Reserved2 = 0ul
-                                });
-                                counters.SignalCount++;
+                                }))
+                                {
+                                    counters.SignalCount++;
+                                }
+                                else
+                                {
+                                    counters.FaultFlags |= EquipmentFaultSignalDrop;
+                                    counters.LastFaultToolHashID = dto.ToolHashID;
+                                }
                             }
                         }
                     }
@@ -3420,7 +3428,7 @@ namespace Hecton8.Tools
 
                     if (!wasOverheated)
                     {
-                        SignalBus<EquipmentOverheatSignal>.TryEnqueueBounded(OverheatWriter, OverheatWriterBudget, new EquipmentOverheatSignal
+                        if (SignalBus<EquipmentOverheatSignal>.TryEnqueueBounded(OverheatWriter, OverheatWriterBudget, new EquipmentOverheatSignal
                         {
                             ToolHashID = dto.ToolHashID,
                             Frame = Frame,
@@ -3432,8 +3440,15 @@ namespace Hecton8.Tools
                             Reserved0 = 0,
                             Reserved1 = 0,
                             Reserved2 = 0u
-                        });
-                        counters.SignalCount++;
+                        }))
+                        {
+                            counters.SignalCount++;
+                        }
+                        else
+                        {
+                            counters.FaultFlags |= EquipmentFaultSignalDrop;
+                            counters.LastFaultToolHashID = dto.ToolHashID;
+                        }
                     }
                 }
 
