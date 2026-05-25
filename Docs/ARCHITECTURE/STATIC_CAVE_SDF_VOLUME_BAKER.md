@@ -64,7 +64,7 @@ Header layout:
 
 
 
-Runtime consumers must treat these files as static environmental data. They are excluded from rollback and Merkle state hashing; netcode synchronizes entity positions and authoritative mutable state only.
+Runtime consumers treat these files as static environmental data. They are excluded from rollback and Merkle state hashing; netcode synchronizes entity positions and authoritative mutable state only.
 
 
 
@@ -198,7 +198,7 @@ This baker adds no runtime point-to-triangle distance evaluation. Runtime SDF qu
 - Local slice index validates before raw index or position reads.
 - Absolute index reads validate against active submesh span, index NativeArray length, vertex count, and vertex byte range before raw strided position access.
 
-- UInt32 indices above `Int32.MaxValue` are rejected before `baseVertex` is applied, so a malformed huge index cannot be converted into a plausible small vertex through a negative base vertex.
+- UInt32 indices above `Int32.MaxValue` are rejected before `baseVertex` is applied, so a malformed huge index cannot be converted into a small vertex through a negative base vertex.
 
 - Invalid index fallback does not inherit `baseVertex`; baseVertex addition is clamped through 64-bit arithmetic before vertex reads.
 
@@ -248,7 +248,7 @@ Source-level gates do not confuse documentation strings with real async writers 
 
 
 
-- Known deliberate deviations: Task 10's async serialization wording is implemented as a synchronous editor-blocking chunked writer because the source payload is TempJob/native memory and the caller waits.
+- Known deviations: Task 10's async serialization wording is implemented as a synchronous editor-blocking chunked writer because the source payload is TempJob/native memory and the caller waits.
 - Task 18's `OnDrawGizmos` shape is implemented as `SceneView.duringSceneGui` to prevent runtime missing-script debt.
 - Task 19 writes `PHYSICS_OPTIMIZATION_REPORT_SHINOBU_244.json` instead of the shared report to avoid overwriting another agent's artifact.
 - The scanner is a method-context streaming text scanner, not a Roslyn AST proof.

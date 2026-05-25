@@ -25,7 +25,7 @@ Instrument:
 - `InputDispatcher` prewarms required haptic Vault handles and requests `GlobalSignals.EnsureHapticPulseSignalLaneInitialized()` during cold dispatcher registration, then refuses the haptic dispatcher route until those handles resolve.
 - `HapticSynthesisSimulationSystem` schedules the Burst synthesis/coalescence chain in `DispatcherPhase.Simulation`; `HapticSynthesisPostSimulationSystem` consumes the completed dispatcher fence in `DispatcherPhase.PostSimulation`; `InputDispatcher.DrainToolHaptics` remains the only hardware PAL write phase.
 - Cadence/capacity: Continuous `GlobalQualityWeight` maps synthesis cadence from 0.016 seconds at weight 1.0 to 0.1 seconds at weight 0.0.
-- The same scalar maps material-profile scan depth from 12.5% to 100% of the active profile table and coalescence reads only the generated pulse prefix when telemetry is available.
+- The scalar maps material-profile scan depth from 12.5% to 100% of the active profile table and coalescence reads only the generated pulse prefix when telemetry is available.
 - `HapticPulseSignal` capacity is 8; synthesis scratch pulse capacity is 64; telemetry ring is 300 entries; haptic profile CSV scratch is `BufferID.ShinobuHapticSynthesisCsvScratch byte[4096]`.
 - Expected max events/reads per frame: reads up to configured current-frame snapshots for `ImpactSignal`, `HighSpeedImpactSignal`, `CombatDamageSignal`, and `ToolAcousticSignal`; emits at most one final `HapticPulseSignal` and one `HapticCommandDTO`.
 - GlobalQualityWeight behavior: Cadence, material-profile scan depth, detail blending, and weighted coalescence scale continuously.

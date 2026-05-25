@@ -69,7 +69,7 @@ Each wrapper consumes a caller `JobHandle inputDeps` and returns the scheduled o
 
 `Assets/_Project/Scripts/World/Terrain/Hecton8.World.Terrain.asmdef` references only `Hecton8.World.Contracts` and Unity Burst/Collections/Jobs/Mathematics. No sibling gameplay, flora, vehicle, audio, or streaming runtime assembly is referenced from the terrain job assembly.
 
-`WorldGenerativeGeologyTerrainSeamApplier` lives in the existing broad `Hecton8.Core` assembly and consumes the terrain job assembly through the pre-existing Core reference. This pass did not add or edit asmdef references.
+`WorldGenerativeGeologyTerrainSeamApplier` lives in the broad `Hecton8.Core` assembly and consumes the terrain job assembly through the pre-existing Core reference. This pass did not add or edit asmdef references.
 
 ## Data Lanes
 

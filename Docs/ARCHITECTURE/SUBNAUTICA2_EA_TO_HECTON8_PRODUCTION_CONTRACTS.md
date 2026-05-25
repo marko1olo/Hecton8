@@ -138,7 +138,7 @@ Relevant source:
 
 - Current `Data/Balance/*.csv` headers have `Id` but no `hash32`; this is valid input for the compiler-side hash injection route.
 
-Contract gap: HECTON-8 has a monolith reader/compiler shape, but no proved mandatory build artifact. This is the exact equivalent of shipping a Subnautica-style world without its baked sidecars.
+Contract gap: HECTON-8 has a monolith reader/compiler shape, but no proved mandatory build artifact. This is equivalent to shipping a Subnautica-style world without its baked sidecars.
 
 ### Save And Schema
 
@@ -229,7 +229,7 @@ Contract gap: the SDK can generate a manifest the runtime rejects. That is a day
 
 Public Subnautica mod ecosystem facts:
 
-- Nautilus succeeded because high-level content handlers exist: craft data, craft tree, prefab, PDA, known tech, loot distribution, world entity database, save data, options, language, sound, sprites, story goals.
+- Nautilus succeeded because content handlers exist: craft data, craft tree, prefab, PDA, known tech, loot distribution, world entity database, save data, options, language, sound, sprites, story goals.
 
 - TerrainPatcher proves patch-package dependency/load-order/conflict concepts are essential.
 

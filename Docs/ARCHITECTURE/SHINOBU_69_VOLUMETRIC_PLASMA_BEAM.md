@@ -2,7 +2,7 @@
 
 Date: 2026-05-19
 
-Status: Blocked by existing non-VFX `Hecton8.Core.csproj` compile errors. Unity/Burst import of the new PlasmaBeam files is still pending because the generated csproj has not picked them up yet.
+Status: Blocked by existing non-VFX `Hecton8.Core.csproj` compile errors. Unity/Burst import of the new PlasmaBeam files is pending because the generated csproj has not picked them up yet.
 
 ## Source Anchors
 
